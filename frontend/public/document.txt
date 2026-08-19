@@ -1,0 +1,609 @@
+Title: Live Content
+
+Description: Fetched live
+
+Source: https://docs.google.com/document/d/1p4EMGwbId2oECJ0WpK9LjrwI7jyQERwAkgmHkMUrQdM/export?format=txt
+
+---
+
+﻿TCG Companion App Design Document
+
+
+
+Product Overview
+TCG Companion is a companion app for physical trading card games that combines a rules assistant with a turn-and-score engine for live tabletop play. Similar products in the market focus on card tracking, collection management, life counting, or tournament coordination, while this concept combines conversational rules to help with shared-screen scorekeeping for custom card effects.
+
+
+The app is designed for mobile and tablet use, with support for casting to a smart TV or large monitor so all players can see turn order, active effects, scores, and the current player. Existing companion and life-counter apps show that shared gameplay utilities and multiplayer tracking are already familiar patterns for TCG players.
+
+
+Product Goals
+- Help players resolve rule questions quickly through a TCG chat assistant.
+- Track player order, turns, card effects, and score changes during a live match.
+- Support local social play on a phone, tablet, or cast display for table visibility
+- Make custom or game-specific card logic configurable, including cards such as poison, antidote, and attack cards inspired by tabletop score-based games.
+Core Modules
+
+
+1. TCG GPT / TCG Chatbot
+This module acts as a rules assistant. Players can ask questions in natural language such as “Can I play antidote after poison?”, “How does attack damage stack?”, or “What happens if two effects trigger together?” The system should return concise rule answers, show confidence level, and optionally cite the source rulebook or game configuration used by the app.[3][6]
+
+
+Primary capabilities
+- Natural-language question answering for supported TCGs.
+- Rule lookup by keyword, card name, phase, or effect type.
+- Clarification mode for beginners, compact mode for experienced players.
+- Game-specific knowledge packs so each TCG can have different rules.
+- Optional admin tool to upload or edit a rule set.
+
+
+**Important constraint**
+The chatbot should not invent rules. For official games, it should use approved rule sources. For custom games, it should only answer from the uploaded design rules for that game.
+
+
+
+
+
+
+
+
+2. Score Calculator / Turn Engine
+This module manages players, turn flow, played card types, and score updates. The user sets player names, chooses the TCG template or custom ruleset, selects the starting player, and the app advances turns clockwise after each action.
+
+
+The user specifically described card examples like poison, antidote, and attack cards. A score engine for these effects should be rule-driven rather than hardcoded so the same app can support multiple TCGs and custom house rules. Score-based card games such as *Antidote* demonstrate that card outcomes can produce positive or negative points based on the final revealed card state, which supports the need for configurable effect logic.
+
+
+User Roles
+- Host player: Creates the session, enters players, selects the game mode, and controls setup.
+- Players: View the shared board, follow turns, and confirm actions.
+- Admin/content manager: Adds supported TCGs, rulebooks, scoring definitions, and card effect templates.
+
+
+Target Platforms
+- iOS and Android phone app.
+- Tablet-optimized mode for tabletop use.
+- Cast/screen-mirror support to smart TVs and large monitors for group visibility.
+- Optional web admin panel for managing rulesets and card logic.
+
+
+Main User Flow
+1. Open app.
+2. Choose module: TCG Chatbot or Score Calculator
+3. For Score Calculator: select a game template or custom TCG profile.
+4. Add player names.
+5. Choose starting player.
+6. Start match.
+7. App shows active player and clockwise turn order.
+8. On each move, host records the card type played, target player if needed, and resulting effect.
+9. Scoreboard updates instantly.
+10. At game-end condition, app announces the winner and shows final ranking.
+
+
+Functional Requirements
+
+
+ Chatbot Requirements
+- Support free-text questions.
+- Support question history in the current match.
+- Support game selection before asking questions.
+- Display short answer first, expanded explanation second.
+- Show “rules not found” state when the answer is uncertain.
+- Allow manual correction or bookmark of common rulings.
+
+
+Score Calculator Requirements
+- Add 2 to 8+ players.
+- Edit player names during setup.
+- Select starting player manually.
+- Auto-advance turn clockwise.
+- Option to reverse direction if a game rule requires it.
+- Record card play by card type, card name, or effect category.
+- Apply score effects automatically based on configured logic.
+- Support temporary status effects such as poison, shield, stun, antidote, attack boost, or heal.
+- Show current score, status effects, turn number, and active player.
+- End game manually or by rule trigger.
+- Announce winner, ties, and full standings.
+
+
+Example Rule Engine Model
+To support many TCGs, the app should use a configurable effect engine.
+
+
+Example effect types
+| Effect Type | Example | Engine Behavior |
+|---|---|---|
+| Damage | Attack card | Subtract points or health from target |
+| Heal | Antidote card | Restore points, remove poison, or cancel a negative state |
+| Status Apply | Poison card | Add poison status and apply recurring damage or penalty |
+| Status Remove | Cure card | Remove one or more active statuses |
+| Modifier | Buff card | Increase next attack or defense value |
+| Turn Control | Skip/Reverse | Skip player or change turn direction |
+| End Trigger | Final round card | Trigger endgame or scoring phase |
+
+
+Example custom logic
+- Poison card: Apply “Poisoned” state to target for 3 turns, lose 2 health each turn.
+- Antidote card: Remove “Poisoned” state and restore 3 health.
+- Attack card: Deal 5 damage to selected target.
+- Shield card: Prevent the next 4 damage.
+
+
+This structure is better than hardcoding a single game because it allows the same system to support both standard TCG helpers and original physical card games.
+
+
+Suggested Screens
+
+
+1. Home Screen
+- Two large cards: **TCG Chatbot** and **Score Calculator**.
+- Recent games.
+- Last used ruleset.
+
+
+2. Game Setup Screen
+- Select TCG/game profile.
+- Add/edit player names.
+- Set starting score or health.
+- Choose first player.
+- Toggle clockwise/counterclockwise rules.
+- Start game button.
+
+
+3. Live Match Screen
+- Large central active-player banner.
+- Circular or horizontal player order layout.
+- Per-player score panel.
+- Status badges like Poisoned, Shielded, Buffed.
+- Quick action buttons for common card types.
+- Match log panel with undo option.
+- Cast-friendly high-contrast layout.
+
+
+4. Card Action Modal
+- Choose card type.
+- Choose target player.
+- Confirm automatic effect preview.
+- Save move.
+
+
+5. Winner Screen
+- Winner name.
+- Final scores.
+- Turn count.
+- Match summary.
+- Rematch button.
+
+
+6. Chatbot Screen
+- Select ruleset.
+- Ask question text input.
+- Suggested prompts.
+- Response card with short and detailed view.
+
+
+UX and UI Notes
+The live match screen should be readable from a distance because the app may be cast to a TV or large monitor. Life-counter and companion tools already emphasize fast visibility and shared table utility, so this design should use large typography, high contrast, and minimal clutter during gameplay.
+
+
+Recommended design principles:
+- Dark tabletop-friendly theme with a light-mode option.
+- Very large active-turn indicator.
+- Color-coded status markers.
+- One-tap common actions.
+- Undo last action to handle input mistakes.
+- “TV mode” with oversized text and simplified layout.
+
+
+ Non-Functional Requirements
+- Fast response during live play.
+- Offline support for saved rule packs and local score matches.
+- Reliable state handling so accidental input does not corrupt scores.
+- Scalable rules engine for multiple TCGs.
+- Secure admin content editing for official/custom rulesets.
+- Responsive layout for phone, tablet, and cast display.
+
+
+Data Model Overview
+
+
+ Player
+- Player ID
+- Name
+- Current score or health
+- Turn position
+- Active statuses
+- Match statistics
+
+
+ Match
+- Match ID
+- Selected game profile
+- Turn number
+- Direction of play
+- Active player index
+- Move history
+- Winner state
+
+
+ Card Effect Definition
+- Effect ID
+- Game profile ID
+- Card name
+- Card type
+- Trigger condition
+- Target rule
+- Score delta
+- Status applied or removed
+- Duration
+- Priority
+
+
+#Ruleset
+- Ruleset ID
+- Game name
+- Version
+- FAQ entries
+- Turn phases
+- Effect glossary
+- Win condition
+
+
+Architecture Recommendation
+A practical version 1 architecture would be:
+- Frontend: Flutter or React Native for cross-platform mobile deployment.
+- State management: Riverpod, Bloc, or Redux-style store for deterministic turn updates.
+- Backend: Firebase or Supabase for ruleset sync, match templates, and analytics.
+- AI layer: LLM-backed rules assistant with retrieval from uploaded game rules.
+- Casting: Native screen-cast support or a dedicated cast-friendly secondary display view.
+
+
+For your team, a cross-platform stack is likely the best choice because the product needs fast UI iteration, mobile deployment, and shared business logic across both modules.
+
+
+Release Scope
+
+
+MVP
+- Home screen with 2 modules.
+- Chatbot with one supported TCG or one custom ruleset.
+- Add players and start match.
+- Clockwise turn handling.
+- Manual score edits.
+- Configured card actions: poison, antidote, attack, heal.
+- Winner announcement.
+- TV-friendly live match screen.
+
+
+ Phase 2
+- Multiple TCG profiles.
+- Rule source citations in chatbot.
+- Match history and analytics.
+- Custom card builder.
+- Remote second-screen mode.
+- Tournament mode.
+
+
+Phase 3
+- OCR/card scan support.
+- Voice input for rules questions.
+- Online synced matches.
+- Community ruleset marketplace.
+
+
+Recommended Next Deliverables
+1. Product Requirements Document with finalized game rules.
+2. Wireframes for setup, live match, and chatbot screens.
+3. Rules engine schema in JSON.
+4. Interactive prototype for cast mode.
+5. Development estimate by module
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+Stz  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+注意 TCG
+Rules & Regulations
+
+
+THE STORY
+
+
+In the Anime Series: Attention, the evil grand being Cacá (Cacáthar, The Devourer of Souls) has finally sucked out and absorbed all the worlds in the universe, life force or soul causing all worlds to be unstable. It is the mission of each character to obtain 3 Stability Crystal in order to bring life and stability back into their world. So they set themselves off into the battlefield to save their only world.
+
+
+* 2 decks: Action Cards and Character Cards
+* 2 sets of dice: Red (Attacker) and Gold (Defender)
+* Optional Accessories: Chance Cards & POG Kit
+* Energy Tokens (ET): Black = 1 ET/ Red = 2 ET/ Gold = 3ET 
+
+
+What is an Action Card?
+* An Action Card determines the move the player can make when it’s their turn. An action card must be paired with a Character card to make the move valid.
+
+
+What is a Character Card?
+* A character card determines the specific attack or defense the player may make. A Character will also indicate what the Retreat # & Defense Point (DP) is. They are located on the single attack cards.
+
+
+How to begin?
+* All players will roll two dice to determine who will start first. The player with the highest roll will be the first player and decide whether the rotation of players will be clockwise or counterclockwise
+* The first player may be the card shuffler or nominate another player to shuffle the Action Card deck and pass out 10 cards to each player.
+* Players will also choose one character to be for that round and have ten Character cards of the same character in their hands.
+* Players will neither nor show anyone their Action Cards and Character Cards
+* Each player will also begin with one Stability Crystal Card, which they will place in front of them. The goal is to defeat a player and collect their stability Crystal Card. The player who obtains three Stability Crystal Cards wins or ops out of the game and other players continue to battle until they win their three. If there are only two players. Two Stability Crystal Cards will be given to each player.
+* The first player will claim the character he or she wishes to be then decide the order of player decisions will be clockwise or counter clockwise. 
+* No players can be the same character, so once a character is chosen the other players must choose a different character to be.
+* Each player will receive 5 energy token to start with and receive one extra energy token, only if they mention it. If it is not requested and the player turn ends, they are no longer allowed to ask or receive an energy token until their next turn.
+* The first  player will pick an Action Card and place it face up in the center of the players. He/She will then choose a character card to go along with the action they choose to make. In order for an action card to be valid, they must repent a character at the same time. Remember once the action is completed, the player must discard the Action Card and Character Card (Only if this applies)
+* Once the Action or Character has been played and discarded. The player must grab another Action card from the top of the Action Card deck.. Players must also replace another Character Card if used. Players may choose which Character Card they would like to replace the discarded one.
+* Players will always have 10 Action Cards and 10 Character Cards when playing. If the player uses two Action Cards in their turn, they must pick up two more Action Cards at the end of their turn.
+* Each player will receive 5 energy tokens. Black = 1 energy token, Red = 2 energy token, Purple = 3 energy token. All players may receive 1 energy token every turn. However, no one will remind the player to get their energy token. Once their turn has passed, they can no longer get it.
+* When a player is using an Attack Card, combined with a Character Card. The player must use an energy token.
+* Regular attacks require 1 energy token. Super attacks require 2 energy tokens Kontrol requires 3 energy tokens and Blitz requires 5 energy tokens.
+* Energy tokens may be traded to another player, if they are soul alliance or it is used as a trade for the Stability Crystal won from an Alliance battle.
+
+
+TERMINOLOGY:
+
+
+General:
+注意 : Attention
+TCG: Trading Card Game
+Stacking: Placing the same card on top of each other or using the same card at the same time during the match.
+HP (Health Points): The amount of life or vitality a player or character has. HP is reduced when damage is taken from attacks or effects. When a player’s HP reaches 0, they are defeated unless they have or is given a Revive card.
+AP (Attack Power): The amount of damage an attack deals to an opponent when the attack is successful.
+DP (Defense Power): A value that represents a player’s or character’s defensive strength, helping reduce or withstand incoming attacks.
+RP (Retreat Points): Represents a character’s ability to escape combat or reposition. The higher a character’s RP is the lower number a player has to roll. Example, if a character’s RP is 5, the player will only need to roll a 1. Only dice is used to determine whether the player can retreat or must stay and fight. If a character has a RP of 2, the player must roll 4+ on one dice. Players must have a Retreat Card in order to retreat. 
+ET (Energy Token): A resource used to activate attacks and special abilities. Energy Tokens are spent when required by a card’s effect or The spiritual force that fuels a warrior’s techniques. Spend Energy Tokens to unleash powerful attacks and devastating abilities.
+Weakness: Attacks matching its weakness gain a bonus effect, such as extra damage, status conditions, or special penalties.
+
+
+Characters:                Weakness:
+Katsumi                Poison Extra 15 AP damage if attack is successful
+Zabina “Bee” Sole         Magic/ Poison Extra 10 AP damage if attack is successful
+CHYNAMAN                Magic/ Poison Extra 10 AP damage if attack is successful
+Kiko the Monkey        Fire Extra 10 AP damage if attack is successful
+Poochi                        Magic/ Poison (Figure out the logic to this) 10 AP damage if attack is successful
+Queeny                        Fire 10 AP damage if attack is successful (Mis-print of Magic/Poison.. Use as glitch)
+Shroomy                Fire 10 AP damage if attack is successful
+
+
+Card Types
+Action: These cards determine the moves or action such as to Attack, Defend, Heal, or any other moves.
+Character: These cards determine the type of attack a player can do. Each character has different powers and abilities. Some cards are more common than others.
+Chance: These cards test your fate. Players may receive good cards or bad cards depending on their luck.
+
+
+Turn Actions
+Activate: To enable the ability to… (Defend, Cast a spell, etc)
+
+
+LEVEL UP:
+Level UP: Players may not use their level 2 cards until they raise their health point to 150. Once a player has leveled up to 2+ He or she may use their level 1 attacks. Their HP will not go down unless they are attacked
+
+
+Ability:
+Ability: A unique effect granted by a card that can influence gameplay.
+Passive Ability: An ability that remains active without requiring activation unless otherwise stated.
+Active Ability: An ability that must be activated by meeting its requirements or paying its cost.
+Status Effect: A temporary condition, such as Poison, Burn, or Stun, that alters a player's or character's abilities.
+Cooldown: The number of turns a player must wait before using the same ability or card again.
+Turn: A player's opportunity to perform actions according to the game's turn sequence.
+Round: A complete cycle in which every player has taken one turn.
+Card Effect: The special rules or abilities printed on a card.
+Successful Attack: An attack that meets all requirements to hit and applies its effects.
+Miss: An attack that fails to hit its target and does not deal damage unless stated otherwise.
+Critical Hit: An attack that deals additional damage or gains an enhanced effect when specific conditions are met.
+Combo: A sequence of attacks or abilities that work together to create a stronger effect.
+Counter: A defensive response that interrupts, redirects, or retaliates against an opponent's action.
+Redirect: Changes the target of an attack or ability to another legal target.
+Heal: Restores lost HP. A player's HP cannot exceed its maximum value unless a card effect states otherwise.
+Victory: A player has won 3 Stability Crystals and have saved their world from destruction.
+
+
+KONTROL Card (Only if it’s available):
+
+
+Each character has a Mind Strength. 1 through 6. 1 is the weakest mind and 6 is the strongest mind. Whoever has a rare Kontrol Card, they can pair it with an Attack action card. In this battle both players will only use one dice. The controller must roll a number higher than the opponent’s mind strength. Example, if the opponent’s Mind Strength is 4. The controller must roll a number higher than 4 in order to control them. If the controller rolls a 4 or less they do not control the opponent and after use must discard the card. However, if they roll a number higher than the opponent’s Mental Strength, they may have the opponent attack another opponent or may force the opponent to show their Action Card and give them one Action Card of their choice. After use the Kontrol Card must be discarded.
+
+
+CHANCE Card (Only if it’s available): 
+If the opponent has the Action card: CHANCE They may roll to see if they will be controlled or not.
+If the Mind Strength is 1, Player must roll a 5+
+If the Mind Strength is 2, Player must roll a 4+
+If the Mind Strength is 3, Player must roll a  4+
+If the Mind Strength is 4, Player must roll a 2+
+If the Mind Strength is 5, Player must roll a 2+
+
+
+QUEENY has psychic power so she 2+ to her roll when attack for mind control
+The more undisciplined the character is and the more emotions and trauma they have the less mind strength the character will have.
+
+
+Kiko the monkey, Poochi, and Shroomy are magical creatures and will be given 1+ to defend their mind, since magic will be fighting magic. However, they are all passionate and often let their emotions cloud their judgement.
+
+
+NAME:                        
+Katsumi                3
+Zabina “Bee” Sole         5
+CHYNAMAN                4
+Kiko the Monkey        3
+Poochi                        2
+Queeny                        2
+Shroomy                2
+
+
+***NOTE*** Extra Card
+Some players with the Kontrol Card may also have an additional card with a QR Code, which is also playable. But must be played with the Kontrol Card and can only be used if the Kontrol attack is successful.
+
+
+“When you take control of your opponent., restore 20 HP and deal 20 HP damage to the defender. Discard this card after use.”
+
+
+Only two Kontrol Cards may be used per match or Cooldown period of 5 turns to be able to use again.
+
+
+BLITZ Card (Only if it’s available):
+USE ONLY WHEN YOUR HP IS <50. Lose 50% of your remaining HP. Destroy 1 enemy or ally our enemies. Discard after use. AP = 200 if the attack is successful.
+
+
+Players may choose to destroy only one player or they may attack all. 
+
+
+How to attack?
+One vs. One Attack. 
+Whomever rolls the highest number on the dice wins. Both Attacker and Defender will use two dice to roll.
+
+
+One vs. All Attack:
+Whomever rolls the highest number on the dice will win. Attackers will roll against all other players. Defenders who are on the roll will dodge the blast/attack. Defenders who lose will take damage.
+
+
+How is damage dealt in One vs. All Attack?
+All defenders that lost on the roll will divide the amount of 200 AP equally. For example, 5 defenders lose. Each one will be dealt -40 HP. 200 AP / 5 losing defender = -40 HP to each losing defender.. 2 defenders lose. Each one will be dealt -100 HP. 200 AP/ 2 losing defender = -100 HP  each losing defender
+
+
+Some players with the Blitz Card may also have an additional card with a QR Code, which is also playable. But must be played with the Blitz Card and can only be used if the Blitz attack is successful.
+
+
+***NOTE*** Extra Card
+Some players with the Blitz Card may also have an additional card with a QR Code, which is also playable. But must be played with the Blitz Card and can only be used if the Blitz attack is successful.
+
+
+“Upon a successful Saigo No Blitz, the battlefield shatters with an Aftershock Wave n- inflicting 20 HP damage to all enemies. Discard after use.”
+
+
+This card is effective even if the defender avoids the main attack.
+
+
+Blitz Cards may only be used the maximum of two per match.
+
+
+Character Cards
+(Each type of Attack Requires Different Amounts of Energy Tokens)
+
+
+CHYNAMAN
+FIRE OF FURY PER PUNCH -5 AP (Use only 1 dice) Example, player rolls a 3 with one dice x -5 AP = -15 AP
+FIRE TIGER SOUL PUNCH - 25 AP
+GOLDEN MIC LIGHTING - 40 AP
+WILD CARD - Variety of attacks available. Players may choose to use and add necessary energy tokens.
+KONTROL - Read Notes
+SAIGO NO BLITZ - 200 AP
+
+
+Individual Defense w/o Defense Card 10 HP less on the AP. This is only activated when the player rolls a total of six from two dices, even if the player loses the battle
+
+
+KIKO THE MONKEY
+TAIL WHIP PER WHIP -4 AP (Use only 1 dice) Example, player rolls a 3 with one dice x -4 AP = -12 AP
+MULTIPLICITY - 30 AP
+SOUL BLAST 3000 -40 AP
+WILD CARD - Variety of attacks available. Players may choose to use and add necessary energy tokens.
+KONTROL - Read Notes
+SAIGO NO BLITZ - 200 AP
+
+
+Individual Defense w/o Defense Card 10 HP less on the AP. This is only activated when the player rolls a total of six from two dices, even if the player loses the battle
+
+
+
+
+SHROOMY
+POPPERS PER POP  -4 AP (Use only 1 dice) Example, player rolls a 3 with one dice x -4 AP = -12 AP
+MS BOMBA -40 AP
+SOUL SNATCHER - 50 AP
+WILD CARD - Variety of attacks available. Players may choose to use and add necessary energy tokens.
+KONTROL - Read Notes
+SAIGO NO BLITZ -200 AP
+
+
+Individual Defense w/o Defense Card 10 HP less on the AP. This is only activated when the player rolls a total of six from two dices, even if the player loses the battle
+
+
+ZABINA “BEE” SOLE
+STING SLAP PER STING -3 AP (Use only 1 dice) Example, player rolls a 3 with one dice x -3 AP = -9 AP
+PAPARAZZI STUN -25 AP Upon successful attack, the defendant will also lose 1 turn.
+BEE DRONE BOMB -40 AP
+WILD CARD- Variety of attacks available. Players may choose to use and add necessary energy tokens.
+KONTROL- Read Notes
+SAIGO NO BLITZ -200 AP
+
+
+Individual Defense w/o Defense Card 10 HP less on the AP. This is only activated when the player rolls a total of six from two dices, even if the player loses the battle
+
+
+KATSUMI
+SAVAGE PAWS PER STRIKE (Use only 1 dice)
+SHADOW PURR
+CLAW OF FATE
+WILD CARD  - Variety of attacks available. Players may choose to use and add necessary energy tokens.
+KONTROL - Read Notes
+SAIGO NO BLITZ
+
+
+POOCHI
+GLITTER SPARKS PER SPARK  -4 AP (Use only 1 dice) Example, player rolls a 3 with one dice x -4 AP = -12 AP
+LASSO OF TRUTH - 25 AP Upon successful attack defendant also must show all his/her Action Cards
+GLITTER BURST -35 AP
+WILD CARD - Variety of attacks available. Players may choose to use and add necessary energy tokens.
+KONTROL - Read Notes
+SAIGO NO BLITZ -200 AP
+
+
+Individual Defense w/o Defense Card 10 HP less on the AP. This is only activated when the player rolls a total of six from two dices, even if the player loses the battle
+
+
+QUEENY
+HAIR WHIP PER WHIP -4 AP (Use only 1 dice) Example, player rolls a 3 with one dice x -4 AP = -12 AP
+SIREN BLAST -30 AP
+RAINBOW FAN BLAST
+WILD CARD - Variety of attacks available. Players may choose to use and add necessary energy tokens.
+KONTROL - Read Notes 
+SAIGO NO BLITZ
+
+
+SUE ELLEN’S V2
+Bonus Card: AMPLIFY. Boost your active card with 1 effect: +20 HP, +20 AP, or +DP. Execute. Discard after use. No dice roll is required. Must be paired up with an Attack Card if used as an Attack.
+
