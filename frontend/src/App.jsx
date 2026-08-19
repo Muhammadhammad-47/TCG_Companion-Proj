@@ -36,7 +36,7 @@ const Avatar = ({ isSpeaking }) => {
   }, [isSpeaking, sequence.length]);
 
   const current = sequence[index] || sequence[0];
-  const imagePath = `/Character/${current.folder}/${current.frame}.png`;
+  const imagePath = `${import.meta.env.BASE_URL}Character/${current.folder}/${current.frame}.png`;
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
@@ -68,7 +68,7 @@ function App() {
   const [chatHistory, setChatHistory] = useState([]);
 
   useEffect(() => {
-    fetch('document.txt')
+    fetch(`${import.meta.env.BASE_URL}document.txt`)
       .then(res => res.text())
       .then(text => setDocumentText(text))
       .catch(err => console.error("Could not load document.txt", err));
