@@ -55,7 +55,7 @@ const Avatar = ({ isSpeaking }) => {
   );
 };
 
-function App() {
+function Chat({ onBack }) {
   const [file, setFile] = useState(null);
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
@@ -77,7 +77,6 @@ function App() {
   const localSearch = (query) => {
     const qLower = query.toLowerCase();
     
-    // Conversational rules
     if (qLower.match(/^(hi|hello|hey|greetings)/)) return "Hello! I am your Attention TCG Companion. How can I help you with the rules today?";
     if (qLower.match(/(how are you|how do you do)/)) return "I am functioning optimally and ready to assist you with the game rules!";
     if (qLower.match(/(who are you|introduce yourself|what are you)/)) return "I am the official Attention TCG Companion bot. I know all the rules and character stats to help you play the game smoothly.";
@@ -111,29 +110,11 @@ function App() {
     return "I couldn't find a specific answer in the rulebook.";
   };
 
-  const handleDocumentUpload = async (e) => {
-    const selectedFile = e.target.files[0];
-    setFile(selectedFile);
-    if (!selectedFile) return;
-
-    const formData = new FormData();
-    formData.append('document', selectedFile);
-
-    setStatus('Uploading document...');
-    try {
-      const res = await axios.post('http://localhost:5000/api/upload', formData);
-      setStatus('Document uploaded successfully!');
-    } catch (err) {
-      console.error(err);
-      setStatus('Error uploading document.');
-    }
-  };
-
   const askQuestion = async (q) => {
     const query = q || question;
     if (!query) return;
     setStatus('Asking question...');
-    setQuestion(''); // Clear input
+    setQuestion('');
     setDisplayedAnswer('');
     
     try {
@@ -154,7 +135,7 @@ function App() {
         utterance.onend = () => {
           setIsSpeaking(false);
           setIsAnimatingTalk(false);
-          setDisplayedAnswer(ans); // Ensure full text is shown at the end
+          setDisplayedAnswer(ans);
         };
         
         utterance.onerror = () => {
@@ -165,23 +146,19 @@ function App() {
         let pauseTimeout;
         utterance.onboundary = (event) => {
           if (event.name === 'word') {
-            // Display text up to the current word boundary + the word length
-            // charLength isn't strictly standard, but if it exists we use it, else we find the next space.
             const nextSpace = ans.indexOf(' ', event.charIndex);
             const endIndex = nextSpace !== -1 ? nextSpace : ans.length;
             setDisplayedAnswer(ans.substring(0, endIndex));
             
-            // Resume talking animation if it was paused
             setIsAnimatingTalk(true);
             
-            // If there's punctuation, temporarily pause the animation for a fraction of a second
             const charBefore = ans.substring(event.charIndex - 1, event.charIndex);
             if (['.', ',', '!', '?', ';'].includes(charBefore)) {
               setIsAnimatingTalk(false);
               clearTimeout(pauseTimeout);
               pauseTimeout = setTimeout(() => {
                 setIsAnimatingTalk(true);
-              }, 400); // Resume after 400ms
+              }, 400);
             }
           }
         };
@@ -217,30 +194,25 @@ function App() {
   return (
     <div className="App">
       <header className="top-nav">
-        <div className="nav-left" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+        <div className="nav-left">
           <button className="burger-button" onClick={toggleSidebar}>☰</button>
+          <button className="back-button" onClick={onBack}>⮌ EXIT TO HUB</button>
           <div className="nav-logo">
-            <h2>注意 TCG Companion</h2>
+            <h2>注意 RULES BOT</h2>
           </div>
         </div>
       </header>
 
-      <div className="main-content chatgpt-layout" style={{ flexDirection: 'row' }}>
+      <div className="chatgpt-layout">
         
-        {/* Overlay for Sidebar */}
-        {isSidebarOpen && (
-          <div className="sidebar-overlay" onClick={toggleSidebar}></div>
-        )}
-
-        {/* Sidebar Menu */}
         <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #30363d', paddingBottom: '10px', marginBottom: '15px' }}>
-            <h3 style={{ borderBottom: 'none', paddingBottom: '0', marginBottom: '0' }}>Common Questions</h3>
-            <button className="close-sidebar" onClick={toggleSidebar} style={{ background: 'none', border: 'none', color: '#ffd700', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '10px', marginBottom: '15px' }}>
+            <h3>Common Questions</h3>
+            <button className="burger-button" onClick={toggleSidebar}>×</button>
           </div>
           
           <div style={{ flex: 1, overflowY: 'auto' }}>
-            <ul className="preset-list" style={{ maxHeight: 'none' }}>
+            <ul className="preset-list">
               {presetQuestions.map((q, idx) => (
                 <li key={idx} onClick={() => handlePresetClick(q)} className="preset-item">
                   {q}
@@ -249,13 +221,13 @@ function App() {
             </ul>
 
             {chatHistory.length > 0 && (
-              <div className="chat-history" style={{ marginTop: '30px' }}>
-                <h3 style={{ borderBottom: '1px solid #30363d', paddingBottom: '10px', marginBottom: '15px', color: '#58a6ff' }}>Chat History</h3>
-                <ul className="preset-list" style={{ maxHeight: 'none' }}>
+              <div style={{ marginTop: '30px' }}>
+                <h3 style={{ borderBottom: '1px solid var(--border-subtle)', paddingBottom: '10px', marginBottom: '15px' }}>Chat History</h3>
+                <ul className="preset-list">
                   {chatHistory.map((item, idx) => (
-                    <li key={idx} className="preset-item" style={{ cursor: 'default', background: 'transparent', border: 'none', padding: '0 0 15px 0' }}>
-                      <strong style={{ color: '#ffd700', display: 'block', marginBottom: '5px' }}>Q: {item.q}</strong>
-                      <span style={{ color: '#8b949e', fontSize: '0.85rem' }}>A: {item.a}</span>
+                    <li key={idx} className="preset-item" style={{ cursor: 'default' }}>
+                      <strong style={{ color: 'var(--accent-gold)', display: 'block', marginBottom: '5px' }}>Q: {item.q}</strong>
+                      <span style={{ fontSize: '0.85rem' }}>A: {item.a}</span>
                     </li>
                   ))}
                 </ul>
@@ -264,19 +236,19 @@ function App() {
           </div>
         </div>
 
-        {/* 2D Canvas Area */}
-        <div className="canvas-wrapper" style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: isSpeaking ? 'row' : 'column', justifyContent: 'center', alignItems: 'center', padding: '0 40px' }}>
-          
-          <div className="avatar-side" style={{ flex: isSpeaking ? '0 0 40%' : 'none', display: 'flex', justifyContent: isSpeaking ? 'flex-end' : 'center', transition: 'all 0.5s ease', paddingRight: isSpeaking ? '40px' : '0' }}>
+        <div className="canvas-wrapper">
+          <div style={{ flex: answer ? '0 0 40%' : 'none', display: 'flex', justifyContent: 'center', transition: 'all 0.5s ease', height: answer ? '50%' : '60%' }}>
             <Avatar isSpeaking={isAnimatingTalk} />
           </div>
 
-          {/* Right Side Text Area when speaking */}
-          {isSpeaking && (
-            <div className="text-side" style={{ flex: '1', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start', maxWidth: '60%', animation: 'fadeIn 0.5s ease' }}>
-              <div style={{ background: 'rgba(22, 27, 34, 0.95)', border: '1px solid #ffd700', borderRadius: '12px', padding: '25px', boxShadow: '0 8px 25px rgba(0,0,0,0.6), 0 0 15px rgba(255, 215, 0, 0.15)', color: '#fff', fontSize: '1.4rem', lineHeight: '1.6', wordWrap: 'break-word', width: '100%' }}>
-                {displayedAnswer}
-                <span className="cursor-blink">|</span>
+          {answer && (
+            <div style={{ display: 'flex', justifyContent: 'center', width: '100%', animation: 'fadeIn 0.5s ease' }}>
+              <div className="chat-bubble bot">
+                <div className="bot-avatar-icon">🤖</div>
+                <div>
+                  {isSpeaking ? displayedAnswer : answer}
+                  {isSpeaking && <span className="cursor-blink">|</span>}
+                </div>
               </div>
             </div>
           )}
@@ -301,9 +273,9 @@ function App() {
           <button className="send-button" onClick={() => askQuestion()}>➤</button>
           {isSpeaking && (
             <button 
-              className="stop-button" 
+              className="send-button" 
               onClick={stopSpeaking} 
-              style={{ background: '#d73a49', color: '#fff', border: 'none', borderRadius: '50%', width: '45px', height: '45px', marginLeft: '10px', cursor: 'pointer', fontSize: '1.2rem', boxShadow: '0 4px 10px rgba(215, 58, 73, 0.4)' }}
+              style={{ background: 'var(--accent-red)' }}
               title="Stop Speaking"
             >
               ⏹
@@ -311,6 +283,42 @@ function App() {
           )}
         </div>
         {status && <div className="status-indicator">{status}</div>}
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [view, setView] = useState('home');
+
+  if (view === 'chat') {
+    return <Chat onBack={() => setView('home')} />;
+  }
+
+  return (
+    <div className="App hub-container">
+      <div className="hub-brand">
+        <div className="hub-badge">注意!</div>
+        <h1 className="hub-title">DANCE WITH MII!</h1>
+        <div className="hub-subtitle">TCG COMPANION HUB</div>
+      </div>
+      
+      <div className="hub-grid">
+        <div className="hub-btn" onClick={() => setView('chat')}>
+          <div className="icon">🤖</div>
+          <div>
+            <h3>RULES BOT</h3>
+            <p>Chat Companion & Card Knowledge</p>
+          </div>
+        </div>
+
+        <div className="hub-btn" onClick={() => { window.location.href = `${import.meta.env.BASE_URL}Game/index.html`; }}>
+          <div className="icon">⚔️</div>
+          <div>
+            <h3>BATTLE ARENA</h3>
+            <p>Interactive Tabletop Simulator</p>
+          </div>
+        </div>
       </div>
     </div>
   );
