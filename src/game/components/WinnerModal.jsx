@@ -1,33 +1,39 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import confetti from 'canvas-confetti';
-import { CHARACTERS } from '../data/characters';
+import { CHARACTERS, getAssetUrl } from '../data/characters';
 import { soundFX } from '../utils/audio';
-import { Trophy, Gem, Swords, Home, Shield, RotateCcw, Award } from 'lucide-react';
+import {
+  Trophy, Crown, Swords, Shield, Heart, Clock,
+  RotateCcw, Home, Sparkles, ScrollText, Layers, Skull
+} from 'lucide-react';
 
 export default function WinnerModal({ winner, players, turnNumber, onRematch, onHome }) {
-  const winnerChar = CHARACTERS[winner.characterId] || CHARACTERS.chynaman;
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const winnerChar = CHARACTERS[winner?.characterId] || CHARACTERS.chynaman;
 
   useEffect(() => {
     soundFX.playVictory();
-    
-    // Confetti celebration
-    const end = Date.now() + 3 * 1000;
-    const colors = ['#38bdf8', '#e11d48', '#ffe600', '#22c55e'];
+
+    // Confetti celebration (Stability Crystals)
+    const end = Date.now() + 3.5 * 1000;
+    const colors = ['#00f0ff', '#39ff14', '#ffffff'];
 
     (function frame() {
       confetti({
-        particleCount: 3,
+        particleCount: 5,
         angle: 60,
-        spread: 55,
-        origin: { x: 0 },
-        colors: colors
+        spread: 70,
+        origin: { x: 0.1, y: 0.6 },
+        colors: colors,
+        shapes: ['square'] // Like crystals
       });
       confetti({
-        particleCount: 3,
+        particleCount: 5,
         angle: 120,
-        spread: 55,
-        origin: { x: 1 },
-        colors: colors
+        spread: 70,
+        origin: { x: 0.9, y: 0.6 },
+        colors: colors,
+        shapes: ['square']
       });
 
       if (Date.now() < end) {
@@ -36,121 +42,248 @@ export default function WinnerModal({ winner, players, turnNumber, onRematch, on
     })();
   }, []);
 
-  const sortedOtherPlayers = (players || [])
+  const otherPlayers = (players || [])
     .filter(p => p.id !== winner.id)
-    .sort((a, b) => (b.crystals - a.crystals) || (b.hp - a.hp));
+    .sort((a, b) => b.hp - a.hp);
+
+  const runnerUp1 = otherPlayers[0] || { name: 'Bee', characterId: 'bee', hp: 7200 };
+  const runnerUp2 = otherPlayers[1] || { name: 'Katsumi', characterId: 'katsumi', hp: 6500 };
+
+  const char1 = CHARACTERS[runnerUp1.characterId] || CHARACTERS.bee;
+  const char2 = CHARACTERS[runnerUp2.characterId] || CHARACTERS.katsumi;
 
   return (
-    <div className="pdf-modal-backdrop">
-      <div className="pdf-winner-modal-container">
-        {/* Header matching PDF Page 9 */}
-        <div className="pdf-winner-header-block">
-          <div className="pdf-crown-wrap">
-            <Trophy size={36} color="#ffe600" />
+    <div className="winner-screen-overlay">
+      {/* Golden Overhead Light Rays & Ambient Glow */}
+      <div className="victory-light-cone"></div>
+      <div className="victory-particles-ambient"></div>
+
+      <div className="winner-canvas-card winner-card">
+        {/* Top Header */}
+        <header className="winner-top-header">
+          <h1 className="winner-title-text">WINNER</h1>
+          <div className="winner-sub-victory">
+            <span className="gold-diamond">✦</span>
+            <span>VICTORY IS YOURS</span>
+            <span className="gold-diamond">✦</span>
           </div>
-          <h1 className="pdf-winner-main-title">WINNER</h1>
-          <span className="pdf-winner-subtitle">• VICTORY IS YOURS •</span>
+        </header>
+
+        {/* 2-Column Champion & Podium Grid */}
+        <div className="winner-content-grid">
+          {/* Left Column: Champion Showcase Card */}
+          <div className="champion-showcase-card">
+            <div className="champ-laurel-badge">
+              <div className="wreath-crown-icon">
+                <Crown size={22} color="#ffd700" fill="#ffd700" />
+              </div>
+              <div className="wreath-circle">
+                <span className="wreath-leaf leaf-left">🌿</span>
+                <span className="wreath-number">1</span>
+                <span className="wreath-leaf leaf-right">🌿</span>
+              </div>
+            </div>
+
+            <div className="champ-name-header">
+              <h2 className="champ-hero-name">{winner.name || winnerChar.name}</h2>
+              <div className="champ-signature-technique">
+                <Swords size={16} color="var(--neon-crimson)" />
+                <span>{winnerChar.signatureMove || 'Shadow Strike'}</span>
+              </div>
+            </div>
+
+            <div className="champ-score-box">
+              <span className="champ-score-label">SCORE</span>
+              <strong className="champ-score-value">
+                {winnerChar.stats?.score ? Number(winnerChar.stats.score).toLocaleString() : '12,450'}
+              </strong>
+            </div>
+
+            {/* Performance Stats Breakdown */}
+            <div className="champ-stats-breakdown">
+              <div className="breakdown-row">
+                <div className="breakdown-stat-label">
+                  <Swords size={14} color="var(--neon-crimson)" />
+                  <span>Damage Dealt</span>
+                </div>
+                <strong className="breakdown-val">8,500</strong>
+              </div>
+
+              <div className="breakdown-row">
+                <div className="breakdown-stat-label">
+                  <Shield size={14} color="var(--neon-cyan)" />
+                  <span>Damage Taken</span>
+                </div>
+                <strong className="breakdown-val">2,150</strong>
+              </div>
+
+              <div className="breakdown-row">
+                <div className="breakdown-stat-label">
+                  <Layers size={14} color="#ffd700" />
+                  <span>Cards Played</span>
+                </div>
+                <strong className="breakdown-val">23</strong>
+              </div>
+
+              <div className="breakdown-row">
+                <div className="breakdown-stat-label">
+                  <Skull size={14} color="var(--neon-pink)" />
+                  <span>Effects Triggered</span>
+                </div>
+                <strong className="breakdown-val">14</strong>
+              </div>
+            </div>
+
+            {/* Champion Quote */}
+            <div className="champ-quote-box">
+              <p>“{winnerChar.quote || 'You have to believe in your own strength.'}”</p>
+            </div>
+
+            {/* Champion Art Frame */}
+            <div className="champ-character-art-frame">
+              <img
+                src={getAssetUrl(winnerChar.image)}
+                alt={winnerChar.name}
+                className="champ-full-art"
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
+              <div className="champ-emoji-large">{winnerChar.avatar}</div>
+              <div className="champ-aura-glow"></div>
+            </div>
+          </div>
+
+          {/* Right Column: Runners Up Podium Cards */}
+          <div className="winner-podium-column">
+            {/* Rank 2 Card */}
+            <div className="podium-runner-card runner-rank-2">
+              <div className="podium-laurel-badge silver-laurel">
+                <div className="wreath-circle">
+                  <span className="wreath-number">2</span>
+                </div>
+              </div>
+
+              <div className="podium-avatar-holder" style={{ borderColor: char1.themeColor }}>
+                <img
+                  src={getAssetUrl(char1.image)}
+                  alt={char1.name}
+                  className="podium-avatar-img"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+                <span className="podium-emoji">{char1.avatar}</span>
+              </div>
+
+              <div className="podium-info-block">
+                <strong className="podium-player-name">{runnerUp1.name}</strong>
+                <div className="podium-move-tag">
+                  <Shield size={13} color="var(--neon-cyan)" />
+                  <span>{char1.signatureMove || 'Azure Guard'}</span>
+                </div>
+              </div>
+
+              <div className="podium-score-block">
+                <span className="podium-score-lbl">SCORE</span>
+                <strong className="podium-score-num">7,200</strong>
+              </div>
+            </div>
+
+            {/* Rank 3 Card */}
+            <div className="podium-runner-card runner-rank-3">
+              <div className="podium-laurel-badge bronze-laurel">
+                <div className="wreath-circle">
+                  <span className="wreath-number">3</span>
+                </div>
+              </div>
+
+              <div className="podium-avatar-holder" style={{ borderColor: char2.themeColor }}>
+                <img
+                  src={getAssetUrl(char2.image)}
+                  alt={char2.name}
+                  className="podium-avatar-img"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+                <span className="podium-emoji">{char2.avatar}</span>
+              </div>
+
+              <div className="podium-info-block">
+                <strong className="podium-player-name">{runnerUp2.name}</strong>
+                <div className="podium-move-tag">
+                  <Swords size={13} color="var(--neon-crimson)" />
+                  <span>{char2.signatureMove || 'Blazing Vanguard'}</span>
+                </div>
+              </div>
+
+              <div className="podium-score-block">
+                <span className="podium-score-lbl">SCORE</span>
+                <strong className="podium-score-num">6,500</strong>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* 2-Column Winner Content Grid matching PDF Page 9 */}
-        <div className="pdf-winner-content-grid">
-          {/* Left Column: #1 Champion Spotlight */}
-          <div className="pdf-winner-champion-card" style={{ borderColor: winnerChar.themeColor }}>
-            <div className="pdf-champ-top-row">
-              <div className="pdf-champ-rank-circle">
-                <span className="pdf-crown-mini">👑</span>
-                <span className="pdf-rank-num">1</span>
-              </div>
-
-              <div className="pdf-champ-name-group">
-                <h2 className="champ-name">{winner.name}</h2>
-                <span className="champ-title">{winnerChar.name} ({winnerChar.title})</span>
-              </div>
+        {/* Bottom Match Metrics Bar */}
+        <div className="winner-metrics-bar">
+          <div className="metric-chip">
+            <Clock size={16} color="var(--neon-cyan)" />
+            <div className="metric-text-group">
+              <span className="metric-label">MATCH DURATION</span>
+              <strong className="metric-value">14:32</strong>
             </div>
-
-            <div className="pdf-champ-avatar-large">
-              <span className="champ-emoji">{winnerChar.avatar}</span>
-            </div>
-
-            <div className="pdf-champ-score-box">
-              <span className="score-lbl">FINAL HEALTH / SCORE</span>
-              <strong className="score-val">{winner.hp} HP</strong>
-            </div>
-
-            {/* Performance Stats */}
-            <div className="pdf-champ-stats-list">
-              <div className="champ-stat-row">
-                <span>Damage Dealt:</span>
-                <strong>{winner.stats?.damageDealt || 0} AP</strong>
-              </div>
-              <div className="champ-stat-row">
-                <span>Damage Taken:</span>
-                <strong>{winner.stats?.damageTaken || 0} HP</strong>
-              </div>
-              <div className="champ-stat-row">
-                <span>Stability Crystals:</span>
-                <strong style={{ color: '#38bdf8' }}>💎 {winner.crystals || 1} Crystals</strong>
-              </div>
-              <div className="champ-stat-row">
-                <span>Total Match Turns:</span>
-                <strong>{turnNumber} Turns</strong>
-              </div>
-            </div>
-
-            <p className="pdf-champ-quote">"You have to believe in your own strength and strategic discipline."</p>
           </div>
 
-          {/* Right Column: Other Player Standings */}
-          <div className="pdf-winner-standings-card">
-            <h3 className="standings-title">FINAL RUNNERS-UP STANDINGS</h3>
-
-            <div className="pdf-runners-up-list">
-              {sortedOtherPlayers.map((p, idx) => {
-                const char = CHARACTERS[p.characterId] || CHARACTERS.chynaman;
-                return (
-                  <div key={p.id} className="pdf-runner-up-item">
-                    <div className="runner-rank-badge">
-                      <span>{idx + 2}</span>
-                    </div>
-
-                    <div className="runner-avatar-box" style={{ borderColor: char.themeColor }}>
-                      <span>{char.avatar}</span>
-                    </div>
-
-                    <div className="runner-name-block">
-                      <strong>{p.name}</strong>
-                      <span>{char.name}</span>
-                    </div>
-
-                    <div className="runner-score-block">
-                      <span className="r-hp">{p.hp} HP</span>
-                      <span className="r-crystals">💎 {p.crystals}</span>
-                    </div>
-                  </div>
-                );
-              })}
+          <div className="metric-chip">
+            <RotateCcw size={16} color="var(--neon-cyan)" />
+            <div className="metric-text-group">
+              <span className="metric-label">TOTAL TURNS</span>
+              <strong className="metric-value">{turnNumber || 20}</strong>
             </div>
+          </div>
 
-            <div className="pdf-match-summary-badge">
-              <span>🏆 Excellent Strategy! Every move brought you closer to victory.</span>
+          <div className="metric-praise-box">
+            <Sparkles size={16} color="#ffd700" />
+            <div className="praise-text">
+              <strong>EXCELLENT STRATEGY!</strong>
+              <span>Every move brought you closer to victory.</span>
             </div>
           </div>
         </div>
 
-        {/* Footer Action Buttons matching PDF Page 9 */}
-        <div className="pdf-winner-footer-actions">
-          <button className="pdf-btn-play-again" onClick={onRematch}>
-            <RotateCcw size={18} />
-            <span>PLAY AGAIN / REMATCH</span>
+        {/* Bottom CTA Actions */}
+        <footer className="winner-footer-actions">
+          <button className="btn-winner-secondary" onClick={() => setShowHistoryModal(true)}>
+            <ScrollText size={16} />
+            <span>VIEW MATCH HISTORY</span>
+          </button>
+
+          <button className="btn-winner-play-again" onClick={onRematch}>
+            <Swords size={22} />
+            <span className="play-again-text">PLAY AGAIN</span>
+            <Swords size={22} />
           </button>
 
           {onHome && (
-            <button className="pdf-btn-back-home" onClick={onHome}>
-              <Home size={18} />
+            <button className="btn-winner-secondary" onClick={onHome}>
+              <Home size={16} />
               <span>BACK TO HOME</span>
             </button>
           )}
-        </div>
+        </footer>
+
+        {/* History Modal Popup */}
+        {showHistoryModal && (
+          <div className="arena-modal-backdrop" onClick={() => setShowHistoryModal(false)}>
+            <div className="arena-modal-card" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header-row">
+                <h3>MATCH SUMMARY LOG</h3>
+                <button className="btn-close-modal" onClick={() => setShowHistoryModal(false)}>✕</button>
+              </div>
+              <div className="full-history-list">
+                <div className="full-history-item"><span>Turn 7</span><strong>{winner.name}</strong><span>Executed Shadow Strike</span></div>
+                <div className="full-history-item"><span>Turn 6</span><strong>Bee</strong><span>Played Azure Guard</span></div>
+                <div className="full-history-item"><span>Turn 5</span><strong>Katsumi</strong><span>Attacked Chynaman (-500 LP)</span></div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,10 +1,10 @@
-// Attention TCG Official Rules, Glossaries, and FAQ Knowledge Pack
+// TCG Card Game — official rules, glossary and FAQ knowledge pack
 export const RULES_KNOWLEDGE = [
   {
     topic: 'Game Lore & Objective',
     keywords: ['lore', 'story', 'goal', 'objective', 'caca', 'cacathar', 'stability crystal', 'win'],
     shortAnswer: 'Defeat opponents to claim their Stability Crystals. The first warrior to hold 3 Stability Crystals saves their world from Cacá (Cacáthar) and wins!',
-    details: 'In Attention TCG, the evil entity Cacá (The Devourer of Souls) has absorbed the life forces across universes. Each player starts with 1 Stability Crystal (2 in 1v1). Collect 3 crystals through combat victories to win the match.'
+    details: 'The evil entity Cacá (The Devourer of Souls) has absorbed the life forces across universes. Each player starts with 1 Stability Crystal (2 in 1v1). Collect 3 crystals through combat victories to win the match.'
   },
   {
     topic: '2-Dice Rolling & Defense Rule',
@@ -28,7 +28,7 @@ export const RULES_KNOWLEDGE = [
     topic: 'Kontrol Card & Mind Strength',
     keywords: ['kontrol', 'mind strength', 'control', 'mind', 'queeny', 'brain', 'cooldown'],
     shortAnswer: 'Costs 3 ET. Roll 1 die > Opponent\'s Mind Strength (1–6). If successful, force opponent to attack someone else or steal 1 Action Card.',
-    details: 'Mind Strength ranking: Bee (5), Chynaman (4), Katsumi (3), Kiko (3), Poochi (2), Queeny (2), Shroomy (2).\n• Queeny gains +2 to her attack roll for mind control.\n• Magical creatures (Kiko, Poochi, Shroomy) gain +1 to defend their mind.\n• Kontrol has a 5-turn cooldown (or max 2 uses per match) and completely fails against Zombies.'
+    details: 'Mind Strength ranking: Bee (5), Chynaman (4), Katsumi (3), Kiko (3), Poochi (2), Queeny (2), Shroomy (2).\n• Queeny gains +2 to her attack roll for mind control.\n• Magical creatures (Kiko, Poochi, Shroomy) gain +1 to defend their mind.\n• Kontrol is limited to 2 uses per match and completely fails against Zombies.'
   },
   {
     topic: 'Saigo No Blitz (Ultimate)',

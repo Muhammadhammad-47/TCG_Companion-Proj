@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { resolveDiceCombat } from '../utils/gameEngine';
 import { CHARACTERS } from '../data/characters';
 import { soundFX } from '../utils/audio';
-import { Dices, Shield, Swords, Sparkles, Check, AlertTriangle } from 'lucide-react';
+import { Dices, Shield, Swords, Sparkles, Check, AlertTriangle, Flame, Zap, X } from 'lucide-react';
 
 export default function DiceRollerModal({ combatData, onCombatComplete, onClose }) {
   const { attacker, defender, actionCard, characterMove, amplifyBonus = 0 } = combatData;
@@ -64,120 +64,158 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
   };
 
   return (
-    <div className="modal-backdrop">
-      <div className="dice-combat-modal">
+    <div className="modal-backdrop cyber-modal-backdrop">
+      <div className="dice-combat-modal cyber-glass-dialog combat-clash-dialog">
         {/* Header */}
-        <div className="modal-header combat-header">
-          <div className="combat-title-box">
-            <span className="combat-step-badge">2-DICE COMBAT RESOLUTION</span>
-            <h2>{attacker.name} vs. {defender.name}</h2>
+        <div className="modal-header combat-header cyber-dialog-header">
+          <div className="combat-title-box dialog-title-group">
+            <span className="combat-step-badge clash-badge"><Dices size={14} /> COMBAT RESOLUTION</span>
+            <h2>{attacker.name} vs {defender.name}</h2>
           </div>
+          {onClose && (
+            <button className="btn-close cyber-close-btn" onClick={onClose} title="Close">
+              <X size={18} />
+            </button>
+          )}
         </div>
 
-        {/* Combatants preview */}
-        <div className="combatants-banner">
-          <div className="combatant-side attacker-side">
-            <span className="combatant-role">ATTACKER</span>
+        {/* Combatants Showcase Banner */}
+        <div className="combatants-banner cyber-clash-banner">
+          {/* Attacker Box */}
+          <div className="combatant-side attacker-side cyber-combatant-card" style={{ borderColor: 'var(--neon-pink)' }}>
+            <div className="combatant-role-badge atk-badge">
+              <Swords size={14} /> ATTACKER
+            </div>
             <div className="combatant-details">
-              <span className="combatant-avatar">{attacker.isZombie ? '🧟‍♂️' : atkChar.avatar}</span>
-              <div>
+              <div className="combatant-avatar" style={{ borderColor: 'var(--neon-pink)' }}>
+                <span>{attacker.isZombie ? '🧟‍♂️' : atkChar.avatar}</span>
+              </div>
+              <div className="combatant-meta">
                 <h4 className="combatant-name">{attacker.name}</h4>
-                <span className="move-title-badge">Move: {characterMove.name}</span>
+                <div className="move-title-badge">
+                  <span>{characterMove.name}</span>
+                  <span className="ap-val">({characterMove.baseAP} AP)</span>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="vs-circle">VS</div>
+          {/* VS Center Clashing Indicator */}
+          <div className="vs-circle cyber-vs-node">
+            <div className="vs-glow-ring"></div>
+            <span>VS</span>
+          </div>
 
-          <div className="combatant-side defender-side">
-            <span className="combatant-role">DEFENDER</span>
+          {/* Defender Box */}
+          <div className="combatant-side defender-side cyber-combatant-card" style={{ borderColor: 'var(--neon-gold)' }}>
+            <div className="combatant-role-badge def-badge">
+              <Shield size={14} /> DEFENDER
+            </div>
             <div className="combatant-details">
-              <span className="combatant-avatar">{defender.isZombie ? '🧟‍♂️' : defChar.avatar}</span>
-              <div>
+              <div className="combatant-avatar" style={{ borderColor: 'var(--neon-gold)' }}>
+                <span>{defender.isZombie ? '🧟‍♂️' : defChar.avatar}</span>
+              </div>
+              <div className="combatant-meta">
                 <h4 className="combatant-name">{defender.name}</h4>
-                <span className="dp-info-badge">Innate DP: -{defChar.defaultDP} (on 6+)</span>
+                <div className="dp-info-badge">
+                  <span>Innate DP: -{defChar.defaultDP}</span>
+                  <small>(Roll 6+ to trigger)</small>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Dice Arena */}
-        <div className="dice-arena-grid">
-          {/* Attacker Dice (Red) */}
-          <div className="dice-player-box attacker-dice-box">
+        {/* Dice Arena Clash Grid */}
+        <div className="dice-arena-grid cyber-dice-arena">
+          {/* Attacker Dice (Red Dice) */}
+          <div className="dice-player-box attacker-dice-box cyber-dice-card">
             <div className="dice-box-title">
-              <Swords size={16} color="#ff4d4f" />
-              <span>Attacker's Red Dice</span>
+              <Swords size={16} color="var(--neon-pink)" />
+              <span>OFFENSE (2 RED DICE)</span>
             </div>
             <div className="dice-pair">
               <div className={`die red-die ${isRolling ? 'die-rolling' : ''}`}>{attackerDice[0]}</div>
               <div className={`die red-die ${isRolling ? 'die-rolling' : ''}`}>{attackerDice[1]}</div>
             </div>
-            <span className="dice-sum">Total Roll: {attackerDice[0] + attackerDice[1]}</span>
+            <div className="dice-sum-box">
+              <span className="sum-lbl">ROLL TOTAL:</span>
+              <strong className="dice-sum">{attackerDice[0] + attackerDice[1]}</strong>
+            </div>
           </div>
 
-          {/* Defender Dice (Gold) */}
-          <div className="dice-player-box defender-dice-box">
+          {/* Defender Dice (Gold Dice) */}
+          <div className="dice-player-box defender-dice-box cyber-dice-card">
             <div className="dice-box-title">
-              <Shield size={16} color="#ffd700" />
-              <span>Defender's Gold Dice</span>
+              <Shield size={16} color="var(--neon-gold)" />
+              <span>DEFENSE (2 GOLD DICE)</span>
             </div>
             <div className="dice-pair">
               <div className={`die gold-die ${isRolling ? 'die-rolling' : ''}`}>{defenderDice[0]}</div>
               <div className={`die gold-die ${isRolling ? 'die-rolling' : ''}`}>{defenderDice[1]}</div>
             </div>
-            <span className="dice-sum">Total Roll: {defenderDice[0] + defenderDice[1]}</span>
+            <div className="dice-sum-box">
+              <span className="sum-lbl">ROLL TOTAL:</span>
+              <strong className="dice-sum">{defenderDice[0] + defenderDice[1]}</strong>
+            </div>
           </div>
         </div>
 
         {/* Roll Action Button */}
         {!hasRolled && (
-          <div className="roll-action-center">
-            <button className="btn-roll-combat" onClick={handleRollDice} disabled={isRolling}>
-              <Dices size={24} /> {isRolling ? 'ROLLING DICE...' : 'ROLL 2 RED & 2 GOLD DICE'}
+          <div className="roll-action-center cyber-roll-cta">
+            <button className="btn-roll-combat cyber-roll-btn" onClick={handleRollDice} disabled={isRolling}>
+              <Dices size={24} />
+              <span>{isRolling ? 'CASTING DICE…' : 'ROLL COMBAT DICE'}</span>
             </button>
           </div>
         )}
 
         {/* Result Breakdown Card */}
         {hasRolled && result && (
-          <div className="combat-result-breakdown">
-            <h4 className="result-header">
-              {result.isAttackSuccessful ? '💥 ATTACK CONNECTED!' : '🛡️ ATTACK BLOCKED / EVADED!'}
-            </h4>
+          <div className="combat-result-breakdown cyber-result-card">
+            <div className="result-headline-row">
+              <h4 className={`result-header ${result.isAttackSuccessful ? 'hit-success' : 'def-blocked'}`}>
+                {result.isAttackSuccessful ? '💥 IMPACT CONFIRMED' : '🛡️ ATTACK MITIGATED'}
+              </h4>
+              <span className="combat-summary-tag">
+                {result.defenseActivated ? `Defender rolled ${result.defenderDiceSum} (DP Activated)` : `Defender rolled ${result.defenderDiceSum} (No DP)`}
+              </span>
+            </div>
 
-            <div className="breakdown-pills-row">
+            <div className="breakdown-pills-row cyber-calc-grid">
               <div className="calc-pill">
-                <span>Base AP:</span>
-                <strong>{result.rawAP}</strong>
+                <span className="pill-title">BASE AP</span>
+                <strong className="pill-value">{result.rawAP}</strong>
               </div>
 
               {result.weaknessTriggered && (
                 <div className="calc-pill weakness-pill">
-                  <span>Weakness Bonus ({defChar.weakness.type}):</span>
-                  <strong>+{result.weaknessBonus} AP</strong>
+                  <span className="pill-title">⚡ {defChar.weakness.type}</span>
+                  <strong className="pill-value">+{result.weaknessBonus} AP</strong>
                 </div>
               )}
 
               <div className={`calc-pill ${result.defenseActivated ? 'dp-pill-active' : 'dp-pill-failed'}`}>
-                <span>Defender Roll ({result.defenderDiceSum} ≥ 6):</span>
-                <strong>{result.defenseActivated ? `DP Active (-${result.innateDP} AP)` : 'DP Failed (Took Full AP)'}</strong>
+                <span className="pill-title">🛡️ DP REDUCTION</span>
+                <strong className="pill-value">{result.defenseActivated ? `-${result.innateDP} DP` : '0 (Failed)'}</strong>
               </div>
 
               <div className="calc-pill net-dmg-pill">
-                <span>Net Damage Dealt:</span>
-                <strong className="net-dmg-val">{result.damageDealt} HP</strong>
+                <span className="pill-title">TOTAL DAMAGE</span>
+                <strong className="net-dmg-val">-{result.damageDealt} HP</strong>
               </div>
             </div>
 
             {result.zombiePoisonCured && (
               <div className="zombie-cure-alert">
-                ⚡ Fire/Lightning attack cured 1 Poison Card from Zombie {defender.name}!
+                ⚡ Elemental burn stripped 1 Poison Card from {defender.name}!
               </div>
             )}
 
-            <button className="btn-apply-damage" onClick={handleApplyDamage}>
-              <Check size={20} /> APPLY {result.damageDealt} DAMAGE TO {defender.name}
+            <button className="btn-apply-damage cyber-apply-btn" onClick={handleApplyDamage}>
+              <Check size={20} />
+              <span>APPLY RESOLUTION (-{result.damageDealt} HP)</span>
             </button>
           </div>
         )}

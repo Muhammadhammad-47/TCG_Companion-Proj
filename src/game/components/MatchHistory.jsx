@@ -8,7 +8,7 @@ export default function MatchHistory({ logs, onUndo, canUndo }) {
       <div className="history-header">
         <div className="history-title">
           <History size={16} />
-          <span>Match Action Log</span>
+          <span>LOG</span>
         </div>
         {canUndo && (
           <button
@@ -19,18 +19,18 @@ export default function MatchHistory({ logs, onUndo, canUndo }) {
               onUndo();
             }}
           >
-            <RotateCcw size={14} /> Undo Move
+            <RotateCcw size={14} />
           </button>
         )}
       </div>
 
       <div className="history-logs-scroller">
         {logs.length === 0 ? (
-          <div className="no-logs">Game match commenced. Waiting for first action...</div>
+          <div className="no-logs">No moves yet</div>
         ) : (
           logs.slice().reverse().map((log, idx) => (
             <div key={idx} className="log-item">
-              <span className="log-turn-badge">Turn {log.turn}</span>
+              <span className="log-turn-badge">T{log.turn}</span>
               <span className="log-text">{log.text}</span>
             </div>
           ))

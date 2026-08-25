@@ -8,18 +8,18 @@ export default function ZombieBanner({ zombiePlayers }) {
     <div className="zombie-global-banner">
       <div className="zombie-banner-left">
         <div className="zombie-pulse-badge">
-          <Skull size={18} className="pulse-icon" /> ZOMBIE OUTBREAK ACTIVE
+          <Skull size={18} className="pulse-icon" /> ZOMBIE
         </div>
         <span className="zombie-banner-text">
-          Infected Warriors: <strong>{zombiePlayers.map(p => p.name).join(', ')}</strong>
+          <strong>{zombiePlayers.map(p => p.name).join(', ')}</strong>
         </span>
       </div>
 
       <div className="zombie-banner-rules">
-        <span className="rule-chip"><Heart size={12} /> HP 40 (+10 Regen/Turn)</span>
-        <span className="rule-chip"><Skull size={12} /> Venom Strike (Infects +1 Poison)</span>
-        <span className="rule-chip"><Zap size={12} /> Immune to Kontrol</span>
-        <span className="rule-chip"><Flame size={12} /> Fire/Lightning removes Poison</span>
+        <span className="rule-chip" title="40 HP, +10 regen"><Heart size={12} /> 40 · +10</span>
+        <span className="rule-chip" title="Venom Strike: +1 poison"><Skull size={12} /> +1</span>
+        <span className="rule-chip" title="Immune to Kontrol"><ShieldAlert size={12} /></span>
+        <span className="rule-chip" title="Fire / Lightning clears poison"><Flame size={12} /></span>
       </div>
     </div>
   );

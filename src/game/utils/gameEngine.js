@@ -1,5 +1,5 @@
-// Game Logic & State Management Engine for Attention TCG
-import { CHARACTERS, ZOMBIE_PROFILE } from '../data/characters';
+// Game Logic & State Management Engine for TCG Card Game
+import { CHARACTERS, ZOMBIE_PROFILE } from '../data/characters.js';
 
 export function createInitialGameState(playerConfigs) {
   const players = playerConfigs.map((cfg, idx) => ({
@@ -13,6 +13,8 @@ export function createInitialGameState(playerConfigs) {
     crystals: cfg.startingCrystals || (playerConfigs.length === 2 ? 2 : 1),
     poisonCards: 0,
     isZombie: false,
+    isDefeated: false,
+    retreatedThisTurn: false,
     shield: 0,
     buffAP: 0,
     isStunned: false,
@@ -44,12 +46,22 @@ export function createInitialGameState(playerConfigs) {
 // Advance Turn Logic
 export function advanceTurn(state) {
   const playerCount = state.players.length;
+  const step = state.direction === 'clockwise' ? 1 : -1;
   let nextIndex = state.activePlayerIndex;
-  
-  if (state.direction === 'clockwise') {
-    nextIndex = (nextIndex + 1) % playerCount;
-  } else {
-    nextIndex = (nextIndex - 1 + playerCount) % playerCount;
+
+  // Walk to the next player who is still in the match. If nobody is left standing
+  // the index simply lands back where it started rather than looping forever.
+  const stunnedSkips = [];
+  for (let hops = 0; hops < playerCount * 2; hops++) {
+    nextIndex = (nextIndex + step + playerCount) % playerCount;
+    const candidate = state.players[nextIndex];
+    if (candidate.isDefeated) continue;
+    // A stunned warrior forfeits this turn; the stun is spent doing so.
+    if (candidate.isStunned && !stunnedSkips.includes(nextIndex)) {
+      stunnedSkips.push(nextIndex);
+      continue;
+    }
+    break;
   }
 
   const isNewRound = nextIndex === 0;
@@ -63,6 +75,7 @@ export function advanceTurn(state) {
     // Reset claimed turn ET for active player
     if (idx === nextIndex) {
       updated.claimedTurnET = false;
+      updated.retreatedThisTurn = false;
       
       // Zombie Auto +10 HP regen at start of turn
       if (updated.isZombie && updated.hp > 0) {
@@ -76,13 +89,15 @@ export function advanceTurn(state) {
         updated.stats.damageTaken += poisonDmg;
       }
 
-      // Handle Stun
-      if (updated.isStunned) {
-        updated.isStunned = false; // expires after skipping turn
-      }
     }
-    
-    return updated;
+
+    // Stun is consumed by the turn it caused the warrior to miss.
+    if (stunnedSkips.includes(idx)) {
+      updated.isStunned = false;
+    }
+
+    // Zombie Mode doc: 5+ poison transforms, <5 cures, and a Zombie at 0 HP revives
+    return checkZombieStatus(updated);
   });
 
   return {
@@ -122,16 +137,33 @@ export function resolveDiceCombat({
   // Add Buffs & Amplify
   rawAP += (attacker.buffAP || 0) + amplifyBonus;
 
-  // Weakness bonus check
-  const defChar = CHARACTERS[defender.characterId] || CHARACTERS.chynaman;
+  // Zombie doc (Zombie Fury): at 8+ Poison Cards, Venom Strike deals +10 damage.
+  const zombieFury = !!attacker.isZombie
+    && characterMove.type === 'zombie_infect'
+    && attacker.poisonCards >= 8;
+  if (zombieFury) rawAP += 10;
+
+  // Weakness bonus check.
+  // Zombie Mode doc: a Zombie may not use any Character Card, so a Zombie defender
+  // takes its DP and weakness from the Zombie Mode Card instead.
+  const defChar = defender.isZombie
+    ? ZOMBIE_PROFILE
+    : (CHARACTERS[defender.characterId] || CHARACTERS.chynaman);
+
+  const moveName = characterMove.name.toLowerCase();
+  const isFire = moveName.includes('fire');
+  const isLightning = moveName.includes('light'); // "Lighting" / "Lightning"
+  const isPoison = moveName.includes('poison') || moveName.includes('venom');
+  const isMagic = moveName.includes('magic') || moveName.includes('soul');
+
   let weaknessBonus = 0;
   let weaknessTriggered = false;
 
   if (defChar.weakness && (
-    (characterMove.name.toLowerCase().includes('fire') && defChar.weakness.type.includes('Fire')) ||
-    (characterMove.name.toLowerCase().includes('poison') && defChar.weakness.type.includes('Poison')) ||
-    (characterMove.name.toLowerCase().includes('magic') && defChar.weakness.type.includes('Magic')) ||
-    (characterMove.name.toLowerCase().includes('soul') && defChar.weakness.type.includes('Magic'))
+    (isFire && defChar.weakness.type.includes('Fire')) ||
+    (isLightning && defChar.weakness.type.includes('Lightning')) ||
+    (isPoison && defChar.weakness.type.includes('Poison')) ||
+    (isMagic && defChar.weakness.type.includes('Magic'))
   )) {
     weaknessBonus = defChar.weakness.bonusAP || 10;
     weaknessTriggered = true;
@@ -142,7 +174,7 @@ export function resolveDiceCombat({
   // Defense 6+ Rule Check
   // As long as defender rolls a minimum of 6 total from 2 dice, DP reduces damage
   const defenseActivated = defenderDiceSum >= 6;
-  const innateDP = defenseActivated ? (defChar.defaultDP || 10) : 0;
+  const innateDP = defenseActivated ? (defChar.defaultDP ?? 10) : 0;
 
   // Check if attack hits (Attacker sum > Defender sum, or flat hit logic)
   const isAttackSuccessful = attackerDiceSum >= defenderDiceSum;
@@ -152,11 +184,15 @@ export function resolveDiceCombat({
     damageDealt = Math.max(0, totalAP - innateDP);
   }
 
-  // Zombie Mode special interaction: Fire & Lightning removes 1 poison card on zombie
-  let zombiePoisonCured = false;
-  if (defender.isZombie && (characterMove.name.toLowerCase().includes('fire') || characterMove.name.toLowerCase().includes('light') || characterMove.name.toLowerCase().includes('mic'))) {
-    zombiePoisonCured = true;
-  }
+  // Zombie Mode doc: when a Zombie is HIT by Fire or Lightning the attack deals its
+  // normal damage and also removes 1 Poison Card — only while in Zombie Mode.
+  const zombiePoisonCured = isAttackSuccessful && !!defender.isZombie && (isFire || isLightning);
+
+  // Zombie Mode doc: a successful Venom Strike gives the defender 1 Poison Card.
+  const poisonApplied = isAttackSuccessful && characterMove.type === 'zombie_infect';
+
+  // Techniques flagged as stunning (e.g. Paparazzi Stun) cost the target their next turn.
+  const stunApplied = isAttackSuccessful && !!characterMove.stun;
 
   return {
     isAttackSuccessful,
@@ -168,8 +204,12 @@ export function resolveDiceCombat({
     totalAP,
     defenseActivated,
     innateDP,
+    mitigatedByDP: isAttackSuccessful ? innateDP : 0,
     damageDealt,
-    zombiePoisonCured
+    poisonApplied,
+    stunApplied,
+    zombiePoisonCured,
+    zombieFury
   };
 }
 
@@ -185,6 +225,24 @@ export const GAME_LIMITS = {
   ZOMBIE_TRIGGER_POISON: 5,
   WIN_CRYSTAL_COUNT: 3
 };
+
+// A player is out of the match at 0 HP — unless they are a Zombie, which the
+// Zombie doc says can never be permanently defeated (it revives instead).
+export function applyDefeatState(player) {
+  if (player.isZombie) return { ...player, isDefeated: false };
+  return { ...player, isDefeated: player.hp <= 0 };
+}
+
+// Match end: first to 3 Stability Crystals, or the last warrior standing.
+export function findMatchWinner(players) {
+  const byCrystals = players.find(p => (p.crystals || 0) >= GAME_LIMITS.WIN_CRYSTAL_COUNT);
+  if (byCrystals) return byCrystals;
+
+  const standing = players.filter(p => !p.isDefeated);
+  if (standing.length === 1 && players.length > 1) return standing[0];
+
+  return null;
+}
 
 // Check & Apply Zombie Mode or Cure with strict limit clamping
 export function checkZombieStatus(player) {
@@ -219,5 +277,5 @@ export function checkZombieStatus(player) {
     }
   }
 
-  return updated;
+  return applyDefeatState(updated);
 }

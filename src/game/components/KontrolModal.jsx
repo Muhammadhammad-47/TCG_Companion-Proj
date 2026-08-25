@@ -21,7 +21,7 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
 
   const handleRoll = () => {
     if (isTargetZombie) {
-      alert('Zombies are MINDLESS and immune to Kontrol Cards!');
+      alert('Zombies are immune to Kontrol.');
       return;
     }
 
@@ -71,21 +71,20 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
       <div className="special-card-modal kontrol-modal">
         <div className="modal-header">
           <div className="header-title-box">
-            <span className="step-pill"><Brain size={14} /> SPECIAL MOVE (3 ET)</span>
-            <h2>KONTROL Card Mind Battle</h2>
+            <span className="step-pill"><Brain size={14} /> 3 ET</span>
+            <h2>KONTROL</h2>
           </div>
           <button className="btn-close" onClick={onClose}><X size={20} /></button>
         </div>
 
         <div className="special-modal-body">
           <p className="special-desc">
-            Roll 1 die against the target warrior's <strong>Mind Strength</strong>.
-            If your roll surpasses their mental barrier, you gain full control of their next move or seize 1 Action Card!
+            Beat their <strong>Mind</strong> to take a card or a move.
           </p>
 
           {/* Target Selector */}
           <div className="target-select-section">
-            <label className="section-label">Select Mind Target:</label>
+            <label className="section-label">TARGET</label>
             <div className="targets-grid">
               {allPlayers
                 .filter(p => p.id !== attacker.id)
@@ -104,7 +103,7 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
                       <div>
                         <strong>{target.name}</strong>
                         <span className="mind-stat">
-                          {target.isZombie ? 'IMMUNE (Mindless)' : `Mind Strength: ${tChar.mindStrength}`}
+                          {target.isZombie ? 'IMMUNE' : `🧠 ${tChar.mindStrength}`}
                         </span>
                       </div>
                     </div>
@@ -117,14 +116,14 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
           {targetPlayer && !isTargetZombie && (
             <div className="mind-rules-summary">
               <div className="mind-badge-box">
-                <span>{attacker.name} (Attacker):</span>
-                <strong>{atkChar.mindAtkBonus ? `+${atkChar.mindAtkBonus} Roll Bonus (Queeny)` : 'Standard Roll'}</strong>
+                <span>{attacker.name}</span>
+                <strong>{atkChar.mindAtkBonus ? `🎲 +${atkChar.mindAtkBonus}` : '🎲'}</strong>
               </div>
               <div className="mind-badge-box">
-                <span>{targetPlayer.name} (Defender):</span>
+                <span>{targetPlayer.name}</span>
                 <strong>
-                  Mind Strength: {targetChar.mindStrength}
-                  {targetChar.mindDefBonus ? ` (+${targetChar.mindDefBonus} Magical Mind Def)` : ''}
+                  🧠 {targetChar.mindStrength}
+                  {targetChar.mindDefBonus ? ` +${targetChar.mindDefBonus}` : ''}
                 </strong>
               </div>
             </div>
@@ -132,7 +131,7 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
 
           {isTargetZombie && (
             <div className="error-alert">
-              <AlertTriangle size={18} /> Zombies have lost their minds and cannot be Kontrolled!
+              <AlertTriangle size={18} /> Zombies are immune.
             </div>
           )}
 
@@ -141,41 +140,41 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
             <div className="kontrol-roll-arena">
               <div className="single-die-box">
                 <div className={`die purple-die ${isRolling ? 'die-rolling' : ''}`}>{dieRoll}</div>
-                <span>1 Die Roll</span>
+                <span>🎲</span>
               </div>
 
               {!hasRolled ? (
                 <button className="btn-roll-combat" onClick={handleRoll} disabled={isRolling}>
-                  <Dices size={20} /> {isRolling ? 'Testing Mind...' : 'ROLL 1 DIE FOR KONTROL'}
+                  <Dices size={20} /> {isRolling ? '…' : 'ROLL'}
                 </button>
               ) : (
                 <div className="kontrol-outcome-box">
                   <h4 className={success ? 'text-success' : 'text-danger'}>
-                    {success ? '🎉 MIND KONTROL SUCCESSFUL!' : '❌ KONTROL RESISTED & FAILED!'}
+                    {success ? '🎉 KONTROLLED' : '❌ RESISTED'}
                   </h4>
 
                   {success && (
                     <div className="kontrol-reward-picker">
-                      <label>Choose Kontrol Action:</label>
+                      <label>REWARD</label>
                       <div className="choice-buttons">
                         <button
                           className={`choice-btn ${chosenOption === 'steal_card' ? 'selected' : ''}`}
                           onClick={() => setChosenOption('steal_card')}
                         >
-                          🃏 Force Target to Reveal & Give 1 Action Card
+                          🃏 Take a card
                         </button>
                         <button
                           className={`choice-btn ${chosenOption === 'force_attack' ? 'selected' : ''}`}
                           onClick={() => setChosenOption('force_attack')}
                         >
-                          ⚔️ Force Target to Attack Another Opponent
+                          ⚔️ Force an attack
                         </button>
                       </div>
                     </div>
                   )}
 
                   <button className="btn-apply-damage" onClick={handleConfirm}>
-                    <Check size={18} /> CONFIRM & SPEND 3 ET
+                    <Check size={18} /> OK
                   </button>
                 </div>
               )}

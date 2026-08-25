@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Swords, Zap, Shield, Skull, Radio } from 'lucide-react';
+import { Swords, Zap, Shield, Skull, Dices, Play } from 'lucide-react';
 import { soundFX } from '../utils/audio';
 
 const LOADING_STEPS = [
-  { text: 'Booting Dance With Mii! Combat Engine...', icon: <Zap size={16} /> },
-  { text: 'Synthesizing 2-Dice Tabletop Roller...', icon: <Swords size={16} /> },
-  { text: 'Awakening 7 Warrior Soul Archetypes...', icon: <Sparkles size={16} /> },
-  { text: 'Calibrating Stability Crystals & ET Matrix...', icon: <Shield size={16} /> },
-  { text: 'Arming Zombie Infection & Venom Protocols...', icon: <Skull size={16} /> },
-  { text: 'All Anime Express TV Systems Online — Ready!', icon: <Radio size={16} /> }
+  { text: 'Loading Tactical Engine...', icon: <Zap size={16} color="var(--neon-cyan)" /> },
+  { text: 'Calibrating Red & Gold Dice...', icon: <Dices size={16} color="var(--neon-crimson)" /> },
+  { text: 'Syncing Action Deck & Cards...', icon: <Swords size={16} color="#ffd700" /> },
+  { text: 'Charging Stability Crystals...', icon: <Shield size={16} color="var(--neon-cyan)" /> },
+  { text: 'Scanning Zombie Bio-Threats...', icon: <Skull size={16} color="#39ff14" /> },
+  { text: 'Battlefield Ready!', icon: <Play size={16} color="#ffffff" /> }
 ];
 
 export default function LoadingScreen({ onComplete }) {
@@ -17,7 +17,6 @@ export default function LoadingScreen({ onComplete }) {
   const [readyToEnter, setReadyToEnter] = useState(false);
 
   useEffect(() => {
-    // Increment progress smoothly
     const interval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
@@ -26,11 +25,9 @@ export default function LoadingScreen({ onComplete }) {
           soundFX.playPowerUp();
           return 100;
         }
-        // Random incremental jumps for realistic game asset loading feel
-        const jump = Math.floor(Math.random() * 14) + 8;
+        const jump = Math.floor(Math.random() * 12) + 10;
         const next = Math.min(100, prev + jump);
-        
-        // Update tip text index based on progress
+
         const nextStep = Math.min(
           LOADING_STEPS.length - 1,
           Math.floor((next / 100) * LOADING_STEPS.length)
@@ -39,7 +36,7 @@ export default function LoadingScreen({ onComplete }) {
 
         return next;
       });
-    }, 110);
+    }, 90);
 
     return () => clearInterval(interval);
   }, []);
@@ -51,90 +48,83 @@ export default function LoadingScreen({ onComplete }) {
   };
 
   return (
-    <div className="game-loader-overlay dance-loader-theme">
-      <div className="game-loader-cyber-bg">
-        <div className="bg-glow-orb orb-magenta-top"></div>
-        <div className="cyber-grid-plane"></div>
-        <div className="neon-particles"></div>
-      </div>
-
-      <div className="game-loader-content">
-        {/* Game Tag */}
-        <div className="studio-tag">
-          <span className="studio-pill">注意! ANIME EXPRESS TV</span>
-          <span className="studio-sub">DANCE WITH MII • TCG ENGINE</span>
+    <div className="webgl-canvas-frame">
+      <div className="webgl-screen loader-screen">
+        {/* Background Neon Elements */}
+        <div className="menu-bg-elements">
+          <div className="neon-streak-red"></div>
+          <div className="neon-streak-blue"></div>
+          <div className="subtle-watermark-card left-wm"></div>
+          <div className="subtle-watermark-card right-wm"></div>
         </div>
 
-        {/* Title Logo Card matching Figma */}
-        <div className="dance-app-icon-card loader-icon-card">
-          <div className="icon-kanji-badge">
-            <span>注意!</span>
-          </div>
-          <div className="icon-dance-with-text">
-            <span>Dance With</span>
-          </div>
-          <div className="icon-mii-logo">
-            <span className="mii-text-front">Mii!</span>
-            <span className="mii-text-glow">Mii!</span>
-          </div>
-        </div>
-
-        {/* Loading Progress Bar Container */}
-        <div className="game-loader-bar-wrap">
-          <div className="loader-meta-row">
-            <span className="loader-status-text">
-              {LOADING_STEPS[stepIndex].icon}
-              <span>{LOADING_STEPS[stepIndex].text}</span>
-            </span>
-            <span className="loader-percent">{progress}%</span>
+        <div className="loader-center-content">
+          {/* Brand Banner */}
+          <div className="loader-brand-card">
+            <div className="brand-pill-badge">注意!</div>
+            <h1 className="game-main-title">
+              <span className="title-dance">Dance With</span>
+              <span className="title-mii">Mii!</span>
+            </h1>
+            <span className="brand-tcg-text">TCG COMPANION</span>
+            <p className="brand-slogan">Track. Play. Win Together.</p>
           </div>
 
-          <div className="game-progress-track">
-            <div
-              className="game-progress-fill"
-              style={{ width: `${progress}%` }}
-            >
-              <div className="progress-glow-tip"></div>
-              <div className="progress-scanline"></div>
+          {/* Progress Section */}
+          <div className="loader-progress-box">
+            <div className="loader-status-row">
+              <div className="step-info-group">
+                {LOADING_STEPS[stepIndex].icon}
+                <span className="step-text">{LOADING_STEPS[stepIndex].text}</span>
+              </div>
+              <span className="loader-percentage-text">{progress}%</span>
             </div>
-          </div>
 
-          {/* Segmented arcade notches */}
-          <div className="loader-segments">
-            {[...Array(10)].map((_, i) => (
+            <div className="loader-track-bar">
               <div
-                key={i}
-                className={`segment-notch ${progress >= (i + 1) * 10 ? 'lit' : ''}`}
-              />
-            ))}
+                className="loader-fill-bar"
+                style={{ width: `${progress}%` }}
+              >
+                <div className="loader-fill-glow"></div>
+              </div>
+            </div>
+
+            {/* Segment Notches */}
+            <div className="loader-notches-row">
+              {[...Array(10)].map((_, i) => (
+                <div
+                  key={i}
+                  className={`notch-item ${progress >= (i + 1) * 10 ? 'notch-active' : ''}`}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Action Area */}
+          <div className="loader-action-container">
+            {readyToEnter ? (
+              <button
+                className="btn-enter-game-cta"
+                onClick={handleStartGame}
+                autoFocus
+              >
+                <Play size={22} fill="currentColor" />
+                <span>ENTER ARENA</span>
+                <Play size={22} fill="currentColor" />
+              </button>
+            ) : (
+              <div className="loader-pulsing-tag">
+                <span className="pulse-dot"></span>
+                <span>INITIALIZING WEBGL ARENA...</span>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Press Start / Enter Button */}
-        <div className="loader-action-area">
-          {readyToEnter ? (
-            <button
-              className="btn-arcade-enter"
-              onClick={handleStartGame}
-              onMouseEnter={() => soundFX.playMenuHover()}
-              autoFocus
-            >
-              <span className="btn-pulse-ring"></span>
-              <Sparkles size={20} color="#ffe600" />
-              <span>START DANCING • ENTER ARENA</span>
-            </button>
-          ) : (
-            <div className="loader-system-initializing">
-              <span className="blink-dot"></span>
-              <span>CONNECTING TO DANCE WITH MII ARENA...</span>
-            </div>
-          )}
-        </div>
-
-        {/* Footer info */}
-        <div className="loader-footer-specs">
-          <span>ANIME EXPRESS TV • 2-DICE RNG ENGINE • ZOMBIE MODE v1.0</span>
-        </div>
+        <footer className="menu-footer">
+          <span className="footer-sparkle">✦ Built for Duelists. Designed for Victory. ✦</span>
+          <span className="footer-version-tag">v1.0.0</span>
+        </footer>
       </div>
     </div>
   );

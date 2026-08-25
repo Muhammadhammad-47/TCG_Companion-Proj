@@ -1,4 +1,4 @@
-// Web Audio API Sound Synthesizer & Procedural Arcade Music for Attention TCG
+// Web Audio API Sound Synthesizer & Procedural Arcade Music for TCG Card Game
 class SoundEffects {
   constructor() {
     this.ctx = null;
@@ -222,6 +222,24 @@ class SoundEffects {
     } catch (e) {
       console.warn(e);
     }
+  }
+
+  // Aliases used by the arena UI — kept as thin wrappers so a missing
+  // sound can never break the action that triggered it.
+  playDamage() {
+    this.playHit();
+  }
+
+  playAttack() {
+    this.playHit();
+  }
+
+  playDefeat() {
+    this.playZombie();
+  }
+
+  playTurnWarning() {
+    this.playTimeout();
   }
 
   // Energy Token Claim

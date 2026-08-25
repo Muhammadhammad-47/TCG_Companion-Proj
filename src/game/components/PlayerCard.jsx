@@ -43,7 +43,7 @@ export default function PlayerCard({
         <div className="player-meta-box">
           <div className="name-and-crystals">
             <h3 className="player-display-name">{player.name}</h3>
-            <div className="crystals-cluster" title="Stability Crystals">
+            <div className="crystals-cluster" title={`${player.crystals}/3 Stability Crystals (Need 3 to win!)`}>
               {[...Array(3)].map((_, i) => (
                 <Gem
                   key={i}
@@ -53,18 +53,18 @@ export default function PlayerCard({
               ))}
             </div>
           </div>
-          <span className="char-sub-name">{isZombie ? 'Undead Plagued (Venom Strike Only)' : char.name}</span>
+          <span className="char-sub-name">{isZombie ? 'Undead' : char.name}</span>
         </div>
       </div>
 
       {/* HP Bar */}
       <div className="hp-section">
         <div className="hp-header-row">
-          <span className="hp-label">HP (HEALTH)</span>
+          <span className="hp-label">HP</span>
           <div className="hp-value-group">
             <span className={`hp-num ${player.hp < 30 ? 'critical-hp' : ''}`}>{player.hp}</span>
             <span className="hp-max">/ {isZombie ? ZOMBIE_PROFILE.baseHP : 150}</span>
-            {isLevel2 && <span className="lvl2-badge" title="Level 2 Unlocked">LVL 2</span>}
+            {isLevel2 && <span className="lvl2-badge" title="Level 2 cards unlocked">LVL 2</span>}
           </div>
         </div>
 
@@ -77,16 +77,16 @@ export default function PlayerCard({
 
         {/* Quick HP adjustment buttons */}
         <div className="quick-adjust-row">
-          <button className="quick-btn dmg" onClick={() => onAdjustHP(player.id, -10)} title="Deal 10 Damage">
+          <button className="quick-btn dmg" onClick={() => onAdjustHP(player.id, -10)} title="-10 HP">
             -10
           </button>
-          <button className="quick-btn dmg" onClick={() => onAdjustHP(player.id, -5)} title="Deal 5 Damage">
+          <button className="quick-btn dmg" onClick={() => onAdjustHP(player.id, -5)} title="-5 HP">
             -5
           </button>
-          <button className="quick-btn heal" onClick={() => onAdjustHP(player.id, +10)} title="Heal 10 HP">
+          <button className="quick-btn heal" onClick={() => onAdjustHP(player.id, +10)} title="+10 HP">
             +10
           </button>
-          <button className="quick-btn heal" onClick={() => onAdjustHP(player.id, +20)} title="Heal 20 HP">
+          <button className="quick-btn heal" onClick={() => onAdjustHP(player.id, +20)} title="+20 HP">
             +20
           </button>
         </div>
@@ -95,10 +95,9 @@ export default function PlayerCard({
       {/* Energy & Status Grid */}
       <div className="stats-badges-grid">
         {/* Energy Tokens */}
-        <div className="stat-pill et-pill" title="Energy Tokens">
+        <div className="stat-pill et-pill" title="Energy tokens">
           <div className="pill-left">
-            <Zap size={14} color="#ffd700" />
-            <span className="pill-label">ET</span>
+            <Zap size={14} color="#ffe93d" />
             <span className="pill-val">{player.energyTokens}/10</span>
           </div>
           <div className="mini-pm-group">
@@ -110,11 +109,10 @@ export default function PlayerCard({
         {/* Poison Cards */}
         <div
           className={`stat-pill poison-pill ${player.poisonCards >= 5 ? 'zombie-alert' : ''}`}
-          title={`${player.poisonCards}/10 Poison Cards. 5=Zombie Mode (10 HP revive), 6-7=20 HP revive, 8-10=40 HP revive + Zombie Fury. Max: 10.`}
+          title="Poison — 5 turns you into a zombie"
         >
           <div className="pill-left">
-            <Skull size={14} color={player.poisonCards >= 5 ? '#52c41a' : '#a0d911'} />
-            <span className="pill-label">Poison</span>
+            <Skull size={14} color={player.poisonCards >= 5 ? '#39ff14' : '#a0d911'} />
             <span className="pill-val">{player.poisonCards}/10</span>
           </div>
           <div className="mini-pm-group">
@@ -128,35 +126,35 @@ export default function PlayerCard({
       <div className="status-badges-row">
         {isZombie ? (
           <>
-            <div className="status-tag zombie-status">
-              🧟 ZOMBIE MODE (Immune to Kontrol • +10 HP Regen • Revive: {player.poisonCards >= 8 ? '40 HP' : player.poisonCards >= 6 ? '20 HP' : '10 HP'})
+            <div className="status-tag zombie-status" title="Immune to Kontrol · +10 HP regen">
+              🧟 ZOMBIE · {player.poisonCards >= 8 ? '40' : player.poisonCards >= 6 ? '20' : '10'} HP
             </div>
             {player.poisonCards >= 8 && (
-              <div className="status-tag fury-tag" title="Zombie Fury Active: Venom Strike deals +10 AP bonus damage">
-                🔥 Zombie Fury (+10 AP)
+              <div className="status-tag fury-tag" title="Venom Strike +10 AP">
+                🔥 FURY +10
               </div>
             )}
           </>
         ) : (
           <>
-            <div className="status-tag dp-tag" title="Innate Defense applied when rolling ≥6 on 2 dice">
-              <Shield size={12} /> DP -{char.defaultDP} (Roll 6+)
+            <div className="status-tag dp-tag" title="Defence on a 6+ roll">
+              <Shield size={12} /> -{char.defaultDP} · 6+
             </div>
-            <div className="status-tag weak-tag" title={`Takes extra AP damage from ${char.weakness.type}`}>
-              {char.weakness.icon} Weak: {char.weakness.type} (+{char.weakness.bonusAP})
+            <div className="status-tag weak-tag" title={`Weak to ${char.weakness.type}`}>
+              {char.weakness.icon} {char.weakness.type} +{char.weakness.bonusAP}
             </div>
           </>
         )}
 
         {player.shield > 0 && (
-          <div className="status-tag shield-active">
-            🛡️ Shield +{player.shield}
+          <div className="status-tag shield-active" title="Shield">
+            🛡️ +{player.shield}
           </div>
         )}
 
         {player.isStunned && (
-          <div className="status-tag stun-active">
-            ⚡ STUNNED (Skip Turn)
+          <div className="status-tag stun-active" title="Skips next turn">
+            ⚡ STUNNED
           </div>
         )}
       </div>
@@ -170,7 +168,7 @@ export default function PlayerCard({
             onSelectAction(player);
           }}
         >
-          <Sparkles size={16} /> PLAY CARD / ACTION
+          <Sparkles size={16} /> PLAY
         </button>
       )}
     </div>

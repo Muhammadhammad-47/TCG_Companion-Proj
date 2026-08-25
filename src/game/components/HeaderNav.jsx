@@ -47,7 +47,7 @@ export default function HeaderNav({
   };
 
   return (
-    <header className="header-nav dance-header-nav">
+    <header className="header-nav brand-header-nav">
       <div className="header-left">
         <div
           className="logo-badge clickable"
@@ -55,12 +55,11 @@ export default function HeaderNav({
             soundFX.playMenuSelect();
             onGoToMenu();
           }}
-          title="Return to Main Menu"
+          title="Home"
         >
-          <span className="kanji-badge">注意!</span>
+          <span className="suit-badge">🃏</span>
           <div className="title-group">
-            <h1 className="logo-title">DANCE WITH MII!</h1>
-            <span className="logo-sub">ANIME EXPRESS TV • COMBAT COMPANION</span>
+            <h1 className="logo-title">TCG CARD GAME</h1>
           </div>
         </div>
       </div>
@@ -74,7 +73,7 @@ export default function HeaderNav({
           }}
         >
           <Home size={18} />
-          <span>Main Menu</span>
+          <span>Menu</span>
         </button>
 
         <button
@@ -85,7 +84,7 @@ export default function HeaderNav({
           }}
         >
           <Swords size={18} />
-          <span>Battle Arena</span>
+          <span>Arena</span>
         </button>
 
         <button
@@ -96,35 +95,33 @@ export default function HeaderNav({
           }}
         >
           <BookOpen size={18} />
-          <span>Rulebook & Codex</span>
+          <span>Rules</span>
         </button>
       </div>
 
       <div className="header-right">
         <button
           className={`icon-btn ${bgmActive ? 'active-glow' : ''}`}
-          title={bgmActive ? 'Music BGM: ON (Click to Stop)' : 'Music BGM: OFF (Click to Play)'}
+          title="Music"
           onClick={handleToggleBgm}
         >
-          <Music size={18} color={bgmActive ? '#00f0ff' : '#d0b8e8'} />
-          <span className="btn-label">{bgmActive ? 'BGM ON' : 'BGM OFF'}</span>
+          <Music size={18} color={bgmActive ? '#2df6ff' : '#d9bdf2'} />
         </button>
 
         <button
           className={`icon-btn ${tvMode ? 'active-glow' : ''}`}
-          title="Toggle Large TV / Tabletop Cast Mode"
+          title="Cast"
           onClick={() => {
             soundFX.playCard();
             setTvMode(!tvMode);
           }}
         >
           <Tv size={18} />
-          <span className="btn-label">TV Mode</span>
         </button>
 
         <button
           className="icon-btn"
-          title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+          title="Fullscreen"
           onClick={handleToggleFullscreen}
         >
           {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
@@ -132,20 +129,19 @@ export default function HeaderNav({
 
         <button
           className="icon-btn"
-          title={isMuted ? 'Unmute SFX' : 'Mute SFX'}
+          title="Sound"
           onClick={handleToggleMute}
         >
-          {isMuted ? <VolumeX size={18} color="#ff007f" /> : <Volume2 size={18} color="#39ff14" />}
+          {isMuted ? <VolumeX size={18} color="#ff1a9d" /> : <Volume2 size={18} color="#39ff14" />}
         </button>
 
         {gameActive && (
           <button
             className="icon-btn reset-btn"
-            title="Reset / New Match"
+            title="New match"
             onClick={onResetGame}
           >
             <RotateCcw size={18} />
-            <span className="btn-label">New Match</span>
           </button>
         )}
       </div>

@@ -14,7 +14,7 @@ export default function BlitzModal({ attacker, allPlayers, onClose, onCompleteBl
 
   const handleExecuteBlitz = () => {
     if (!canUseBlitz) {
-      alert('Cannot use Blitz: Requires HP < 50 and at least 5 Energy Tokens.');
+      alert('Blitz needs HP < 50 and 5 ET.');
       return;
     }
 
@@ -33,8 +33,8 @@ export default function BlitzModal({ attacker, allPlayers, onClose, onCompleteBl
       <div className="special-card-modal blitz-modal">
         <div className="modal-header">
           <div className="header-title-box">
-            <span className="step-pill blitz-step"><Flame size={14} /> ULTIMATE DESTRUCTION (5 ET)</span>
-            <h2>SAIGO NO BLITZ (200 AP)</h2>
+            <span className="step-pill blitz-step"><Flame size={14} /> 5 ET</span>
+            <h2>BLITZ · 200 AP</h2>
           </div>
           <button className="btn-close" onClick={onClose}><X size={20} /></button>
         </div>
@@ -44,34 +44,30 @@ export default function BlitzModal({ attacker, allPlayers, onClose, onCompleteBl
           {attacker.hp >= 50 && (
             <div className="error-alert">
               <AlertOctagon size={18} />
-              <span>
-                <strong>Requirement Not Met:</strong> Saigo No Blitz can ONLY be triggered when HP is below 50. (Current HP: {attacker.hp})
-              </span>
+              <span>Needs HP &lt; 50 — you have {attacker.hp}.</span>
             </div>
           )}
 
           <div className="blitz-sacrifice-notice">
-            <Zap size={18} color="#ffd700" />
-            <span>
-              <strong>Cost:</strong> 5 Energy Tokens + <strong>Lose 50% remaining HP</strong> (will lose {Math.floor(attacker.hp * 0.5)} HP).
-            </span>
+            <Zap size={18} color="#ffe93d" />
+            <span>5 ET + <strong>-{Math.floor(attacker.hp * 0.5)} HP</strong></span>
           </div>
 
           {/* Mode Selector */}
           <div className="setting-group">
-            <label className="section-label">Select Attack Mode:</label>
+            <label className="section-label">MODE</label>
             <div className="preset-buttons">
               <button
                 className={`preset-btn ${mode === 'one_vs_one' ? 'selected' : ''}`}
                 onClick={() => setMode('one_vs_one')}
               >
-                🎯 1 vs. 1 (Single Target: Full 200 AP)
+                🎯 1v1 · 200 AP
               </button>
               <button
                 className={`preset-btn ${mode === 'one_vs_all' ? 'selected' : ''}`}
                 onClick={() => setMode('one_vs_all')}
               >
-                💥 1 vs. ALL (Split 200 AP = {splitDamagePerOpponent} AP each)
+                💥 ALL · {splitDamagePerOpponent} each
               </button>
             </div>
           </div>
@@ -79,7 +75,7 @@ export default function BlitzModal({ attacker, allPlayers, onClose, onCompleteBl
           {/* Target Selector for 1v1 */}
           {mode === 'one_vs_one' && (
             <div className="target-select-section">
-              <label className="section-label">Select Target to Annihilate:</label>
+              <label className="section-label">TARGET</label>
               <div className="targets-grid">
                 {opponents.map(target => (
                   <div
@@ -90,7 +86,7 @@ export default function BlitzModal({ attacker, allPlayers, onClose, onCompleteBl
                     <span>{target.isZombie ? '🧟‍♂️' : '⚔️'}</span>
                     <div>
                       <strong>{target.name}</strong>
-                      <span>{target.hp} HP</span>
+                      <span>{target.hp}</span>
                     </div>
                   </div>
                 ))}
@@ -104,7 +100,7 @@ export default function BlitzModal({ attacker, allPlayers, onClose, onCompleteBl
             onClick={handleExecuteBlitz}
             disabled={!canUseBlitz}
           >
-            <Flame size={20} fill="#fff" /> UNLEASH 200 AP SAIGO NO BLITZ
+            <Flame size={20} fill="#fff" /> UNLEASH
           </button>
         </div>
       </div>
