@@ -291,36 +291,54 @@ function Chat({ onBack }) {
 function App() {
   const [view, setView] = useState('home');
 
-  if (view === 'chat') {
-    return <Chat onBack={() => setView('home')} />;
-  }
+  useEffect(() => {
+    try {
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('portrait').catch((e) => console.log('Orientation lock failed:', e));
+      }
+    } catch (e) {
+      console.log('Orientation API not supported');
+    }
+  }, []);
 
   return (
-    <div className="App hub-container">
-      <div className="hub-brand">
-        <div className="hub-badge">注意!</div>
-        <h1 className="hub-title">DANCE WITH MII!</h1>
-        <div className="hub-subtitle">TCG COMPANION HUB</div>
+    <>
+      <div className="force-orientation-overlay force-portrait-overlay">
+        <div className="icon">📱</div>
+        <h2>Please Rotate Your Device</h2>
+        <p>The Chat Companion is designed for Portrait mode.</p>
       </div>
-      
-      <div className="hub-grid">
-        <div className="hub-btn" onClick={() => setView('chat')}>
-          <div className="icon">🤖</div>
-          <div>
-            <h3>RULES BOT</h3>
-            <p>Chat Companion & Card Knowledge</p>
-          </div>
-        </div>
 
-        <div className="hub-btn" onClick={() => { window.location.href = `${import.meta.env.BASE_URL}Game/index.html`; }}>
-          <div className="icon">⚔️</div>
-          <div>
-            <h3>BATTLE ARENA</h3>
-            <p>Interactive Tabletop Simulator</p>
+      {view === 'chat' ? (
+        <Chat onBack={() => setView('home')} />
+      ) : (
+        <div className="App hub-container">
+          <div className="hub-brand">
+            <div className="hub-badge">注意!</div>
+            <h1 className="hub-title">DANCE WITH MII!</h1>
+            <div className="hub-subtitle">TCG COMPANION HUB</div>
+          </div>
+          
+          <div className="hub-grid">
+            <div className="hub-btn" onClick={() => setView('chat')}>
+              <div className="icon">🤖</div>
+              <div>
+                <h3>RULES BOT</h3>
+                <p>Chat Companion & Card Knowledge</p>
+              </div>
+            </div>
+
+            <div className="hub-btn" onClick={() => { window.location.href = `${import.meta.env.BASE_URL}Game/index.html`; }}>
+              <div className="icon">⚔️</div>
+              <div>
+                <h3>BATTLE ARENA</h3>
+                <p>Interactive Tabletop Simulator</p>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 }
 

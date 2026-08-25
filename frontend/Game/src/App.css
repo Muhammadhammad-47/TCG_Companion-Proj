@@ -2658,3 +2658,44 @@ body {
   background: rgba(56, 189, 248, 0.1);
 }
 
+
+
+/* =========================================================
+   ORIENTATION ENFORCEMENT (LANDSCAPE)
+   ========================================================= */
+.force-orientation-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: var(--bg-deep);
+  z-index: 99999;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-main);
+}
+
+.force-orientation-overlay .icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  animation: rotatePhoneLandscape 2s infinite ease-in-out;
+}
+
+@keyframes rotatePhoneLandscape {
+  0% { transform: rotate(0deg); }
+  50% { transform: rotate(-90deg); }
+  100% { transform: rotate(0deg); }
+}
+
+/* For mobile devices held in portrait */
+@media screen and (max-width: 900px) and (orientation: portrait) {
+  .force-landscape-overlay {
+    display: flex;
+  }
+}
+

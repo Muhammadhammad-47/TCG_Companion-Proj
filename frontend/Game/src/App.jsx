@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import LoadingScreen from './components/LoadingScreen';
 import MainMenu from './components/MainMenu';
 import GameSetup from './components/GameSetup';
@@ -97,6 +97,16 @@ export default function App() {
     setActiveTab('menu');
   };
 
+  useEffect(() => {
+    try {
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch((e) => console.log('Orientation lock failed:', e));
+      }
+    } catch (e) {
+      console.log('Orientation API not supported');
+    }
+  }, []);
+
   // 1. Initial Arcade Game Loading Screen
   if (isLoading) {
     return <LoadingScreen onComplete={() => setIsLoading(false)} />;
@@ -104,6 +114,12 @@ export default function App() {
 
   return (
     <div className={`app-shell ${tvMode ? 'tv-mode-active' : ''}`}>
+      <div className="force-orientation-overlay force-landscape-overlay">
+        <div className="icon">📱</div>
+        <h2>Please Rotate Your Device</h2>
+        <p>The Battle Arena requires Landscape mode.</p>
+      </div>
+
       <main className="main-content-viewport">
         {/* Main Menu Screen (Page 7) */}
         {activeTab === 'menu' && (
