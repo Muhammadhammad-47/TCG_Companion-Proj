@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Home, BookOpen, Music, Volume2, VolumeX, Tv, Maximize2, Minimize2, RotateCcw } from 'lucide-react';
+import { Home, BookOpen, Music, Volume2, VolumeX, Tv, Maximize2, Minimize2, RotateCcw, ArrowLeft } from 'lucide-react';
 import { soundFX } from '../utils/audio';
 
 export default function InGameHeaderHUD({
@@ -61,18 +61,21 @@ export default function InGameHeaderHUD({
         <span>MAIN MENU</span>
       </button>
 
-      {/* Center: In-Game Game Rulebook */}
       <button
-        className="hud-btn hud-rulebook-btn"
-        onClick={() => {
-          soundFX.playCard();
-          onOpenRulebook();
+        className="hud-btn"
+        style={{
+          background: 'rgba(225, 29, 72, 0.2)',
+          border: '1px solid #e11d48',
+          color: '#fff',
         }}
-        title="View Game Rulebook & AI Codex"
+        onClick={() => { window.location.href = '../index.html'; }}
+        title="Exit to Hub"
       >
-        <BookOpen size={16} />
-        <span>RULEBOOK & AI CODEX</span>
+        <ArrowLeft size={16} />
+        <span>EXIT TO HUB</span>
       </button>
+
+
 
       {/* Right: Sound & Display Controls */}
       <div className="hud-right-tools">

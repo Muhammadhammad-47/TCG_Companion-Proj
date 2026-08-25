@@ -43,7 +43,7 @@ export default function PlayerCard({
         <div className="player-meta-box">
           <div className="name-and-crystals">
             <h3 className="player-display-name">{player.name}</h3>
-            <div className="crystals-cluster" title={`${player.crystals}/3 Stability Crystals (Need 3 to win!)`}>
+            <div className="crystals-cluster" title="Stability Crystals">
               {[...Array(3)].map((_, i) => (
                 <Gem
                   key={i}
@@ -64,7 +64,7 @@ export default function PlayerCard({
           <div className="hp-value-group">
             <span className={`hp-num ${player.hp < 30 ? 'critical-hp' : ''}`}>{player.hp}</span>
             <span className="hp-max">/ {isZombie ? ZOMBIE_PROFILE.baseHP : 150}</span>
-            {isLevel2 && <span className="lvl2-badge" title="HP ≥ 150: Level 2 cards unlocked!">LVL 2</span>}
+            {isLevel2 && <span className="lvl2-badge" title="Level 2 Unlocked">LVL 2</span>}
           </div>
         </div>
 
@@ -95,7 +95,7 @@ export default function PlayerCard({
       {/* Energy & Status Grid */}
       <div className="stats-badges-grid">
         {/* Energy Tokens */}
-        <div className="stat-pill et-pill" title="Energy Tokens (0-10 ET cap). Used to activate attacks: Regular (1), Super (2), Kontrol (3), Blitz (5)">
+        <div className="stat-pill et-pill" title="Energy Tokens">
           <div className="pill-left">
             <Zap size={14} color="#ffd700" />
             <span className="pill-label">ET</span>

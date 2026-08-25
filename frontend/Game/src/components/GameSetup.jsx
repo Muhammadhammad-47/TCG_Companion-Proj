@@ -87,11 +87,9 @@ export default function GameSetup({ onStartGame, onBack }) {
   };
 
   return (
-    <div className="img-setup-container">
-      {/* Header matching Image 2 */}
-      <div className="img-setup-header">
-        <h1 className="img-setup-title">Game Setup</h1>
-        <p className="img-setup-subtitle">✦ CONFIGURE YOUR DUEL. SET PLAYERS, TURN ORDER, AND STARTING SCORE.</p>
+    <div className="img-setup-container clean-dashboard">
+      <div className="img-setup-header" style={{ width: '100%', textAlign: 'left' }}>
+        <h1 className="img-setup-title" style={{ color: 'var(--accent-cyan)' }}>Game Setup</h1>
       </div>
 
       {/* 2-Column Setup Grid matching Image 2 */}

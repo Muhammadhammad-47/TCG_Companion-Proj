@@ -216,7 +216,7 @@ export default function BattleArena({
   const otherPlayers = gameState.players.filter(p => p.id !== activePlayer.id);
 
   return (
-    <div className="img-arena-container">
+    <div className="img-arena-container clean-dashboard">
       {/* Top Header Bar matching Image 3 */}
       <header className="img-arena-header">
         <div className="img-header-left">
