@@ -22,7 +22,8 @@ export default function BattleArena({
   setHistoryStack,
   tvMode,
   onRematch,
-  onOpenNewMatch
+  onOpenNewMatch,
+  onExitToHub
 }) {
   const [activeCombatData, setActiveCombatData] = useState(null);
   const [activeKontrolData, setActiveKontrolData] = useState(null);
@@ -259,6 +260,19 @@ export default function BattleArena({
               <Menu size={16} />
             </button>
           )}
+
+          <button
+            className="img-header-btn btn-menu-dialog"
+            style={{
+              background: 'rgba(225, 29, 72, 0.2)',
+              border: '1px solid #e11d48',
+              color: '#fff',
+            }}
+            onClick={onExitToHub}
+            title="Exit to Hub"
+          >
+            EXIT TO HUB
+          </button>
         </div>
       </header>
 

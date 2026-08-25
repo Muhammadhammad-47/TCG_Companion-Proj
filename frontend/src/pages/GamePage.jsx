@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import LoadingScreen from './components/LoadingScreen';
-import MainMenu from './components/MainMenu';
-import GameSetup from './components/GameSetup';
-import BattleArena from './components/BattleArena';
-import { createInitialGameState } from './utils/gameEngine';
-import { soundFX } from './utils/audio';
-import './App.css';
+import { useNavigate } from 'react-router-dom';
+import LoadingScreen from '../game/components/LoadingScreen';
+import MainMenu from '../game/components/MainMenu';
+import GameSetup from '../game/components/GameSetup';
+import BattleArena from '../game/components/BattleArena';
+import { createInitialGameState } from '../game/utils/gameEngine';
+import { soundFX } from '../game/utils/audio';
+import './GamePage.css';
 
-export default function App() {
+export default function GamePage() {
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('menu'); // 'menu' | 'setup' | 'arena'
   const [gameState, setGameState] = useState(null);
@@ -133,6 +135,7 @@ export default function App() {
               const muted = soundFX.toggleMute();
               setIsMuted(muted);
             }}
+            onExitToHub={() => navigate('/')}
           />
         )}
 
@@ -154,6 +157,7 @@ export default function App() {
             tvMode={tvMode}
             onRematch={handleRematch}
             onOpenNewMatch={handleOpenNewMatchDialog}
+            onExitToHub={() => navigate('/')}
           />
         )}
       </main>

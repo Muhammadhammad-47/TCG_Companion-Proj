@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './App.css';
 import { presetQuestions } from './questions.js';
+import GamePage from './pages/GamePage.jsx';
 
 const Avatar = ({ isSpeaking }) => {
   const [index, setIndex] = useState(0);
@@ -288,8 +290,8 @@ function Chat({ onBack }) {
   );
 }
 
-function App() {
-  const [view, setView] = useState('home');
+function Hub() {
+  const navigate = useNavigate();
 
   useEffect(() => {
     try {
@@ -308,37 +310,43 @@ function App() {
         <h2>Please Rotate Your Device</h2>
         <p>The Chat Companion is designed for Portrait mode.</p>
       </div>
-
-      {view === 'chat' ? (
-        <Chat onBack={() => setView('home')} />
-      ) : (
-        <div className="App hub-container">
-          <div className="hub-brand">
-            <div className="hub-badge">注意!</div>
-            <h1 className="hub-title">DANCE WITH MII!</h1>
-            <div className="hub-subtitle">TCG COMPANION HUB</div>
-          </div>
-          
-          <div className="hub-grid">
-            <div className="hub-btn" onClick={() => setView('chat')}>
-              <div className="icon">🤖</div>
-              <div>
-                <h3>RULES BOT</h3>
-                <p>Chat Companion & Card Knowledge</p>
-              </div>
+      <div className="App hub-container">
+        <div className="hub-brand">
+          <div className="hub-badge">注意!</div>
+          <h1 className="hub-title">DANCE WITH MII!</h1>
+          <div className="hub-subtitle">TCG COMPANION HUB</div>
+        </div>
+        
+        <div className="hub-grid">
+          <div className="hub-btn" onClick={() => navigate('/chat')}>
+            <div className="icon">🤖</div>
+            <div>
+              <h3>RULES BOT</h3>
+              <p>Chat Companion & Card Knowledge</p>
             </div>
+          </div>
 
-            <div className="hub-btn" onClick={() => { window.location.href = `${import.meta.env.BASE_URL}Game/index.html`; }}>
-              <div className="icon">⚔️</div>
-              <div>
-                <h3>BATTLE ARENA</h3>
-                <p>Interactive Tabletop Simulator</p>
-              </div>
+          <div className="hub-btn" onClick={() => navigate('/game')}>
+            <div className="icon">⚔️</div>
+            <div>
+              <h3>BATTLE ARENA</h3>
+              <p>Interactive Tabletop Simulator</p>
             </div>
           </div>
         </div>
-      )}
+      </div>
     </>
+  );
+}
+
+function App() {
+  const navigate = useNavigate();
+  return (
+    <Routes>
+      <Route path="/" element={<Hub />} />
+      <Route path="/chat" element={<Chat onBack={() => navigate('/')} />} />
+      <Route path="/game" element={<GamePage />} />
+    </Routes>
   );
 }
 

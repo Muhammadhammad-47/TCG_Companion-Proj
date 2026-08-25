@@ -11,7 +11,8 @@ export default function MainMenu({
   tvMode,
   setTvMode,
   isMuted,
-  onToggleMute
+  onToggleMute,
+  onExitToHub
 }) {
   const [selectedCharId, setSelectedCharId] = useState('chynaman');
   const charList = Object.values(CHARACTERS);
@@ -22,7 +23,7 @@ export default function MainMenu({
       <div className="clean-top-nav">
         <button 
           className="clean-back-btn"
-          onClick={() => { window.location.href = '../index.html'; }}
+          onClick={onExitToHub}
         >
           <ArrowLeft size={16} /> EXIT TO HUB
         </button>
