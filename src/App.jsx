@@ -194,9 +194,23 @@ export function Chat({ onBack }) {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  useEffect(() => {
+    return () => {
+      stopSpeaking();
+    };
+  }, []);
+
+  useEffect(() => {
+    try {
+      if (window.screen && screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('portrait').catch(e => console.log('Portrait lock failed', e));
+      }
+    } catch(e) {}
+  }, []);
+
   return (
     <div className="webgl-canvas-frame">
-      <div className="webgl-screen menu-screen" style={{ padding: '0', overflow: 'hidden' }}>
+      <div className="webgl-screen menu-screen" style={{ padding: '0', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100vh' }}>
         <div className="menu-bg-elements" style={{ zIndex: 0 }}>
           <div className="neon-streak-red"></div>
           <div className="neon-streak-blue"></div>

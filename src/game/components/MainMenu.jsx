@@ -19,11 +19,20 @@ export default function MainMenu({
 }) {
   const [selectedCharId, setSelectedCharId] = useState('chynaman');
   const [quickQuestion, setQuickQuestion] = useState('');
-  const [quickAnswer, setQuickAnswer] = useState('');
+  const [miniChat, setMiniChat] = useState([
+    { isBot: true, text: "Need a rule clarification? I'm here to help!" }
+  ]);
   const [turnCounter, setTurnCounter] = useState(12);
   const [phaseIndex, setPhaseIndex] = useState(0);
+  const chatScrollRef = useRef(null);
 
   const PHASES = ['Draw Phase', 'Main Phase 1', 'Battle Phase', 'Main Phase 2', 'End Phase'];
+
+  useEffect(() => {
+    if (chatScrollRef.current) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    }
+  }, [miniChat]);
 
   const charList = [
     CHARACTERS.chynaman,
@@ -38,7 +47,6 @@ export default function MainMenu({
     soundFX.playMenuHover();
     setTurnCounter(prev => prev + 1);
     setPhaseIndex(prev => (prev + 1) % PHASES.length);
-    // Cycle selected character
     const currIdx = charList.findIndex(c => c.id === selectedCharId);
     const nextIdx = (currIdx + 1) % charList.length;
     setSelectedCharId(charList[nextIdx].id);
@@ -49,17 +57,26 @@ export default function MainMenu({
     if (!quickQuestion.trim()) return;
     soundFX.playCard();
     const q = quickQuestion.toLowerCase();
-    if (q.includes('poison')) {
-      setQuickAnswer('Poison deals damage at the start of your turn. 5 Poison activates Zombie Mode!');
-    } else if (q.includes('dp') || q.includes('defense')) {
-      setQuickAnswer('Roll 6+ on 2 Gold dice to activate innate Defense Power (DP) damage reduction.');
-    } else if (q.includes('et') || q.includes('energy')) {
-      setQuickAnswer('Start with 5 ET. Regular attacks cost 1, Super 2, Kontrol 3, Blitz 5.');
-    } else if (q.includes('crystal') || q.includes('win')) {
-      setQuickAnswer('Claim 3 Stability Crystals or reduce all opponents to 0 LP to win!');
-    } else {
-      setQuickAnswer('Match pairs Action Cards with Hero techniques. Click to view full rulebook!');
-    }
+    
+    const newChat = [...miniChat, { isBot: false, text: quickQuestion }];
+    setQuickQuestion('');
+    
+    let bestMatch = null;
+    let maxScore = 0;
+    
+    RULES_KNOWLEDGE.forEach(rule => {
+      let score = 0;
+      rule.keywords.forEach(kw => {
+        if (q.includes(kw.toLowerCase())) score++;
+      });
+      if (score > maxScore) {
+        maxScore = score;
+        bestMatch = rule;
+      }
+    });
+
+    const answerText = maxScore > 0 ? bestMatch.shortAnswer : "I'm not sure. Try asking about poison, dice, ET, or winning!";
+    setMiniChat([...newChat, { isBot: true, text: answerText }]);
   };
 
   return (
@@ -274,7 +291,30 @@ export default function MainMenu({
               </div>
             </div>
 
-            <form onSubmit={handleAskQuick} className="bot-query-box">
+            <div 
+              className="mini-chat-history" 
+              ref={chatScrollRef}
+              style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px', paddingRight: '5px' }}
+            >
+              {miniChat.map((msg, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: msg.isBot ? 'flex-start' : 'flex-end' }}>
+                  <div style={{
+                    maxWidth: '85%',
+                    padding: '8px 12px',
+                    borderRadius: '12px',
+                    fontSize: '0.85rem',
+                    background: msg.isBot ? 'rgba(0, 240, 255, 0.1)' : 'rgba(255, 51, 102, 0.15)',
+                    border: `1px solid ${msg.isBot ? 'rgba(0, 240, 255, 0.3)' : 'rgba(255, 51, 102, 0.3)'}`,
+                    color: msg.isBot ? 'var(--neon-cyan)' : '#fff',
+                    wordWrap: 'break-word'
+                  }}>
+                    {msg.text}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <form onSubmit={handleAskQuick} className="bot-query-box" style={{ marginTop: 'auto' }}>
               <input
                 type="text"
                 className="bot-input-field"
@@ -286,14 +326,6 @@ export default function MainMenu({
                 <Send size={15} />
               </button>
             </form>
-
-            {quickAnswer && (
-              <div className="bot-quick-response" onClick={onOpenRules} title="Open full rulebook">
-                <Sparkles size={14} className="sparkle-cyan" />
-                <span>{quickAnswer}</span>
-                <ChevronRight size={14} />
-              </div>
-            )}
           </div>
         </div>
 

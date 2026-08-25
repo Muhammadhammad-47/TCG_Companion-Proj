@@ -48,22 +48,17 @@ export default function GamePage() {
 
   React.useEffect(() => {
     try {
-      if (screen.orientation && screen.orientation.lock) {
-        screen.orientation.lock('landscape').catch(console.error);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-    return () => {
-      try {
-        if (screen.orientation && screen.orientation.unlock) {
-          screen.orientation.unlock();
+      if (window.screen && screen.orientation && screen.orientation.lock) {
+        if (activeTab === 'arena' || activeTab === 'setup') {
+          screen.orientation.lock('landscape').catch(e => console.log('Landscape lock failed', e));
+        } else {
+          screen.orientation.lock('portrait').catch(e => console.log('Portrait lock failed', e));
         }
-      } catch (e) {
-        console.error(e);
       }
-    };
-  }, []);
+    } catch(e) {}
+  }, [activeTab]);
+
+  // Orientation managed by activeTab useEffect
 
   const handleToggleFullscreen = () => {
     soundFX.playMenuHover();
