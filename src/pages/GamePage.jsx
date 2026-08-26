@@ -251,7 +251,7 @@ export default function GamePage() {
         {/* Rules Chatbot Overlay */}
         {activeTab === 'rules' && (
           <div style={{ position: 'fixed', top: '5%', left: '5%', width: '90%', height: '90%', zIndex: 999999, borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--neon-cyan)', background: '#02040c', boxShadow: '0 0 30px rgba(0,240,255,0.2)' }}>
-            <Chat onBack={() => setActiveTab(rulesReturnTab || 'menu')} />
+            <Chat onBack={() => setActiveTab(rulesReturnTab || 'menu')} isOverlay={true} />
           </div>
         )}
       </main>
