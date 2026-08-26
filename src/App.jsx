@@ -324,7 +324,7 @@ export function Chat({ onBack, isOverlay = false }) {
 export function Hub() {
   const navigate = useNavigate();
 
-  useEffect(() => {
+  React.useLayoutEffect(() => {
     try {
       if (screen.orientation && screen.orientation.lock) {
         screen.orientation.lock('portrait').catch(() => {});
@@ -361,7 +361,18 @@ export function Hub() {
               </div>
             </button>
 
-            <button className="btn-enter-game-cta" onClick={() => navigate('/game')} style={{ width: '100%', padding: '30px 40px', borderRadius: '24px', background: 'linear-gradient(90deg, #0d1a38 0%, #050a18 100%)', border: '2px solid var(--neon-cyan)', color: 'var(--neon-cyan)' }}>
+            <button 
+              className="btn-enter-game-cta" 
+              onClick={() => {
+                try {
+                  if (screen.orientation && screen.orientation.lock) {
+                    screen.orientation.lock('landscape').catch(() => {});
+                  }
+                } catch(e) {}
+                navigate('/game');
+              }} 
+              style={{ width: '100%', padding: '30px 40px', borderRadius: '24px', background: 'linear-gradient(90deg, #0d1a38 0%, #050a18 100%)', border: '2px solid var(--neon-cyan)', color: 'var(--neon-cyan)' }}
+            >
               <span style={{ fontSize: '3rem', marginRight: '20px' }}>⚔️</span>
               <div style={{ textAlign: 'left' }}>
                 <div style={{ fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '8px' }}>BATTLE ARENA</div>
