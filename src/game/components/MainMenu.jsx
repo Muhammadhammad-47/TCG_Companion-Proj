@@ -53,31 +53,18 @@ export default function MainMenu({
     setSelectedCharId(charList[nextIdx].id);
   };
 
-  const handleAskQuick = (e) => {
-    e.preventDefault();
-    if (!quickQuestion.trim()) return;
-    soundFX.playCard();
-    const q = quickQuestion.toLowerCase();
-    
-    const newChat = [...miniChat, { isBot: false, text: quickQuestion }];
-    setQuickQuestion('');
-    
-    let bestMatch = null;
-    let maxScore = 0;
-    
-    RULES_KNOWLEDGE.forEach(rule => {
-      let score = 0;
-      rule.keywords.forEach(kw => {
-        if (q.includes(kw.toLowerCase())) score++;
-      });
-      if (score > maxScore) {
-        maxScore = score;
-        bestMatch = rule;
-      }
-    });
-
-    const answerText = maxScore > 0 ? bestMatch.shortAnswer : "I'm not sure. Try asking about poison, dice, ET, or winning!";
-    setMiniChat([...newChat, { isBot: true, text: answerText }]);
+  // Play sound on hover for buttons
+  const playHoverSound = () => soundFX.play('hover');
+  
+  // Play sound on click for buttons
+  const playClickSound = () => soundFX.play('click');
+  
+  // Custom click handler for Rules Bot
+  const handleOpenRules = () => {
+    playClickSound();
+    if (onOpenRules) {
+      onOpenRules();
+    }
   };
 
   return (
@@ -279,7 +266,12 @@ export default function MainMenu({
           </button>
 
           {/* Rules Bot Beta Card (Moved to bottom right empty space) */}
-          <div className="rules-bot-card" style={{ marginLeft: 'auto', marginBottom: 0, padding: '10px 15px', height: '100%', flex: '0 1 350px' }}>
+          <div 
+            className="rules-bot-card" 
+            onClick={handleOpenRules}
+            onMouseEnter={playHoverSound}
+            style={{ marginLeft: 'auto', marginBottom: 0, padding: '10px 15px', height: '100%', flex: '0 1 350px', cursor: 'pointer', transition: 'all 0.3s ease' }}
+          >
             <div className="rules-bot-header" style={{ marginBottom: '8px' }}>
               <div className="bot-avatar-wrap" style={{ width: '35px', height: '35px' }}>
                 <div className="bot-robot-icon">
@@ -295,35 +287,32 @@ export default function MainMenu({
 
             <div 
               className="mini-chat-history" 
-              ref={chatScrollRef}
-              style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px', paddingRight: '5px' }}
+              style={{ flex: 1, overflowY: 'hidden', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px', paddingRight: '5px', justifyContent: 'center' }}
             >
-              {miniChat.map((msg, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: msg.isBot ? 'flex-start' : 'flex-end' }}>
-                  <div style={{
-                    maxWidth: '85%',
-                    padding: '8px 12px',
-                    borderRadius: '12px',
-                    fontSize: '0.85rem',
-                    background: msg.isBot ? 'rgba(0, 240, 255, 0.1)' : 'rgba(255, 51, 102, 0.15)',
-                    border: `1px solid ${msg.isBot ? 'rgba(0, 240, 255, 0.3)' : 'rgba(255, 51, 102, 0.3)'}`,
-                    color: msg.isBot ? 'var(--neon-cyan)' : '#fff',
-                    wordWrap: 'break-word'
-                  }}>
-                    {msg.text}
-                  </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                <div style={{
+                  maxWidth: '100%',
+                  padding: '12px 16px',
+                  borderRadius: '12px',
+                  fontSize: '0.95rem',
+                  background: 'rgba(0, 240, 255, 0.1)',
+                  border: '1px solid rgba(0, 240, 255, 0.3)',
+                  color: 'var(--neon-cyan)',
+                  wordWrap: 'break-word',
+                  textAlign: 'center'
+                }}>
+                  Need a rule clarification? Click here to open the full Rules Bot!
                 </div>
-              ))}
+              </div>
             </div>
 
-            <form onSubmit={handleAskQuick} className="bot-query-box" style={{ marginTop: 'auto' }}>
-              <input
-                type="text"
+            <div className="bot-query-box" style={{ marginTop: 'auto', pointerEvents: 'none', opacity: 0.7 }}>
+              <div
                 className="bot-input-field"
-                placeholder="Ask a question..."
-                value={quickQuestion}
-                onChange={(e) => setQuickQuestion(e.target.value)}
-              />
+                style={{ padding: '10px', display: 'flex', alignItems: 'center', color: '#fff', fontSize: '0.9rem' }}
+              >
+                Open Rules Bot...
+              </div>
               <button type="submit" className="bot-send-btn" title="Submit Question">
                 <Send size={15} />
               </button>
