@@ -232,7 +232,7 @@ export default function GamePage() {
         {activeTab === 'arena' && gameState && (
           <BattleArena
             gameState={gameState}
-            onUpdateGameState={setGameState}
+            setGameState={setGameState}
             historyStack={historyStack}
             setHistoryStack={setHistoryStack}
             tvMode={tvMode}

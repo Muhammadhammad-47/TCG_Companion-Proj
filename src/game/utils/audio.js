@@ -16,7 +16,7 @@ class SoundEffects {
       }
     }
     if (this.ctx && this.ctx.state === 'suspended') {
-      this.ctx.resume();
+      this.ctx.resume().catch(e => console.warn('Audio autoplay blocked until user interaction.'));
     }
   }
 
