@@ -136,6 +136,29 @@ export function Chat({ onBack, isOverlay = false }) {
       
       if (streamTimer.current) clearInterval(streamTimer.current);
       
+      // Fire off TTS (Best effort, won't block visuals if it fails on mobile)
+      let ttsActive = false;
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(ans);
+        
+        utterance.onstart = () => { ttsActive = true; };
+        utterance.onend = () => {
+          ttsActive = false;
+          setIsSpeaking(false);
+          setIsAnimatingTalk(false);
+        };
+        utterance.onerror = () => {
+          ttsActive = false;
+          setIsSpeaking(false);
+          setIsAnimatingTalk(false);
+        };
+        
+        window.speechSynthesis.speak(utterance);
+        // Sometimes onstart doesn't fire immediately but it is speaking
+        ttsActive = true; 
+      }
+
       streamTimer.current = setInterval(() => {
         i++;
         setDisplayedAnswer(ans.substring(0, i));
@@ -143,22 +166,20 @@ export function Chat({ onBack, isOverlay = false }) {
         // Randomly pause animation to look natural
         if (i % 15 === 0) {
           setIsAnimatingTalk(false);
-          setTimeout(() => { if (isSpeaking) setIsAnimatingTalk(true); }, 200);
+          setTimeout(() => { 
+            if (ttsActive || i < ans.length) setIsAnimatingTalk(true); 
+          }, 200);
         }
         
         if (i >= ans.length) {
           clearInterval(streamTimer.current);
-          setIsSpeaking(false);
-          setIsAnimatingTalk(false);
+          // Only stop animation if TTS is NOT active
+          if (!ttsActive) {
+            setIsSpeaking(false);
+            setIsAnimatingTalk(false);
+          }
         }
       }, 35); // 35ms per char
-
-      // Fire off TTS (Best effort, won't block visuals if it fails on mobile)
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(ans);
-        window.speechSynthesis.speak(utterance);
-      }
     } catch (err) {
       console.error(err);
       setStatus('Error asking question. Make sure a document is uploaded.');
