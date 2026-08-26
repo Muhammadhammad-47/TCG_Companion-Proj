@@ -172,6 +172,7 @@
   font-weight: 800;
   background: linear-gradient(180deg, #dcf8ff 0%, #38bdf8 55%, #0284c7 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.7));
   letter-spacing: -0.01em;
@@ -183,6 +184,7 @@
   font-weight: 900;
   background: linear-gradient(180deg, #ffffff 0%, #fecdd3 50%, #f43f5e 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   filter: drop-shadow(0 0 20px rgba(244, 63, 94, 0.85));
   letter-spacing: -0.02em;
@@ -792,6 +794,7 @@
   font-weight: 800;
   background: linear-gradient(180deg, #dcf8ff 0%, #fed7aa 50%, #f97316 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   filter: drop-shadow(0 0 14px rgba(249, 115, 22, 0.6));
   margin: 0;
@@ -2648,6 +2651,7 @@
   letter-spacing: 0.18em;
   background: linear-gradient(180deg, #fff7d6 0%, #ffd700 50%, #d97706 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   filter: drop-shadow(0 0 25px rgba(255, 215, 0, 0.75));
   margin: 0;
