@@ -101,7 +101,7 @@ export default function GameSetup({ onStartGame, onBack }) {
   const primaryProfileChar = CHARACTERS[players[0]?.characterId] || CHARACTERS.chynaman;
 
   return (
-    <div className="webgl-canvas-frame landscape-mode">
+    <div style={{ width: '100%', height: '100%' }}>
       
       <div className="webgl-screen setup-screen">
         {/* Background diagonal neon streaks */}

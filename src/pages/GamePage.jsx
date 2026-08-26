@@ -191,6 +191,7 @@ export default function GamePage() {
           <p>This game is best experienced in landscape mode.</p>
         </div>
       </div>
+      <div className="webgl-canvas-frame landscape-mode">
       <ScaleWrapper targetWidth={1920} targetHeight={1080}>
       <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <button 
@@ -291,6 +292,7 @@ export default function GamePage() {
       )}
     </div>
     </ScaleWrapper>
+    </div>
     </div>
   );
 }

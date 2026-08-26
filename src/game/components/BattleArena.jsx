@@ -273,7 +273,7 @@ export default function BattleArena({
   };
 
   return (
-    <div className="webgl-canvas-frame landscape-mode">
+    <div style={{ width: '100%', height: '100%' }}>
       
       <div className={`webgl-screen arena-screen ${isShaking ? 'shake-animation damage-flash-overlay' : ''}`}>
         

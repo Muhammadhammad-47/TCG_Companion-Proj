@@ -81,7 +81,7 @@ export default function MainMenu({
   };
 
   return (
-    <div className="webgl-canvas-frame landscape-mode">
+    <div style={{ width: '100%', height: '100%' }}>
       
       <div className="webgl-screen menu-screen">
         {/* Background diagonal neon streaks & particle glow */}
