@@ -7,8 +7,8 @@ import BattleArena from '../game/components/BattleArena';
 import { Chat } from '../App';
 import { createInitialGameState } from '../game/utils/gameEngine';
 import { soundFX } from '../game/utils/audio';
-import './GamePage.css';
 import { useNavigate } from 'react-router-dom';
+import { ScaleWrapper } from '../components/ScaleWrapper';
 
 export default function GamePage() {
   const navigate = useNavigate();
@@ -173,9 +173,11 @@ export default function GamePage() {
   if (isLoading) {
     return (
       <div className={`app-shell ${tvMode ? 'tv-mode-active' : ''} ${isFullscreen ? 'fullscreen-mode-active' : ''}`}>
-        <main className="main-content-viewport">
-          <LoadingScreen onComplete={() => setIsLoading(false)} />
-        </main>
+        <ScaleWrapper targetWidth={1920} targetHeight={1080}>
+          <main className="main-content-viewport" style={{ position: 'absolute', inset: 0 }}>
+            <LoadingScreen onComplete={() => setIsLoading(false)} />
+          </main>
+        </ScaleWrapper>
       </div>
     );
   }
@@ -189,14 +191,16 @@ export default function GamePage() {
           <p>This game is best experienced in landscape mode.</p>
         </div>
       </div>
+      <ScaleWrapper targetWidth={1920} targetHeight={1080}>
+      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <button 
         onClick={() => { soundFX.stopBGM(); navigate('/'); }} 
-        style={{ position: 'absolute', top: '15px', right: '20px', zIndex: 9999, background: 'none', border: 'none', color: '#fff', fontSize: '2rem', cursor: 'pointer', lineHeight: 1 }}
+        style={{ position: 'absolute', top: '20px', right: '30px', zIndex: 9999, background: 'none', border: 'none', color: '#fff', fontSize: '2rem', cursor: 'pointer', lineHeight: 1 }}
         title="Exit to Hub"
       >
         ×
       </button>
-      <main className="main-content-viewport">
+      <main className="main-content-viewport" style={{ position: 'absolute', inset: 0 }}>
         {/* Main Menu Screen (Page 7) */}
         {activeTab === 'menu' && (
           <MainMenu
@@ -285,6 +289,8 @@ export default function GamePage() {
           </div>
         </div>
       )}
+    </div>
+    </ScaleWrapper>
     </div>
   );
 }

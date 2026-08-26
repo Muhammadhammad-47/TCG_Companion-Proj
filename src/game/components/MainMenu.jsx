@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { CHARACTERS, getAssetUrl } from '../data/characters';
 import { soundFX } from '../utils/audio';
-import { ScaleWrapper } from '../../components/ScaleWrapper';
+
 
 export default function MainMenu({
   onStartCustomGame,
@@ -82,7 +82,7 @@ export default function MainMenu({
 
   return (
     <div className="webgl-canvas-frame landscape-mode">
-      <ScaleWrapper targetWidth={1920} targetHeight={1080}>
+      
       <div className="webgl-screen menu-screen">
         {/* Background diagonal neon streaks & particle glow */}
         <div className="menu-bg-elements">
@@ -337,7 +337,7 @@ export default function MainMenu({
           <div className="version-info">v1.0.0</div>
         </div>
       </div>
-      </ScaleWrapper>
+      
     </div>
   );
 }

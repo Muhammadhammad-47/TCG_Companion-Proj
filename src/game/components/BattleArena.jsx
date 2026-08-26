@@ -3,7 +3,7 @@ import { CHARACTERS, getAssetUrl } from '../data/characters';
 import { ACTION_CARDS } from '../data/cards';
 import { soundFX } from '../utils/audio';
 import WinnerModal from './WinnerModal';
-import { ScaleWrapper } from '../../components/ScaleWrapper';
+
 import {
   Swords, Undo2, Menu, Shield, Skull, Zap, Gem,
   Clock, Play, Heart, Trophy, Crown, Dices,
@@ -274,7 +274,7 @@ export default function BattleArena({
 
   return (
     <div className="webgl-canvas-frame landscape-mode">
-      <ScaleWrapper targetWidth={1920} targetHeight={1080}>
+      
       <div className={`webgl-screen arena-screen ${isShaking ? 'shake-animation damage-flash-overlay' : ''}`}>
         
         {turnAnnouncement && (
@@ -951,7 +951,7 @@ export default function BattleArena({
           />
         )}
       </div>
-      </ScaleWrapper>
+      
     </div>
   );
 }
