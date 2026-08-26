@@ -327,38 +327,37 @@ export function Hub() {
   return (
     <div className="webgl-canvas-frame portrait-mode">
       <ScaleWrapper targetWidth={1080} targetHeight={1920}>
-        <div className="webgl-screen menu-screen" style={{ justifyContent: 'center', alignItems: 'center' }}>
-          <div className="menu-bg-elements">
+        <div className="webgl-screen menu-screen" style={{ justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%', padding: '0 40px', boxSizing: 'border-box' }}>
+          <div className="menu-bg-elements" style={{ width: '100%', height: '100%' }}>
             <div className="neon-streak-red"></div>
             <div className="neon-streak-blue"></div>
             <div className="subtle-watermark-card left-wm"></div>
             <div className="subtle-watermark-card right-wm"></div>
           </div>
-          
-          <div className="game-brand-block" style={{ marginBottom: '40px', textAlign: 'center' }}>
-            <div className="brand-pill-badge" style={{ margin: '0 auto 15px auto' }}>注意!</div>
+          <div className="game-brand-block" style={{ marginBottom: '60px', textAlign: 'center' }}>
+            <div className="brand-pill-badge" style={{ margin: '0 auto 15px auto', fontSize: '1.2rem', padding: '6px 16px' }}>注意!</div>
             <h1 className="game-main-title">
-              <span className="title-dance">注意 TCG</span>
+              <span className="title-dance" style={{ fontSize: '4.5rem' }}>✨ TCG</span>
             </h1>
-            <div className="brand-sub-row" style={{ justifyContent: 'center' }}>
-              <span className="brand-tcg-text">TCG COMPANION HUB</span>
+            <div className="brand-sub-row" style={{ justifyContent: 'center', marginTop: '10px' }}>
+              <span className="brand-tcg-text" style={{ fontSize: '1.5rem', letterSpacing: '4px' }}>TCG COMPANION HUB</span>
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '20px', flexDirection: 'column', width: '100%', maxWidth: '400px', zIndex: 10 }}>
-            <button className="btn-enter-game-cta" onClick={() => navigate('/chat')} style={{ width: '100%', padding: '20px' }}>
-              <span style={{ fontSize: '1.5rem', marginRight: '10px' }}>🤖</span>
+          <div style={{ display: 'flex', gap: '30px', flexDirection: 'column', width: '100%', maxWidth: '800px', zIndex: 10 }}>
+            <button className="btn-enter-game-cta" onClick={() => navigate('/chat')} style={{ width: '100%', padding: '30px 40px', borderRadius: '24px' }}>
+              <span style={{ fontSize: '3rem', marginRight: '20px' }}>🤖</span>
               <div style={{ textAlign: 'left' }}>
-                <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>RULES BOT</div>
-                <div style={{ fontSize: '0.8rem', opacity: 0.8, fontWeight: 'normal' }}>Chat Companion & Card Knowledge</div>
+                <div style={{ fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '8px' }}>RULES BOT</div>
+                <div style={{ fontSize: '1.2rem', opacity: 0.8, fontWeight: 'normal' }}>Chat Companion & Card Knowledge</div>
               </div>
             </button>
 
-            <button className="btn-enter-game-cta" onClick={() => navigate('/game')} style={{ width: '100%', padding: '20px', background: 'linear-gradient(90deg, #0d1a38 0%, #050a18 100%)', border: '1px solid var(--neon-cyan)', color: 'var(--neon-cyan)' }}>
-              <span style={{ fontSize: '1.5rem', marginRight: '10px' }}>⚔️</span>
+            <button className="btn-enter-game-cta" onClick={() => navigate('/game')} style={{ width: '100%', padding: '30px 40px', borderRadius: '24px', background: 'linear-gradient(90deg, #0d1a38 0%, #050a18 100%)', border: '2px solid var(--neon-cyan)', color: 'var(--neon-cyan)' }}>
+              <span style={{ fontSize: '3rem', marginRight: '20px' }}>⚔️</span>
               <div style={{ textAlign: 'left' }}>
-                <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>BATTLE ARENA</div>
-                <div style={{ fontSize: '0.8rem', opacity: 0.8, fontWeight: 'normal' }}>Interactive Tabletop Simulator</div>
+                <div style={{ fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '8px' }}>BATTLE ARENA</div>
+                <div style={{ fontSize: '1.2rem', opacity: 0.8, fontWeight: 'normal' }}>Interactive Tabletop Simulator</div>
               </div>
             </button>
           </div>
