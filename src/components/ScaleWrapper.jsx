@@ -31,7 +31,8 @@ export const ScaleWrapper = ({ children, targetWidth = 1920, targetHeight = 1080
         transformOrigin: 'center center',
         display: 'flex',
         flexDirection: 'column',
-        position: 'relative'
+        position: 'relative',
+        flexShrink: 0
       }}>
         {children}
       </div>

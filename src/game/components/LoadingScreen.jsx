@@ -49,7 +49,7 @@ export default function LoadingScreen({ onComplete }) {
   };
 
   return (
-    <div style={{ width: '1920px', height: '1080px' }}>
+    <div style={{ width: '100%', height: '100%' }}>
       
       <div className="webgl-screen loader-screen">
         {/* Background Neon Elements */}
