@@ -313,10 +313,10 @@ export default function MainMenu({
               >
                 Open Rules Bot...
               </div>
-              <button type="submit" className="bot-send-btn" title="Submit Question">
+              <button type="button" className="bot-send-btn" title="Open Bot">
                 <Send size={15} />
               </button>
-            </form>
+            </div>
           </div>
         </div>
 

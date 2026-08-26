@@ -200,8 +200,11 @@ export function Chat({ onBack, isOverlay = false }) {
     } catch(e) {}
   }, []);
 
+  const layoutWidth = isOverlay ? '100%' : '1080px';
+  const innerInputWidth = isOverlay ? '95%' : '1026px';
+
   const chatContent = (
-    <div className="webgl-screen menu-screen" style={{ padding: '0', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%', width: '100%', alignItems: 'stretch', borderRadius: isOverlay ? '0' : undefined }}>
+    <div className="webgl-screen menu-screen" style={{ padding: '0', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%', width: layoutWidth, alignItems: 'stretch', borderRadius: isOverlay ? '0' : undefined }}>
       <div className="menu-bg-elements" style={{ zIndex: 0 }}>
         <div className="neon-streak-red"></div>
         <div className="neon-streak-blue"></div>
@@ -209,7 +212,7 @@ export function Chat({ onBack, isOverlay = false }) {
         <div className="subtle-watermark-card right-wm"></div>
       </div>
 
-      <header className="top-nav" style={{ width: '100%', boxSizing: 'border-box' }}>
+      <header className="top-nav" style={{ width: layoutWidth, boxSizing: 'border-box' }}>
           <div className="nav-left" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
             <button className="burger-button" onClick={toggleSidebar} style={{ background: 'none', border: 'none', color: 'var(--neon-cyan)', fontSize: '1.5rem', cursor: 'pointer' }}>☰</button>
             <div className="nav-logo" style={{ color: 'var(--text-light)', fontFamily: 'Orbitron, sans-serif' }}>
@@ -221,7 +224,7 @@ export function Chat({ onBack, isOverlay = false }) {
           </div>
         </header>
 
-        <div className="chatgpt-layout" style={{ position: 'relative', zIndex: 10, background: 'transparent', width: '100%', alignItems: 'stretch' }}>
+        <div className="chatgpt-layout" style={{ position: 'relative', zIndex: 10, background: 'transparent', width: layoutWidth, alignItems: 'stretch' }}>
         
         <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '10px', marginBottom: '15px' }}>
@@ -254,7 +257,7 @@ export function Chat({ onBack, isOverlay = false }) {
           </div>
         </div>
 
-        <div className="canvas-wrapper chat-canvas-layout" style={{ width: '100%', alignItems: 'stretch', padding: '0' }}>
+        <div className="canvas-wrapper chat-canvas-layout" style={{ width: layoutWidth, alignItems: 'stretch', padding: '0' }}>
           <div className="chat-avatar-container">
             <Avatar isSpeaking={isAnimatingTalk} />
           </div>
@@ -273,8 +276,8 @@ export function Chat({ onBack, isOverlay = false }) {
         </div>
       </div>
 
-      <div className="bottom-input-area" style={{ width: '100%' }}>
-        <div className="input-container" style={{ width: '95%' }}>
+      <div className="bottom-input-area" style={{ width: layoutWidth }}>
+        <div className="input-container" style={{ width: innerInputWidth }}>
           <textarea 
             className="chat-textarea"
             rows={2}
