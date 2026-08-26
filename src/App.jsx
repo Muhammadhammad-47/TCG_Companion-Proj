@@ -203,7 +203,7 @@ export function Chat({ onBack }) {
   return (
     <div className="webgl-canvas-frame portrait-mode">
       <ScaleWrapper targetWidth={1080} targetHeight={1920}>
-      <div className="webgl-screen menu-screen" style={{ padding: '0', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%', width: '100%', alignItems: 'stretch' }}>
+      <div className="webgl-screen menu-screen" style={{ padding: '0', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '1920px', width: '1080px', alignItems: 'stretch' }}>
         <div className="menu-bg-elements" style={{ zIndex: 0 }}>
           <div className="neon-streak-red"></div>
           <div className="neon-streak-blue"></div>
@@ -211,7 +211,7 @@ export function Chat({ onBack }) {
           <div className="subtle-watermark-card right-wm"></div>
         </div>
 
-        <header className="top-nav" style={{ width: '100%', boxSizing: 'border-box' }}>
+        <header className="top-nav" style={{ width: '1080px', boxSizing: 'border-box' }}>
           <div className="nav-left" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
             <button className="burger-button" onClick={toggleSidebar} style={{ background: 'none', border: 'none', color: 'var(--neon-cyan)', fontSize: '1.5rem', cursor: 'pointer' }}>☰</button>
             <div className="nav-logo" style={{ color: 'var(--text-light)', fontFamily: 'Orbitron, sans-serif' }}>
@@ -223,7 +223,7 @@ export function Chat({ onBack }) {
           </div>
         </header>
 
-        <div className="chatgpt-layout" style={{ position: 'relative', zIndex: 10, background: 'transparent', width: '100%', alignItems: 'stretch' }}>
+        <div className="chatgpt-layout" style={{ position: 'relative', zIndex: 10, background: 'transparent', width: '1080px', alignItems: 'stretch' }}>
         
         <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '10px', marginBottom: '15px' }}>
@@ -256,7 +256,7 @@ export function Chat({ onBack }) {
           </div>
         </div>
 
-        <div className="canvas-wrapper chat-canvas-layout" style={{ width: '100%', alignItems: 'stretch', padding: '0' }}>
+        <div className="canvas-wrapper chat-canvas-layout" style={{ width: '1080px', alignItems: 'stretch', padding: '0' }}>
           <div className="chat-avatar-container">
             <Avatar isSpeaking={isAnimatingTalk} />
           </div>
@@ -275,8 +275,8 @@ export function Chat({ onBack }) {
         </div>
       </div>
 
-      <div className="bottom-input-area" style={{ width: '100%' }}>
-        <div className="input-container" style={{ width: '95%', maxWidth: 'none' }}>
+      <div className="bottom-input-area" style={{ width: '1080px' }}>
+        <div className="input-container" style={{ width: '1026px', maxWidth: 'none' }}>
           <textarea 
             className="chat-textarea"
             rows={2}
