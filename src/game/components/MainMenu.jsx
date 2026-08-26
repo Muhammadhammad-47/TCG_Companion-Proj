@@ -54,10 +54,10 @@ export default function MainMenu({
   };
 
   // Play sound on hover for buttons
-  const playHoverSound = () => soundFX.play('hover');
+  const playHoverSound = () => soundFX.playMenuHover();
   
   // Play sound on click for buttons
-  const playClickSound = () => soundFX.play('click');
+  const playClickSound = () => soundFX.playMenuSelect();
   
   // Custom click handler for Rules Bot
   const handleOpenRules = () => {
