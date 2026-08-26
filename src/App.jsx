@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Send, X } from 'lucide-react';
 import axios from 'axios';
 import './App.css';
 import './pages/GamePage.css';
 import { presetQuestions } from './questions.js';
 import GamePage from './pages/GamePage.jsx';
+import { ScaleWrapper } from './components/ScaleWrapper.jsx';
 
 const Avatar = ({ isSpeaking }) => {
   const [index, setIndex] = useState(0);
@@ -112,6 +114,7 @@ export function Chat({ onBack }) {
     
     return "I couldn't find a specific answer in the rulebook.";
   };
+  const streamTimer = useRef(null);
 
   const askQuestion = async (q) => {
     const query = q || question;
@@ -126,46 +129,34 @@ export function Chat({ onBack }) {
       setChatHistory(prev => [...prev, { q: query, a: ans }]);
       setStatus('Answer received.');
       
+      // Start text streaming & visual animation
+      setIsSpeaking(true);
+      setIsAnimatingTalk(true);
+      let i = 0;
+      
+      if (streamTimer.current) clearInterval(streamTimer.current);
+      
+      streamTimer.current = setInterval(() => {
+        i++;
+        setDisplayedAnswer(ans.substring(0, i));
+        
+        // Randomly pause animation to look natural
+        if (i % 15 === 0) {
+          setIsAnimatingTalk(false);
+          setTimeout(() => { if (isSpeaking) setIsAnimatingTalk(true); }, 200);
+        }
+        
+        if (i >= ans.length) {
+          clearInterval(streamTimer.current);
+          setIsSpeaking(false);
+          setIsAnimatingTalk(false);
+        }
+      }, 35); // 35ms per char
+
+      // Fire off TTS (Best effort, won't block visuals if it fails on mobile)
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(ans);
-        
-        utterance.onstart = () => {
-          setIsSpeaking(true);
-          setIsAnimatingTalk(true);
-        };
-        
-        utterance.onend = () => {
-          setIsSpeaking(false);
-          setIsAnimatingTalk(false);
-          setDisplayedAnswer(ans);
-        };
-        
-        utterance.onerror = () => {
-          setIsSpeaking(false);
-          setIsAnimatingTalk(false);
-        };
-        
-        let pauseTimeout;
-        utterance.onboundary = (event) => {
-          if (event.name === 'word') {
-            const nextSpace = ans.indexOf(' ', event.charIndex);
-            const endIndex = nextSpace !== -1 ? nextSpace : ans.length;
-            setDisplayedAnswer(ans.substring(0, endIndex));
-            
-            setIsAnimatingTalk(true);
-            
-            const charBefore = ans.substring(event.charIndex - 1, event.charIndex);
-            if (['.', ',', '!', '?', ';'].includes(charBefore)) {
-              setIsAnimatingTalk(false);
-              clearTimeout(pauseTimeout);
-              pauseTimeout = setTimeout(() => {
-                setIsAnimatingTalk(true);
-              }, 400);
-            }
-          }
-        };
-        
         window.speechSynthesis.speak(utterance);
       }
     } catch (err) {
@@ -178,6 +169,7 @@ export function Chat({ onBack }) {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
+    if (streamTimer.current) clearInterval(streamTimer.current);
     setIsSpeaking(false);
     setIsAnimatingTalk(false);
   };
@@ -203,14 +195,15 @@ export function Chat({ onBack }) {
   useEffect(() => {
     try {
       if (window.screen && screen.orientation && screen.orientation.lock) {
-        screen.orientation.lock('portrait').catch(e => console.log('Portrait lock failed', e));
+        screen.orientation.lock('portrait').catch(() => {});
       }
     } catch(e) {}
   }, []);
 
   return (
-    <div className="webgl-canvas-frame">
-      <div className="webgl-screen menu-screen" style={{ padding: '0', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <div className="webgl-canvas-frame portrait-mode">
+      <ScaleWrapper targetWidth={1080} targetHeight={1920}>
+      <div className="webgl-screen menu-screen" style={{ padding: '0', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%' }}>
         <div className="menu-bg-elements" style={{ zIndex: 0 }}>
           <div className="neon-streak-red"></div>
           <div className="neon-streak-blue"></div>
@@ -218,7 +211,7 @@ export function Chat({ onBack }) {
           <div className="subtle-watermark-card right-wm"></div>
         </div>
 
-        <header className="top-nav" style={{ position: 'relative', zIndex: 10, background: 'rgba(5, 10, 24, 0.8)', borderBottom: '1px solid rgba(0, 240, 255, 0.2)', padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <header className="top-nav">
           <div className="nav-left" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
             <button className="burger-button" onClick={toggleSidebar} style={{ background: 'none', border: 'none', color: 'var(--neon-cyan)', fontSize: '1.5rem', cursor: 'pointer' }}>☰</button>
             <div className="nav-logo" style={{ color: 'var(--text-light)', fontFamily: 'Orbitron, sans-serif' }}>
@@ -263,13 +256,13 @@ export function Chat({ onBack }) {
           </div>
         </div>
 
-        <div className="canvas-wrapper" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: '40px', padding: '0 50px' }}>
-          <div style={{ flex: '0 0 auto', display: 'flex', justifyContent: 'center', transition: 'all 0.5s ease' }}>
+        <div className="canvas-wrapper chat-canvas-layout">
+          <div className="chat-avatar-container">
             <Avatar isSpeaking={isAnimatingTalk} />
           </div>
 
           {answer && (
-            <div style={{ flex: '0 1 600px', animation: 'fadeIn 0.5s ease' }}>
+            <div className="chat-response-container">
               <div className="chat-bubble bot" style={{ margin: 0, position: 'relative' }}>
                 <div className="bot-avatar-icon">🤖</div>
                 <div>
@@ -286,7 +279,8 @@ export function Chat({ onBack }) {
         <div className="input-container">
           <textarea 
             className="chat-textarea"
-            rows={1}
+            rows={2}
+            style={{ minWidth: 0, resize: 'none' }}
             value={question} 
             onChange={(e) => setQuestion(e.target.value)} 
             onKeyDown={(e) => {
@@ -295,11 +289,11 @@ export function Chat({ onBack }) {
                 askQuestion();
               }
             }}
-            placeholder="Ask a rule question (e.g. What is Kiko's weakness?)"
+            placeholder="Ask a rule question..."
             disabled={isSpeaking}
           />
           {!isSpeaking ? (
-            <button className="send-button" onClick={() => askQuestion()}>➤</button>
+            <button className="send-button" onClick={() => askQuestion()}><Send size={18} /></button>
           ) : (
             <button 
               className="send-button" 
@@ -307,13 +301,14 @@ export function Chat({ onBack }) {
               style={{ background: '#ff3366', color: '#fff', boxShadow: '0 0 15px rgba(255, 51, 102, 0.6)' }}
               title="Stop Speaking"
             >
-              ⏹
+              <X size={18} />
             </button>
           )}
         </div>
         {status && <div className="status-indicator">{status}</div>}
       </div>
-    </div>
+      </div>
+      </ScaleWrapper>
     </div>
   );
 }
@@ -324,51 +319,51 @@ export function Hub() {
   useEffect(() => {
     try {
       if (screen.orientation && screen.orientation.lock) {
-        screen.orientation.lock('portrait').catch((e) => console.log('Orientation lock failed:', e));
+        screen.orientation.lock('portrait').catch(() => {});
       }
-    } catch (e) {
-      console.log('Orientation API not supported');
-    }
+    } catch (e) {}
   }, []);
 
   return (
-    <div className="webgl-canvas-frame">
-      <div className="webgl-screen menu-screen" style={{ justifyContent: 'center', alignItems: 'center' }}>
-        <div className="menu-bg-elements">
-          <div className="neon-streak-red"></div>
-          <div className="neon-streak-blue"></div>
-          <div className="subtle-watermark-card left-wm"></div>
-          <div className="subtle-watermark-card right-wm"></div>
-        </div>
-        
-        <div className="game-brand-block" style={{ marginBottom: '40px', textAlign: 'center' }}>
-          <div className="brand-pill-badge" style={{ margin: '0 auto 15px auto' }}>注意!</div>
-          <h1 className="game-main-title">
-            <span className="title-dance">注意 TCG</span>
-          </h1>
-          <div className="brand-sub-row" style={{ justifyContent: 'center' }}>
-            <span className="brand-tcg-text">TCG COMPANION HUB</span>
+    <div className="webgl-canvas-frame portrait-mode">
+      <ScaleWrapper targetWidth={1080} targetHeight={1920}>
+        <div className="webgl-screen menu-screen" style={{ justifyContent: 'center', alignItems: 'center' }}>
+          <div className="menu-bg-elements">
+            <div className="neon-streak-red"></div>
+            <div className="neon-streak-blue"></div>
+            <div className="subtle-watermark-card left-wm"></div>
+            <div className="subtle-watermark-card right-wm"></div>
+          </div>
+          
+          <div className="game-brand-block" style={{ marginBottom: '40px', textAlign: 'center' }}>
+            <div className="brand-pill-badge" style={{ margin: '0 auto 15px auto' }}>注意!</div>
+            <h1 className="game-main-title">
+              <span className="title-dance">注意 TCG</span>
+            </h1>
+            <div className="brand-sub-row" style={{ justifyContent: 'center' }}>
+              <span className="brand-tcg-text">TCG COMPANION HUB</span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '20px', flexDirection: 'column', width: '100%', maxWidth: '400px', zIndex: 10 }}>
+            <button className="btn-enter-game-cta" onClick={() => navigate('/chat')} style={{ width: '100%', padding: '20px' }}>
+              <span style={{ fontSize: '1.5rem', marginRight: '10px' }}>🤖</span>
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>RULES BOT</div>
+                <div style={{ fontSize: '0.8rem', opacity: 0.8, fontWeight: 'normal' }}>Chat Companion & Card Knowledge</div>
+              </div>
+            </button>
+
+            <button className="btn-enter-game-cta" onClick={() => navigate('/game')} style={{ width: '100%', padding: '20px', background: 'linear-gradient(90deg, #0d1a38 0%, #050a18 100%)', border: '1px solid var(--neon-cyan)', color: 'var(--neon-cyan)' }}>
+              <span style={{ fontSize: '1.5rem', marginRight: '10px' }}>⚔️</span>
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>BATTLE ARENA</div>
+                <div style={{ fontSize: '0.8rem', opacity: 0.8, fontWeight: 'normal' }}>Interactive Tabletop Simulator</div>
+              </div>
+            </button>
           </div>
         </div>
-        
-        <div style={{ display: 'flex', gap: '20px', flexDirection: 'column', width: '100%', maxWidth: '400px', zIndex: 10 }}>
-          <button className="btn-enter-game-cta" onClick={() => navigate('/chat')} style={{ width: '100%', padding: '20px' }}>
-            <span style={{ fontSize: '1.5rem', marginRight: '10px' }}>🤖</span>
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>RULES BOT</div>
-              <div style={{ fontSize: '0.8rem', opacity: 0.8, fontWeight: 'normal' }}>Chat Companion & Card Knowledge</div>
-            </div>
-          </button>
-
-          <button className="btn-enter-game-cta" onClick={() => navigate('/game')} style={{ width: '100%', padding: '20px', background: 'linear-gradient(90deg, #0d1a38 0%, #050a18 100%)', border: '1px solid var(--neon-cyan)', color: 'var(--neon-cyan)' }}>
-            <span style={{ fontSize: '1.5rem', marginRight: '10px' }}>⚔️</span>
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>BATTLE ARENA</div>
-              <div style={{ fontSize: '0.8rem', opacity: 0.8, fontWeight: 'normal' }}>Interactive Tabletop Simulator</div>
-            </div>
-          </button>
-        </div>
-      </div>
+      </ScaleWrapper>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Swords, Zap, Shield, Skull, Dices, Play } from 'lucide-react';
 import { soundFX } from '../utils/audio';
+import { ScaleWrapper } from '../../components/ScaleWrapper';
 
 const LOADING_STEPS = [
   { text: 'Loading Tactical Engine...', icon: <Zap size={16} color="var(--neon-cyan)" /> },
@@ -48,7 +49,8 @@ export default function LoadingScreen({ onComplete }) {
   };
 
   return (
-    <div className="webgl-canvas-frame">
+    <div className="webgl-canvas-frame landscape-mode">
+      <ScaleWrapper targetWidth={1920} targetHeight={1080}>
       <div className="webgl-screen loader-screen">
         {/* Background Neon Elements */}
         <div className="menu-bg-elements">
@@ -126,6 +128,7 @@ export default function LoadingScreen({ onComplete }) {
           <span className="footer-version-tag">v1.0.0</span>
         </footer>
       </div>
+      </ScaleWrapper>
     </div>
   );
 }

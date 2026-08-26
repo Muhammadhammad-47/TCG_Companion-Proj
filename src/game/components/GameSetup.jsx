@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { CHARACTERS, getAssetUrl } from '../data/characters';
 import { soundFX } from '../utils/audio';
+import { ScaleWrapper } from '../../components/ScaleWrapper';
 
 export default function GameSetup({ onStartGame, onBack }) {
   const charKeys = ['chynaman', 'bee', 'katsumi', 'kiko'];
@@ -100,7 +101,8 @@ export default function GameSetup({ onStartGame, onBack }) {
   const primaryProfileChar = CHARACTERS[players[0]?.characterId] || CHARACTERS.chynaman;
 
   return (
-    <div className="webgl-canvas-frame">
+    <div className="webgl-canvas-frame landscape-mode">
+      <ScaleWrapper targetWidth={1920} targetHeight={1080}>
       <div className="webgl-screen setup-screen">
         {/* Background diagonal neon streaks */}
         <div className="setup-bg-elements">
@@ -383,6 +385,7 @@ export default function GameSetup({ onStartGame, onBack }) {
           <div className="setup-version-label">v1.0.0</div>
         </div>
       </div>
+      </ScaleWrapper>
     </div>
   );
 }

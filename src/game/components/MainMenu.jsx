@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Swords, HelpCircle, UserPlus, Cast, Send, Crown, Sparkles, ChevronRight,
   RotateCw, Bot, Volume2, VolumeX, Maximize2, Minimize2
 } from 'lucide-react';
 import { CHARACTERS, getAssetUrl } from '../data/characters';
 import { soundFX } from '../utils/audio';
+import { ScaleWrapper } from '../../components/ScaleWrapper';
 
 export default function MainMenu({
   onStartCustomGame,
@@ -80,7 +81,8 @@ export default function MainMenu({
   };
 
   return (
-    <div className="webgl-canvas-frame">
+    <div className="webgl-canvas-frame landscape-mode">
+      <ScaleWrapper targetWidth={1920} targetHeight={1080}>
       <div className="webgl-screen menu-screen">
         {/* Background diagonal neon streaks & particle glow */}
         <div className="menu-bg-elements">
@@ -329,16 +331,13 @@ export default function MainMenu({
           </div>
         </div>
 
-        {/* Footer Credit */}
-        <footer className="menu-footer">
-          <div className="footer-built-with">
-            <span className="footer-sparkle">✦</span>
-            <span>Built for Duelists. Designed for Victory.</span>
-            <span className="footer-sparkle">✦</span>
-          </div>
-          <span className="footer-version-tag">v1.0.0</span>
-        </footer>
+        {/* Bottom Footer Info */}
+        <div className="menu-footer">
+          <p className="footer-tagline">✦ Built for Duelists. Designed for Victory. ✦</p>
+          <div className="version-info">v1.0.0</div>
+        </div>
       </div>
+      </ScaleWrapper>
     </div>
   );
 }
