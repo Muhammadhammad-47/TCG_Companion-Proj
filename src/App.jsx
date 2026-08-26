@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
-import { Send, X } from 'lucide-react';
+import { Send, X, Bot, Swords } from 'lucide-react';
 import axios from 'axios';
 import './App.css';
 import './pages/GamePage.css';
 import { presetQuestions } from './questions.js';
 import GamePage from './pages/GamePage.jsx';
 import { ScaleWrapper } from './components/ScaleWrapper.jsx';
+import { DynamicScaleWrapper } from './components/DynamicScaleWrapper.jsx';
 
 const Avatar = ({ isSpeaking }) => {
   const [index, setIndex] = useState(0);
@@ -221,8 +222,8 @@ export function Chat({ onBack, isOverlay = false }) {
     } catch(e) {}
   }, []);
 
-  const layoutWidth = isOverlay ? '100%' : '1080px';
-  const innerInputWidth = isOverlay ? '95%' : '1026px';
+  const layoutWidth = '100%';
+  const innerInputWidth = isOverlay ? '95%' : '90%';
 
   const chatContent = (
     <div className="webgl-screen menu-screen" style={{ padding: '0', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%', width: layoutWidth, alignItems: 'stretch', borderRadius: isOverlay ? '0' : undefined }}>
@@ -234,18 +235,18 @@ export function Chat({ onBack, isOverlay = false }) {
       </div>
 
       <header className="top-nav" style={{ width: layoutWidth, boxSizing: 'border-box' }}>
-          <div className="nav-left" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <button className="burger-button" onClick={toggleSidebar} style={{ background: 'none', border: 'none', color: 'var(--neon-cyan)', fontSize: '1.5rem', cursor: 'pointer' }}>☰</button>
-            <div className="nav-logo" style={{ color: 'var(--text-light)', fontFamily: 'Orbitron, sans-serif' }}>
-              <h2 style={{ margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}><span className="brand-pill-badge" style={{ fontSize: '0.6rem', padding: '2px 6px' }}>注意!</span> RULES BOT</h2>
-            </div>
+        <div className="nav-left" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <button className="burger-button" onClick={toggleSidebar} style={{ background: 'none', border: 'none', color: 'var(--neon-cyan)', fontSize: '1.5rem', cursor: 'pointer' }}>☰</button>
+          <div className="nav-logo" style={{ color: 'var(--text-light)', fontFamily: 'Orbitron, sans-serif' }}>
+            <h2 style={{ margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}><span className="brand-pill-badge" style={{ fontSize: '0.6rem', padding: '2px 6px' }}>注意!</span> RULES BOT</h2>
           </div>
-          <div className="nav-right" style={{ display: 'flex', alignItems: 'center' }}>
-            <button onClick={() => { stopSpeaking(); onBack(); }} style={{ background: 'none', border: 'none', color: 'var(--neon-pink)', fontSize: '2rem', cursor: 'pointer', padding: '0 15px', lineHeight: '1' }}>×</button>
-          </div>
-        </header>
+        </div>
+        <div className="nav-right" style={{ display: 'flex', alignItems: 'center' }}>
+          <button onClick={() => { stopSpeaking(); onBack(); }} style={{ background: 'none', border: 'none', color: 'var(--neon-pink)', fontSize: '2rem', cursor: 'pointer', padding: '0 15px', lineHeight: '1' }}>×</button>
+        </div>
+      </header>
 
-        <div className="chatgpt-layout" style={{ position: 'relative', zIndex: 10, background: 'transparent', width: layoutWidth, alignItems: 'stretch' }}>
+      <div className="chatgpt-layout" style={{ position: 'relative', zIndex: 10, background: 'transparent', width: layoutWidth, flexDirection: 'column', flex: 1, display: 'flex' }}>
         
         <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '10px', marginBottom: '15px' }}>
@@ -278,7 +279,7 @@ export function Chat({ onBack, isOverlay = false }) {
           </div>
         </div>
 
-        <div className="canvas-wrapper chat-canvas-layout" style={{ width: layoutWidth, alignItems: 'stretch', padding: '0' }}>
+        <div className="canvas-wrapper chat-canvas-layout" style={{ width: layoutWidth, flex: 1 }}>
           <div className="chat-avatar-container">
             <Avatar isSpeaking={isAnimatingTalk} />
           </div>
@@ -286,7 +287,7 @@ export function Chat({ onBack, isOverlay = false }) {
           {answer && (
             <div className="chat-response-container">
               <div className="chat-bubble bot" style={{ margin: 0, position: 'relative' }}>
-                <div className="bot-avatar-icon">🤖</div>
+                <div className="bot-avatar-icon"><Bot size={24} color="var(--neon-cyan)" /></div>
                 <div>
                   {isSpeaking ? displayedAnswer : answer}
                   {isSpeaking && <span className="cursor-blink">|</span>}
@@ -295,40 +296,48 @@ export function Chat({ onBack, isOverlay = false }) {
             </div>
           )}
         </div>
-      </div>
 
-      <div className="bottom-input-area" style={{ width: layoutWidth }}>
-        <div className="input-container" style={{ width: innerInputWidth }}>
-          <textarea 
-            className="chat-textarea"
-            rows={2}
-            style={{ minWidth: 0, resize: 'none' }}
-            value={question} 
-            onChange={(e) => setQuestion(e.target.value)} 
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey && !isSpeaking) {
-                e.preventDefault();
-                askQuestion();
-              }
-            }}
-            placeholder="Ask a rule question..."
-            disabled={isSpeaking}
-          />
-          {!isSpeaking ? (
-            <button className="send-button" onClick={() => askQuestion()}><Send size={18} /></button>
-          ) : (
-            <button 
-              className="send-button" 
-              onClick={stopSpeaking} 
-              style={{ background: '#ff3366', color: '#fff', boxShadow: '0 0 15px rgba(255, 51, 102, 0.6)' }}
-              title="Stop Speaking"
-            >
-              <X size={18} />
-            </button>
-          )}
+        <div className="bottom-input-area" style={{ width: layoutWidth, padding: '20px 40px 40px 40px', marginTop: 'auto' }}>
+          <div className="input-container" style={{ width: innerInputWidth, margin: '0 auto' }}>
+            <textarea 
+              className="chat-textarea"
+              rows={2}
+              style={{ minWidth: 0, resize: 'none' }}
+              value={question} 
+              onChange={(e) => setQuestion(e.target.value)} 
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey && !isSpeaking) {
+                  e.preventDefault();
+                  askQuestion();
+                }
+              }}
+              placeholder="Ask a rule question..."
+              disabled={isSpeaking}
+            />
+            {!isSpeaking ? (
+              <button className="send-button" onClick={() => askQuestion()}><Send size={18} /></button>
+            ) : (
+              <button 
+                className="send-button" 
+                onClick={stopSpeaking} 
+                style={{ background: '#ff3366', color: '#fff', boxShadow: '0 0 15px rgba(255, 51, 102, 0.6)', flexShrink: 0 }}
+                title="Stop Speaking"
+              >
+                ×
+              </button>
+            )}
+          </div>
+          {status && <div className="status-indicator" style={{ textAlign: 'center', fontSize: '0.8rem', opacity: 0.7, marginTop: '8px' }}>{status}</div>}
         </div>
-        {status && <div className="status-indicator">{status}</div>}
       </div>
+    </div>
+  );
+
+  const PortraitOverlay = () => (
+    <div className="force-portrait-overlay">
+      <div className="icon">📱</div>
+      <h2>Please Rotate Your Device</h2>
+      <p>This screen is best experienced in portrait mode.</p>
     </div>
   );
 
@@ -337,11 +346,14 @@ export function Chat({ onBack, isOverlay = false }) {
   }
 
   return (
-    <div className="webgl-canvas-frame portrait-mode">
-      <ScaleWrapper targetWidth={1080} targetHeight={1920}>
-        {chatContent}
-      </ScaleWrapper>
-    </div>
+    <>
+      <PortraitOverlay />
+      <div className="webgl-canvas-frame portrait-mode" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+        <DynamicScaleWrapper>
+          {chatContent}
+        </DynamicScaleWrapper>
+      </div>
+    </>
   );
 }
 
@@ -356,57 +368,68 @@ export function Hub() {
     } catch (e) {}
   }, []);
 
+  const PortraitOverlay = () => (
+    <div className="force-portrait-overlay">
+      <div className="icon">📱</div>
+      <h2>Please Rotate Your Device</h2>
+      <p>This screen is best experienced in portrait mode.</p>
+    </div>
+  );
+
   return (
-    <div className="webgl-canvas-frame portrait-mode">
-      <ScaleWrapper targetWidth={1080} targetHeight={1920}>
-        <div className="webgl-screen menu-screen" style={{ justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%', padding: '0 40px', boxSizing: 'border-box' }}>
-          <div className="menu-bg-elements" style={{ width: '100%', height: '100%' }}>
-            <div className="neon-streak-red"></div>
-            <div className="neon-streak-blue"></div>
-            <div className="subtle-watermark-card left-wm"></div>
-            <div className="subtle-watermark-card right-wm"></div>
-          </div>
-          <div className="game-brand-block" style={{ marginBottom: '60px', textAlign: 'center' }}>
-            <div className="brand-pill-badge" style={{ margin: '0 auto 15px auto', fontSize: '1.2rem', padding: '6px 16px' }}>注意!</div>
-            <h1 className="game-main-title">
-              <span className="title-dance" style={{ fontSize: '4.5rem' }}>✨ TCG</span>
-            </h1>
-            <div className="brand-sub-row" style={{ justifyContent: 'center', marginTop: '10px' }}>
-              <span className="brand-tcg-text" style={{ fontSize: '1.5rem', letterSpacing: '4px' }}>TCG COMPANION HUB</span>
+    <>
+      <PortraitOverlay />
+      <div className="webgl-canvas-frame portrait-mode" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+        <DynamicScaleWrapper>
+          <div className="webgl-screen menu-screen" style={{ justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%', padding: '0 40px', boxSizing: 'border-box' }}>
+            <div className="menu-bg-elements" style={{ width: '100%', height: '100%' }}>
+              <div className="neon-streak-red"></div>
+              <div className="neon-streak-blue"></div>
+              <div className="subtle-watermark-card left-wm"></div>
+              <div className="subtle-watermark-card right-wm"></div>
+            </div>
+            <div className="game-brand-block" style={{ marginBottom: '60px', textAlign: 'center' }}>
+              <div className="brand-pill-badge" style={{ margin: '0 auto 15px auto', fontSize: '1.2rem', padding: '6px 16px' }}>注意!</div>
+              <h1 className="game-main-title">
+                <span className="title-dance" style={{ fontSize: '4.5rem' }}>注意 TCG</span>
+              </h1>
+              <div className="brand-sub-row" style={{ justifyContent: 'center', marginTop: '10px' }}>
+                <span className="brand-tcg-text" style={{ fontSize: '1.5rem', letterSpacing: '4px' }}>TCG COMPANION HUB</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '30px', flexDirection: 'column', width: '100%', maxWidth: '800px', zIndex: 10 }}>
+              <button className="btn-enter-game-cta" onClick={() => navigate('/chat')} style={{ width: '100%', padding: '30px 40px', borderRadius: '24px' }}>
+                <div style={{ marginRight: '20px', display: 'flex', alignItems: 'center' }}><Bot size={48} /></div>
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '8px' }}>RULES BOT</div>
+                  <div style={{ fontSize: '1.2rem', opacity: 0.8, fontWeight: 'normal' }}>Chat Companion & Card Knowledge</div>
+                </div>
+              </button>
+
+              <button 
+                className="btn-enter-game-cta" 
+                onClick={() => {
+                  try {
+                    if (screen.orientation && screen.orientation.lock) {
+                      screen.orientation.lock('landscape').catch(() => {});
+                    }
+                  } catch(e) {}
+                  navigate('/game');
+                }} 
+                style={{ width: '100%', padding: '30px 40px', borderRadius: '24px', background: 'linear-gradient(90deg, #0d1a38 0%, #050a18 100%)', border: '2px solid var(--neon-cyan)', color: 'var(--neon-cyan)' }}
+              >
+                <div style={{ marginRight: '20px', display: 'flex', alignItems: 'center' }}><Swords size={48} /></div>
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '8px' }}>BATTLE ARENA</div>
+                  <div style={{ fontSize: '1.2rem', opacity: 0.8, fontWeight: 'normal' }}>Interactive Tabletop Simulator</div>
+                </div>
+              </button>
             </div>
           </div>
-
-          <div style={{ display: 'flex', gap: '30px', flexDirection: 'column', width: '100%', maxWidth: '800px', zIndex: 10 }}>
-            <button className="btn-enter-game-cta" onClick={() => navigate('/chat')} style={{ width: '100%', padding: '30px 40px', borderRadius: '24px' }}>
-              <span style={{ fontSize: '3rem', marginRight: '20px' }}>🤖</span>
-              <div style={{ textAlign: 'left' }}>
-                <div style={{ fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '8px' }}>RULES BOT</div>
-                <div style={{ fontSize: '1.2rem', opacity: 0.8, fontWeight: 'normal' }}>Chat Companion & Card Knowledge</div>
-              </div>
-            </button>
-
-            <button 
-              className="btn-enter-game-cta" 
-              onClick={() => {
-                try {
-                  if (screen.orientation && screen.orientation.lock) {
-                    screen.orientation.lock('landscape').catch(() => {});
-                  }
-                } catch(e) {}
-                navigate('/game');
-              }} 
-              style={{ width: '100%', padding: '30px 40px', borderRadius: '24px', background: 'linear-gradient(90deg, #0d1a38 0%, #050a18 100%)', border: '2px solid var(--neon-cyan)', color: 'var(--neon-cyan)' }}
-            >
-              <span style={{ fontSize: '3rem', marginRight: '20px' }}>⚔️</span>
-              <div style={{ textAlign: 'left' }}>
-                <div style={{ fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '8px' }}>BATTLE ARENA</div>
-                <div style={{ fontSize: '1.2rem', opacity: 0.8, fontWeight: 'normal' }}>Interactive Tabletop Simulator</div>
-              </div>
-            </button>
-          </div>
-        </div>
-      </ScaleWrapper>
-    </div>
+        </DynamicScaleWrapper>
+      </div>
+    </>
   );
 }
 

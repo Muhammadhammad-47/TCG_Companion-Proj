@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trophy, Settings, RotateCcw, X } from 'lucide-react';
 import LoadingScreen from '../game/components/LoadingScreen';
+
 import MainMenu from '../game/components/MainMenu';
 import GameSetup from '../game/components/GameSetup';
 import BattleArena from '../game/components/BattleArena';
@@ -186,7 +187,7 @@ export default function GamePage() {
     <div className={`app-shell ${tvMode ? 'tv-mode-active' : ''} ${isFullscreen ? 'fullscreen-mode-active' : ''}`}>
       <div className="rotate-device-overlay">
         <div className="rotate-content">
-          <RotateCcw size={48} className="rotate-icon" />
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="rotate-icon"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.21l5.6 5.6"/></svg>
           <h2>Please Rotate Your Device</h2>
           <p>This game is best experienced in landscape mode.</p>
         </div>
@@ -291,7 +292,7 @@ export default function GamePage() {
         </div>
       )}
     </div>
-    </ScaleWrapper>
+      </ScaleWrapper>
     </div>
     </div>
   );
