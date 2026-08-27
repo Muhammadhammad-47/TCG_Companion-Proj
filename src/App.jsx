@@ -82,45 +82,61 @@ export function Chat({ onBack, isOverlay = false }) {
       .catch(err => console.error("Could not load document.txt", err));
   }, []);
   const localSearch = (query) => {
-    const qLower = query.toLowerCase();
+    const qLower = query.toLowerCase().trim();
+    if (!qLower) return "Please ask a question about Attention TCG rules, combat dice, character moves, or Zombie mode!";
     
-    if (qLower.match(/^(hi|hello|hey|greetings)/)) return "Hello! I am your Attention TCG Companion. How can I help you with the rules today?";
-    if (qLower.match(/(how are you|how do you do)/)) return "I am functioning optimally and ready to assist you with the game rules!";
-    if (qLower.match(/(who are you|introduce yourself|what are you)/)) return "I am the official Attention TCG Companion bot. I know all the rules, character stats, dice combat, and Zombie mode to help you play smoothly!";
+    if (qLower.match(/^(hi|hello|hey|greetings|start)/)) return "Hello warrior! I am your Attention TCG Rules & Strategy Assistant. Ask me anything about character moves, 2-dice combat, Energy Tokens, Zombie mode, or card effects!";
+    if (qLower.match(/(how are you|how do you do)/)) return "I am running at peak combat readiness and ready to clarify any Attention TCG tournament rules or match rulings!";
+    if (qLower.match(/(who are you|introduce yourself|what are you)/)) return "I am the official Attention TCG Companion AI. I have the entire GDD rulebook, character stats, DP defense math, and Zombie mode mechanics in my memory to assist your duels!";
 
-    // 1. Direct Knowledge FAQ matching
+    // 1. Scored Knowledge Pack Matching
+    let bestKnowledge = null;
+    let highestScore = 0;
+
     for (const item of RULES_KNOWLEDGE) {
-      if (item.keywords.some(k => qLower.includes(k))) {
-        return `${item.shortAnswer}\n\n${item.details}`;
-      }
-    }
-    
-    if (!documentText) return "I am still loading the rulebook. Please wait a moment.";
-    
-    const paragraphs = documentText.split(/\n\s*\n/).filter(p => p.trim() !== '');
-    const words = qLower.split(' ').filter(w => w.length > 2);
-    
-    let bestMatch = "";
-    let maxScore = 0;
-    
-    for (let p of paragraphs) {
       let score = 0;
-      const pLower = p.toLowerCase();
-      for (let w of words) {
-        if (pLower.includes(w)) score++;
+      for (const k of item.keywords) {
+        if (qLower.includes(k)) {
+          score += k.length >= 5 ? 3 : 2;
+        }
       }
-      if (score > maxScore) {
-        maxScore = score;
-        bestMatch = p;
+      if (score > highestScore) {
+        highestScore = score;
+        bestKnowledge = item;
       }
     }
-    
-    if (maxScore > 0) {
-      const cleanMatch = bestMatch.trim().replace(/\n/g, ' ');
-      return cleanMatch;
+
+    if (bestKnowledge && highestScore >= 2) {
+      return `【 ${bestKnowledge.topic.toUpperCase()} 】\n${bestKnowledge.shortAnswer}\n\n${bestKnowledge.details}`;
     }
     
-    return "I couldn't find a specific answer in the rulebook. Try asking about 2-Dice defense, Zombie Mode, Stability Crystals, Kontrol, or Saigo No Blitz!";
+    // 2. Fallback rulebook document paragraph search
+    if (documentText) {
+      const paragraphs = documentText.split(/\n\s*\n/).filter(p => p.trim() !== '');
+      const queryTokens = qLower.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 2);
+      
+      let bestMatch = "";
+      let maxDocScore = 0;
+      
+      for (let p of paragraphs) {
+        let pScore = 0;
+        const pLower = p.toLowerCase();
+        for (let t of queryTokens) {
+          if (pLower.includes(t)) pScore += 1;
+        }
+        if (pScore > maxDocScore) {
+          maxDocScore = pScore;
+          bestMatch = p;
+        }
+      }
+      
+      if (maxDocScore >= 2) {
+        return `【 OFFICIAL RULEBOOK CITATION 】\n${bestMatch.trim().replace(/\n/g, ' ')}`;
+      }
+    }
+
+    // Default guidance
+    return "I couldn't find an exact rule match for that query. You can ask me about:\n• 2-Dice Defense (rolling 6+ on Gold dice)\n• Zombie Mode (transformation, 40 HP, +10 regen, revival tiers)\n• Energy Tokens & Claims (5 starting ET, +1 per turn)\n• Saigo No Blitz (200 AP, HP < 50 condition)\n• Mind Strength & Kontrol\n• Character Move Sets & Elemental Weaknesses";
   };
   const streamTimer = useRef(null);
 

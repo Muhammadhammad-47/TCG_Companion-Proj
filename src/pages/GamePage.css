@@ -3762,3 +3762,100 @@
   z-index: 1000;
 }
 
+/* ==========================================================================
+   Real 3D Dice Object & Physical Throw Animations
+   ========================================================================== */
+.real-3d-dice-scene {
+  filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.8));
+  user-select: none;
+}
+
+.dice-cube-object {
+  transform-style: preserve-3d;
+}
+
+.dice-cube-object.dice-tumble-active {
+  animation: dice-bounce-throw 0.9s ease-out;
+}
+
+@keyframes dice-bounce-throw {
+  0% {
+    transform: translateY(-50px) scale(1.3) rotateX(0deg) rotateY(0deg);
+  }
+  35% {
+    transform: translateY(12px) scale(0.9) rotateX(360deg) rotateY(180deg);
+  }
+  65% {
+    transform: translateY(-16px) scale(1.05) rotateX(720deg) rotateY(540deg);
+  }
+  85% {
+    transform: translateY(4px) scale(0.98) rotateX(900deg) rotateY(720deg);
+  }
+  100% {
+    transform: translateY(0px) scale(1);
+  }
+}
+
+/* Pips Grid Layouts for standard 6-sided dice */
+.pip-layout {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.pip-layout.pips-1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pip-layout.pips-2 {
+  display: flex;
+  justify-content: space-between;
+}
+.pip-layout.pips-2 span:nth-child(2) {
+  align-self: flex-end;
+}
+
+.pip-layout.pips-3 {
+  display: flex;
+  justify-content: space-between;
+}
+.pip-layout.pips-3 span:nth-child(2) {
+  align-self: center;
+}
+.pip-layout.pips-3 span:nth-child(3) {
+  align-self: flex-end;
+}
+
+.pip-layout.pips-4 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  align-items: center;
+  justify-items: center;
+}
+
+.pip-layout.pips-5 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  align-items: center;
+  justify-items: center;
+}
+.pip-layout.pips-5 span:nth-child(1) { grid-area: 1 / 1; }
+.pip-layout.pips-5 span:nth-child(2) { grid-area: 1 / 3; }
+.pip-layout.pips-5 span:nth-child(3) { grid-area: 2 / 2; }
+.pip-layout.pips-5 span:nth-child(4) { grid-area: 3 / 1; }
+.pip-layout.pips-5 span:nth-child(5) { grid-area: 3 / 3; }
+
+.pip-layout.pips-6 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  align-items: center;
+  justify-items: center;
+}
+
+
