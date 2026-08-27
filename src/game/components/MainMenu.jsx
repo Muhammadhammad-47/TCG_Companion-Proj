@@ -442,7 +442,7 @@ export default function MainMenu({
 
         {/* Bottom Footer Info */}
         <div className="menu-footer">
-          <p className="footer-tagline">✦ Built for Duelists. Designed for Victory. ✦</p>
+
           <div className="version-info">v1.0.0</div>
         </div>
       </div>

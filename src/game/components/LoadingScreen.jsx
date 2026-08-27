@@ -124,7 +124,7 @@ export default function LoadingScreen({ onComplete }) {
         </div>
 
         <footer className="menu-footer">
-          <span className="footer-sparkle">✦ Built for Duelists. Designed for Victory. ✦</span>
+
           <span className="footer-version-tag">v1.0.0</span>
         </footer>
       </div>
