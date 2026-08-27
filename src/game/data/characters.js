@@ -1,4 +1,4 @@
-// TCG Card Game — character database & statistics
+// TCG Card Game — Official Character Database & Statistics from GDD
 
 export const getAssetUrl = (path) => {
   if (!path) return '';
@@ -17,27 +17,62 @@ export const CHARACTERS = {
     avatar: '🔥🥋',
     themeColor: '#ff3366',
     bgGradient: 'linear-gradient(135deg, #431418 0%, #1f080a 100%)',
-    defaultLP: 8000,
-    atk: 2800,
-    def: 2400,
-    signatureMove: 'Shadow Strike',
-    signatureDesc: 'Deal 500 damage to target enemy and apply Poison.',
-    quote: 'You have to believe in your own strength.',
-    deckName: "Chynaman's Deck",
-    deckFormat: 'Standard Format',
-    status: { poison: 0, antidote: 1, atkBoost: 500, shield: 0, stun: 0 },
-    stats: { damageDealt: 8500, damageTaken: 2150, cardsPlayed: 23, effectsTriggered: 14, score: 12450 },
+    baseHP: 100,
+    maxHP: 200,
     mindStrength: 4,
-    defaultDP: 15,
+    defaultDP: 15, // Innate defense reduction if roll >= 6
     retreatTarget: 4,
     weakness: { type: 'Magic / Poison', bonusAP: 10, icon: '🧪' },
-    traits: ['High DP Defender', 'Fire Martial Arts'],
+    traits: ['High DP Defender (-15)', 'Fire Martial Arts'],
+    signatureMove: 'Fire Tiger Soul Punch',
+    signatureDesc: '25 AP Fire martial arts technique.',
+    quote: 'You have to believe in your own strength.',
     moves: [
-      { id: 'c_shadow', name: 'Shadow Strike', type: 'flat', costET: 1, baseAP: 500, desc: 'Deal 500 damage to target enemy and apply Poison.' },
-      { id: 'c_punch', name: 'Fire of Fury', type: 'dice_mult', costET: 1, baseAP: 25, desc: 'Fire combat technique' },
-      { id: 'c_mic', name: 'Golden Mic Lightning', type: 'flat', costET: 2, baseAP: 40, desc: 'Lightning strike', isSuper: true },
-      { id: 'c_wild', name: 'Wild Card Soul Combo', type: 'flat', costET: 3, baseAP: 55, desc: 'Flexible attack combo' },
-      { id: 'c_blitz', name: 'Saigo No Blitz', type: 'blitz', costET: 5, baseAP: 200, desc: 'HP < 50 · costs half your HP' }
+      {
+        id: 'c_punch',
+        name: 'Fire of Fury',
+        type: 'dice_mult',
+        multiplier: 5,
+        element: 'Fire',
+        costET: 1,
+        desc: 'Roll 1 Die × 5 AP Fire combat strikes.'
+      },
+      {
+        id: 'c_tiger',
+        name: 'Fire Tiger Soul Punch',
+        type: 'flat',
+        baseAP: 25,
+        element: 'Fire',
+        costET: 1,
+        desc: 'Direct blazing strike dealing 25 AP.'
+      },
+      {
+        id: 'c_mic',
+        name: 'Golden Mic Lightning',
+        type: 'flat',
+        baseAP: 40,
+        element: 'Lightning',
+        costET: 2,
+        isSuper: true,
+        desc: 'Super Lightning strike dealing 40 AP.'
+      },
+      {
+        id: 'c_wild',
+        name: 'Wild Card Soul Combo',
+        type: 'flat',
+        baseAP: 55,
+        element: 'Fire',
+        costET: 3,
+        desc: 'Flexible all-out technique dealing 55 AP.'
+      },
+      {
+        id: 'c_blitz',
+        name: 'Saigo No Blitz',
+        type: 'blitz',
+        baseAP: 200,
+        costET: 5,
+        desc: 'Requires HP < 50. Sacrifices 50% HP for 200 AP devastation.'
+      }
     ]
   },
   bee: {
@@ -48,27 +83,63 @@ export const CHARACTERS = {
     avatar: '🐝👑',
     themeColor: '#00f0ff',
     bgGradient: 'linear-gradient(135deg, #093436 0%, #031517 100%)',
-    defaultLP: 7200,
-    atk: 2600,
-    def: 2500,
-    signatureMove: 'Azure Guard',
-    signatureDesc: 'Grant +300 Shield and counter next incoming assault.',
-    quote: 'The hive always protects its own.',
-    deckName: "Bee's Hive Guard",
-    deckFormat: 'Standard Format',
-    status: { poison: 0, antidote: 0, atkBoost: 0, shield: 300, stun: 0 },
-    stats: { damageDealt: 5400, damageTaken: 1800, cardsPlayed: 19, effectsTriggered: 11, score: 7200 },
-    mindStrength: 5,
+    baseHP: 100,
+    maxHP: 200,
+    mindStrength: 5, // Highest mind resistance
     defaultDP: 10,
     retreatTarget: 3,
     weakness: { type: 'Magic / Poison', bonusAP: 10, icon: '🧪' },
-    traits: ['High Mind Strength (5)', 'Stun & Shield Specialist'],
+    traits: ['High Mind Strength (5)', 'Stun & Drone Specialist', 'Fast Retreat (3+)'],
+    signatureMove: 'Paparazzi Stun',
+    signatureDesc: '25 AP strike that forces target to skip their next turn.',
+    quote: 'The hive always protects its own.',
     moves: [
-      { id: 'b_guard', name: 'Azure Guard', type: 'flat', costET: 1, baseAP: 300, desc: 'Grant +300 Shield and counter next incoming assault.' },
-      { id: 'b_sting', name: 'Sting Slap', type: 'dice_mult', costET: 1, baseAP: 3, desc: 'Rapid piercing sting' },
-      { id: 'b_stun', name: 'Paparazzi Stun', type: 'flat', costET: 2, baseAP: 25, stun: true, desc: 'Stun target', isSuper: true },
-      { id: 'b_bomb', name: 'Bee Drone Bomb', type: 'flat', costET: 2, baseAP: 40, desc: 'Explosive swarm blast', isSuper: true },
-      { id: 'b_blitz', name: 'Saigo No Blitz', type: 'blitz', costET: 5, baseAP: 200, desc: 'HP < 50 · costs half your HP' }
+      {
+        id: 'b_sting',
+        name: 'Sting Slap',
+        type: 'dice_mult',
+        multiplier: 3,
+        element: 'Physical',
+        costET: 1,
+        desc: 'Roll 1 Die × 3 AP rapid piercing stings.'
+      },
+      {
+        id: 'b_stun',
+        name: 'Paparazzi Stun',
+        type: 'flat',
+        baseAP: 25,
+        element: 'Lightning',
+        stun: true,
+        costET: 2,
+        isSuper: true,
+        desc: '25 AP damage and target loses their next turn.'
+      },
+      {
+        id: 'b_bomb',
+        name: 'Bee Drone Bomb',
+        type: 'flat',
+        baseAP: 40,
+        element: 'Physical',
+        costET: 2,
+        isSuper: true,
+        desc: 'Explosive swarm blast dealing 40 AP.'
+      },
+      {
+        id: 'b_guard',
+        name: 'Azure Guard',
+        type: 'shield',
+        baseShield: 30,
+        costET: 1,
+        desc: 'Deploy high-tech hex barrier (+30 Shield).'
+      },
+      {
+        id: 'b_blitz',
+        name: 'Saigo No Blitz',
+        type: 'blitz',
+        baseAP: 200,
+        costET: 5,
+        desc: 'Requires HP < 50. Sacrifices 50% HP for 200 AP devastation.'
+      }
     ]
   },
   katsumi: {
@@ -79,27 +150,62 @@ export const CHARACTERS = {
     avatar: '🦊🗡️',
     themeColor: '#a855f7',
     bgGradient: 'linear-gradient(135deg, #2b134d 0%, #0d0617 100%)',
-    defaultLP: 6500,
-    atk: 2700,
-    def: 2200,
-    signatureMove: 'Blazing Vanguard',
-    signatureDesc: 'Boost attack by +500 and strike with fatal precision.',
-    quote: 'Fate bends to the swift and relentless.',
-    deckName: "Katsumi's Eclipse",
-    deckFormat: 'Standard Format',
-    status: { poison: 0, antidote: 0, atkBoost: 500, shield: 0, stun: 0 },
-    stats: { damageDealt: 6100, damageTaken: 2900, cardsPlayed: 21, effectsTriggered: 9, score: 6500 },
+    baseHP: 100,
+    maxHP: 200,
     mindStrength: 3,
     defaultDP: 15,
-    retreatTarget: 1,
+    retreatTarget: 1, // Ultra fast retreat (roll 1+)
     weakness: { type: 'Poison', bonusAP: 15, icon: '☠️' },
-    traits: ['Ultra Fast Retreat (1+)', 'High DP (-15)'],
+    traits: ['Ultra Fast Retreat (1+)', 'High DP Defender (-15)', 'Lethal Criticals'],
+    signatureMove: 'Claw of Fate',
+    signatureDesc: '45 AP fatal precision slash.',
+    quote: 'Fate bends to the swift and relentless.',
     moves: [
-      { id: 'k_vanguard', name: 'Blazing Vanguard', type: 'flat', costET: 1, baseAP: 500, desc: 'Boost attack by +500 and strike with fatal precision.' },
-      { id: 'k_paws', name: 'Savage Paws', type: 'dice_mult', costET: 1, baseAP: 5, desc: 'Rapid claws' },
-      { id: 'k_fate', name: 'Claw of Fate', type: 'flat', costET: 2, baseAP: 45, desc: 'Critical strike', isSuper: true },
-      { id: 'k_wild', name: 'Wild Card Eclipse', type: 'flat', costET: 3, baseAP: 60, desc: 'Void shadow strike' },
-      { id: 'k_blitz', name: 'Saigo No Blitz', type: 'blitz', costET: 5, baseAP: 200, desc: 'HP < 50 · costs half your HP' }
+      {
+        id: 'k_paws',
+        name: 'Savage Paws',
+        type: 'dice_mult',
+        multiplier: 5,
+        element: 'Physical',
+        costET: 1,
+        desc: 'Roll 1 Die × 5 AP razor claws.'
+      },
+      {
+        id: 'k_purr',
+        name: 'Shadow Purr',
+        type: 'flat',
+        baseAP: 30,
+        element: 'Shadow',
+        costET: 1,
+        desc: 'Stealth shadow strike dealing 30 AP.'
+      },
+      {
+        id: 'k_fate',
+        name: 'Claw of Fate',
+        type: 'flat',
+        baseAP: 45,
+        element: 'Physical',
+        costET: 2,
+        isSuper: true,
+        desc: 'Critical fatal slash dealing 45 AP.'
+      },
+      {
+        id: 'k_wild',
+        name: 'Wild Card Eclipse',
+        type: 'flat',
+        baseAP: 60,
+        element: 'Shadow',
+        costET: 3,
+        desc: 'Void shadow strike dealing 60 AP.'
+      },
+      {
+        id: 'k_blitz',
+        name: 'Saigo No Blitz',
+        type: 'blitz',
+        baseAP: 200,
+        costET: 5,
+        desc: 'Requires HP < 50. Sacrifices 50% HP for 200 AP devastation.'
+      }
     ]
   },
   kiko: {
@@ -110,28 +216,63 @@ export const CHARACTERS = {
     avatar: '🐵🎧',
     themeColor: '#39ff14',
     bgGradient: 'linear-gradient(135deg, #173d09 0%, #061403 100%)',
-    defaultLP: 5800,
-    atk: 2400,
-    def: 2600,
-    signatureMove: 'Astral Surge',
-    signatureDesc: 'Summon illusionary clones and apply 2 Poison stacks.',
-    quote: 'Tricks and tunes always conquer brute force!',
-    deckName: "Kiko's Groove Deck",
-    deckFormat: 'Standard Format',
-    status: { poison: 2, antidote: 0, atkBoost: 0, shield: 0, stun: 0 },
-    stats: { damageDealt: 4200, damageTaken: 3400, cardsPlayed: 17, effectsTriggered: 15, score: 5800 },
+    baseHP: 100,
+    maxHP: 200,
     mindStrength: 3,
-    mindDefBonus: 1,
+    mindDefBonus: 1, // Magical creature +1 to mind defense
     defaultDP: 10,
     retreatTarget: 4,
     weakness: { type: 'Fire', bonusAP: 10, icon: '🔥' },
-    traits: ['Magical Mind Shield (+1)', 'Multiplicity Clones'],
+    traits: ['Magical Mind Shield (+1)', 'Multiplicity Clones', 'Sonic Beats'],
+    signatureMove: 'Soul Blast 3000',
+    signatureDesc: '40 AP mystical sonic blast.',
+    quote: 'Tricks and tunes always conquer brute force!',
     moves: [
-      { id: 'm_surge', name: 'Astral Surge', type: 'flat', costET: 1, baseAP: 400, desc: 'Summon illusionary clones and apply 2 Poison stacks.' },
-      { id: 'm_whip', name: 'Tail Whip', type: 'dice_mult', costET: 1, baseAP: 4, desc: 'Tail sweep' },
-      { id: 'm_soul', name: 'Soul Blast 3000', type: 'flat', costET: 2, baseAP: 40, desc: 'Mystic beat pulse', isSuper: true },
-      { id: 'm_wild', name: 'Wild Card Astral Surge', type: 'flat', costET: 3, baseAP: 50, desc: 'Magic illusion' },
-      { id: 'm_blitz', name: 'Saigo No Blitz', type: 'blitz', costET: 5, baseAP: 200, desc: 'HP < 50 · costs half your HP' }
+      {
+        id: 'm_whip',
+        name: 'Tail Whip',
+        type: 'dice_mult',
+        multiplier: 4,
+        element: 'Physical',
+        costET: 1,
+        desc: 'Roll 1 Die × 4 AP sweeping tail strikes.'
+      },
+      {
+        id: 'm_multi',
+        name: 'Multiplicity',
+        type: 'flat',
+        baseAP: 30,
+        element: 'Magic',
+        costET: 1,
+        desc: 'Summon illusionary clones dealing 30 AP.'
+      },
+      {
+        id: 'm_soul',
+        name: 'Soul Blast 3000',
+        type: 'flat',
+        baseAP: 40,
+        element: 'Magic',
+        costET: 2,
+        isSuper: true,
+        desc: 'Mystic sonic beat pulse dealing 40 AP.'
+      },
+      {
+        id: 'm_wild',
+        name: 'Wild Card Astral Surge',
+        type: 'flat',
+        baseAP: 50,
+        element: 'Magic',
+        costET: 3,
+        desc: 'Magic illusion onslaught dealing 50 AP.'
+      },
+      {
+        id: 'm_blitz',
+        name: 'Saigo No Blitz',
+        type: 'blitz',
+        baseAP: 200,
+        costET: 5,
+        desc: 'Requires HP < 50. Sacrifices 50% HP for 200 AP devastation.'
+      }
     ]
   },
   shroomy: {
@@ -141,19 +282,55 @@ export const CHARACTERS = {
     image: 'characters/kiko.png',
     avatar: '🍄💥',
     themeColor: '#39ff14',
-    bgGradient: 'linear-gradient(135deg, #173d09 0%, #061403 100%)',
-    defaultLP: 5000,
-    atk: 2200,
-    def: 2100,
+    bgGradient: 'linear-gradient(135deg, #173d09 0%, #061402 100%)',
+    baseHP: 100,
+    maxHP: 200,
     mindStrength: 2,
-    mindDefBonus: 1,
+    mindDefBonus: 1, // Magical creature +1
     defaultDP: 10,
-    retreatTarget: 1,
+    retreatTarget: 1, // Ultra fast escape (roll 1+)
     weakness: { type: 'Fire', bonusAP: 10, icon: '🔥' },
-    traits: ['Fast Retreat (1+)', 'High Damage Spores'],
+    traits: ['Ultra Fast Retreat (1+)', 'Magical Mind Shield (+1)', 'Explosive Spores'],
+    signatureMove: 'Soul Snatcher',
+    signatureDesc: '50 AP dense fungal extraction.',
+    quote: 'Small fungi carry the biggest explosions!',
     moves: [
-      { id: 's_pop', name: 'Poppers per Pop', type: 'dice_mult', costET: 1, baseAP: 4, desc: '' },
-      { id: 's_bomba', name: 'Ms Bomba', type: 'flat', costET: 2, baseAP: 40, desc: 'Explosive fungi', isSuper: true }
+      {
+        id: 's_pop',
+        name: 'Poppers per Pop',
+        type: 'dice_mult',
+        multiplier: 4,
+        element: 'Nature',
+        costET: 1,
+        desc: 'Roll 1 Die × 4 AP rapid popping spores.'
+      },
+      {
+        id: 's_bomba',
+        name: 'Ms Bomba',
+        type: 'flat',
+        baseAP: 40,
+        element: 'Nature',
+        costET: 2,
+        isSuper: true,
+        desc: 'Massive explosive fungal burst dealing 40 AP.'
+      },
+      {
+        id: 's_snatcher',
+        name: 'Soul Snatcher',
+        type: 'flat',
+        baseAP: 50,
+        element: 'Magic',
+        costET: 3,
+        desc: 'High potency mystic spore extraction dealing 50 AP.'
+      },
+      {
+        id: 's_blitz',
+        name: 'Saigo No Blitz',
+        type: 'blitz',
+        baseAP: 200,
+        costET: 5,
+        desc: 'Requires HP < 50. Sacrifices 50% HP for 200 AP devastation.'
+      }
     ]
   },
   poochi: {
@@ -164,18 +341,55 @@ export const CHARACTERS = {
     avatar: '🐶💖',
     themeColor: '#ff1a9d',
     bgGradient: 'linear-gradient(135deg, #4a0d2e 0%, #17040e 100%)',
-    defaultLP: 5200,
-    atk: 2300,
-    def: 2500,
+    baseHP: 100,
+    maxHP: 200,
     mindStrength: 2,
-    mindDefBonus: 1,
+    mindDefBonus: 1, // Magical creature +1
     defaultDP: 10,
     retreatTarget: 4,
     weakness: { type: 'Magic / Poison', bonusAP: 10, icon: '🧪' },
-    traits: ['Magical Mind Shield (+1)', 'Lasso of Truth Reveal'],
+    traits: ['Magical Mind Shield (+1)', 'Lasso of Truth Hand Reveal', 'Radiant Glitter'],
+    signatureMove: 'Glitter Burst',
+    signatureDesc: '35 AP blinding sparkle assault.',
+    quote: 'Sparkle bright, banish the dark!',
     moves: [
-      { id: 'p_sparks', name: 'Glitter Sparks', type: 'dice_mult', costET: 1, baseAP: 4, desc: '' },
-      { id: 'p_burst', name: 'Glitter Burst', type: 'flat', costET: 2, baseAP: 35, desc: 'Radiant burst', isSuper: true }
+      {
+        id: 'p_sparks',
+        name: 'Glitter Sparks',
+        type: 'dice_mult',
+        multiplier: 4,
+        element: 'Magic',
+        costET: 1,
+        desc: 'Roll 1 Die × 4 AP shimmering sparks.'
+      },
+      {
+        id: 'p_lasso',
+        name: 'Lasso of Truth',
+        type: 'flat',
+        baseAP: 25,
+        revealCards: true,
+        element: 'Magic',
+        costET: 1,
+        desc: '25 AP strike and target must reveal their Action Cards.'
+      },
+      {
+        id: 'p_burst',
+        name: 'Glitter Burst',
+        type: 'flat',
+        baseAP: 35,
+        element: 'Magic',
+        costET: 2,
+        isSuper: true,
+        desc: 'Radiant glitter super burst dealing 35 AP.'
+      },
+      {
+        id: 'p_blitz',
+        name: 'Saigo No Blitz',
+        type: 'blitz',
+        baseAP: 200,
+        costET: 5,
+        desc: 'Requires HP < 50. Sacrifices 50% HP for 200 AP devastation.'
+      }
     ]
   },
   queeny: {
@@ -186,22 +400,59 @@ export const CHARACTERS = {
     avatar: '👑🔮',
     themeColor: '#ff9d2d',
     bgGradient: 'linear-gradient(135deg, #452107 0%, #170a02 100%)',
-    defaultLP: 6000,
-    atk: 2500,
-    def: 2300,
+    baseHP: 100,
+    maxHP: 200,
     mindStrength: 2,
-    mindAtkBonus: 2,
+    mindAtkBonus: 2, // Psychic master: +2 to Kontrol attack roll!
     defaultDP: 10,
     retreatTarget: 4,
     weakness: { type: 'Fire / Glitch', bonusAP: 10, icon: '🔥' },
     traits: ['Psychic Kontrol Specialist (+2 Roll)', 'Siren Wave Attacks'],
+    signatureMove: 'Rainbow Fan Blast',
+    signatureDesc: '40 AP prism storm assault.',
+    quote: 'Your thoughts already belong to the Empress.',
     moves: [
-      { id: 'q_whip', name: 'Hair Whip', type: 'dice_mult', costET: 1, baseAP: 4, desc: '' },
-      { id: 'q_fan', name: 'Rainbow Fan Blast', type: 'flat', costET: 2, baseAP: 40, desc: 'Prism storm', isSuper: true }
+      {
+        id: 'q_whip',
+        name: 'Hair Whip',
+        type: 'dice_mult',
+        multiplier: 4,
+        element: 'Physical',
+        costET: 1,
+        desc: 'Roll 1 Die × 4 AP psychic hair slashes.'
+      },
+      {
+        id: 'q_siren',
+        name: 'Siren Blast',
+        type: 'flat',
+        baseAP: 30,
+        element: 'Magic',
+        costET: 1,
+        desc: 'Sonic psychic screech dealing 30 AP.'
+      },
+      {
+        id: 'q_fan',
+        name: 'Rainbow Fan Blast',
+        type: 'flat',
+        baseAP: 40,
+        element: 'Magic',
+        costET: 2,
+        isSuper: true,
+        desc: 'Prism energy fan storm dealing 40 AP.'
+      },
+      {
+        id: 'q_blitz',
+        name: 'Saigo No Blitz',
+        type: 'blitz',
+        baseAP: 200,
+        costET: 5,
+        desc: 'Requires HP < 50. Sacrifices 50% HP for 200 AP devastation.'
+      }
     ]
   }
 };
 
+// Official Zombie Profile strictly matching GDD
 export const ZOMBIE_PROFILE = {
   name: 'ZOMBIE INFECTED',
   title: 'Undead Plagued Husk',
@@ -209,19 +460,27 @@ export const ZOMBIE_PROFILE = {
   themeColor: '#39ff14',
   bgGradient: 'linear-gradient(135deg, #133806 0%, #061402 100%)',
   baseHP: 40,
-  turnRegen: 10,
-  mindStrength: 0,
-  retreatTarget: 5,
-  defaultDP: 0,
-  weakness: { type: 'Fire & Lightning', bonusAP: 10, desc: 'Full damage, -1 poison', icon: '⚡🔥' },
+  maxHP: 200,
+  turnRegen: 10, // +10 HP at start of each round
+  mindStrength: 0, // Mindless: Immune to Kontrol
+  retreatTarget: 5, // Extremely slow
+  defaultDP: 0, // No innate character defense
+  weakness: {
+    type: 'Fire & Lightning',
+    bonusAP: 10,
+    desc: 'Fire & Lightning attacks deal normal damage AND strip 1 Poison card!',
+    icon: '⚡🔥'
+  },
   moves: [
     {
       id: 'z_venom',
       name: 'Venom Strike',
       type: 'zombie_infect',
+      element: 'Poison',
       costET: 1,
       baseAP: 15,
-      desc: '+1 poison'
+      appliesPoison: true,
+      desc: 'Deals 15 AP damage. On a successful hit, infects target with +1 Poison card!'
     }
   ]
 };

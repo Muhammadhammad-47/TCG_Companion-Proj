@@ -97,41 +97,180 @@ export default function MainMenu({
             </div>
           </div>
 
-          {/* Center Column: Active Player Spotlight Card */}
-          <div className="menu-center-col">
-            <div className="active-player-wrapper">
-              <span className="active-player-kicker">ACTIVE PLAYER</span>
+          {/* Center Column: Full-Art Active Player Spotlight Card */}
+          <div className="menu-center-col" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <div className="active-player-wrapper" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+              <span className="active-player-kicker" style={{ fontSize: '0.72rem', letterSpacing: '2px', color: 'var(--neon-cyan)', fontWeight: 'bold' }}>
+                WARRIOR SPOTLIGHT
+              </span>
 
-              <div className="active-player-card">
-                <div className="active-crown-badge">
-                  <Crown size={20} color="var(--neon-crimson)" fill="var(--neon-crimson)" />
-                </div>
-
-                <div className="active-character-portrait-frame">
+              {/* Full-Art Combat Card matching the Match Screen */}
+              <div
+                className="hero-combat-card"
+                style={{
+                  position: 'relative',
+                  width: '290px',
+                  height: '380px',
+                  borderRadius: '22px',
+                  overflow: 'hidden',
+                  isolation: 'isolate',
+                  WebkitMaskImage: '-webkit-radial-gradient(white, black)',
+                  border: `2.5px solid ${activeChar.themeColor || 'var(--neon-crimson)'}`,
+                  boxShadow: `0 20px 50px rgba(0,0,0,0.9), 0 0 35px ${activeChar.themeColor ? activeChar.themeColor + '55' : 'rgba(255, 51, 102, 0.4)'}`,
+                  background: 'linear-gradient(180deg, #0f2248 0%, #050b18 100%)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between'
+                }}
+              >
+                {/* Full-Card Background Artwork */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    zIndex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                    borderRadius: '20px',
+                    background: activeChar.bgGradient || 'none'
+                  }}
+                >
                   <img
                     src={getAssetUrl(activeChar.image)}
                     alt={activeChar.name}
-                    className="active-character-img"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      objectPosition: 'center 15%',
+                      borderRadius: '20px',
+                      filter: 'drop-shadow(0 0 20px rgba(0,0,0,0.8))'
                     }}
                   />
-                  <div className="portrait-fallback-avatar">{activeChar.avatar}</div>
-                  <div className="portrait-inner-glow"></div>
+
+                  {/* Dark gradient scrim at the bottom for legibility */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      borderRadius: '20px',
+                      background: 'linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.05) 40%, rgba(3,7,18,0.92) 75%, rgba(3,7,18,1) 100%)'
+                    }}
+                  />
                 </div>
 
-                <div className="active-player-meta">
-                  <h2 className="active-player-name">{activeChar.name}</h2>
-                  <div className="active-lp-row">
-                    <span className="active-lp-label">LP</span>
-                    <span className="active-lp-value">{activeChar.defaultLP || 8000}</span>
+                {/* Top Card Header */}
+                <div
+                  style={{
+                    position: 'relative',
+                    zIndex: 2,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '10px 14px',
+                    background: 'rgba(0, 0, 0, 0.6)',
+                    backdropFilter: 'blur(6px)',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
+                    borderTopLeftRadius: '20px',
+                    borderTopRightRadius: '20px'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ background: 'var(--neon-crimson)', color: '#fff', fontWeight: 'bold', width: '22px', height: '22px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem' }}>
+                      ★
+                    </div>
+                    <strong style={{ fontSize: '0.92rem', color: '#fff', letterSpacing: '0.5px' }}>
+                      {activeChar.name}
+                    </strong>
+                  </div>
+                  <div style={{ fontSize: '1.2rem', color: 'var(--neon-gold)' }}>
+                    ❖
+                  </div>
+                </div>
+
+                {/* Bottom Overlay: Stats, Signature Moves & Turn Button */}
+                <div
+                  style={{
+                    position: 'relative',
+                    zIndex: 2,
+                    padding: '12px 14px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    borderBottomLeftRadius: '20px',
+                    borderBottomRightRadius: '20px'
+                  }}
+                >
+                  {/* Stats Row (100 Base HP & Defense Power) */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div
+                      style={{
+                        background: 'rgba(255, 51, 102, 0.25)',
+                        border: '1px solid rgba(255, 51, 102, 0.6)',
+                        borderRadius: '8px',
+                        padding: '5px 8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        backdropFilter: 'blur(4px)'
+                      }}
+                    >
+                      <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.8)' }}>HP</span>
+                      <strong style={{ fontSize: '0.88rem', color: '#fff' }}>100 / 200</strong>
+                    </div>
+
+                    <div
+                      style={{
+                        background: 'rgba(0, 240, 255, 0.2)',
+                        border: '1px solid rgba(0, 240, 255, 0.5)',
+                        borderRadius: '8px',
+                        padding: '5px 8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        backdropFilter: 'blur(4px)'
+                      }}
+                    >
+                      <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.8)' }}>DP</span>
+                      <strong style={{ fontSize: '0.88rem', color: '#fff' }}>-{activeChar.defaultDP || 10} AP</strong>
+                    </div>
                   </div>
 
-                  <button className="btn-next-turn-ribbon" onClick={handleNextTurn}>
-                    <span>NEXT TURN</span>
-                  </button>
+                  {/* Moves List Preview */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {activeChar.moves?.slice(0, 2).map(move => (
+                      <div
+                        key={move.id}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.08)',
+                          border: '1px solid rgba(255, 255, 255, 0.15)',
+                          borderRadius: '6px',
+                          color: '#fff',
+                          padding: '5px 8px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          fontSize: '0.76rem',
+                          backdropFilter: 'blur(4px)'
+                        }}
+                      >
+                        <span style={{ fontWeight: 'bold' }}>⚔️ {move.name}</span>
+                        <span style={{ color: '#ffd700', fontWeight: 'bold' }}>
+                          {move.type === 'dice_mult' ? `🎲 × ${move.multiplier}` : `${move.baseAP} AP`} ({move.costET} ET)
+                        </span>
+                      </div>
+                    ))}
+                  </div>
 
-                  <div className="active-phase-tag">{PHASES[phaseIndex]}</div>
+                  <button
+                    className="btn-next-turn-ribbon"
+                    onClick={handleNextTurn}
+                    style={{ marginTop: '2px', padding: '7px', fontSize: '0.8rem', borderRadius: '6px', background: 'linear-gradient(90deg, #ff0055, #ff5500)', border: 'none', color: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
+                  >
+                    <span>NEXT WARRIOR (SWITCH)</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -140,45 +279,26 @@ export default function MainMenu({
             <div className="turn-dial-widget">
               <div className="dial-svg-container">
                 <svg className="turn-dial-svg" viewBox="0 0 120 120">
-                  {/* Outer Track */}
-                  <circle
-                    cx="60"
-                    cy="60"
-                    r="48"
-                    className="dial-track-bg"
-                  />
-                  {/* Segmented Glowing Arc */}
-                  <circle
-                    cx="60"
-                    cy="60"
-                    r="48"
-                    className="dial-arc-glow"
-                    strokeDasharray="210 300"
-                    strokeDashoffset="75"
-                  />
-                  {/* Arrow Indicator */}
-                  <path
-                    d="M 50 15 L 60 12 L 60 18 Z"
-                    fill="var(--neon-cyan)"
-                    opacity="0.8"
-                  />
+                  <circle cx="60" cy="60" r="48" className="dial-track-bg" />
+                  <circle cx="60" cy="60" r="48" className="dial-arc-glow" strokeDasharray="210 300" strokeDashoffset="75" />
+                  <path d="M 50 15 L 60 12 L 60 18 Z" fill="var(--neon-cyan)" opacity="0.8" />
                 </svg>
 
                 <div className="dial-center-content">
-                  <span className="dial-turn-lbl">TURN</span>
-                  <span className="dial-turn-num">{turnCounter}</span>
-                  <span className="dial-turn-infinity">/ ∞</span>
+                  <span className="dial-turn-lbl">ROUND</span>
+                  <span className="dial-turn-num">1</span>
+                  <span className="dial-turn-infinity">/ 3 💎</span>
                 </div>
               </div>
 
-              <span className="dial-caption">CLOCKWISE TURN ORDER</span>
+              <span className="dial-caption">CLOCKWISE DUEL ORDER</span>
             </div>
           </div>
 
           {/* Right Column: Score Summary Panel */}
           <div className="menu-right-col">
             <div className="score-summary-panel">
-              <h3 className="score-summary-title">SCORE SUMMARY</h3>
+              <h3 className="score-summary-title">WARRIORS ROSTER</h3>
 
               <div className="score-summary-list">
                 {charList.map((char, idx) => {
@@ -192,26 +312,26 @@ export default function MainMenu({
                         soundFX.playMenuHover();
                         setSelectedCharId(char.id);
                       }}
+                      style={{ cursor: 'pointer' }}
                     >
-                      <div className="score-row-avatar-wrap" style={{ borderColor: char.themeColor }}>
+                      <div className="score-row-avatar-wrap" style={{ borderColor: char.themeColor, overflow: 'hidden', width: '38px', height: '38px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }}>
                         <img
                           src={getAssetUrl(char.image)}
                           alt={char.name}
-                          className="score-row-img"
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                          }}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         />
-                        <span className="score-row-emoji">{char.avatar}</span>
                       </div>
 
                       <div className="score-row-names">
                         <strong className="score-player-name">{char.name}</strong>
-                        <span className="score-player-format">LP</span>
+                        <span className="score-player-format" style={{ color: 'var(--neon-gold)', fontSize: '0.7rem' }}>
+                          DP: -{char.defaultDP} AP
+                        </span>
                       </div>
 
                       <div className="score-row-lp">
-                        <span className="score-lp-val">{char.defaultLP || 8000}</span>
+                        <span className="score-lp-val" style={{ color: '#00f0ff', fontWeight: 'bold' }}>100</span>
+                        <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.6)', marginLeft: '2px' }}>HP</span>
                       </div>
 
                       <div className={`score-rank-badge rank-${rankNum} ${isActive ? 'rank-active' : ''}`}>

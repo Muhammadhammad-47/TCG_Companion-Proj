@@ -1,4 +1,5 @@
-// TCG Card Game — action & special cards
+// TCG Card Game — Official 10 Action Cards from GDD
+
 export const ACTION_CARDS = [
   {
     id: 'atk_basic',
@@ -7,7 +8,7 @@ export const ACTION_CARDS = [
     costET: 1,
     icon: '⚔️',
     color: '#ff3b6b',
-    desc: 'Standard attack. Pair with a move.'
+    desc: 'Standard combat attack. Pair with a character move (Costs 1 ET).'
   },
   {
     id: 'atk_super',
@@ -16,7 +17,7 @@ export const ACTION_CARDS = [
     costET: 2,
     icon: '💥',
     color: '#ff9d2d',
-    desc: 'High-power attack.'
+    desc: 'High-power combat technique (Costs 2 ET).'
   },
   {
     id: 'poison_card',
@@ -25,7 +26,7 @@ export const ACTION_CARDS = [
     costET: 1,
     icon: '☠️',
     color: '#39ff14',
-    desc: '-10 HP a round. 5 = zombie.'
+    desc: 'Inflicts 1 Poison stack (-10 HP per stack every round). 5 Poison turns target into a Zombie!'
   },
   {
     id: 'antidote_card',
@@ -34,7 +35,7 @@ export const ACTION_CARDS = [
     costET: 1,
     icon: '🧪',
     color: '#2df6ff',
-    desc: '-1 poison, +20 HP.'
+    desc: 'Removes 1 Poison card and restores +20 HP. Cures Zombie Mode if poison drops below 5!'
   },
   {
     id: 'shield_card',
@@ -43,7 +44,7 @@ export const ACTION_CARDS = [
     costET: 1,
     icon: '🛡️',
     color: '#3b9dff',
-    desc: '+30 shield.'
+    desc: 'Deploys a defensive barrier granting +30 Shield points to absorb incoming damage.'
   },
   {
     id: 'heal_card',
@@ -52,25 +53,7 @@ export const ACTION_CARDS = [
     costET: 1,
     icon: '💖',
     color: '#ff1a9d',
-    desc: '+30 HP.'
-  },
-  {
-    id: 'kontrol_card',
-    name: 'Kontrol',
-    category: 'Special',
-    costET: 3,
-    icon: '🧠',
-    color: '#a855f7',
-    desc: 'Beat their Mind — steal a card or a move.'
-  },
-  {
-    id: 'blitz_card',
-    name: 'Blitz',
-    category: 'Ultimate',
-    costET: 5,
-    icon: '⚡',
-    color: '#ffe93d',
-    desc: 'HP < 50. Spend half your HP for 200 AP.'
+    desc: 'Restores +30 HP immediately.'
   },
   {
     id: 'amplify_card',
@@ -79,7 +62,25 @@ export const ACTION_CARDS = [
     costET: 0,
     icon: '⚡',
     color: '#ffb02e',
-    desc: '+20 HP, +20 AP or +10 DP.'
+    desc: 'Boost active action with 1 effect: +20 HP, +20 AP attack, or +10 DP defense (0 ET).'
+  },
+  {
+    id: 'kontrol_card',
+    name: 'Kontrol',
+    category: 'Special',
+    costET: 3,
+    icon: '🧠',
+    color: '#a855f7',
+    desc: 'Roll 1 die > target Mind Strength. Force them to attack another opponent or steal 1 Action Card (3 ET, Max 2/match).'
+  },
+  {
+    id: 'blitz_card',
+    name: 'Blitz (Saigo No Blitz)',
+    category: 'Ultimate',
+    costET: 5,
+    icon: '⚡',
+    color: '#ffe93d',
+    desc: 'Requires HP < 50. Sacrifices 50% remaining HP to unleash 200 AP devastation across opponents (5 ET, Max 2/match).'
   },
   {
     id: 'retreat_card',
@@ -88,7 +89,7 @@ export const ACTION_CARDS = [
     costET: 0,
     icon: '💨',
     color: '#7c8dff',
-    desc: 'Roll to escape combat.'
+    desc: 'Roll 1 die to escape combat without taking damage based on character speed (0 ET).'
   }
 ];
 
@@ -97,6 +98,9 @@ export const GAME_LIMITS = {
   MAX_PLAYERS: 6,
   MAX_ET: 10,
   STARTING_ET: 5,
-  MAX_POISON: 10
+  BASE_HP: 100,
+  LEVEL_2_HP: 150,
+  MAX_HP: 200,
+  ZOMBIE_POISON_TRIGGER: 5,
+  WINNING_CRYSTALS: 3
 };
-

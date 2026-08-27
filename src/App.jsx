@@ -9,6 +9,8 @@ import GamePage from './pages/GamePage.jsx';
 import { ScaleWrapper } from './components/ScaleWrapper.jsx';
 import { DynamicScaleWrapper } from './components/DynamicScaleWrapper.jsx';
 
+import { RULES_KNOWLEDGE } from './game/data/rulesKnowledge.js';
+
 const Avatar = ({ isSpeaking }) => {
   const [index, setIndex] = useState(0);
 
@@ -79,13 +81,19 @@ export function Chat({ onBack, isOverlay = false }) {
       .then(text => setDocumentText(text))
       .catch(err => console.error("Could not load document.txt", err));
   }, []);
-
   const localSearch = (query) => {
     const qLower = query.toLowerCase();
     
     if (qLower.match(/^(hi|hello|hey|greetings)/)) return "Hello! I am your Attention TCG Companion. How can I help you with the rules today?";
     if (qLower.match(/(how are you|how do you do)/)) return "I am functioning optimally and ready to assist you with the game rules!";
-    if (qLower.match(/(who are you|introduce yourself|what are you)/)) return "I am the official Attention TCG Companion bot. I know all the rules and character stats to help you play the game smoothly.";
+    if (qLower.match(/(who are you|introduce yourself|what are you)/)) return "I am the official Attention TCG Companion bot. I know all the rules, character stats, dice combat, and Zombie mode to help you play smoothly!";
+
+    // 1. Direct Knowledge FAQ matching
+    for (const item of RULES_KNOWLEDGE) {
+      if (item.keywords.some(k => qLower.includes(k))) {
+        return `${item.shortAnswer}\n\n${item.details}`;
+      }
+    }
     
     if (!documentText) return "I am still loading the rulebook. Please wait a moment.";
     
@@ -109,11 +117,10 @@ export function Chat({ onBack, isOverlay = false }) {
     
     if (maxScore > 0) {
       const cleanMatch = bestMatch.trim().replace(/\n/g, ' ');
-      // Return the full matched rule without any truncation
       return cleanMatch;
     }
     
-    return "I couldn't find a specific answer in the rulebook.";
+    return "I couldn't find a specific answer in the rulebook. Try asking about 2-Dice defense, Zombie Mode, Stability Crystals, Kontrol, or Saigo No Blitz!";
   };
   const streamTimer = useRef(null);
 

@@ -607,3 +607,32 @@ SAIGO NO BLITZ
 SUE ELLEN’S V2
 Bonus Card: AMPLIFY. Boost your active card with 1 effect: +20 HP, +20 AP, or +DP. Execute. Discard after use. No dice roll is required. Must be paired up with an Attack Card if used as an Attack.
 
+---
+
+OFFICIAL ZOMBIE MODE RULES
+
+When a player has 5 Poison Cards, the dealer gives them a Zombie Mode Card. The card must be placed face-up so all players know that the infected player is now a Zombie.
+
+Zombie Mode Restrictions:
+- Players in Zombie Mode cannot use any Character Cards or Character Card abilities.
+- A player in Zombie Mode cannot win or claim a Stability Crystal Card (they must be cured back to regular mode before taking a crystal).
+- All attacks must come from the Zombie Mode Card: Venom Strike (15 AP, infects target with +1 Poison Card on hit).
+
+Zombie Stats:
+- Starting HP: 40 HP (can only increase via Vitality or Heal cards).
+- Turn Regeneration: At the beginning of each Zombie player's turn, they automatically recover +10 HP even if they took damage in the previous round.
+- Kontrol Immunity: Mindless zombies are immune to Kontrol Cards.
+
+Revival Rules:
+If Zombie HP is reduced to 0, they immediately revive:
+- 5 Poison Cards: Revives at 10 HP.
+- 6-7 Poison Cards: Revives at 20 HP.
+- 8+ Poison Cards: Revives at 40 HP.
+
+Weaknesses:
+- Fire and Lightning are especially effective against Zombies. Whenever a Zombie is hit by Fire or Lightning attack, the attack deals normal damage AND removes 1 Poison Card. (Only removes poison while in Zombie Mode).
+
+Curing Zombie Mode:
+- Playing an Antidote or reducing poison below 5 immediately cures the player. Discard the Zombie Mode Card and return to the exact HP you had before entering Zombie Mode (pre-zombie HP). Remaining poison cards continue to deal -10 HP per round until cured.
+
+

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CHARACTERS } from '../data/characters';
 import { soundFX } from '../utils/audio';
-import { Wind, X, Dices, Check, AlertCircle } from 'lucide-react';
+import { Wind, X, Dices, Check } from 'lucide-react';
 
 export default function RetreatModal({ player, onClose, onCompleteRetreat }) {
   const char = CHARACTERS[player.characterId] || CHARACTERS.chynaman;
@@ -20,7 +20,7 @@ export default function RetreatModal({ player, onClose, onCompleteRetreat }) {
     const interval = setInterval(() => {
       setDieRoll(Math.floor(Math.random() * 6) + 1);
       count++;
-      if (count >= 8) {
+      if (count >= 10) {
         clearInterval(interval);
         const finalRoll = Math.floor(Math.random() * 6) + 1;
         setDieRoll(finalRoll);
@@ -36,7 +36,7 @@ export default function RetreatModal({ player, onClose, onCompleteRetreat }) {
           soundFX.playHit();
         }
       }
-    }, 80);
+    }, 70);
   };
 
   const handleConfirm = () => {
@@ -47,42 +47,119 @@ export default function RetreatModal({ player, onClose, onCompleteRetreat }) {
   };
 
   return (
-    <div className="modal-backdrop">
-      <div className="special-card-modal retreat-modal">
-        <div className="modal-header">
-          <div className="header-title-box">
-            <span className="step-pill retreat-step"><Wind size={14} /> 0 ET</span>
-            <h2>RETREAT</h2>
+    <div
+      style={{
+        position: 'absolute',
+        inset: 0,
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'rgba(3, 7, 18, 0.88)',
+        backdropFilter: 'blur(10px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 999999,
+        padding: '16px'
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          background: 'linear-gradient(180deg, #092440 0%, #041020 100%)',
+          border: '1.5px solid #00f0ff',
+          borderRadius: '16px',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.9), 0 0 35px rgba(0, 240, 255, 0.3)',
+          width: '100%',
+          maxWidth: '480px',
+          padding: '20px',
+          color: '#fff'
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '1px solid rgba(0, 240, 255, 0.2)', paddingBottom: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '0.75rem', background: 'rgba(0, 240, 255, 0.15)', border: '1px solid #00f0ff', color: '#00f0ff', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
+              💨 0 ET · TACTICAL
+            </span>
+            <h2 style={{ fontSize: '1.25rem', margin: 0, fontFamily: 'Orbitron, sans-serif' }}>RETREAT ROLL</h2>
           </div>
-          <button className="btn-close" onClick={onClose}><X size={20} /></button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}><X size={20} /></button>
         </div>
 
-        <div className="special-modal-body">
-          <p className="special-desc">
-            {player.name} needs <strong>{targetRoll}+</strong>
-          </p>
+        <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.75)', margin: '0 0 16px 0' }}>
+          Roll 1 Die. <strong>{player.name}</strong> needs to roll a <strong>{targetRoll}+</strong> to successfully escape combat without taking damage.
+        </p>
 
-          <div className="retreat-roll-arena">
-            <div className="single-die-box">
-              <div className={`die blue-die ${isRolling ? 'die-rolling' : ''}`}>{dieRoll}</div>
-              <span>{targetRoll}+</span>
+        <div style={{ background: 'rgba(0,0,0,0.4)', borderRadius: '10px', padding: '16px', textAlign: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+            <div
+              style={{
+                width: '56px',
+                height: '56px',
+                background: 'linear-gradient(135deg, #00f0ff, #0077cc)',
+                color: '#000',
+                fontSize: '1.8rem',
+                fontWeight: 'bold',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '10px',
+                border: '2px solid #fff',
+                boxShadow: '0 0 15px rgba(0, 240, 255, 0.5)'
+              }}
+            >
+              {dieRoll}
             </div>
-
-            {!hasRolled ? (
-              <button className="btn-roll-combat" onClick={handleRoll} disabled={isRolling}>
-                <Dices size={20} /> {isRolling ? '…' : 'ROLL'}
-              </button>
-            ) : (
-              <div className="kontrol-outcome-box">
-                <h4 className={success ? 'text-success' : 'text-danger'}>
-                  {success ? '💨 ESCAPED' : '🛑 FAILED'}
-                </h4>
-                <button className="btn-apply-damage" onClick={handleConfirm}>
-                  <Check size={18} /> OK
-                </button>
-              </div>
-            )}
+            <span style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.7)' }}>Target: {targetRoll}+</span>
           </div>
+
+          {!hasRolled ? (
+            <button
+              onClick={handleRoll}
+              disabled={isRolling}
+              style={{
+                width: '100%',
+                padding: '12px',
+                background: 'linear-gradient(90deg, #00f0ff, #0088ff)',
+                color: '#000',
+                border: 'none',
+                borderRadius: '8px',
+                fontWeight: 'bold',
+                fontSize: '1rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+            >
+              <Dices size={20} />
+              <span>{isRolling ? 'ROLLING DIE…' : `ROLL 1 DIE (NEEDS ${targetRoll}+)`}</span>
+            </button>
+          ) : (
+            <div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: success ? '#39ff14' : '#ff3366', marginBottom: '12px' }}>
+                {success ? '💨 RETREAT SUCCESSFUL (ESCAPED)' : '🛑 RETREAT FAILED (MUST STAY & FIGHT)'}
+              </div>
+
+              <button
+                onClick={handleConfirm}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  background: 'linear-gradient(90deg, #00f0ff, #0088ff)',
+                  color: '#000',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
+                CONFIRM RETREAT RESULT
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

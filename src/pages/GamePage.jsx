@@ -197,7 +197,25 @@ export default function GamePage() {
       <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <button 
         onClick={() => { soundFX.stopBGM(); navigate('/'); }} 
-        style={{ position: 'absolute', top: '20px', right: '30px', zIndex: 9999, background: 'none', border: 'none', color: '#fff', fontSize: '2rem', cursor: 'pointer', lineHeight: 1 }}
+        style={{
+          position: 'absolute',
+          top: '14px',
+          right: '18px',
+          zIndex: 9999,
+          width: '32px',
+          height: '32px',
+          borderRadius: '50%',
+          background: 'rgba(10, 25, 50, 0.85)',
+          border: '1px solid rgba(0, 240, 255, 0.35)',
+          color: '#ffffff',
+          fontSize: '1.2rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
+          transition: 'all 0.2s ease'
+        }}
         title="Exit to Hub"
       >
         ×

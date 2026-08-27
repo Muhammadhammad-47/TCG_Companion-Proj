@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  Swords, Plus, ArrowLeft, RotateCw, RotateCcw,
+  Swords, Plus, Minus, ArrowLeft, RotateCw, RotateCcw,
   Crown, X, ChevronDown, ChevronUp, Users, Info
 } from 'lucide-react';
 import { CHARACTERS, getAssetUrl } from '../data/characters';
@@ -17,14 +17,14 @@ export default function GameSetup({ onStartGame, onBack }) {
         id: `p-${idx + 1}`,
         name: c.name,
         characterId: key,
-        startingHP: 8000,
+        startingHP: 100,
         startingET: 5,
         startingCrystals: 1
       };
     })
   );
 
-  const [startingLP, setStartingLP] = useState(8000);
+  const [startingLP, setStartingLP] = useState(100);
   const [startingPlayerIndex, setStartingPlayerIndex] = useState(0);
   const [turnDirection, setTurnDirection] = useState('clockwise');
   const [selectedDeckProfile, setSelectedDeckProfile] = useState('Chynaman');
@@ -33,7 +33,7 @@ export default function GameSetup({ onStartGame, onBack }) {
   const availableChars = Object.values(CHARACTERS);
 
   const handleAddPlayer = () => {
-    if (players.length >= 8) return;
+    if (players.length >= 6) return;
     soundFX.playMenuHover();
     const usedCharIds = players.map(p => p.characterId);
     const availableChar = availableChars.find(c => !usedCharIds.includes(c.id)) || availableChars[0];
@@ -72,7 +72,7 @@ export default function GameSetup({ onStartGame, onBack }) {
 
   const handleAdjustLP = (delta) => {
     soundFX.playMenuHover();
-    const nextVal = Math.max(1000, Math.min(99999, startingLP + delta));
+    const nextVal = Math.max(50, Math.min(200, startingLP + delta));
     setStartingLP(nextVal);
     setPlayers(players.map(p => ({ ...p, startingHP: nextVal })));
   };
@@ -287,19 +287,19 @@ export default function GameSetup({ onStartGame, onBack }) {
                 </div>
               </div>
             </div>
-
             {/* Turn Order Preview Circle */}
-            <div className="setup-box-block turn-preview-block">
+            <div className="setup-box-block turn-preview-block" style={{ minHeight: '300px' }}>
               <span className="setup-section-label">TURN ORDER PREVIEW</span>
 
                 <div className="turn-preview-stage">
-                  <div className="turn-orbit-ring" style={{ position: 'relative' }}>
+                  <div className="turn-orbit-ring" style={{ position: 'relative', width: '220px', height: '220px' }}>
                     {players.map((p, i) => {
                       // Dynamically position players in a circle
                       const angleDeg = (360 / players.length) * i - 90; // Start at top (-90)
-                      const radius = 80; // Distance from center
+                      const radius = 82; // Distance from center
                       const x = Math.cos(angleDeg * (Math.PI / 180)) * radius;
                       const y = Math.sin(angleDeg * (Math.PI / 180)) * radius;
+                      const c = CHARACTERS[p.characterId] || CHARACTERS.chynaman;
                       
                       return (
                         <div 
@@ -309,60 +309,145 @@ export default function GameSetup({ onStartGame, onBack }) {
                             position: 'absolute', 
                             left: '50%', 
                             top: '50%', 
-                            transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))` 
+                            transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center'
                           }}
                         >
                           <div className={`orbit-node-pill pill-${i + 1}`}>{i + 1}</div>
-                          <div className="orbit-avatar-ring ring-blue">
+                          <div className="orbit-avatar-ring ring-blue" style={{ borderColor: c.themeColor, overflow: 'hidden', width: '40px', height: '40px', borderRadius: '50%', background: '#071226', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <img
-                              src={getAssetUrl(CHARACTERS[p.characterId]?.image)}
+                              src={getAssetUrl(c.image || 'characters/chynaman.png')}
                               alt={`P${i+1}`}
                               className="orbit-img"
-                              onError={(e) => { e.target.style.display = 'none'; }}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                             />
-                            <span className="orbit-emoji">{CHARACTERS[p.characterId]?.avatar}</span>
                           </div>
-                          <span className="orbit-label" style={{ position: 'absolute', top: '100%', whiteSpace: 'nowrap', left: '50%', transform: 'translateX(-50%)' }}>
-                            {p.name}
+                          <span className="orbit-label" style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.85)', whiteSpace: 'nowrap', marginTop: '2px', textShadow: '0 2px 4px #000' }}>
+                            {p.name || c.name}
                           </span>
                         </div>
                       );
                     })}
 
                     {/* Center Direction Indicator */}
-                    <div className="orbit-center-indicator" onClick={handleToggleTurnDirection} title="Click to reverse direction" style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', zIndex: 10 }}>
-                      <RotateCw size={24} className={`orbit-arrow-spin ${turnDirection === 'counter-clockwise' ? 'reverse-spin' : ''}`} />
-                      <span className="orbit-direction-text">
+                    <div className="orbit-center-indicator" onClick={handleToggleTurnDirection} title="Click to reverse direction" style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', zIndex: 10, cursor: 'pointer' }}>
+                      <RotateCw size={22} className={`orbit-arrow-spin ${turnDirection === 'counter-clockwise' ? 'reverse-spin' : ''}`} />
+                      <span className="orbit-direction-text" style={{ fontSize: '0.65rem' }}>
                         {turnDirection.toUpperCase()}
                       </span>
                     </div>
 
-                    {/* SVG Circle background instead of hardcoded arcs */}
-                    <svg className="orbit-curved-arrows" viewBox="0 0 200 200" style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
-                      <circle cx="100" cy="100" r="80" fill="none" stroke="var(--neon-cyan)" strokeWidth="2.5" strokeDasharray="4 8" opacity="0.5" />
+                    {/* SVG Circle background */}
+                    <svg className="orbit-curved-arrows" viewBox="0 0 220 220" style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+                      <circle cx="110" cy="110" r="82" fill="none" stroke="var(--neon-cyan)" strokeWidth="1.5" strokeDasharray="4 6" opacity="0.4" />
                     </svg>
                   </div>
                 </div>
             </div>
 
-            {/* Starting Score (LP) */}
+            {/* Starting Score (HP) */}
             <div className="setup-box-block">
-              <span className="setup-section-label">STARTING SCORE (LP)</span>
-              <div className="starting-score-stepper-row">
-                <div className="score-stepper-controls">
-                  <button className="btn-stepper-step" onClick={() => handleAdjustLP(-1000)}>
-                    –
+              <span className="setup-section-label">STARTING SCORE (HP)</span>
+              <div className="score-adjuster-container" style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '6px' }}>
+                <div className="score-stepper-row" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <button
+                    className="btn-score-adjust"
+                    onClick={() => handleAdjustLP(-10)}
+                    disabled={startingLP <= 50}
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '10px',
+                      background: 'rgba(0, 240, 255, 0.12)',
+                      border: '1.5px solid rgba(0, 240, 255, 0.4)',
+                      color: '#00f0ff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: startingLP <= 50 ? 'not-allowed' : 'pointer',
+                      opacity: startingLP <= 50 ? 0.4 : 1,
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <Minus size={18} />
                   </button>
-                  <div className="score-display-box">
-                    <span className="score-main-digits">{startingLP}</span>
+
+                  <div
+                    className="score-display-field"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      gap: '6px',
+                      background: 'rgba(6, 14, 32, 0.85)',
+                      border: '1.5px solid rgba(0, 240, 255, 0.3)',
+                      borderRadius: '10px',
+                      padding: '6px 20px',
+                      minWidth: '130px',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <span className="score-main-digits" style={{ fontSize: '1.6rem', fontWeight: '900', color: '#ffffff', fontFamily: 'Orbitron, sans-serif' }}>
+                      {startingLP}
+                    </span>
+                    <span className="score-unit" style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--neon-crimson)' }}>
+                      HP
+                    </span>
                   </div>
-                  <button className="btn-stepper-step" onClick={() => handleAdjustLP(1000)}>
-                    +
+
+                  <button
+                    className="btn-score-adjust"
+                    onClick={() => handleAdjustLP(10)}
+                    disabled={startingLP >= 200}
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '10px',
+                      background: 'rgba(0, 240, 255, 0.12)',
+                      border: '1.5px solid rgba(0, 240, 255, 0.4)',
+                      color: '#00f0ff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: startingLP >= 200 ? 'not-allowed' : 'pointer',
+                      opacity: startingLP >= 200 ? 0.4 : 1,
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <Plus size={18} />
                   </button>
+
+                  {/* Quick Preset Buttons */}
+                  <div style={{ display: 'flex', gap: '6px', marginLeft: '8px' }}>
+                    {[
+                      { label: '100 HP (Official)', val: 100 },
+                      { label: '150 HP (Lvl 2)', val: 150 },
+                      { label: '200 HP (Max)', val: 200 }
+                    ].map(preset => (
+                      <button
+                        key={preset.val}
+                        onClick={() => setStartingLP(preset.val)}
+                        style={{
+                          background: startingLP === preset.val ? 'rgba(0, 240, 255, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                          border: startingLP === preset.val ? '1.5px solid #00f0ff' : '1px solid rgba(255, 255, 255, 0.15)',
+                          borderRadius: '8px',
+                          padding: '6px 10px',
+                          color: startingLP === preset.val ? '#00f0ff' : '#94a3b8',
+                          fontSize: '0.74rem',
+                          fontWeight: startingLP === preset.val ? 'bold' : 'normal',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="score-range-note">
-                  <span>Common starting LP range is 1000 – 99999.</span>
+                <div className="score-hint-text" style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>
+                  Official base HP is 100 (Max 200 HP). Level 2 unlocks at 150+ HP.
                 </div>
               </div>
             </div>
