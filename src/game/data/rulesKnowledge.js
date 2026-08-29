@@ -3,21 +3,21 @@
 export const RULES_KNOWLEDGE = [
   {
     topic: 'Game Lore & Objective',
-    keywords: ['lore', 'story', 'goal', 'objective', 'caca', 'cacathar', 'stability crystal', 'crystal', 'win', 'victory', 'universe'],
-    shortAnswer: 'Defeat opponents to claim their Stability Crystals. The first warrior to hold 3 Stability Crystals saves their world from Cacá (Cacáthar) and wins the match!',
-    details: 'In the Attention universe, the evil cosmic being Cacá (Cacáthar, The Devourer of Souls) has absorbed the life force and soul energy of all dimensions, causing worlds to collapse into instability.\n\n• Each player begins with 1 Stability Crystal placed in front of them (or 2 Crystals in a 1v1 duel).\n• Defeating an opponent allows you to claim their Stability Crystal.\n• The first warrior to collect 3 Stability Crystals restores balance to the universe and wins the game.'
+    keywords: ['lore', 'story', 'goal', 'objective', 'caca', 'cacathar', 'stability crystal', 'crystal', 'win', 'victory', 'universe', 'kill', 'steal'],
+    shortAnswer: 'Defeat opponents to claim their Stability Crystals. The first warrior to hold 3 Stability Crystals saves their world from Cacá and wins the match!',
+    details: 'In the Attention universe, the evil cosmic being Cacá (Cacáthar, The Devourer of Souls) has absorbed the life force and soul energy of all dimensions, causing worlds to collapse into instability.\n\n• Each player begins with 1 Stability Crystal (or 2 Crystals in a 1v1 duel).\n• Defeating an opponent (reducing them to 0 HP) allows you to steal 1 Stability Crystal from them.\n• The first warrior to collect 3 Stability Crystals restores balance to the universe and instantly triggers a Victory.'
   },
   {
-    topic: '2-Dice Combat & Defense Point (DP) Rule',
-    keywords: ['dice', 'defense', 'roll', 'dp', 'defense point', 'defense power', 'basic defense', '6', 'gold dice', 'red dice', 'combat'],
-    shortAnswer: 'Attacker rolls 2 Red dice vs Defender\'s 2 Gold dice. If Defender rolls a total of 6 or higher (≥6), their innate DP (e.g. -10 or -15 AP) reduces incoming attack damage.',
-    details: 'Combat Resolution Rules strictly following the GDD:\n1. Attacker rolls 2 Red dice (or 1 die for multiplier attacks like Fire of Fury).\n2. Defender rolls 2 Gold dice.\n3. 6+ Defense Check: If the Defender\'s 2-dice sum is 6 or greater (≥6), the Defender successfully activates their innate DP armor (e.g. -15 AP for Chynaman/Katsumi, -10 AP for Bee/Kiko/Shroomy/Queeny/Poochi).\n4. If the Defender rolls less than 6 (<6), DP fails and the defender takes the full incoming attack damage!\n5. Regardless of plus or minus notation on physical cards, the DP number is subtracted directly from the total Attack Power (AP).'
+    topic: '2-Stage Clash Roll & Defense Point (DP) Rule',
+    keywords: ['dice', 'defense', 'roll', 'dp', 'defense point', 'defense power', 'basic defense', '6', 'gold dice', 'red dice', 'combat', 'clash', 'doubles'],
+    shortAnswer: 'Combat is a 2-Stage Clash. Phase 1: Both roll 2 dice; attacker must roll higher to hit. Phase 2: Attacker rolls 1 die for AP multiplier. Defender DP activates if they roll 6+.',
+    details: 'Combat Resolution Rules:\n1. Phase 1 (The Clash): Attacker rolls 2 Red dice, Defender rolls 2 Gold dice. If Attacker Sum > Defender Sum, the attacker wins the clash. If the attacker loses, they miss entirely (0 Damage).\n2. Phase 2 (Multiplier): If the attacker wins the clash, they clear the gold dice and roll 1 single red die to determine their AP multiplier.\n3. 6+ Defense Check: If the Defender\'s 2-dice sum during the clash is 6 or greater (≥6), their innate DP armor activates (e.g. -15 AP or -10 AP).\n4. Doubles Rule: If a player rolls doubles (e.g., two 4s) during the clash, they instantly claim 1 Chance Card and get a Re-roll!'
   },
   {
     topic: 'Energy Tokens (ET) Economy',
     keywords: ['energy', 'token', 'et', 'black', 'red', 'purple', 'gold', 'claim', 'cost', 'trade', 'economy'],
-    shortAnswer: 'Players start with 5 ET and can claim +1 ET at the start of each turn. Energy Tokens fuel all card moves and special techniques.',
-    details: 'Energy Token Mechanics:\n• Token Values: Black = 1 ET, Red = 2 ET, Purple/Gold = 3 ET.\n• Starting Reserve: Each player starts the match with 5 ET.\n• Claim Rule: Players may claim 1 free Energy Token at the beginning of their turn. If a player forgets to mention/claim it before their turn ends, it cannot be claimed retroactively until their next turn!\n• Move Costs:\n  - Regular / Basic Attack: 1 ET\n  - Super Attack: 2 ET\n  - Kontrol Card: 3 ET\n  - Saigo No Blitz: 5 ET\n• Trade: ET may be traded between soul alliance teammates or as collateral for a Stability Crystal.'
+    shortAnswer: 'Players start with 5 ET and can claim +1 ET during their turn. Energy Tokens fuel all card moves and special techniques.',
+    details: 'Energy Token Mechanics:\n• Token Values: Black = 1 ET, Red = 2 ET, Purple/Gold = 3 ET.\n• Starting Reserve: Each player starts the match with 5 ET.\n• "Use It or Lose It" Claim Rule: Players may claim 1 free Energy Token at any point *during* their turn. If a player clicks "END TURN" without having claimed their ET, they permanently forfeit it for that round!\n• Move Costs:\n  - Regular / Basic Attack: 1 ET\n  - Super Attack: 2 ET\n  - Kontrol Card: 3 ET\n  - Saigo No Blitz: 5 ET\n• Trade: ET may be traded between soul alliance teammates or as collateral for a Stability Crystal.'
   },
   {
     topic: 'Zombie Mode Transformation & Full Rules',
@@ -34,8 +34,8 @@ export const RULES_KNOWLEDGE = [
   {
     topic: 'Kontrol Card & Mind Strength System',
     keywords: ['kontrol', 'mind strength', 'control', 'mind', 'queeny', 'brain', 'cooldown', 'mental', 'mindless'],
-    shortAnswer: 'Costs 3 ET. Pair with an Attack Card. Both players roll 1 die; Controller must roll higher than target\'s Mind Strength (1–6) to take control of their turn or steal a card.',
-    details: 'Mind Strength Ratings (1 to 6):\n• Zabina "Bee" Sole: 5\n• Chynaman: 4\n• Katsumi: 3\n• Kiko the Monkey: 3\n• Poochi: 2\n• Queeny: 2\n• Shroomy: 2\n\nSpecial Modifiers:\n• Queeny has psychic power: gains +2 to her attack roll when attempting mind control.\n• Magical Creatures (Kiko, Poochi, Shroomy): gain +1 to defend their mind.\n• Success Outcome: Force the opponent to attack another player or force them to show their Action Cards and surrender one chosen Action Card.\n• Cooldown: Max 2 Kontrol cards per match, with a 5-turn cooldown between uses.\n• Zombies are Mindless and completely immune to Kontrol.'
+    shortAnswer: 'Costs 3 ET. Both players roll 1 die; Controller must roll higher than target\'s Mind Strength (1–6) to take control of their turn or steal a card.',
+    details: 'Mind Strength Ratings (1 to 6):\n• Zabina "Bee" Sole: 5\n• Chynaman: 4\n• Katsumi: 3\n• Kiko the Monkey: 3\n• Poochi: 2\n• Queeny: 2\n• Shroomy: 2\n\nSpecial Modifiers:\n• Queeny has psychic power: gains +2 to her attack roll when attempting mind control.\n• Magical Creatures (Kiko, Poochi, Shroomy): gain +1 to defend their mind.\n• Success Outcome: Force the opponent to attack another player (Victim becomes the active attacker for free at 0 ET cost) OR force them to surrender one chosen Action Card.\n• Cooldown: Max 2 Kontrol cards per match, with a 5-turn cooldown between uses.\n• Zombies are Mindless and completely immune to Kontrol.'
   },
   {
     topic: 'Saigo No Blitz (Ultimate Destruction)',

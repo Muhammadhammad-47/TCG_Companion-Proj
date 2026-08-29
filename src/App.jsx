@@ -156,7 +156,7 @@ export function Chat({ onBack, isOverlay = false }) {
     }
 
     // Default guidance
-    return "I couldn't find an exact rule match for that query. You can ask me about:\n• 2-Dice Defense (rolling 6+ on Gold dice)\n• Zombie Mode (transformation, 40 HP, +10 regen, revival tiers)\n• Energy Tokens & Claims (5 starting ET, +1 per turn)\n• Saigo No Blitz (200 AP, HP < 50 condition)\n• Mind Strength & Kontrol\n• Character Move Sets & Elemental Weaknesses";
+    return "I couldn't find an exact rule match for that query. You can ask me about:\n• 2-Stage Clash & DP Defense (rolling 6+ on Gold dice)\n• Zombie Mode (transformation, 40 HP, +10 regen, revival tiers)\n• Energy Tokens & Claims (5 starting ET, Use It or Lose It rule)\n• Saigo No Blitz (200 AP, HP < 50 condition)\n• Mind Strength & Kontrol Card rules\n• Character Move Sets & Elemental Weaknesses";
   };
   const streamTimer = useRef(null);
 
