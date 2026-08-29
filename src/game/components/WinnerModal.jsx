@@ -7,7 +7,7 @@ import {
   RotateCcw, Home, Sparkles, ScrollText, Layers, Skull
 } from 'lucide-react';
 
-export default function WinnerModal({ winner, players, turnNumber, onRematch, onHome }) {
+export default function WinnerModal({ winner, players, turnNumber, onRematch, onHome, onContinue }) {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const winnerChar = CHARACTERS[winner?.characterId] || CHARACTERS.chynaman;
 
@@ -249,21 +249,21 @@ export default function WinnerModal({ winner, players, turnNumber, onRematch, on
 
         {/* Bottom CTA Actions */}
         <footer className="winner-footer-actions">
-          <button className="btn-winner-secondary" onClick={() => setShowHistoryModal(true)}>
+          <button className="btn-winner-secondary" onClick={onContinue || (() => setShowHistoryModal(true))}>
             <ScrollText size={16} />
-            <span>VIEW MATCH HISTORY</span>
+            <span>CONTINUE TO PLAY</span>
           </button>
 
           <button className="btn-winner-play-again" onClick={onRematch}>
-            <Swords size={22} />
-            <span className="play-again-text">PLAY AGAIN</span>
-            <Swords size={22} />
+            <RotateCcw size={22} />
+            <span className="play-again-text">RESTART GAME</span>
+            <RotateCcw size={22} />
           </button>
 
           {onHome && (
-            <button className="btn-winner-secondary" onClick={onHome}>
-              <Home size={16} />
-              <span>BACK TO HOME</span>
+            <button className="btn-winner-secondary" onClick={onHome} style={{ background: 'rgba(255, 51, 102, 0.15)', border: '1px solid #ff3366', color: '#ff3366' }}>
+              <X size={16} />
+              <span>END GAME</span>
             </button>
           )}
         </footer>

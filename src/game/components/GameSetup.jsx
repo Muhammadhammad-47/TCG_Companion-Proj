@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Swords, Plus, Minus, ArrowLeft, RotateCw, RotateCcw,
-  Crown, X, ChevronDown, ChevronUp, Users, Info
+  Crown, X, ChevronDown, ChevronUp, Users, Info, GripVertical, Edit2
 } from 'lucide-react';
 import { CHARACTERS, getAssetUrl } from '../data/characters';
 import { soundFX } from '../utils/audio';
@@ -10,25 +10,52 @@ import { soundFX } from '../utils/audio';
 export default function GameSetup({ onStartGame, onBack }) {
   const charKeys = ['chynaman', 'bee', 'katsumi', 'kiko'];
   
-  const [players, setPlayers] = useState(
-    charKeys.map((key, idx) => {
+  const [players, setPlayers] = useState(() => {
+    let cachedNames = {};
+    try {
+      cachedNames = JSON.parse(localStorage.getItem('tcg_player_names_cache')) || {};
+    } catch (e) {}
+
+    return charKeys.map((key, idx) => {
       const c = CHARACTERS[key] || CHARACTERS.chynaman;
       return {
         id: `p-${idx + 1}`,
-        name: c.name,
+        name: cachedNames[key] || c.name,
         characterId: key,
         startingHP: 100,
         startingET: 5,
         startingCrystals: 1
       };
-    })
-  );
+    });
+  });
 
-  const [startingLP, setStartingLP] = useState(100);
+  const [showConfig, setShowConfig] = useState(true);
+  const [draggedIdx, setDraggedIdx] = useState(null);
+
+  const handleDragStart = (e, idx) => {
+    setDraggedIdx(idx);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+  const handleDrop = (e, targetIdx) => {
+    e.preventDefault();
+    if (draggedIdx === null || draggedIdx === targetIdx) return;
+    
+    const newPlayers = [...players];
+    const item = newPlayers.splice(draggedIdx, 1)[0];
+    newPlayers.splice(targetIdx, 0, item);
+    
+    setPlayers(newPlayers);
+    setDraggedIdx(null);
+  };
   const [startingPlayerIndex, setStartingPlayerIndex] = useState(0);
   const [turnDirection, setTurnDirection] = useState('clockwise');
   const [selectedDeckProfile, setSelectedDeckProfile] = useState('Chynaman');
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+
+  const [startingLP, setStartingLP] = useState(100);
 
   const availableChars = Object.values(CHARACTERS);
 
@@ -72,7 +99,7 @@ export default function GameSetup({ onStartGame, onBack }) {
 
   const handleAdjustLP = (delta) => {
     soundFX.playMenuHover();
-    const nextVal = Math.max(50, Math.min(200, startingLP + delta));
+    const nextVal = Math.max(1, Math.min(9999, startingLP + delta));
     setStartingLP(nextVal);
     setPlayers(players.map(p => ({ ...p, startingHP: nextVal })));
   };
@@ -196,7 +223,15 @@ export default function GameSetup({ onStartGame, onBack }) {
                   const c = CHARACTERS[p.characterId] || CHARACTERS.chynaman;
                   const isFirst = idx === 0;
                   return (
-                    <div key={p.id} className={`setup-player-row ${isFirst ? 'first-player-row' : ''}`}>
+                    <div 
+                      key={p.id} 
+                      className={`setup-player-row ${isFirst ? 'first-player-row' : ''}`}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, idx)}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, idx)}
+                      style={{ cursor: 'grab', opacity: draggedIdx === idx ? 0.5 : 1 }}
+                    >
                       <div className={`player-num-pill pill-${idx + 1}`}>
                         {idx + 1}
                       </div>
@@ -213,8 +248,42 @@ export default function GameSetup({ onStartGame, onBack }) {
                         <span className="avatar-emoji-fallback">{c.avatar}</span>
                       </div>
 
-                      <div className="player-name-display">
-                        <span className="player-name-text">{p.name || c.name}</span>
+                      <div className="player-name-display" style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, paddingRight: '12px' }}>
+                        <Edit2 size={12} color="rgba(255,255,255,0.4)" style={{ flexShrink: 0 }} />
+                        <input
+                          type="text"
+                          value={p.name}
+                          onChange={(e) => {
+                            const newName = e.target.value;
+                            const next = [...players];
+                            next[idx].name = newName;
+                            setPlayers(next);
+                            
+                            // Cache name
+                            try {
+                              const cache = JSON.parse(localStorage.getItem('tcg_player_names_cache')) || {};
+                              cache[p.characterId] = newName;
+                              localStorage.setItem('tcg_player_names_cache', JSON.stringify(cache));
+                            } catch(err) {}
+                          }}
+                          className="player-name-text"
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'inherit',
+                            fontSize: 'inherit',
+                            fontFamily: 'inherit',
+                            width: '100%',
+                            outline: 'none',
+                            borderBottom: '1px solid rgba(255,255,255,0.2)'
+                          }}
+                          title="Click to edit name"
+                        />
+                      </div>
+
+                      {/* Drag Handle Icon */}
+                      <div style={{ padding: '0 8px', color: 'rgba(255,255,255,0.3)', cursor: 'grab' }} title="Drag to reorder">
+                        <GripVertical size={16} />
                       </div>
 
                       {/* Reorder Buttons */}
@@ -312,19 +381,22 @@ export default function GameSetup({ onStartGame, onBack }) {
                             transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`,
                             display: 'flex',
                             flexDirection: 'column',
-                            alignItems: 'center'
+                            alignItems: 'center',
+                            width: '80px'
                           }}
                         >
-                          <div className={`orbit-node-pill pill-${i + 1}`}>{i + 1}</div>
-                          <div className="orbit-avatar-ring ring-blue" style={{ borderColor: c.themeColor, overflow: 'hidden', width: '40px', height: '40px', borderRadius: '50%', background: '#071226', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <img
-                              src={getAssetUrl(c.image || 'characters/chynaman.png')}
-                              alt={`P${i+1}`}
-                              className="orbit-img"
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            />
+                          <div style={{ position: 'relative' }}>
+                            <div className={`orbit-node-pill pill-${i + 1}`} style={{ position: 'absolute', top: '-6px', left: '-6px', zIndex: 10 }}>{i + 1}</div>
+                            <div className="orbit-avatar-ring ring-blue" style={{ borderColor: c.themeColor, overflow: 'hidden', width: '40px', height: '40px', borderRadius: '50%', background: '#071226', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <img
+                                src={getAssetUrl(c.image || 'characters/chynaman.png')}
+                                alt={`P${i+1}`}
+                                className="orbit-img"
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              />
+                            </div>
                           </div>
-                          <span className="orbit-label" style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.85)', whiteSpace: 'nowrap', marginTop: '2px', textShadow: '0 2px 4px #000' }}>
+                          <span className="orbit-label" style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.85)', whiteSpace: 'nowrap', marginTop: '4px', textShadow: '0 2px 4px #000', maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {p.name || c.name}
                           </span>
                         </div>
@@ -354,8 +426,8 @@ export default function GameSetup({ onStartGame, onBack }) {
                 <div className="score-stepper-row" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <button
                     className="btn-score-adjust"
-                    onClick={() => handleAdjustLP(-10)}
-                    disabled={startingLP <= 50}
+                    onClick={() => handleAdjustLP(-5)}
+                    disabled={startingLP <= 1}
                     style={{
                       width: '40px',
                       height: '40px',
@@ -366,8 +438,8 @@ export default function GameSetup({ onStartGame, onBack }) {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      cursor: startingLP <= 50 ? 'not-allowed' : 'pointer',
-                      opacity: startingLP <= 50 ? 0.4 : 1,
+                      cursor: startingLP <= 1 ? 'not-allowed' : 'pointer',
+                      opacity: startingLP <= 1 ? 0.4 : 1,
                       transition: 'all 0.15s ease'
                     }}
                   >
@@ -388,9 +460,27 @@ export default function GameSetup({ onStartGame, onBack }) {
                       justifyContent: 'center'
                     }}
                   >
-                    <span className="score-main-digits" style={{ fontSize: '1.6rem', fontWeight: '900', color: '#ffffff', fontFamily: 'Orbitron, sans-serif' }}>
-                      {startingLP}
-                    </span>
+                    <input
+                      type="number"
+                      className="score-main-digits"
+                      value={startingLP}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 0;
+                        setStartingLP(val);
+                        setPlayers(players.map(p => ({ ...p, startingHP: val })));
+                      }}
+                      style={{ 
+                        fontSize: '1.6rem', 
+                        fontWeight: '900', 
+                        color: '#ffffff', 
+                        fontFamily: 'Orbitron, sans-serif',
+                        background: 'transparent',
+                        border: 'none',
+                        width: '80px',
+                        textAlign: 'center',
+                        outline: 'none',
+                      }}
+                    />
                     <span className="score-unit" style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--neon-crimson)' }}>
                       HP
                     </span>
@@ -398,8 +488,8 @@ export default function GameSetup({ onStartGame, onBack }) {
 
                   <button
                     className="btn-score-adjust"
-                    onClick={() => handleAdjustLP(10)}
-                    disabled={startingLP >= 200}
+                    onClick={() => handleAdjustLP(5)}
+                    disabled={startingLP >= 9999}
                     style={{
                       width: '40px',
                       height: '40px',
@@ -410,8 +500,8 @@ export default function GameSetup({ onStartGame, onBack }) {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      cursor: startingLP >= 200 ? 'not-allowed' : 'pointer',
-                      opacity: startingLP >= 200 ? 0.4 : 1,
+                      cursor: startingLP >= 9999 ? 'not-allowed' : 'pointer',
+                      opacity: startingLP >= 9999 ? 0.4 : 1,
                       transition: 'all 0.15s ease'
                     }}
                   >

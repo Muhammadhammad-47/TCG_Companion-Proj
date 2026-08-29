@@ -44,6 +44,7 @@ export default function BattleArena({
   const [showInGameMenu, setShowInGameMenu] = useState(false);
   const [showRulesChatOverlay, setShowRulesChatOverlay] = useState(false);
   const [showLocalChat, setShowLocalChat] = useState(false);
+  const [systemError, setSystemError] = useState(null);
   const [localChatMessages, setLocalChatMessages] = useState([
     {
       id: 'init_1',
@@ -79,8 +80,24 @@ export default function BattleArena({
   const defaultTarget = nonDefeatedOpponents[0] || players[(activeIdx + 1) % Math.max(1, players.length)] || activePlayer;
   const targetChar = defaultTarget?.isZombie ? ZOMBIE_PROFILE : (CHARACTERS[defaultTarget?.characterId] || CHARACTERS.bee);
 
+  const [lastSnapshotTime, setLastSnapshotTime] = useState(null);
+
+  useEffect(() => {
+    if (!lastSnapshotTime || historyStack.length === 0) return;
+
+    const interval = setInterval(() => {
+      if (Date.now() - lastSnapshotTime >= 15000) {
+        setHistoryStack([]);
+        setLastSnapshotTime(null);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [lastSnapshotTime, historyStack]);
+
   const pushStateSnapshot = () => {
     setHistoryStack(prev => [...prev, JSON.parse(JSON.stringify(gameState))]);
+    setLastSnapshotTime(Date.now());
   };
 
   const handleUndo = () => {
@@ -89,6 +106,7 @@ export default function BattleArena({
     const previous = historyStack[historyStack.length - 1];
     setHistoryStack(historyStack.slice(0, -1));
     setGameState(previous);
+    setLastSnapshotTime(null);
   };
 
   // Claim +1 ET at turn start
@@ -134,7 +152,7 @@ export default function BattleArena({
     // Verify ET cost
     const totalET = (actionCard?.costET || 0) + (characterMove?.costET || 0);
     if (attacker.energyTokens < totalET) {
-      alert(`Insufficient Energy Tokens! Need ${totalET} ET, but you have ${attacker.energyTokens} ET.`);
+      setSystemError(`Insufficient Energy Tokens! Need ${totalET} ET, but you have ${attacker.energyTokens} ET.`);
       return;
     }
 
@@ -211,27 +229,62 @@ export default function BattleArena({
 
     // Check defeated and stability crystal steal
     let crystalWinner = null;
+    let didTransferCrystal = false;
+
+    const defenderDefeated = updatedPlayers.find(p => p.id === defender.id && p.hp === 0 && !p.isZombie);
+
     const finalPlayers = updatedPlayers.map(p => {
-      if (p.id === defender.id && p.hp === 0 && !p.isZombie) {
-        // Attacker captures 1 crystal from defeated defender
-        return p;
+      if (defenderDefeated) {
+        if (p.id === defender.id) {
+          return { ...p, crystals: Math.max(0, p.crystals - 1) };
+        }
+        if (p.id === attacker.id) {
+          const newCrystals = p.crystals + 1;
+          didTransferCrystal = true;
+          if (newCrystals >= 3) {
+            crystalWinner = p;
+          }
+          return { ...p, crystals: newCrystals };
+        }
       }
       return p;
     });
 
-    const newLog = {
+    if (crystalWinner) {
+      setGameState({
+        ...gameState,
+        players: finalPlayers,
+        phase: 'game_over',
+        winner: crystalWinner
+      });
+      soundFX.playVictory(); // Assuming victory sound exists, or just use general sound
+      return;
+    }
+
+    const newLogs = [];
+    newLogs.push({
       turn: turnNum,
       actor: attacker.name,
       action: `Used ${characterMove?.name || 'Attack'} on ${defender.name}`,
       type: 'attack',
       amount: `-${damage} HP`
-    };
+    });
+
+    if (didTransferCrystal) {
+      newLogs.push({
+        turn: turnNum,
+        actor: attacker.name,
+        action: `Defeated ${defender.name} and claimed 1 Stability Crystal!`,
+        type: 'crystal_steal',
+        amount: '+1 Crystal'
+      });
+    }
 
     setGameState({
       ...gameState,
       players: finalPlayers,
-      history: [newLog, ...(gameState.history || [])],
-      lastActionLog: newLog
+      history: [...newLogs, ...(gameState.history || [])],
+      lastActionLog: newLogs[0]
     });
   };
 
@@ -243,7 +296,7 @@ export default function BattleArena({
 
     const sourcePlayer = players.find(p => p.id === sourcePlayerId);
     if (sourcePlayer.energyTokens < costET) {
-      alert(`Need ${costET} ET to play this card.`);
+      setSystemError(`Need ${costET} ET to play this card.`);
       return;
     }
 
@@ -441,6 +494,33 @@ export default function BattleArena({
     setTimeout(() => setTurnAnnouncement(null), 2000);
   };
 
+  const handleTaunt = () => {
+    pushStateSnapshot();
+    soundFX.playTaunt();
+
+    const taunts = [
+      "Sorry sucka!",
+      "Is that all you got?",
+      "Too slow!",
+      "In your face!",
+      "Try harder next time!"
+    ];
+    const randomTaunt = taunts[Math.floor(Math.random() * taunts.length)];
+
+    const newLog = {
+      turn: turnNum,
+      actor: activePlayer.name,
+      action: `TAUNTED: "${randomTaunt}"`,
+      type: 'chat',
+      amount: ''
+    };
+
+    setGameState({
+      ...gameState,
+      history: [newLog, ...(gameState.history || [])]
+    });
+  };
+
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       <div className={`webgl-screen arena-screen ${isShaking ? 'shake-animation damage-flash-overlay' : ''}`}>
@@ -582,8 +662,8 @@ export default function BattleArena({
                         />
                       </div>
 
-                      <div className="arena-score-meta">
-                        <strong className="arena-player-name">{p.name}</strong>
+                      <div className="arena-score-meta" style={{ flex: 1, minWidth: 0 }}>
+                        <strong className="arena-player-name" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block', maxWidth: '140px' }}>{p.name}</strong>
                         <div style={{ display: 'flex', gap: '6px', fontSize: '0.7rem', color: 'rgba(255,255,255,0.7)' }}>
                           <span>⚡ {p.energyTokens} ET</span>
                           <span>💎 {p.crystals}/3</span>
@@ -621,14 +701,14 @@ export default function BattleArena({
               </div>
 
               <div className="effects-icons-row">
-                <button
+                <div
                   className="effect-chip effect-poison"
-                  onClick={() => setSelectedEffectInfo({ name: 'Poison Stacks', desc: 'Deals -10 HP per stack at the start of each turn. Accumulating 5 poison cards transforms you into a Zombie!', count: `${activePlayer.poisonCards || 0}` })}
+                  style={{ cursor: 'default' }}
                 >
                   <Skull size={15} color="#39ff14" />
                   <span className="effect-name">Poison</span>
                   <span className="effect-count">{activePlayer.poisonCards || 0}</span>
-                </button>
+                </div>
 
                 <button
                   className="effect-chip effect-shield"
@@ -687,11 +767,20 @@ export default function BattleArena({
 
                 {/* Seated Warriors around the Perfect Circle */}
                 {players.map((p, i) => {
-                  const angleDeg = (360 / players.length) * i - 90;
-                  const radius = 125;
-                  const x = Math.cos(angleDeg * (Math.PI / 180)) * radius;
-                  const y = Math.sin(angleDeg * (Math.PI / 180)) * radius;
                   const isActive = i === activeIdx;
+                  let x = 0;
+                  let y = 0;
+                  
+                  if (!isActive) {
+                    let relativeIdx = i;
+                    if (i > activeIdx) relativeIdx--;
+                    const totalOthers = Math.max(1, players.length - 1);
+                    const angleDeg = (360 / totalOthers) * relativeIdx - 90;
+                    const radius = 125;
+                    x = Math.cos(angleDeg * (Math.PI / 180)) * radius;
+                    y = Math.sin(angleDeg * (Math.PI / 180)) * radius;
+                  }
+
                   const realChar = CHARACTERS[p.characterId] || CHARACTERS.chynaman;
 
                   return (
@@ -702,7 +791,7 @@ export default function BattleArena({
                         position: 'absolute',
                         left: '50%',
                         top: '50%',
-                        transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) ${isActive ? 'scale(1.22)' : 'scale(0.95)'}`,
+                        transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) ${isActive ? 'scale(1.4)' : 'scale(0.95)'}`,
                         transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
                         zIndex: isActive ? 10 : 5
                       }}
@@ -996,33 +1085,28 @@ export default function BattleArena({
                   <span>ROLL COMBAT DICE</span>
                 </button>
 
-                <button
-                  className="btn-play-card-cta"
-                  onClick={() => {
-                    pushStateSnapshot();
-                    const updated = players.map((p, idx) => {
-                      if (idx === activeIdx) {
-                        const nextZombie = !p.isZombie;
-                        return {
-                          ...p,
-                          isZombie: nextZombie,
-                          poisonCards: nextZombie ? Math.max(5, p.poisonCards || 5) : 0,
-                          hp: nextZombie ? 40 : (p.preZombieHP || 100)
-                        };
-                      }
-                      return p;
-                    });
-                    setGameState({
-                      ...gameState,
-                      players: updated,
-                      zombieTransformationAlert: !activePlayer.isZombie ? { player: activePlayer.name, poisonCount: 5 } : null
-                    });
-                  }}
-                  style={{ padding: '12px 8px', fontSize: '0.82rem', background: 'linear-gradient(90deg, #39ff14, #008800)', color: '#000', fontWeight: 'bold', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', whiteSpace: 'nowrap' }}
-                >
-                  <Skull size={16} />
-                  <span>{activePlayer.isZombie ? 'CURE ZOMBIE' : 'ACTIVATE ZOMBIE'}</span>
-                </button>
+                {!activePlayer.claimedTurnET && (
+                  <button
+                    className="btn-play-card-cta"
+                    onClick={() => {
+                      pushStateSnapshot();
+                      const updated = players.map(p => {
+                        if (p.id === activePlayer.id) {
+                          return { ...p, energyTokens: Math.min(10, p.energyTokens + 1), claimedTurnET: true };
+                        }
+                        return p;
+                      });
+                      setGameState({ ...gameState, players: updated });
+                      soundFX.playEnergy();
+                    }}
+                    style={{ padding: '12px 10px', fontSize: '0.82rem', background: 'linear-gradient(90deg, #ffd700, #ffaa00)', color: '#000', fontWeight: 'bold', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', whiteSpace: 'nowrap' }}
+                  >
+                    <Zap size={16} />
+                    <span>CLAIM 1 ET</span>
+                  </button>
+                )}
+
+
 
                 <button
                   className="btn-play-card-cta"
@@ -1137,6 +1221,27 @@ export default function BattleArena({
             >
               <MessageSquare size={16} />
               <span>💬 Match Chat (Local)</span>
+            </button>
+
+            <button
+              className="btn-arena-chat"
+              onClick={handleTaunt}
+              style={{
+                background: 'rgba(255, 153, 0, 0.12)',
+                border: '1.5px solid #ff9900',
+                color: '#ff9900',
+                boxShadow: '0 0 12px rgba(255, 153, 0, 0.25)',
+                fontWeight: 'bold',
+                padding: '8px 14px',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                cursor: 'pointer'
+              }}
+            >
+              <span style={{ fontSize: '16px' }}>🗣️</span>
+              <span>TAUNT</span>
             </button>
           </div>
 
@@ -1357,6 +1462,23 @@ export default function BattleArena({
           </div>
         )}
 
+        {/* System Error Modal */}
+        {systemError && (
+          <div className="arena-modal-backdrop" style={{ zIndex: 9999 }} onClick={() => setSystemError(null)}>
+            <div className="arena-modal-card" style={{ maxWidth: '400px', textAlign: 'center', border: '1px solid #ff3366', boxShadow: '0 0 20px rgba(255, 51, 102, 0.4)' }} onClick={(e) => e.stopPropagation()}>
+              <h3 style={{ color: '#ff3366', marginTop: 0 }}>ACTION FAILED</h3>
+              <p style={{ color: '#fff', fontSize: '0.95rem', margin: '15px 0' }}>{systemError}</p>
+              <button
+                className="btn-play-card-cta"
+                onClick={() => setSystemError(null)}
+                style={{ width: '100%', padding: '12px', marginTop: '10px', background: 'linear-gradient(90deg, #ff3366, #ff0055)' }}
+              >
+                ACKNOWLEDGE
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Winner Screen Modal */}
         {gameState?.winner && (
           <WinnerModal
@@ -1365,6 +1487,7 @@ export default function BattleArena({
             turnNumber={turnNum}
             onRematch={onRematch}
             onHome={onGoToMenu}
+            onContinue={() => setGameState({ ...gameState, winner: null })}
           />
         )}
       </div>

@@ -114,13 +114,50 @@ export function resolveDiceCombat({
   defender,
   actionCard = null,
   characterMove = null,
-  attackerRoll = [3, 4], // 2 Red dice
-  defenderRoll = [3, 3], // 2 Gold dice
+  attackerRoll = [3, 4], // 2 Red dice (or 1 Die for multiplier)
+  clashWon = true, // Passed from Phase 1
+  clashDefSum = 6, // Defender's sum from Phase 1 (for 6+ check)
   amplifyBonus = 0,
   isSingleDieMultiplier = false
 }) {
   const atkChar = attacker.isZombie ? ZOMBIE_PROFILE : (CHARACTERS[attacker.characterId] || CHARACTERS.chynaman);
   const defChar = defender.isZombie ? ZOMBIE_PROFILE : (CHARACTERS[defender.characterId] || CHARACTERS.chynaman);
+
+  // 0. Clash Check
+  if (!clashWon) {
+    return {
+      rawAP: 0,
+      weaknessTriggered: false,
+      weaknessBonus: 0,
+      defenseActivated: false,
+      innateDP: 0,
+      damageDealt: 0,
+      absorbedByShield: 0,
+      zombiePoisonCured: false,
+      appliesPoison: false,
+      appliesStun: false,
+      revealCards: false,
+      isMiss: true
+    };
+  }
+
+  // 0.5. Zombie vs Zombie (No Effect)
+  if (attacker.isZombie && defender.isZombie) {
+    return {
+      rawAP: 0,
+      weaknessTriggered: false,
+      weaknessBonus: 0,
+      defenseActivated: false,
+      innateDP: 0,
+      damageDealt: 0,
+      absorbedByShield: 0,
+      zombiePoisonCured: false,
+      appliesPoison: false,
+      appliesStun: false,
+      revealCards: false,
+      isMiss: false // It's not a miss, it just has no effect
+    };
+  }
 
   // 1. Calculate Base AP
   let rawAP = 0;
@@ -159,9 +196,8 @@ export function resolveDiceCombat({
 
   const totalOffensiveAP = Math.max(0, rawAP + weaknessBonus);
 
-  // 3. Defender 6+ Defense Rule (2 Gold Dice sum >= 6)
-  const defenderDiceSum = defenderRoll[0] + defenderRoll[1];
-  const defenseActivated = defenderDiceSum >= 6;
+  // 3. Defender 6+ Defense Rule (2 Gold Dice sum >= 6 from Clash)
+  const defenseActivated = clashDefSum >= 6;
   const innateDP = defenseActivated ? (defChar.defaultDP || 0) + (defender.buffDP || 0) : 0;
 
   // 4. Net Damage after DP mitigation
@@ -196,9 +232,10 @@ export function resolveDiceCombat({
   const revealCards = characterMove?.revealCards || false;
 
   return {
+    isTie,
     attackerDice: attackerRoll,
     defenderDice: defenderRoll,
-    attackerDiceSum: attackerRoll[0] + (characterMove?.type === 'dice_mult' ? 0 : attackerRoll[1]),
+    attackerDiceSum,
     defenderDiceSum,
     rawAP,
     weaknessTriggered,

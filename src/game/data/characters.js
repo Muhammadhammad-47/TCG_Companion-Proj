@@ -57,13 +57,31 @@ export const CHARACTERS = {
         desc: 'Super Lightning strike dealing 40 AP.'
       },
       {
-        id: 'c_wild',
+        id: 'c_wild1',
         name: 'Wild Card Soul Combo',
         type: 'flat',
-        baseAP: 55,
+        baseAP: 20,
+        element: 'Physical',
+        costET: 1,
+        desc: 'Unpredictable rapid strikes dealing 20 AP.'
+      },
+      {
+        id: 'c_wild2',
+        name: 'Wild Card Blazing Kick',
+        type: 'flat',
+        baseAP: 30,
         element: 'Fire',
-        costET: 3,
-        desc: 'Flexible all-out technique dealing 55 AP.'
+        costET: 1,
+        desc: 'A wild flaming kick dealing 30 AP.'
+      },
+      {
+        id: 'c_wild3',
+        name: 'Wild Card Hidden Flame',
+        type: 'flat',
+        baseAP: 35,
+        element: 'Fire',
+        costET: 1,
+        desc: 'A hidden fire technique dealing 35 AP.'
       },
       {
         id: 'c_blitz',
@@ -121,7 +139,6 @@ export const CHARACTERS = {
         baseAP: 40,
         element: 'Physical',
         costET: 2,
-        isSuper: true,
         desc: 'Explosive swarm blast dealing 40 AP.'
       },
       {
@@ -190,13 +207,31 @@ export const CHARACTERS = {
         desc: 'Critical fatal slash dealing 45 AP.'
       },
       {
-        id: 'k_wild',
-        name: 'Wild Card Eclipse',
+        id: 'k_wild1',
+        name: 'Wild Card Shadow Pounce',
         type: 'flat',
-        baseAP: 60,
+        baseAP: 20,
         element: 'Shadow',
-        costET: 3,
-        desc: 'Void shadow strike dealing 60 AP.'
+        costET: 1,
+        desc: 'Sneaky shadow pounce dealing 20 AP.'
+      },
+      {
+        id: 'k_wild2',
+        name: 'Wild Card Fox Fire',
+        type: 'flat',
+        baseAP: 30,
+        element: 'Physical',
+        costET: 1,
+        desc: 'Wild fox flame strike dealing 30 AP.'
+      },
+      {
+        id: 'k_wild3',
+        name: 'Wild Card Twin Slash',
+        type: 'flat',
+        baseAP: 40,
+        element: 'Physical',
+        costET: 1,
+        desc: 'Two rapid slashes dealing 40 AP.'
       },
       {
         id: 'k_blitz',
@@ -257,13 +292,31 @@ export const CHARACTERS = {
         desc: 'Mystic sonic beat pulse dealing 40 AP.'
       },
       {
-        id: 'm_wild',
-        name: 'Wild Card Astral Surge',
+        id: 'kiko_wild1',
+        name: 'Wild Card Banana Toss',
         type: 'flat',
-        baseAP: 50,
+        baseAP: 15,
+        element: 'Physical',
+        costET: 1,
+        desc: 'Throws a banana dealing 15 AP.'
+      },
+      {
+        id: 'kiko_wild2',
+        name: 'Wild Card Monkey Flip',
+        type: 'flat',
+        baseAP: 25,
+        element: 'Physical',
+        costET: 1,
+        desc: 'A wild flip kick dealing 25 AP.'
+      },
+      {
+        id: 'kiko_wild3',
+        name: 'Wild Card Jungle Strike',
+        type: 'flat',
+        baseAP: 35,
         element: 'Magic',
-        costET: 3,
-        desc: 'Magic illusion onslaught dealing 50 AP.'
+        costET: 1,
+        desc: 'Unpredictable magic strike dealing 35 AP.'
       },
       {
         id: 'm_blitz',

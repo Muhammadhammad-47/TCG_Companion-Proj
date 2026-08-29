@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ACTION_CARDS } from '../data/cards';
 import { CHARACTERS, ZOMBIE_PROFILE, getAssetUrl } from '../data/characters';
 import { soundFX } from '../utils/audio';
-import { X, Zap, Shield, Sparkles, Flame, Brain, Skull, Heart, Swords, Target, Play } from 'lucide-react';
+import { ArrowLeft, Zap, Shield, Sparkles, Flame, Brain, Skull, Heart, Swords, Target, Play } from 'lucide-react';
 
 export default function CardActionModal({
   activePlayer,
@@ -20,16 +20,20 @@ export default function CardActionModal({
     allPlayers.find(p => p.id !== activePlayer.id)?.id || ''
   );
   const [amplifyChoice, setAmplifyChoice] = useState('hp'); // 'hp' | 'ap' | 'dp'
+  const [awaitingPhysicalPlacement, setAwaitingPhysicalPlacement] = useState(false);
+  const [placementData, setPlacementData] = useState(null);
+  const [errorMsg, setErrorMsg] = useState(null);
 
   const isZombie = activePlayer.isZombie;
   const char = isZombie ? ZOMBIE_PROFILE : (CHARACTERS[activePlayer.characterId] || CHARACTERS.chynaman);
-  const availableMoves = isZombie ? ZOMBIE_PROFILE.moves : char.moves;
+  const allCharMoves = isZombie ? ZOMBIE_PROFILE.moves : char.moves;
+  const availableMoves = allCharMoves.filter(m => !m.id.includes('blitz') && !m.id.includes('kontrol'));
 
   const currentAction = ACTION_CARDS.find(c => c.id === selectedActionId);
   const currentMove = availableMoves.find(m => m.id === selectedMoveId) || availableMoves[0];
 
   const isAttackPlay = currentAction?.category === 'Attack' || isZombie;
-  const totalETCost = (currentAction?.costET || 0) + (isAttackPlay ? (currentMove?.costET || 0) : 0);
+  const totalETCost = isAttackPlay ? (currentMove?.costET || 0) : (currentAction?.costET || 0);
 
   const selectableTargets = allPlayers.filter(p => {
     if (p.isDefeated) return false;
@@ -42,12 +46,18 @@ export default function CardActionModal({
     setSelectedActionId(card.id);
 
     if (card.id === 'kontrol_card' && (activePlayer.kontrolUsesLeft ?? 2) <= 0) {
-      alert('No Kontrol uses left this match.');
+      setErrorMsg('No Kontrol uses left this match.');
       return;
     }
-    if (card.id === 'blitz_card' && (activePlayer.blitzUsesLeft ?? 2) <= 0) {
-      alert('No Blitz uses left this match.');
-      return;
+    if (card.id === 'blitz_card') {
+      if ((activePlayer.blitzUsesLeft ?? 2) <= 0) {
+        setErrorMsg('No Blitz uses left this match.');
+        return;
+      }
+      if (activePlayer.hp > 50) {
+        setErrorMsg('Saigo No Blitz requires HP to be 50 or below.');
+        return;
+      }
     }
     if (card.id === 'retreat_card' && activePlayer.retreatedThisTurn) {
       alert('Already retreated this turn.');
@@ -72,7 +82,7 @@ export default function CardActionModal({
     if (!currentAction) return;
 
     if (activePlayer.energyTokens < totalETCost) {
-      alert(`Need ${totalETCost} ET — you have ${activePlayer.energyTokens} ET.`);
+      setErrorMsg(`Need ${totalETCost} ET — you have ${activePlayer.energyTokens} ET.`);
       return;
     }
 
@@ -83,16 +93,17 @@ export default function CardActionModal({
     // Handle Attacks
     if (currentAction.category === 'Attack' || isZombie) {
       if (!targetPlayer) {
-        alert('Please pick a target opponent.');
+        setErrorMsg('Please pick a target opponent.');
         return;
       }
-      onInitiateCombat({
+      setPlacementData({
         attacker: activePlayer,
         defender: targetPlayer,
         actionCard: currentAction,
         characterMove: currentMove,
         amplifyBonus: amplifyChoice === 'ap' ? 20 : 0
       });
+      setAwaitingPhysicalPlacement(true);
       return;
     }
 
@@ -157,6 +168,13 @@ export default function CardActionModal({
         costET: 0
       });
       return;
+    }
+  };
+
+  const handlePhysicalPlacementConfirmed = () => {
+    soundFX.playMenuSelect();
+    if (placementData) {
+      onInitiateCombat(placementData);
     }
   };
 
@@ -235,22 +253,70 @@ export default function CardActionModal({
               color: '#fff',
               cursor: 'pointer'
             }}
+            title="Back"
           >
-            <X size={18} />
+            <ArrowLeft size={18} />
           </button>
         </div>
 
-        {/* 2-Column Responsive Body */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1.1fr 1fr',
-            gap: '16px',
-            padding: '16px 20px',
-            overflowY: 'auto',
-            flex: 1
-          }}
-        >
+        {awaitingPhysicalPlacement ? (
+          <div style={{ padding: '60px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, textAlign: 'center' }}>
+            <div style={{ fontSize: '4rem', marginBottom: '20px', animation: 'pulse 1.5s infinite' }}>
+              🎴
+            </div>
+            <h2 style={{ fontSize: '1.8rem', color: '#fff', margin: '0 0 16px', fontFamily: 'Orbitron, sans-serif' }}>
+              PHYSICAL PLACEMENT REQUIRED
+            </h2>
+            <p style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.8)', maxWidth: '400px', margin: '0 auto 40px', lineHeight: '1.5' }}>
+              Place your Character Card on the table to physically validate this move.
+            </p>
+            <button
+              onClick={handlePhysicalPlacementConfirmed}
+              style={{
+                background: 'linear-gradient(90deg, #ff3366, #ff9900)',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '16px 32px',
+                color: '#fff',
+                fontWeight: '900',
+                fontSize: '1.1rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                boxShadow: '0 0 20px rgba(255, 51, 102, 0.5)',
+                animation: 'pulse 2s infinite'
+              }}
+            >
+              <Zap size={24} fill="#fff" /> CONFIRM PHYSICAL PLACEMENT
+            </button>
+            <button
+              onClick={() => { setAwaitingPhysicalPlacement(false); setPlacementData(null); }}
+              style={{
+                background: 'transparent',
+                border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: '8px',
+                padding: '10px 20px',
+                color: '#fff',
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                marginTop: '20px'
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1.1fr 1fr',
+              gap: '16px',
+              padding: '16px 20px',
+              overflowY: 'auto',
+              flex: 1
+            }}
+          >
           {/* Left Column: 10 Action Cards */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--neon-cyan)', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -453,6 +519,11 @@ export default function CardActionModal({
             )}
 
             {/* Action Cost & Execute CTA */}
+            {errorMsg && (
+              <div style={{ color: '#ff3366', background: 'rgba(255, 51, 102, 0.1)', border: '1px solid #ff3366', padding: '8px 12px', borderRadius: '8px', fontSize: '0.85rem', marginBottom: '10px', textAlign: 'center', fontWeight: 'bold' }}>
+                ⚠️ {errorMsg}
+              </div>
+            )}
             <div
               style={{
                 marginTop: 'auto',
@@ -498,6 +569,7 @@ export default function CardActionModal({
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

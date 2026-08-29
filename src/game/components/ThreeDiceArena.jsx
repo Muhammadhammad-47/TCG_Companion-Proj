@@ -123,14 +123,14 @@ function createDiceMaterials(theme) {
   ];
 }
 
-// Target rotations (Euler) to face the camera (+Z) with target number
+// Target rotations (Euler) to face UP (+Y) with target number
 const FACE_EULER_ROTATIONS = {
-  1: { x: 0, y: 0, z: 0 },
-  2: { x: 0, y: -Math.PI / 2, z: 0 },
-  3: { x: -Math.PI / 2, y: 0, z: 0 },
-  4: { x: Math.PI / 2, y: 0, z: 0 },
-  5: { x: 0, y: Math.PI / 2, z: 0 },
-  6: { x: 0, y: Math.PI, z: 0 }
+  1: { x: -Math.PI / 2, y: 0, z: 0 },
+  2: { x: 0, y: 0, z: Math.PI / 2 },
+  3: { x: 0, y: 0, z: 0 },
+  4: { x: Math.PI, y: 0, z: 0 },
+  5: { x: 0, y: 0, z: -Math.PI / 2 },
+  6: { x: Math.PI / 2, y: 0, z: 0 }
 };
 
 export default function ThreeDiceArena({
