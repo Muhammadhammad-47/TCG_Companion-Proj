@@ -325,7 +325,36 @@ class SoundEffects {
     }
   }
 
+  // Menu Navigation Click
+  playMenuSelect() {
+    if (this.muted) return;
+    this.init();
+    if (!this.ctx) return;
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
 
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(600, now);
+      osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
+
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.1);
+    } catch (e) {
+      console.warn(e);
+    }
+  }
+
+  playTaunt() {
+    this.playMenuSelect(); // Re-use menu select blip for taunt for now
+  }
 
   // Turn Timer Tick
   playTick() {

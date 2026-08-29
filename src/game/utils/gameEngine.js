@@ -232,11 +232,11 @@ export function resolveDiceCombat({
   const revealCards = characterMove?.revealCards || false;
 
   return {
-    isTie,
+    isTie: false,
     attackerDice: attackerRoll,
-    defenderDice: defenderRoll,
-    attackerDiceSum,
-    defenderDiceSum,
+    defenderDice: defenderRoll || [],
+    attackerDiceSum: attackerRoll.reduce((a, b) => a + b, 0),
+    defenderDiceSum: defenderRoll ? defenderRoll.reduce((a, b) => a + b, 0) : 0,
     rawAP,
     weaknessTriggered,
     weaknessBonus,
