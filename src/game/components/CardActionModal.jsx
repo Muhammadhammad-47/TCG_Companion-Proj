@@ -200,27 +200,27 @@ export default function CardActionModal({
         onClick={onClose}
         style={{
           position: 'absolute',
-          top: '20px',
-          left: '20px',
+          top: '40px',
+          left: '40px',
           background: 'linear-gradient(135deg, #1a2a4c 0%, #0d1b38 100%)',
-          border: '2px solid var(--neon-cyan)',
-          borderRadius: '10px',
-          padding: '12px 24px',
+          border: '3px solid var(--neon-cyan)',
+          borderRadius: '12px',
+          padding: '16px 36px',
           display: 'flex',
           alignItems: 'center',
-          gap: '10px',
+          gap: '12px',
           color: '#fff',
           cursor: 'pointer',
           zIndex: 10,
-          boxShadow: '0 6px 20px rgba(0,0,0,0.9), 0 0 20px rgba(0, 240, 255, 0.4)',
+          boxShadow: '0 8px 28px rgba(0,0,0,0.9), 0 0 28px rgba(0, 240, 255, 0.5)',
           fontWeight: 'bold',
           fontFamily: 'Orbitron, sans-serif',
-          fontSize: '1rem',
-          letterSpacing: '2px',
+          fontSize: '1.2rem',
+          letterSpacing: '3px',
           transition: 'all 0.2s ease'
         }}
       >
-        <ArrowLeft size={22} />
+        <ArrowLeft size={28} />
         <span>BACK</span>
       </button>
       {/* Modal wrapper */}
