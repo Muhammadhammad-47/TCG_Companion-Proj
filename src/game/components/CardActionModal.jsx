@@ -191,38 +191,40 @@ export default function CardActionModal({
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 999999,
-        padding: '32px 16px 16px'
+        padding: '16px'
       }}
       onClick={onClose}
     >
-      {/* Wrapper with relative positioning for floating back button */}
+      {/* Floating BACK button — fixed to top-left of the screen overlay */}
+      <button
+        onClick={onClose}
+        style={{
+          position: 'absolute',
+          top: '20px',
+          left: '20px',
+          background: 'linear-gradient(135deg, #1a2a4c 0%, #0d1b38 100%)',
+          border: '2px solid var(--neon-cyan)',
+          borderRadius: '10px',
+          padding: '12px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          color: '#fff',
+          cursor: 'pointer',
+          zIndex: 10,
+          boxShadow: '0 6px 20px rgba(0,0,0,0.9), 0 0 20px rgba(0, 240, 255, 0.4)',
+          fontWeight: 'bold',
+          fontFamily: 'Orbitron, sans-serif',
+          fontSize: '1rem',
+          letterSpacing: '2px',
+          transition: 'all 0.2s ease'
+        }}
+      >
+        <ArrowLeft size={22} />
+        <span>BACK</span>
+      </button>
+      {/* Modal wrapper */}
       <div style={{ position: 'relative', width: '100%', maxWidth: '920px', display: 'flex', flexDirection: 'column' }}>
-
-        {/* Floating BACK button outside modal */}
-        <button
-          onClick={onClose}
-          style={{
-            position: 'absolute',
-            top: '-20px',
-            left: '0px',
-            background: 'linear-gradient(180deg, #1a2a4c 0%, #0d1b38 100%)',
-            border: '2px solid var(--neon-cyan)',
-            borderRadius: '8px',
-            padding: '8px 16px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            color: '#fff',
-            cursor: 'pointer',
-            zIndex: 10,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.8), 0 0 15px rgba(0, 240, 255, 0.3)',
-            fontWeight: 'bold',
-            fontFamily: 'Orbitron, sans-serif'
-          }}
-        >
-          <ArrowLeft size={16} />
-          <span style={{ fontSize: '0.85rem', letterSpacing: '1px' }}>BACK</span>
-        </button>
 
         {/* Main modal panel */}
         <div
