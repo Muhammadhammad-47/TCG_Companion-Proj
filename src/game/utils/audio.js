@@ -353,7 +353,43 @@ class SoundEffects {
   }
 
   playTaunt() {
-    this.playMenuSelect(); // Re-use menu select blip for taunt for now
+    if (this.muted) return;
+    this.init();
+    if (!this.ctx) return;
+    try {
+      const now = this.ctx.currentTime;
+
+      // Note 1: First cheerful chirp — ascending bright sine
+      const osc1 = this.ctx.createOscillator();
+      const gain1 = this.ctx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(1200, now);
+      osc1.frequency.exponentialRampToValueAtTime(1800, now + 0.12);
+      gain1.gain.setValueAtTime(0.0, now);
+      gain1.gain.linearRampToValueAtTime(0.22, now + 0.02);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+      osc1.connect(gain1);
+      gain1.connect(this.ctx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.15);
+
+      // Note 2: Second chirp — slightly higher, delayed (playful ta-DA feel)
+      const osc2 = this.ctx.createOscillator();
+      const gain2 = this.ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(1600, now + 0.15);
+      osc2.frequency.exponentialRampToValueAtTime(2200, now + 0.30);
+      gain2.gain.setValueAtTime(0.0, now + 0.15);
+      gain2.gain.linearRampToValueAtTime(0.18, now + 0.17);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+      osc2.connect(gain2);
+      gain2.connect(this.ctx.destination);
+      osc2.start(now + 0.15);
+      osc2.stop(now + 0.33);
+
+    } catch (e) {
+      console.warn(e);
+    }
   }
 
   // Turn Timer Tick

@@ -74,6 +74,26 @@ export function Chat({ onBack, isOverlay = false }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [documentText, setDocumentText] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
+  const [availableVoices, setAvailableVoices] = useState([]);
+  const [selectedVoiceURI, setSelectedVoiceURI] = useState('');
+
+  // Load available system voices
+  useEffect(() => {
+    if ('speechSynthesis' in window) {
+      const loadVoices = () => {
+        // Filter to English voices to keep the dropdown clean
+        const voices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
+        setAvailableVoices(voices);
+        // Set a smart default if none selected yet
+        if (voices.length > 0 && !selectedVoiceURI) {
+           const defaultVoice = voices.find(v => v.name.includes('Google UK English Female') || v.name.includes('Samantha') || v.name.includes('Zira')) || voices[0];
+           if (defaultVoice) setSelectedVoiceURI(defaultVoice.voiceURI);
+        }
+      };
+      loadVoices();
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+  }, [selectedVoiceURI]);
 
   useEffect(() => {
     fetch(`${import.meta.env.BASE_URL}document.txt`)
@@ -107,7 +127,7 @@ export function Chat({ onBack, isOverlay = false }) {
     }
 
     if (bestKnowledge && highestScore >= 2) {
-      return `【 ${bestKnowledge.topic.toUpperCase()} 】\n${bestKnowledge.shortAnswer}\n\n${bestKnowledge.details}`;
+      return `${bestKnowledge.shortAnswer}\n\n${bestKnowledge.details}`;
     }
     
     // 2. Fallback rulebook document paragraph search
@@ -131,7 +151,7 @@ export function Chat({ onBack, isOverlay = false }) {
       }
       
       if (maxDocScore >= 2) {
-        return `【 OFFICIAL RULEBOOK CITATION 】\n${bestMatch.trim().replace(/\n/g, ' ')}`;
+        return bestMatch.trim();
       }
     }
 
@@ -152,58 +172,97 @@ export function Chat({ onBack, isOverlay = false }) {
       setAnswer(ans);
       setChatHistory(prev => [...prev, { q: query, a: ans }]);
       setStatus('Answer received.');
-      
-      // Start text streaming & visual animation
+
+      // Clean answer for TTS — use equal-length replacements so charIndex maps perfectly 1:1
+      const cleanForTTS = (text) => text
+        .replace(/[【】•·*]/g, ' ')        // remove special brackets, bullets, and asterisks
+        .replace(/\n\n/g, '. ')           // double newlines (2 chars) → '. ' (2 chars) for pause
+        .replace(/\n/g, ' ');             // single newlines → space
+
+      const cleanAns = cleanForTTS(ans);
+
+      // Visual prep, but don't start typing until the voice starts!
       setIsSpeaking(true);
       setIsAnimatingTalk(true);
-      let i = 0;
       
       if (streamTimer.current) clearInterval(streamTimer.current);
       
-      // Fire off TTS (Best effort, won't block visuals if it fails on mobile)
-      let ttsActive = false;
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(ans);
-        
-        utterance.onstart = () => { ttsActive = true; };
-        utterance.onend = () => {
-          ttsActive = false;
-          setIsSpeaking(false);
-          setIsAnimatingTalk(false);
-        };
-        utterance.onerror = () => {
-          ttsActive = false;
-          setIsSpeaking(false);
-          setIsAnimatingTalk(false);
-        };
-        
-        window.speechSynthesis.speak(utterance);
-        // Sometimes onstart doesn't fire immediately but it is speaking
-        ttsActive = true; 
-      }
-
-      streamTimer.current = setInterval(() => {
-        i++;
-        setDisplayedAnswer(ans.substring(0, i));
-        
-        // Randomly pause animation to look natural
-        if (i % 15 === 0) {
-          setIsAnimatingTalk(false);
-          setTimeout(() => { 
-            if (ttsActive || i < ans.length) setIsAnimatingTalk(true); 
-          }, 200);
-        }
-        
-        if (i >= ans.length) {
-          clearInterval(streamTimer.current);
-          // Only stop animation if TTS is NOT active
-          if (!ttsActive) {
+      let usedTTS = false;
+      const startTextStream = () => {
+        let i = 0;
+        const msPerChar = 65; // Matches rate 0.9
+        streamTimer.current = setInterval(() => {
+          i++;
+          setDisplayedAnswer(ans.substring(0, i));
+          
+          if (i % 20 === 0 || ['.', ',', '!'].includes(ans[i])) {
+            setIsAnimatingTalk(false);
+            setTimeout(() => { if (i < ans.length) setIsAnimatingTalk(true); }, 150);
+          }
+          
+          if (i >= ans.length) {
+            clearInterval(streamTimer.current);
             setIsSpeaking(false);
             setIsAnimatingTalk(false);
           }
+        }, msPerChar);
+      };
+
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(cleanAns);
+        
+        // Prevent Garbage Collection
+        window.currentUtterance = utterance; 
+
+        const applyVoiceAndSpeak = () => {
+          const voices = window.speechSynthesis.getVoices();
+          const voice = voices.find(v => v.voiceURI === selectedVoiceURI) || voices[0];
+          
+          if (voice) {
+            utterance.voice = voice;
+            // Lower pitch for male-sounding voices, higher for female
+            const isMale = voice.name.toLowerCase().includes('male') || ['Daniel', 'Alex', 'Fred', 'David'].some(n => voice.name.includes(n));
+            utterance.pitch = isMale ? 1.0 : 1.2;
+          }
+          
+          utterance.rate = 0.9;
+          utterance.volume = 1.0;
+          window.speechSynthesis.speak(utterance);
+        };
+
+        if (window.speechSynthesis.getVoices().length > 0) {
+          applyVoiceAndSpeak();
+        } else {
+          window.speechSynthesis.onvoiceschanged = () => {
+            applyVoiceAndSpeak();
+            window.speechSynthesis.onvoiceschanged = null;
+          };
         }
-      }, 35); // 35ms per char
+
+        // ONLY start the text typing when the voice actually begins speaking!
+        utterance.onstart = () => {
+          usedTTS = true;
+          startTextStream();
+        };
+
+        utterance.onend = () => {
+          window.currentUtterance = null;
+        };
+        
+        utterance.onerror = () => {
+          window.currentUtterance = null;
+          if (!usedTTS) startTextStream();
+        };
+
+        // Fallback: if browser blocks TTS or it fails to start within 500ms, start typing anyway
+        setTimeout(() => {
+          if (!usedTTS) startTextStream();
+        }, 500);
+
+      } else {
+        startTextStream();
+      }
     } catch (err) {
       console.error(err);
       setStatus('Error asking question. Make sure a document is uploaded.');
@@ -264,7 +323,30 @@ export function Chat({ onBack, isOverlay = false }) {
             <h2 style={{ margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}><span className="brand-pill-badge" style={{ fontSize: '0.6rem', padding: '2px 6px' }}>注意!</span> RULES BOT</h2>
           </div>
         </div>
-        <div className="nav-right" style={{ display: 'flex', alignItems: 'center' }}>
+        <div className="nav-right" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <select 
+            value={selectedVoiceURI} 
+            onChange={(e) => setSelectedVoiceURI(e.target.value)}
+            style={{ 
+              background: 'rgba(0, 0, 0, 0.4)', 
+              border: '1px solid var(--neon-cyan)', 
+              color: 'var(--text-light)', 
+              fontSize: '0.8rem', 
+              cursor: 'pointer', 
+              padding: '6px 10px', 
+              borderRadius: '8px',
+              fontFamily: 'Orbitron, sans-serif',
+              outline: 'none',
+              maxWidth: '180px',
+              textOverflow: 'ellipsis'
+            }}
+          >
+            {availableVoices.map(voice => (
+              <option key={voice.voiceURI} value={voice.voiceURI}>
+                {voice.name}
+              </option>
+            ))}
+          </select>
           <button onClick={() => { stopSpeaking(); onBack(); }} style={{ background: 'none', border: 'none', color: 'var(--neon-pink)', fontSize: '2rem', cursor: 'pointer', padding: '0 15px', lineHeight: '1' }}>×</button>
         </div>
       </header>
@@ -311,7 +393,7 @@ export function Chat({ onBack, isOverlay = false }) {
             <div className="chat-response-container">
               <div className="chat-bubble bot" style={{ margin: 0, position: 'relative' }}>
                 <div className="bot-avatar-icon"><Bot size={24} color="var(--neon-cyan)" /></div>
-                <div>
+                <div style={{ whiteSpace: 'pre-wrap' }}>
                   {isSpeaking ? displayedAnswer : answer}
                   {isSpeaking && <span className="cursor-blink">|</span>}
                 </div>

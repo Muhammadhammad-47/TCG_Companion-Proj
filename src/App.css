@@ -510,8 +510,6 @@ body {
   position: relative;
   z-index: 10;
   width: 95%;
-  max-height: 50%;
-  overflow-y: auto;
   background: rgba(2, 5, 14, 0.85);
   backdrop-filter: blur(8px);
   border-radius: 12px;
