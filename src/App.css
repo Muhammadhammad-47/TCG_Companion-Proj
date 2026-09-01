@@ -103,7 +103,7 @@ body {
   gap: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 .hub-btn:hover {
@@ -333,7 +333,7 @@ body {
   border-radius: 12px;
   padding: 20px 25px;
   width: 95%;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   transition: border-color 0.3s ease;
 }
 
@@ -396,7 +396,10 @@ body {
   .force-portrait-overlay {
     display: flex;
     position: fixed;
-    top: 0; left: 0; width: 100vw; height: 100vh;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
     background: #000;
     color: #fff;
     z-index: 999999;
@@ -406,11 +409,13 @@ body {
     text-align: center;
     padding: 20px;
   }
+
   .force-portrait-overlay .icon {
     font-size: 4rem;
     animation: rotatePhonePortrait 2s infinite ease-in-out;
     margin-bottom: 20px;
   }
+
   .force-portrait-overlay h2 {
     color: var(--neon-pink);
     margin-bottom: 10px;
@@ -419,15 +424,34 @@ body {
 }
 
 @keyframes rotatePhonePortrait {
-  0% { transform: rotate(0deg); }
-  50% { transform: rotate(90deg); }
-  100% { transform: rotate(90deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  50% {
+    transform: rotate(90deg);
+  }
+
+  100% {
+    transform: rotate(90deg);
+  }
 }
 
 @keyframes tilt-shimmer {
-  0% { transform: perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1); box-shadow: 0 0 10px rgba(0, 240, 255, 0.2); }
-  50% { transform: perspective(1000px) rotateX(2deg) rotateY(2deg) scale(1.02); box-shadow: 0 0 25px rgba(0, 240, 255, 0.5); }
-  100% { transform: perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1); box-shadow: 0 0 10px rgba(0, 240, 255, 0.2); }
+  0% {
+    transform: perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1);
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+  }
+
+  50% {
+    transform: perspective(1000px) rotateX(2deg) rotateY(2deg) scale(1.02);
+    box-shadow: 0 0 25px rgba(0, 240, 255, 0.5);
+  }
+
+  100% {
+    transform: perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1);
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+  }
 }
 
 .btn-enter-game-cta {
@@ -467,7 +491,7 @@ body {
   width: 100%;
   height: 100%;
   border: 1px solid rgba(0, 240, 255, 0.2);
-  box-shadow: 0 0 50px rgba(0,0,0,0.8);
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
   margin: 0 auto;
 }
 
@@ -478,7 +502,7 @@ body {
   max-width: calc(100vh * (16 / 9));
   max-height: calc(100vw * (9 / 16));
   border: 1px solid rgba(0, 240, 255, 0.2);
-  box-shadow: 0 0 50px rgba(0,0,0,0.8);
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
   margin: 0 auto;
 }
 
@@ -521,7 +545,8 @@ body {
 }
 
 .chat-bubble.bot::before {
-  display: none; /* Hide the arrow triangle since it's floating on top now */
+  display: none;
+  /* Hide the arrow triangle since it's floating on top now */
 }
 
 
@@ -529,3 +554,72 @@ body {
   flex-shrink: 0;
 }
 
+
+/* Gemini Voice Avatar Styles */
+.avatar-gemini-container {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto;
+}
+
+.avatar-gemini-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  padding: 5px;
+  background: conic-gradient(from 0deg, #ff3366, #33ccff, #9933ff, #ff3366);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.1;
+  transition: opacity 0.3s ease;
+}
+
+.avatar-gemini-container.is-speaking .avatar-gemini-ring {
+  animation: gemini-spin 3s linear infinite;
+  opacity: 1;
+}
+
+.avatar-gemini-mask {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  background-color: var(--bg-card-solid);
+}
+
+.avatar-gemini-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(.6);
+  transform-origin: center center;
+  transition: all 0.05s ease;
+}
+
+@keyframes gemini-spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes gemini-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 15px rgba(51, 204, 255, 0.4);
+  }
+
+  100% {
+    transform: scale(1.05);
+    box-shadow: 0 0 35px rgba(255, 51, 102, 0.8);
+  }
+}

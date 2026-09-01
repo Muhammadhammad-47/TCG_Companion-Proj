@@ -11,54 +11,84 @@ import { DynamicScaleWrapper } from './components/DynamicScaleWrapper.jsx';
 
 import { RULES_KNOWLEDGE } from './game/data/rulesKnowledge.js';
 
-const Avatar = ({ isSpeaking }) => {
-  const [index, setIndex] = useState(0);
+const getViseme = (text, index) => {
+  if (!text || index < 0 || index >= text.length) return 'CLOSED (BLINK).png';
+  const char = text[index].toLowerCase();
+  const nextChar = index + 1 < text.length ? text[index + 1].toLowerCase() : '';
+  const digraph = char + nextChar;
 
-  const idleSequence = [
-    { folder: 'Idle', frame: 1 },
-    { folder: 'Idle', frame: 2 }
-  ];
+  // Digraphs
+  if (['ch', 'sh'].includes(digraph)) return 'CH, J, SH.png';
+  if (digraph === 'ee') return 'EE.png';
+  if (digraph === 'oo') return 'OO.png';
+  if (digraph === 'th') return 'TH.png';
+  if (digraph === 'ay') return 'AY.png';
+  if (digraph === 'ai') return 'AI.png';
+  if (digraph === 'ow') return 'OW.png';
+  if (digraph === 'oh') return 'OH.png';
 
-  const talkSequence = [
-    { folder: 'Talk', frame: 2 },
-    { folder: 'Talk', frame: 3 },
-    { folder: 'Talk', frame: 1 },
-    { folder: 'Talk', frame: 4 },
-    { folder: 'Idle', frame: 3 },
-    { folder: 'Idle', frame: 4 }
-  ];
+  // Single characters
+  if (['b', 'p'].includes(char)) return 'B, P.png';
+  if (char === 'm') return 'M.png';
+  if (['d', 't', 'n', 'k', 'g', 'c'].includes(char)) return 'D, T, N, K, G.png';
+  if (['f', 'v'].includes(char)) return 'F, V.png';
+  if (char === 'l') return 'L.png';
+  if (char === 'r') return 'R.png';
+  if (['s', 'z', 'x'].includes(char)) return 'S, Z.png';
+  if (['w', 'q'].includes(char)) return 'W, Q.png';
+  if (char === 'j') return 'CH, J, SH.png';
+  if (char === 'y') return 'Y.png';
+  if (['a', 'i'].includes(char)) return 'A, I.png';
+  if (char === 'e') return 'E.png';
+  if (char === 'o') return 'O.png';
+  if (char === 'u') return 'U.png';
 
-  const sequence = isSpeaking ? talkSequence : idleSequence;
+  // Punctuation / Spacing
+  if ([' ', '.', ',', '!', '?'].includes(char)) return 'CLOSED (BLINK).png';
 
-  useEffect(() => {
-    setIndex(0);
-  }, [isSpeaking]);
+  return 'CLOSED (BLINK).png';
+};
 
-  useEffect(() => {
-    const speed = isSpeaking ? 300 : 600;
-    const interval = setInterval(() => {
-      setIndex((prev) => (prev + 1) % sequence.length);
-    }, speed);
+const Avatar = ({ isSpeaking, currentVisemeFile }) => {
+  const imagePath = isSpeaking && currentVisemeFile
+    ? `${import.meta.env.BASE_URL}Chatbot Characters/Chyna/MouthShapes/${currentVisemeFile}`
+    : `${import.meta.env.BASE_URL}Chatbot Characters/Chyna/Idle/SILENCE.png`;
 
-    return () => clearInterval(interval);
-  }, [isSpeaking, sequence.length]);
-
-  const current = sequence[index] || sequence[0];
-  const imagePath = `${import.meta.env.BASE_URL}Character/${current.folder}/${current.frame}.png`;
+  // Dynamically calculate ring scale based on how open the mouth is
+  let ringScale = 1.0;
+  if (isSpeaking && currentVisemeFile) {
+    const v = currentVisemeFile.toUpperCase();
+    if (v.includes('A.PNG') || v.includes('E.PNG') || v.includes('O.PNG') || v.includes('WQ.PNG')) {
+      ringScale = 1.25; // wide open
+    } else if (v.includes('U.PNG') || v.includes('I.PNG') || v.includes('L.PNG') || v.includes('MBP.PNG')) {
+      ringScale = 1.15; // partially open
+    } else if (v.includes('CLOSED')) {
+      ringScale = 1.0;  // closed
+    } else {
+      ringScale = 1.08; // other consonants
+    }
+  }
 
   return (
-    <div style={{ width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
-      <img 
-        src={imagePath} 
-        alt="Avatar" 
+    <div className={`avatar-gemini-container ${isSpeaking ? 'is-speaking' : ''}`}>
+      <div 
+        className="avatar-gemini-ring-wrapper" 
         style={{ 
-          maxWidth: '80%', 
-          maxHeight: '80%', 
-          objectFit: 'contain', 
-          filter: 'drop-shadow(0 15px 25px rgba(0,0,0,0.6))',
-          transition: 'all 0.2s ease'
-        }} 
-      />
+          position: 'absolute', 
+          inset: 0, 
+          transform: `scale(${ringScale})`, 
+          transition: 'transform 0.1s ease-out' 
+        }}
+      >
+        <div className="avatar-gemini-ring"></div>
+      </div>
+      <div className="avatar-gemini-mask">
+        <img 
+          src={imagePath} 
+          alt="Avatar" 
+          className="avatar-gemini-image"
+        />
+      </div>
     </div>
   );
 };
@@ -76,18 +106,20 @@ export function Chat({ onBack, isOverlay = false }) {
   const [chatHistory, setChatHistory] = useState([]);
   const [availableVoices, setAvailableVoices] = useState([]);
   const [selectedVoiceURI, setSelectedVoiceURI] = useState('');
+  const [useExactSync, setUseExactSync] = useState(true);
+  const [currentVisemeFile, setCurrentVisemeFile] = useState('CLOSED (BLINK).png');
 
   // Load available system voices
   useEffect(() => {
     if ('speechSynthesis' in window) {
       const loadVoices = () => {
-        // Filter to English voices to keep the dropdown clean
-        const voices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
+        // Filter to English voices AND ensure they are locally processed (network voices often don't support boundary events)
+        const voices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('en') && v.localService);
         setAvailableVoices(voices);
         // Set a smart default if none selected yet
         if (voices.length > 0 && !selectedVoiceURI) {
-           const defaultVoice = voices.find(v => v.name.includes('Google UK English Female') || v.name.includes('Samantha') || v.name.includes('Zira')) || voices[0];
-           if (defaultVoice) setSelectedVoiceURI(defaultVoice.voiceURI);
+          const defaultVoice = voices.find(v => v.name.includes('Google UK English Female') || v.name.includes('Samantha') || v.name.includes('Zira')) || voices[0];
+          if (defaultVoice) setSelectedVoiceURI(defaultVoice.voiceURI);
         }
       };
       loadVoices();
@@ -104,7 +136,7 @@ export function Chat({ onBack, isOverlay = false }) {
   const localSearch = (query) => {
     const qLower = query.toLowerCase().trim();
     if (!qLower) return "Please ask a question about Attention TCG rules, combat dice, character moves, or Zombie mode!";
-    
+
     if (qLower.match(/^(hi|hello|hey|greetings|start)/)) return "Hello warrior! I am your Attention TCG Rules & Strategy Assistant. Ask me anything about character moves, 2-dice combat, Energy Tokens, Zombie mode, or card effects!";
     if (qLower.match(/(how are you|how do you do)/)) return "I am running at peak combat readiness and ready to clarify any Attention TCG tournament rules or match rulings!";
     if (qLower.match(/(who are you|introduce yourself|what are you)/)) return "I am the official Attention TCG Companion AI. I have the entire GDD rulebook, character stats, DP defense math, and Zombie mode mechanics in my memory to assist your duels!";
@@ -129,15 +161,15 @@ export function Chat({ onBack, isOverlay = false }) {
     if (bestKnowledge && highestScore >= 2) {
       return `${bestKnowledge.shortAnswer}\n\n${bestKnowledge.details}`;
     }
-    
+
     // 2. Fallback rulebook document paragraph search
     if (documentText) {
       const paragraphs = documentText.split(/\n\s*\n/).filter(p => p.trim() !== '');
       const queryTokens = qLower.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 2);
-      
+
       let bestMatch = "";
       let maxDocScore = 0;
-      
+
       for (let p of paragraphs) {
         let pScore = 0;
         const pLower = p.toLowerCase();
@@ -149,7 +181,7 @@ export function Chat({ onBack, isOverlay = false }) {
           bestMatch = p;
         }
       }
-      
+
       if (maxDocScore >= 2) {
         return bestMatch.trim();
       }
@@ -166,7 +198,7 @@ export function Chat({ onBack, isOverlay = false }) {
     setStatus('Asking question...');
     setQuestion('');
     setDisplayedAnswer('');
-    
+
     try {
       const ans = localSearch(query);
       setAnswer(ans);
@@ -184,9 +216,9 @@ export function Chat({ onBack, isOverlay = false }) {
       // Visual prep, but don't start typing until the voice starts!
       setIsSpeaking(true);
       setIsAnimatingTalk(true);
-      
+
       if (streamTimer.current) clearInterval(streamTimer.current);
-      
+
       let usedTTS = false;
       const startTextStream = () => {
         let i = 0;
@@ -194,72 +226,164 @@ export function Chat({ onBack, isOverlay = false }) {
         streamTimer.current = setInterval(() => {
           i++;
           setDisplayedAnswer(ans.substring(0, i));
-          
-          if (i % 20 === 0 || ['.', ',', '!'].includes(ans[i])) {
+          setCurrentVisemeFile(getViseme(ans, i - 1));
+
+          if (i % 20 === 0 || ['.', ',', '!'].includes(ans[i - 1])) {
             setIsAnimatingTalk(false);
+            setCurrentVisemeFile('CLOSED (BLINK).png');
             setTimeout(() => { if (i < ans.length) setIsAnimatingTalk(true); }, 150);
           }
-          
+
           if (i >= ans.length) {
             clearInterval(streamTimer.current);
             setIsSpeaking(false);
             setIsAnimatingTalk(false);
+            setCurrentVisemeFile('SMILE.png');
           }
         }, msPerChar);
       };
 
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(cleanAns);
-        
-        // Prevent Garbage Collection
-        window.currentUtterance = utterance; 
 
-        const applyVoiceAndSpeak = () => {
+        const applyVoiceToUtterance = (utt) => {
           const voices = window.speechSynthesis.getVoices();
           const voice = voices.find(v => v.voiceURI === selectedVoiceURI) || voices[0];
-          
           if (voice) {
-            utterance.voice = voice;
-            // Lower pitch for male-sounding voices, higher for female
+            utt.voice = voice;
             const isMale = voice.name.toLowerCase().includes('male') || ['Daniel', 'Alex', 'Fred', 'David'].some(n => voice.name.includes(n));
-            utterance.pitch = isMale ? 1.0 : 1.2;
+            utt.pitch = isMale ? 1.0 : 1.2;
           }
-          
-          utterance.rate = 0.9;
-          utterance.volume = 1.0;
-          window.speechSynthesis.speak(utterance);
+          utt.rate = 0.9;
+          utt.volume = 1.0;
         };
 
-        if (window.speechSynthesis.getVoices().length > 0) {
-          applyVoiceAndSpeak();
-        } else {
-          window.speechSynthesis.onvoiceschanged = () => {
-            applyVoiceAndSpeak();
-            window.speechSynthesis.onvoiceschanged = null;
+        if (useExactSync) {
+          // Option A: Single Utterance with onboundary
+          const utterance = new SpeechSynthesisUtterance(cleanAns);
+          applyVoiceToUtterance(utterance);
+
+          let vInterval = null;
+          let onboundaryFired = false;
+
+          utterance.onstart = () => {
+            setIsSpeaking(true);
+            setIsAnimatingTalk(true);
+
+            // Fallback for voices that don't support onboundary
+            setTimeout(() => {
+              if (!onboundaryFired) {
+                startTextStream();
+              }
+            }, 500);
           };
+
+          utterance.onboundary = (event) => {
+            onboundaryFired = true;
+            if (event.name === 'word') {
+              if (vInterval) clearInterval(vInterval);
+
+              let nextSpace = cleanAns.indexOf(' ', event.charIndex);
+              if (nextSpace === -1) nextSpace = cleanAns.length;
+
+              const wordStr = cleanAns.substring(event.charIndex, nextSpace);
+
+              // Show text up to this word
+              setDisplayedAnswer(ans.substring(0, nextSpace));
+
+              // Start visemes for this word
+              let wordClean = wordStr.trim();
+              // If it's just punctuation, close mouth immediately and wait
+              if (/^[.,!?]+$/.test(wordClean)) {
+                 setCurrentVisemeFile('CLOSED (BLINK).png');
+                 return;
+              }
+
+              setCurrentVisemeFile(getViseme(wordClean, 0));
+
+              // Limit to max 3 frames per word so it doesn't animate after the voice stops
+              const maxFrames = Math.min(wordClean.length, 3);
+
+              let vIdx = 0;
+              vInterval = setInterval(() => {
+                vIdx++;
+                if (vIdx < maxFrames) {
+                  const nextViseme = getViseme(wordClean, vIdx);
+                  // Forcing update on every letter to allow mid-word bouncing/blinking
+                  setCurrentVisemeFile(nextViseme);
+                } else {
+                  // If the word ends with punctuation, close the mouth during the TTS pause
+                  if (/[.,!?]$/.test(wordClean)) {
+                     setCurrentVisemeFile('CLOSED (BLINK).png');
+                  }
+                  clearInterval(vInterval);
+                }
+              }, 150);
+            }
+          };
+
+          utterance.onend = () => {
+            if (vInterval) clearInterval(vInterval);
+            setIsSpeaking(false);
+            setIsAnimatingTalk(false);
+            setCurrentVisemeFile('SMILE.png');
+            setDisplayedAnswer(ans);
+          };
+
+          utterance.onerror = () => {
+            if (vInterval) clearInterval(vInterval);
+            setIsSpeaking(false);
+            setIsAnimatingTalk(false);
+            setDisplayedAnswer(ans);
+          };
+
+          if (window.speechSynthesis.getVoices().length > 0) {
+            window.speechSynthesis.speak(utterance);
+          } else {
+            window.speechSynthesis.onvoiceschanged = () => {
+              window.speechSynthesis.speak(utterance);
+              window.speechSynthesis.onvoiceschanged = null;
+            };
+          }
+
+        } else {
+          // Option C: Hybrid Typewriter (current logic)
+          const utterance = new SpeechSynthesisUtterance(cleanAns);
+          window.currentUtterance = utterance; // Prevent Garbage Collection
+
+          const applyVoiceAndSpeak = () => {
+            applyVoiceToUtterance(utterance);
+            window.speechSynthesis.speak(utterance);
+          };
+
+          if (window.speechSynthesis.getVoices().length > 0) {
+            applyVoiceAndSpeak();
+          } else {
+            window.speechSynthesis.onvoiceschanged = () => {
+              applyVoiceAndSpeak();
+              window.speechSynthesis.onvoiceschanged = null;
+            };
+          }
+
+          utterance.onstart = () => {
+            usedTTS = true;
+            startTextStream();
+          };
+
+          utterance.onend = () => {
+            window.currentUtterance = null;
+          };
+
+          utterance.onerror = () => {
+            window.currentUtterance = null;
+            if (!usedTTS) startTextStream();
+          };
+
+          // Fallback if TTS fails to start within 500ms
+          setTimeout(() => {
+            if (!usedTTS) startTextStream();
+          }, 500);
         }
-
-        // ONLY start the text typing when the voice actually begins speaking!
-        utterance.onstart = () => {
-          usedTTS = true;
-          startTextStream();
-        };
-
-        utterance.onend = () => {
-          window.currentUtterance = null;
-        };
-        
-        utterance.onerror = () => {
-          window.currentUtterance = null;
-          if (!usedTTS) startTextStream();
-        };
-
-        // Fallback: if browser blocks TTS or it fails to start within 500ms, start typing anyway
-        setTimeout(() => {
-          if (!usedTTS) startTextStream();
-        }, 500);
-
       } else {
         startTextStream();
       }
@@ -299,9 +423,9 @@ export function Chat({ onBack, isOverlay = false }) {
   useEffect(() => {
     try {
       if (window.screen && screen.orientation && screen.orientation.lock) {
-        screen.orientation.lock('portrait').catch(() => {});
+        screen.orientation.lock('portrait').catch(() => { });
       }
-    } catch(e) {}
+    } catch (e) { }
   }, []);
 
   const layoutWidth = '100%';
@@ -324,16 +448,16 @@ export function Chat({ onBack, isOverlay = false }) {
           </div>
         </div>
         <div className="nav-right" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          <select 
-            value={selectedVoiceURI} 
+          <select
+            value={selectedVoiceURI}
             onChange={(e) => setSelectedVoiceURI(e.target.value)}
-            style={{ 
-              background: 'rgba(0, 0, 0, 0.4)', 
-              border: '1px solid var(--neon-cyan)', 
-              color: 'var(--text-light)', 
-              fontSize: '0.8rem', 
-              cursor: 'pointer', 
-              padding: '6px 10px', 
+            style={{
+              background: 'rgba(0, 0, 0, 0.4)',
+              border: '1px solid var(--neon-cyan)',
+              color: 'var(--text-light)',
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              padding: '6px 10px',
               borderRadius: '8px',
               fontFamily: 'Orbitron, sans-serif',
               outline: 'none',
@@ -352,13 +476,13 @@ export function Chat({ onBack, isOverlay = false }) {
       </header>
 
       <div className="chatgpt-layout" style={{ position: 'relative', zIndex: 10, background: 'transparent', width: layoutWidth, flexDirection: 'column', flex: 1, display: 'flex' }}>
-        
+
         <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '10px', marginBottom: '15px' }}>
             <h3>Common Questions</h3>
             <button className="burger-button" onClick={toggleSidebar}>×</button>
           </div>
-          
+
           <div style={{ flex: 1, overflowY: 'auto' }}>
             <ul className="preset-list">
               {presetQuestions.map((q, idx) => (
@@ -386,7 +510,7 @@ export function Chat({ onBack, isOverlay = false }) {
 
         <div className="canvas-wrapper chat-canvas-layout" style={{ width: layoutWidth, flex: 1 }}>
           <div className="chat-avatar-container">
-            <Avatar isSpeaking={isAnimatingTalk} />
+            <Avatar isSpeaking={isAnimatingTalk} currentVisemeFile={currentVisemeFile} />
           </div>
 
           {answer && (
@@ -404,12 +528,12 @@ export function Chat({ onBack, isOverlay = false }) {
 
         <div className="bottom-input-area" style={{ width: layoutWidth, padding: '20px 40px 40px 40px', marginTop: 'auto' }}>
           <div className="input-container" style={{ width: innerInputWidth, margin: '0 auto' }}>
-            <textarea 
+            <textarea
               className="chat-textarea"
               rows={2}
               style={{ minWidth: 0, resize: 'none' }}
-              value={question} 
-              onChange={(e) => setQuestion(e.target.value)} 
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey && !isSpeaking) {
                   e.preventDefault();
@@ -422,9 +546,9 @@ export function Chat({ onBack, isOverlay = false }) {
             {!isSpeaking ? (
               <button className="send-button" onClick={() => askQuestion()}><Send size={18} /></button>
             ) : (
-              <button 
-                className="send-button" 
-                onClick={stopSpeaking} 
+              <button
+                className="send-button"
+                onClick={stopSpeaking}
                 style={{ background: '#ff3366', color: '#fff', boxShadow: '0 0 15px rgba(255, 51, 102, 0.6)', flexShrink: 0 }}
                 title="Stop Speaking"
               >
@@ -468,9 +592,9 @@ export function Hub() {
   React.useLayoutEffect(() => {
     try {
       if (screen.orientation && screen.orientation.lock) {
-        screen.orientation.lock('portrait').catch(() => {});
+        screen.orientation.lock('portrait').catch(() => { });
       }
-    } catch (e) {}
+    } catch (e) { }
   }, []);
 
   const PortraitOverlay = () => (
@@ -512,16 +636,16 @@ export function Hub() {
                 </div>
               </button>
 
-              <button 
-                className="btn-enter-game-cta" 
+              <button
+                className="btn-enter-game-cta"
                 onClick={() => {
                   try {
                     if (screen.orientation && screen.orientation.lock) {
-                      screen.orientation.lock('landscape').catch(() => {});
+                      screen.orientation.lock('landscape').catch(() => { });
                     }
-                  } catch(e) {}
+                  } catch (e) { }
                   navigate('/game');
-                }} 
+                }}
                 style={{ width: '100%', padding: '30px 40px', borderRadius: '24px', background: 'linear-gradient(90deg, #0d1a38 0%, #050a18 100%)', border: '2px solid var(--neon-cyan)', color: 'var(--neon-cyan)' }}
               >
                 <div style={{ marginRight: '20px', display: 'flex', alignItems: 'center' }}><Swords size={48} /></div>
