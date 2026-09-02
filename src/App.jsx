@@ -45,52 +45,66 @@ const Avatar = ({ characterId, isSpeaking, currentVisemeFile }) => {
     ? `${import.meta.env.BASE_URL}${avatarConfig.talkDir}/${closedViseme}`
     : `${import.meta.env.BASE_URL}${avatarConfig.idlePath}`;
 
+  const visuals = avatarConfig.visuals || {
+    enableWaves: true,
+    enableOutline: true,
+    enableCircleBg: true,
+    pumpScaleWide: 1.25,
+    pumpScalePartial: 1.15,
+    pumpScaleConsonant: 1.08,
+    pumpScaleClosed: 1.0
+  };
+
   // Dynamically calculate ring scale based on how open the mouth is
-  let ringScale = 1.0;
+  let ringScale = visuals.pumpScaleClosed;
   if (isSpeaking && currentVisemeFile) {
     const v = currentVisemeFile.toUpperCase();
     if (v.includes('A') || v.includes('E') || v.includes('O') || v.includes('W')) {
-      ringScale = 1.25; // wide open
+      ringScale = visuals.pumpScaleWide;
     } else if (v.includes('U') || v.includes('I') || v.includes('L') || v.includes('M') || v.includes('B')) {
-      ringScale = 1.15; // partially open
+      ringScale = visuals.pumpScalePartial;
     } else if (v.includes('CLOSED') || v.includes('SILENCE')) {
-      ringScale = 1.0;  // closed
+      ringScale = visuals.pumpScaleClosed;
     } else {
-      ringScale = 1.08; // other consonants
+      ringScale = visuals.pumpScaleConsonant;
     }
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div className={`avatar-gemini-container ${isSpeaking ? 'is-speaking' : ''}`}>
-        {/* Ambient Character Aura */}
-        <div 
-          className="avatar-aura-glow"
-          style={{
-            background: avatarConfig.ringGradient || avatarConfig.themeColor || 'var(--neon-cyan)',
-          }}
-        />
-
-        {/* Dynamic Glowing Ring */}
-        <div 
-          className="avatar-gemini-ring-wrapper" 
-          style={{ 
-            position: 'absolute', 
-            inset: 0, 
-            transform: `scale(${ringScale})`, 
-            transition: 'transform 0.1s ease-out' 
-          }}
-        >
+        {/* Ambient Character Aura (only if outline is enabled) */}
+        {visuals.enableOutline && (
           <div 
-            className="avatar-gemini-ring"
+            className="avatar-aura-glow"
             style={{
-              background: avatarConfig.ringGradient || undefined
+              background: avatarConfig.ringGradient || avatarConfig.themeColor || 'var(--neon-cyan)',
             }}
-          ></div>
-        </div>
+          />
+        )}
+
+        {/* Dynamic Glowing Ring (only if outline is enabled) */}
+        {visuals.enableOutline && (
+          <div 
+            className="avatar-gemini-ring-wrapper" 
+            style={{ 
+              position: 'absolute', 
+              inset: 0, 
+              transform: `scale(${ringScale})`, 
+              transition: isSpeaking ? 'transform 0.1s ease-out' : 'transform 1.5s ease-out'
+            }}
+          >
+            <div 
+              className="avatar-gemini-ring"
+              style={{
+                background: avatarConfig.ringGradient || undefined
+              }}
+            ></div>
+          </div>
+        )}
 
         {/* Masked Portrait with Scale/Offset */}
-        <div className="avatar-gemini-mask">
+        <div className="avatar-gemini-mask" style={{ background: visuals.enableCircleBg ? 'var(--bg-card-solid)' : 'transparent' }}>
           <img 
             src={imagePath} 
             alt={avatarConfig.name} 
@@ -103,20 +117,22 @@ const Avatar = ({ characterId, isSpeaking, currentVisemeFile }) => {
         </div>
       </div>
 
-      {/* Audio Reactive Waveform Indicator */}
-      <div className={`avatar-audio-waves ${isSpeaking ? 'is-active' : ''}`}>
-        {[1, 2, 3, 4, 5].map((i) => (
-          <div 
-            key={i} 
-            className="soundwave-bar" 
-            style={{ 
-              background: avatarConfig.themeColor || 'var(--neon-cyan)',
-              height: isSpeaking ? undefined : '3px',
-              opacity: isSpeaking ? 0.95 : 0.25,
-            }} 
-          />
-        ))}
-      </div>
+      {/* Audio Reactive Waveform Indicator (only if enabled) */}
+      {visuals.enableWaves && (
+        <div className={`avatar-audio-waves ${isSpeaking ? 'is-active' : ''}`}>
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div 
+              key={i} 
+              className="soundwave-bar" 
+              style={{ 
+                background: avatarConfig.themeColor || 'var(--neon-cyan)',
+                height: isSpeaking ? undefined : '3px',
+                opacity: isSpeaking ? 0.95 : 0.25,
+              }} 
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };
@@ -159,12 +175,32 @@ export function Chat({ onBack, isOverlay = false }) {
     if (newAvatarId === selectedAvatarId) return;
     stopSpeaking();
     setSelectedAvatarId(newAvatarId);
+    setChatHistory([]);
+    setDisplayedAnswer('');
+    setAnswer('');
+    setStatus('');
+    
     try {
       localStorage.setItem(AVATAR_STORAGE_KEY, newAvatarId);
     } catch (e) {
       console.warn('Failed saving avatar to localStorage:', e);
     }
     setCurrentVisemeFile(getVisemeFileForChar(newAvatarId, 'CLOSED'));
+
+    // Automatically switch voice based on character gender
+    if (availableVoices.length > 0) {
+      let voice;
+      if (newAvatarId === 'chyna') {
+        // Chyna is male
+        voice = availableVoices.find(v => v.name.toLowerCase().includes('male') || ['Daniel', 'Alex', 'Fred', 'David'].some(n => v.name.includes(n)));
+      } else {
+        // Others are female
+        voice = availableVoices.find(v => v.name.toLowerCase().includes('female') || ['Samantha', 'Victoria', 'Karen', 'Zira'].some(n => v.name.includes(n)));
+      }
+      if (voice) {
+        setSelectedVoiceURI(voice.voiceURI);
+      }
+    }
   };
 
   // Load available system voices
@@ -176,14 +212,20 @@ export function Chat({ onBack, isOverlay = false }) {
         setAvailableVoices(voices);
         // Set a smart default if none selected yet
         if (voices.length > 0 && !selectedVoiceURI) {
-          const defaultVoice = voices.find(v => v.name.includes('Google UK English Female') || v.name.includes('Samantha') || v.name.includes('Zira')) || voices[0];
+          let defaultVoice;
+          if (selectedAvatarId === 'chyna') {
+            defaultVoice = voices.find(v => v.name.toLowerCase().includes('male') || ['Daniel', 'Alex', 'Fred', 'David'].some(n => v.name.includes(n)));
+          } else {
+            defaultVoice = voices.find(v => v.name.toLowerCase().includes('female') || ['Samantha', 'Victoria', 'Karen', 'Zira'].some(n => v.name.includes(n)));
+          }
           if (defaultVoice) setSelectedVoiceURI(defaultVoice.voiceURI);
+          else setSelectedVoiceURI(voices[0].voiceURI);
         }
       };
       loadVoices();
       window.speechSynthesis.onvoiceschanged = loadVoices;
     }
-  }, [selectedVoiceURI]);
+  }, [selectedAvatarId]); // Removed selectedVoiceURI from deps so it doesn't constantly fight manual changes
 
   useEffect(() => {
     fetch(`${import.meta.env.BASE_URL}document.txt`)
@@ -263,11 +305,10 @@ export function Chat({ onBack, isOverlay = false }) {
       setChatHistory(prev => [...prev, { q: query, a: ans }]);
       setStatus('Answer received.');
 
-      // Clean answer for TTS — use equal-length replacements so charIndex maps perfectly 1:1
       const cleanForTTS = (text) => text
         .replace(/[【】•·*]/g, ' ')        // remove special brackets, bullets, and asterisks
-        .replace(/\n\n/g, '. ')           // double newlines (2 chars) → '. ' (2 chars) for pause
-        .replace(/\n/g, ' ');             // single newlines → space
+        .replace(/\n\n/g, '. ')           // double newlines (2 chars) -> '. ' (2 chars) for pause
+        .replace(/\n/g, ' ');             // single newlines -> space
 
       const cleanAns = cleanForTTS(ans);
 
@@ -509,16 +550,20 @@ export function Chat({ onBack, isOverlay = false }) {
           <AvatarDropdown 
             selectedAvatarId={selectedAvatarId} 
             onSelectAvatar={handleSelectAvatar} 
+            disabled={isSpeaking || isAnimatingTalk}
           />
           <select
             value={selectedVoiceURI}
             onChange={(e) => setSelectedVoiceURI(e.target.value)}
+            disabled={isSpeaking || isAnimatingTalk}
+            title={(isSpeaking || isAnimatingTalk) ? "Please wait until the bot stops speaking" : "Select Voice"}
             style={{
               background: 'rgba(0, 0, 0, 0.4)',
               border: '1px solid var(--neon-cyan)',
               color: 'var(--text-light)',
               fontSize: '0.78rem',
-              cursor: 'pointer',
+              cursor: (isSpeaking || isAnimatingTalk) ? 'not-allowed' : 'pointer',
+              opacity: (isSpeaking || isAnimatingTalk) ? 0.5 : 1,
               padding: '6px 8px',
               borderRadius: '8px',
               fontFamily: 'Orbitron, sans-serif',

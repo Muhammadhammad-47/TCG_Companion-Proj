@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
 import { CHAT_AVATARS } from '../chatAvatars';
 
-export function AvatarDropdown({ selectedAvatarId, onSelectAvatar }) {
+export function AvatarDropdown({ selectedAvatarId, onSelectAvatar, disabled }) {
   const [isOpen, setIsOpen] = useState(false);
 
   const currentAvatar = CHAT_AVATARS[selectedAvatarId] || CHAT_AVATARS.chyna;
@@ -42,11 +42,13 @@ export function AvatarDropdown({ selectedAvatarId, onSelectAvatar }) {
         id="avatar-trigger-btn"
         type="button"
         className="avatar-dropdown-trigger"
+        disabled={disabled}
         onClick={(e) => {
+          if (disabled) return;
           e.stopPropagation();
           setIsOpen(prev => !prev);
         }}
-        title="Select AI Companion Avatar"
+        title={disabled ? "Please wait until the bot stops speaking" : "Select AI Companion Avatar"}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -57,7 +59,7 @@ export function AvatarDropdown({ selectedAvatarId, onSelectAvatar }) {
           borderRadius: '20px',
           padding: '4px 10px 4px 6px',
           color: 'var(--text-light, #ffffff)',
-          cursor: 'pointer',
+          cursor: disabled ? 'not-allowed' : 'pointer',
           fontFamily: 'Orbitron, sans-serif',
           fontSize: '0.78rem',
           transition: 'all 0.2s ease',
@@ -65,6 +67,7 @@ export function AvatarDropdown({ selectedAvatarId, onSelectAvatar }) {
           backdropFilter: 'blur(8px)',
           position: 'relative',
           zIndex: isOpen ? 9999 : 'auto',
+          opacity: disabled ? 0.5 : 1,
         }}
       >
         {/* Idle Icon Thumbnail */}

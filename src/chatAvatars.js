@@ -16,6 +16,15 @@ export const CHAT_AVATARS = {
     themeColor: '#ff3366',
     glowColor: 'rgba(255, 51, 102, 0.6)',
     ringGradient: 'conic-gradient(from 0deg, #ff3366, #ff6600, #ff0055, #ff3366)',
+    visuals: {
+      enableWaves: false,
+      enableOutline: true,
+      enableCircleBg: true,
+      pumpScaleWide: 1.25,
+      pumpScalePartial: 1.15,
+      pumpScaleConsonant: 1.08,
+      pumpScaleClosed: 1.0
+    }
   },
   bee: {
     id: 'bee',
@@ -25,13 +34,22 @@ export const CHAT_AVATARS = {
     element: 'Lightning',
     icon: '🐝',
     quote: 'The hive always protects its own.',
-    idlePath: 'Charcter Bee/Idle/Idle.png',
-    talkDir: 'Charcter Bee/Talk',
-    scale: 0.82,
+    idlePath: 'Chatbot Characters/Bee/Idle/Idle.png',
+    talkDir: 'Chatbot Characters/Bee/MouthShapes',
+    scale: 0.6,
     offsetY: '4px',
     themeColor: '#00f0ff',
     glowColor: 'rgba(0, 240, 255, 0.6)',
     ringGradient: 'conic-gradient(from 0deg, #00f0ff, #ffd700, #ffaa00, #00f0ff)',
+    visuals: {
+      enableWaves: false,
+      enableOutline: true,
+      enableCircleBg: true,
+      pumpScaleWide: 1.25,
+      pumpScalePartial: 1.15,
+      pumpScaleConsonant: 1.08,
+      pumpScaleClosed: 1.0
+    }
   },
   kiko: {
     id: 'kiko',
@@ -41,13 +59,22 @@ export const CHAT_AVATARS = {
     element: 'Sonic / Lightning',
     icon: '⚡',
     quote: 'Too fast for you to catch!',
-    idlePath: 'Charcter Kiko/Talk/Slince.png',
-    talkDir: 'Charcter Kiko/Talk',
-    scale: 0.72,
-    offsetY: '0px',
+    idlePath: 'Chatbot Characters/Kiko/MouthShapes/Slince.png',
+    talkDir: 'Chatbot Characters/Kiko/MouthShapes',
+    scale: 0.55,
+    offsetY: '5px',
     themeColor: '#00e5ff',
     glowColor: 'rgba(0, 229, 255, 0.6)',
     ringGradient: 'conic-gradient(from 0deg, #00e5ff, #3d8bfd, #00ffaa, #00e5ff)',
+    visuals: {
+      enableWaves: false,
+      enableOutline: true,
+      enableCircleBg: true,
+      pumpScaleWide: 1.25,
+      pumpScalePartial: 1.15,
+      pumpScaleConsonant: 1.08,
+      pumpScaleClosed: 1.0
+    }
   },
   katsumi: {
     id: 'katsumi',
@@ -57,13 +84,22 @@ export const CHAT_AVATARS = {
     element: 'Shadow / Steel',
     icon: '🌸',
     quote: 'One strike, one truth.',
-    idlePath: 'Chracter katsumi/Talk/silence.png',
-    talkDir: 'Chracter katsumi/Talk',
-    scale: 0.85,
-    offsetY: '2px',
+    idlePath: 'Chatbot Characters/Katsumi/MouthShapes/silence.png',
+    talkDir: 'Chatbot Characters/Katsumi/MouthShapes',
+    scale: 0.65,
+    offsetY: '0px',
     themeColor: '#ff77a9',
     glowColor: 'rgba(255, 119, 169, 0.6)',
     ringGradient: 'conic-gradient(from 0deg, #ff77a9, #ff5500, #ff007f, #ff77a9)',
+    visuals: {
+      enableWaves: false,
+      enableOutline: true,
+      enableCircleBg: true,
+      pumpScaleWide: 1.25,
+      pumpScalePartial: 1.15,
+      pumpScaleConsonant: 1.08,
+      pumpScaleClosed: 1.0
+    }
   },
 };
 
