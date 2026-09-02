@@ -10,59 +10,50 @@ import { ScaleWrapper } from './components/ScaleWrapper.jsx';
 import { DynamicScaleWrapper } from './components/DynamicScaleWrapper.jsx';
 
 import { RULES_KNOWLEDGE } from './game/data/rulesKnowledge.js';
+import { CHAT_AVATARS, getViseme, getVisemeFileForChar, preloadCharacterVisemes } from './chatAvatars';
+import { AvatarDropdown } from './components/AvatarDropdown.jsx';
 
-const getViseme = (text, index) => {
-  if (!text || index < 0 || index >= text.length) return 'CLOSED (BLINK).png';
-  const char = text[index].toLowerCase();
-  const nextChar = index + 1 < text.length ? text[index + 1].toLowerCase() : '';
-  const digraph = char + nextChar;
+const Avatar = ({ characterId, isSpeaking, currentVisemeFile }) => {
+  const avatarConfig = CHAT_AVATARS[characterId] || CHAT_AVATARS.chyna;
+  const [isBlinking, setIsBlinking] = useState(false);
 
-  // Digraphs
-  if (['ch', 'sh'].includes(digraph)) return 'CH, J, SH.png';
-  if (digraph === 'ee') return 'EE.png';
-  if (digraph === 'oo') return 'OO.png';
-  if (digraph === 'th') return 'TH.png';
-  if (digraph === 'ay') return 'AY.png';
-  if (digraph === 'ai') return 'AI.png';
-  if (digraph === 'ow') return 'OW.png';
-  if (digraph === 'oh') return 'OH.png';
+  // Natural idle eye blinking every 3-5 seconds
+  useEffect(() => {
+    if (isSpeaking) {
+      setIsBlinking(false);
+      return;
+    }
+    let blinkTimer;
+    const scheduleNextBlink = () => {
+      const delay = Math.random() * 2500 + 2800;
+      blinkTimer = setTimeout(() => {
+        setIsBlinking(true);
+        setTimeout(() => {
+          setIsBlinking(false);
+          scheduleNextBlink();
+        }, 160);
+      }, delay);
+    };
+    scheduleNextBlink();
+    return () => clearTimeout(blinkTimer);
+  }, [isSpeaking, characterId]);
 
-  // Single characters
-  if (['b', 'p'].includes(char)) return 'B, P.png';
-  if (char === 'm') return 'M.png';
-  if (['d', 't', 'n', 'k', 'g', 'c'].includes(char)) return 'D, T, N, K, G.png';
-  if (['f', 'v'].includes(char)) return 'F, V.png';
-  if (char === 'l') return 'L.png';
-  if (char === 'r') return 'R.png';
-  if (['s', 'z', 'x'].includes(char)) return 'S, Z.png';
-  if (['w', 'q'].includes(char)) return 'W, Q.png';
-  if (char === 'j') return 'CH, J, SH.png';
-  if (char === 'y') return 'Y.png';
-  if (['a', 'i'].includes(char)) return 'A, I.png';
-  if (char === 'e') return 'E.png';
-  if (char === 'o') return 'O.png';
-  if (char === 'u') return 'U.png';
-
-  // Punctuation / Spacing
-  if ([' ', '.', ',', '!', '?'].includes(char)) return 'CLOSED (BLINK).png';
-
-  return 'CLOSED (BLINK).png';
-};
-
-const Avatar = ({ isSpeaking, currentVisemeFile }) => {
+  const closedViseme = getVisemeFileForChar(characterId, 'CLOSED');
   const imagePath = isSpeaking && currentVisemeFile
-    ? `${import.meta.env.BASE_URL}Chatbot Characters/Chyna/MouthShapes/${currentVisemeFile}`
-    : `${import.meta.env.BASE_URL}Chatbot Characters/Chyna/Idle/SILENCE.png`;
+    ? `${import.meta.env.BASE_URL}${avatarConfig.talkDir}/${currentVisemeFile}`
+    : isBlinking
+    ? `${import.meta.env.BASE_URL}${avatarConfig.talkDir}/${closedViseme}`
+    : `${import.meta.env.BASE_URL}${avatarConfig.idlePath}`;
 
   // Dynamically calculate ring scale based on how open the mouth is
   let ringScale = 1.0;
   if (isSpeaking && currentVisemeFile) {
     const v = currentVisemeFile.toUpperCase();
-    if (v.includes('A.PNG') || v.includes('E.PNG') || v.includes('O.PNG') || v.includes('WQ.PNG')) {
+    if (v.includes('A') || v.includes('E') || v.includes('O') || v.includes('W')) {
       ringScale = 1.25; // wide open
-    } else if (v.includes('U.PNG') || v.includes('I.PNG') || v.includes('L.PNG') || v.includes('MBP.PNG')) {
+    } else if (v.includes('U') || v.includes('I') || v.includes('L') || v.includes('M') || v.includes('B')) {
       ringScale = 1.15; // partially open
-    } else if (v.includes('CLOSED')) {
+    } else if (v.includes('CLOSED') || v.includes('SILENCE')) {
       ringScale = 1.0;  // closed
     } else {
       ringScale = 1.08; // other consonants
@@ -70,24 +61,61 @@ const Avatar = ({ isSpeaking, currentVisemeFile }) => {
   }
 
   return (
-    <div className={`avatar-gemini-container ${isSpeaking ? 'is-speaking' : ''}`}>
-      <div 
-        className="avatar-gemini-ring-wrapper" 
-        style={{ 
-          position: 'absolute', 
-          inset: 0, 
-          transform: `scale(${ringScale})`, 
-          transition: 'transform 0.1s ease-out' 
-        }}
-      >
-        <div className="avatar-gemini-ring"></div>
-      </div>
-      <div className="avatar-gemini-mask">
-        <img 
-          src={imagePath} 
-          alt="Avatar" 
-          className="avatar-gemini-image"
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div className={`avatar-gemini-container ${isSpeaking ? 'is-speaking' : ''}`}>
+        {/* Ambient Character Aura */}
+        <div 
+          className="avatar-aura-glow"
+          style={{
+            background: avatarConfig.ringGradient || avatarConfig.themeColor || 'var(--neon-cyan)',
+          }}
         />
+
+        {/* Dynamic Glowing Ring */}
+        <div 
+          className="avatar-gemini-ring-wrapper" 
+          style={{ 
+            position: 'absolute', 
+            inset: 0, 
+            transform: `scale(${ringScale})`, 
+            transition: 'transform 0.1s ease-out' 
+          }}
+        >
+          <div 
+            className="avatar-gemini-ring"
+            style={{
+              background: avatarConfig.ringGradient || undefined
+            }}
+          ></div>
+        </div>
+
+        {/* Masked Portrait with Scale/Offset */}
+        <div className="avatar-gemini-mask">
+          <img 
+            src={imagePath} 
+            alt={avatarConfig.name} 
+            className="avatar-gemini-image"
+            style={{
+              transform: `scale(${avatarConfig.scale || 0.6}) translateY(${avatarConfig.offsetY || '0px'})`,
+              transformOrigin: 'center center',
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Audio Reactive Waveform Indicator */}
+      <div className={`avatar-audio-waves ${isSpeaking ? 'is-active' : ''}`}>
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div 
+            key={i} 
+            className="soundwave-bar" 
+            style={{ 
+              background: avatarConfig.themeColor || 'var(--neon-cyan)',
+              height: isSpeaking ? undefined : '3px',
+              opacity: isSpeaking ? 0.95 : 0.25,
+            }} 
+          />
+        ))}
       </div>
     </div>
   );
@@ -107,7 +135,37 @@ export function Chat({ onBack, isOverlay = false }) {
   const [availableVoices, setAvailableVoices] = useState([]);
   const [selectedVoiceURI, setSelectedVoiceURI] = useState('');
   const [useExactSync, setUseExactSync] = useState(true);
-  const [currentVisemeFile, setCurrentVisemeFile] = useState('CLOSED (BLINK).png');
+  const AVATAR_STORAGE_KEY = 'tcg_companion_chat_avatar';
+  const [selectedAvatarId, setSelectedAvatarId] = useState(() => {
+    try {
+      const cached = localStorage.getItem(AVATAR_STORAGE_KEY);
+      if (cached && CHAT_AVATARS[cached]) return cached;
+    } catch (e) {
+      console.warn('Failed reading avatar from localStorage:', e);
+    }
+    return 'chyna';
+  });
+  const [currentVisemeFile, setCurrentVisemeFile] = useState(() => {
+    try {
+      const cached = localStorage.getItem(AVATAR_STORAGE_KEY);
+      if (cached && CHAT_AVATARS[cached]) {
+        return getVisemeFileForChar(cached, 'CLOSED');
+      }
+    } catch (e) {}
+    return getVisemeFileForChar('chyna', 'CLOSED');
+  });
+
+  const handleSelectAvatar = (newAvatarId) => {
+    if (newAvatarId === selectedAvatarId) return;
+    stopSpeaking();
+    setSelectedAvatarId(newAvatarId);
+    try {
+      localStorage.setItem(AVATAR_STORAGE_KEY, newAvatarId);
+    } catch (e) {
+      console.warn('Failed saving avatar to localStorage:', e);
+    }
+    setCurrentVisemeFile(getVisemeFileForChar(newAvatarId, 'CLOSED'));
+  };
 
   // Load available system voices
   useEffect(() => {
@@ -226,11 +284,11 @@ export function Chat({ onBack, isOverlay = false }) {
         streamTimer.current = setInterval(() => {
           i++;
           setDisplayedAnswer(ans.substring(0, i));
-          setCurrentVisemeFile(getViseme(ans, i - 1));
+          setCurrentVisemeFile(getViseme(ans, i - 1, selectedAvatarId));
 
           if (i % 20 === 0 || ['.', ',', '!'].includes(ans[i - 1])) {
             setIsAnimatingTalk(false);
-            setCurrentVisemeFile('CLOSED (BLINK).png');
+            setCurrentVisemeFile(getVisemeFileForChar(selectedAvatarId, 'CLOSED'));
             setTimeout(() => { if (i < ans.length) setIsAnimatingTalk(true); }, 150);
           }
 
@@ -238,7 +296,7 @@ export function Chat({ onBack, isOverlay = false }) {
             clearInterval(streamTimer.current);
             setIsSpeaking(false);
             setIsAnimatingTalk(false);
-            setCurrentVisemeFile('SMILE.png');
+            setCurrentVisemeFile(getVisemeFileForChar(selectedAvatarId, 'SMILE'));
           }
         }, msPerChar);
       };
@@ -251,7 +309,7 @@ export function Chat({ onBack, isOverlay = false }) {
           const voice = voices.find(v => v.voiceURI === selectedVoiceURI) || voices[0];
           if (voice) {
             utt.voice = voice;
-            const isMale = voice.name.toLowerCase().includes('male') || ['Daniel', 'Alex', 'Fred', 'David'].some(n => voice.name.includes(n));
+            const isMale = selectedAvatarId === 'chyna' || voice.name.toLowerCase().includes('male') || ['Daniel', 'Alex', 'Fred', 'David'].some(n => voice.name.includes(n));
             utt.pitch = isMale ? 1.0 : 1.2;
           }
           utt.rate = 0.9;
@@ -295,11 +353,11 @@ export function Chat({ onBack, isOverlay = false }) {
               let wordClean = wordStr.trim();
               // If it's just punctuation, close mouth immediately and wait
               if (/^[.,!?]+$/.test(wordClean)) {
-                 setCurrentVisemeFile('CLOSED (BLINK).png');
+                 setCurrentVisemeFile(getVisemeFileForChar(selectedAvatarId, 'CLOSED'));
                  return;
               }
 
-              setCurrentVisemeFile(getViseme(wordClean, 0));
+              setCurrentVisemeFile(getViseme(wordClean, 0, selectedAvatarId));
 
               // Limit to max 3 frames per word so it doesn't animate after the voice stops
               const maxFrames = Math.min(wordClean.length, 3);
@@ -308,13 +366,13 @@ export function Chat({ onBack, isOverlay = false }) {
               vInterval = setInterval(() => {
                 vIdx++;
                 if (vIdx < maxFrames) {
-                  const nextViseme = getViseme(wordClean, vIdx);
+                  const nextViseme = getViseme(wordClean, vIdx, selectedAvatarId);
                   // Forcing update on every letter to allow mid-word bouncing/blinking
                   setCurrentVisemeFile(nextViseme);
                 } else {
                   // If the word ends with punctuation, close the mouth during the TTS pause
                   if (/[.,!?]$/.test(wordClean)) {
-                     setCurrentVisemeFile('CLOSED (BLINK).png');
+                     setCurrentVisemeFile(getVisemeFileForChar(selectedAvatarId, 'CLOSED'));
                   }
                   clearInterval(vInterval);
                 }
@@ -326,7 +384,7 @@ export function Chat({ onBack, isOverlay = false }) {
             if (vInterval) clearInterval(vInterval);
             setIsSpeaking(false);
             setIsAnimatingTalk(false);
-            setCurrentVisemeFile('SMILE.png');
+            setCurrentVisemeFile(getVisemeFileForChar(selectedAvatarId, 'SMILE'));
             setDisplayedAnswer(ans);
           };
 
@@ -440,14 +498,18 @@ export function Chat({ onBack, isOverlay = false }) {
         <div className="subtle-watermark-card right-wm"></div>
       </div>
 
-      <header className="top-nav" style={{ width: layoutWidth, boxSizing: 'border-box' }}>
+      <header className="top-nav" style={{ width: layoutWidth, boxSizing: 'border-box', position: 'relative', zIndex: 100 }}>
         <div className="nav-left" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <button className="burger-button" onClick={toggleSidebar} style={{ background: 'none', border: 'none', color: 'var(--neon-cyan)', fontSize: '1.5rem', cursor: 'pointer' }}>☰</button>
           <div className="nav-logo" style={{ color: 'var(--text-light)', fontFamily: 'Orbitron, sans-serif' }}>
             <h2 style={{ margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}><span className="brand-pill-badge" style={{ fontSize: '0.6rem', padding: '2px 6px' }}>注意!</span> RULES BOT</h2>
           </div>
         </div>
-        <div className="nav-right" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+        <div className="nav-right" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <AvatarDropdown 
+            selectedAvatarId={selectedAvatarId} 
+            onSelectAvatar={handleSelectAvatar} 
+          />
           <select
             value={selectedVoiceURI}
             onChange={(e) => setSelectedVoiceURI(e.target.value)}
@@ -455,13 +517,13 @@ export function Chat({ onBack, isOverlay = false }) {
               background: 'rgba(0, 0, 0, 0.4)',
               border: '1px solid var(--neon-cyan)',
               color: 'var(--text-light)',
-              fontSize: '0.8rem',
+              fontSize: '0.78rem',
               cursor: 'pointer',
-              padding: '6px 10px',
+              padding: '6px 8px',
               borderRadius: '8px',
               fontFamily: 'Orbitron, sans-serif',
               outline: 'none',
-              maxWidth: '180px',
+              maxWidth: '120px',
               textOverflow: 'ellipsis'
             }}
           >
@@ -471,7 +533,7 @@ export function Chat({ onBack, isOverlay = false }) {
               </option>
             ))}
           </select>
-          <button onClick={() => { stopSpeaking(); onBack(); }} style={{ background: 'none', border: 'none', color: 'var(--neon-pink)', fontSize: '2rem', cursor: 'pointer', padding: '0 15px', lineHeight: '1' }}>×</button>
+          <button onClick={() => { stopSpeaking(); onBack(); }} style={{ background: 'none', border: 'none', color: 'var(--neon-pink)', fontSize: '2rem', cursor: 'pointer', padding: '0 10px', lineHeight: '1' }}>×</button>
         </div>
       </header>
 
@@ -510,7 +572,7 @@ export function Chat({ onBack, isOverlay = false }) {
 
         <div className="canvas-wrapper chat-canvas-layout" style={{ width: layoutWidth, flex: 1 }}>
           <div className="chat-avatar-container">
-            <Avatar isSpeaking={isAnimatingTalk} currentVisemeFile={currentVisemeFile} />
+            <Avatar characterId={selectedAvatarId} isSpeaking={isAnimatingTalk} currentVisemeFile={currentVisemeFile} />
           </div>
 
           {answer && (
