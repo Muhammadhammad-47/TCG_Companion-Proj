@@ -314,6 +314,7 @@ export function Chat({ onBack, isOverlay = false }) {
   };
 
   const askQuestion = async (q) => {
+    if (status === 'Asking question...' || isSpeaking) return;
     const query = q || question;
     if (!query) return;
     setStatus('Asking question...');
@@ -354,14 +355,20 @@ export function Chat({ onBack, isOverlay = false }) {
                 }
               ],
               temperature: 0.1,
-              max_tokens: 300,
+              max_tokens: 1500,
             })
           });
 
           const data = await response.json();
           if (data.error) throw new Error(data.error.message);
           
-          ans = data.choices[0].message.content.trim();
+          let rawAns = data.choices[0].message.content.trim();
+          // Qwen/DeepSeek output their reasoning inside <think> tags. Strip them even if truncated!
+          ans = rawAns.replace(/<think>[\s\S]*?(<\/think>|$)/gi, '').trim();
+          
+          if (!ans) {
+             ans = "I couldn't formulate a proper response to that. Could you ask me about the Attention TCG rules, characters, or Zombie mode?";
+          }
         } catch (groqError) {
           console.error("Groq API Failed, using local fallback:", groqError);
           // 3. Fallback: Groq failed (token limit, network, etc.), use local fuzzy search
@@ -683,15 +690,28 @@ export function Chat({ onBack, isOverlay = false }) {
           </div>
         </div>
 
-        <div className="canvas-wrapper chat-canvas-layout" style={{ width: layoutWidth, flex: 1 }}>
-          <div className="chat-avatar-container">
+        <div className="canvas-wrapper chat-canvas-layout" style={{ width: layoutWidth, flex: 1, position: 'relative' }}>
+          <div className="chat-avatar-container" style={{ position: 'relative' }}>
             <Avatar characterId={selectedAvatarId} isSpeaking={isAnimatingTalk} currentVisemeFile={currentVisemeFile} />
+            {status === 'Asking question...' && (
+              <div className="thinking-bubble">
+                <span className="dot"></span>
+                <span className="dot"></span>
+                <span className="dot"></span>
+              </div>
+            )}
           </div>
 
           {answer && (
             <div className="chat-response-container">
               <div className="chat-bubble bot" style={{ margin: 0, position: 'relative' }}>
-                <div className="bot-avatar-icon"><Bot size={24} color="var(--neon-cyan)" /></div>
+                <div className="bot-avatar-icon" style={{ overflow: 'hidden' }}>
+                  <img 
+                    src={`${import.meta.env.BASE_URL}${CHAT_AVATARS[selectedAvatarId]?.image || CHAT_AVATARS.chyna.image}`} 
+                    alt="avatar" 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                  />
+                </div>
                 <div style={{ whiteSpace: 'pre-wrap' }}>
                   {isSpeaking ? displayedAnswer : answer}
                   {isSpeaking && <span className="cursor-blink">|</span>}
@@ -710,16 +730,23 @@ export function Chat({ onBack, isOverlay = false }) {
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey && !isSpeaking) {
+                if (e.key === 'Enter' && !e.shiftKey && !isSpeaking && status !== 'Asking question...') {
                   e.preventDefault();
                   askQuestion();
                 }
               }}
               placeholder="Ask a rule question..."
-              disabled={isSpeaking}
+              disabled={isSpeaking || status === 'Asking question...'}
             />
             {!isSpeaking ? (
-              <button className="send-button" onClick={() => askQuestion()}><Send size={18} /></button>
+              <button 
+                className="send-button" 
+                onClick={() => askQuestion()}
+                disabled={status === 'Asking question...'}
+                style={{ opacity: status === 'Asking question...' ? 0.5 : 1, cursor: status === 'Asking question...' ? 'not-allowed' : 'pointer' }}
+              >
+                <Send size={18} />
+              </button>
             ) : (
               <button
                 className="send-button"

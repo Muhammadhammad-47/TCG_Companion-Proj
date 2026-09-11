@@ -708,3 +708,36 @@ body {
     transform: rotate(360deg);
   }
 }
+/* Thinking Bubble */
+.thinking-bubble {
+  position: absolute;
+  top: 10px;
+  right: 10%;
+  background: var(--bg-surface);
+  border: 1px solid var(--accent-gold);
+  border-radius: 20px;
+  padding: 12px 18px;
+  display: flex;
+  gap: 6px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+  animation: popIn 0.3s ease-out forwards;
+  z-index: 10;
+}
+.thinking-bubble .dot {
+  width: 8px;
+  height: 8px;
+  background: var(--neon-cyan);
+  border-radius: 50%;
+  animation: pulseDot 1.4s infinite ease-in-out both;
+}
+.thinking-bubble .dot:nth-child(1) { animation-delay: -0.32s; }
+.thinking-bubble .dot:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes pulseDot {
+  0%, 80%, 100% { transform: scale(0.3); opacity: 0.3; }
+  40% { transform: scale(1); opacity: 1; }
+}
+@keyframes popIn {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
