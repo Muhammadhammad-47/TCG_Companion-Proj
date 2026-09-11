@@ -8,8 +8,6 @@ import { presetQuestions } from './questions.js';
 import GamePage from './pages/GamePage.jsx';
 import { ScaleWrapper } from './components/ScaleWrapper.jsx';
 import { DynamicScaleWrapper } from './components/DynamicScaleWrapper.jsx';
-
-import { RULES_KNOWLEDGE } from './game/data/rulesKnowledge.js';
 import { CHAT_AVATARS, getViseme, getVisemeFileForChar, preloadCharacterVisemes } from './chatAvatars';
 import { AvatarDropdown } from './components/AvatarDropdown.jsx';
 
@@ -228,68 +226,11 @@ export function Chat({ onBack, isOverlay = false }) {
   }, [selectedAvatarId]); // Removed selectedVoiceURI from deps so it doesn't constantly fight manual changes
 
   useEffect(() => {
-    fetch(`${import.meta.env.BASE_URL}document.txt`)
+    fetch(`${import.meta.env.BASE_URL}Knowledge Base/AI_Breakdowns.txt`)
       .then(res => res.text())
       .then(text => setDocumentText(text))
-      .catch(err => console.error("Could not load document.txt", err));
+      .catch(err => console.error("Could not load Knowledge Base/AI_Breakdowns.txt", err));
   }, []);
-  const localSearch = (query) => {
-    const qLower = query.toLowerCase().trim();
-    if (!qLower) return "Please ask a question about Attention TCG rules, combat dice, character moves, or Zombie mode!";
-
-    if (qLower.match(/^(hi|hello|hey|greetings|start)/)) return "Hello warrior! I am your Attention TCG Rules & Strategy Assistant. Ask me anything about character moves, 2-dice combat, Energy Tokens, Zombie mode, or card effects!";
-    if (qLower.match(/(how are you|how do you do)/)) return "I am running at peak combat readiness and ready to clarify any Attention TCG tournament rules or match rulings!";
-    if (qLower.match(/(who are you|introduce yourself|what are you)/)) return "I am the official Attention TCG Companion AI. I have the entire GDD rulebook, character stats, DP defense math, and Zombie mode mechanics in my memory to assist your duels!";
-
-    // 1. Scored Knowledge Pack Matching
-    let bestKnowledge = null;
-    let highestScore = 0;
-
-    for (const item of RULES_KNOWLEDGE) {
-      let score = 0;
-      for (const k of item.keywords) {
-        if (qLower.includes(k)) {
-          score += k.length >= 5 ? 3 : 2;
-        }
-      }
-      if (score > highestScore) {
-        highestScore = score;
-        bestKnowledge = item;
-      }
-    }
-
-    if (bestKnowledge && highestScore >= 2) {
-      return `${bestKnowledge.shortAnswer}\n\n${bestKnowledge.details}`;
-    }
-
-    // 2. Fallback rulebook document paragraph search
-    if (documentText) {
-      const paragraphs = documentText.split(/\n\s*\n/).filter(p => p.trim() !== '');
-      const queryTokens = qLower.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 2);
-
-      let bestMatch = "";
-      let maxDocScore = 0;
-
-      for (let p of paragraphs) {
-        let pScore = 0;
-        const pLower = p.toLowerCase();
-        for (let t of queryTokens) {
-          if (pLower.includes(t)) pScore += 1;
-        }
-        if (pScore > maxDocScore) {
-          maxDocScore = pScore;
-          bestMatch = p;
-        }
-      }
-
-      if (maxDocScore >= 2) {
-        return bestMatch.trim();
-      }
-    }
-
-    // Default guidance
-    return "I couldn't find an exact rule match for that query. You can ask me about:\n• 2-Stage Clash & DP Defense (rolling 6+ on Gold dice)\n• Zombie Mode (transformation, 40 HP, +10 regen, revival tiers)\n• Energy Tokens & Claims (5 starting ET, Use It or Lose It rule)\n• Saigo No Blitz (200 AP, HP < 50 condition)\n• Mind Strength & Kontrol Card rules\n• Character Move Sets & Elemental Weaknesses";
-  };
   const streamTimer = useRef(null);
 
   const askQuestion = async (q) => {
@@ -300,7 +241,35 @@ export function Chat({ onBack, isOverlay = false }) {
     setDisplayedAnswer('');
 
     try {
-      const ans = localSearch(query);
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "llama-3.1-8b-instant",
+          messages: [
+            {
+              role: "system",
+              content: `You are the Attention TCG Companion AI. Use the provided Knowledge Base below.\n\nCRITICAL RULE: If the user's question closely matches one of the exact questions in the Knowledge Base, you MUST return the exact answer verbatim from the document. If it is a loose match or general question, provide a short, summarized answer. Do not give lengthy answers unless quoting an exact answer.\n\n=== KNOWLEDGE BASE ===\n${documentText}`
+            },
+            {
+              role: "user",
+              content: query
+            }
+          ],
+          temperature: 0.1,
+          max_tokens: 400,
+        })
+      });
+
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(data.error.message);
+      }
+      
+      const ans = data.choices[0].message.content.trim();
       setAnswer(ans);
       setChatHistory(prev => [...prev, { q: query, a: ans }]);
       setStatus('Answer received.');
