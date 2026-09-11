@@ -233,6 +233,86 @@ export function Chat({ onBack, isOverlay = false }) {
   }, []);
   const streamTimer = useRef(null);
 
+  const getRelevantContext = (query, text) => {
+    if (!text) return "";
+    const blocks = text.split(/\n\s*\n/).filter(b => b.trim().length > 10);
+    const queryTokens = query.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 2);
+    
+    const scoredBlocks = blocks.map(block => {
+      const bLower = block.toLowerCase();
+      let score = 0;
+      queryTokens.forEach(t => {
+        if (bLower.includes(t)) score++;
+      });
+      return { block, score };
+    });
+
+    scoredBlocks.sort((a, b) => b.score - a.score);
+    // Take the top 5 most relevant Q&A blocks to stay well under token limits
+    return scoredBlocks.slice(0, 5).map(sb => sb.block).join("\n\n---\n\n");
+  };
+
+  const parseDocumentQA = (text) => {
+    if (!text) return [];
+    const blocks = text.split(/\n\s*\n/).filter(b => b.trim().length > 10);
+    const qaPairs = [];
+    
+    for (let b of blocks) {
+      const lines = b.trim().split('\n');
+      if (lines[0].trim().endsWith('?')) {
+        const question = lines[0].trim();
+        const answer = lines.slice(1).join('\n').trim();
+        qaPairs.push({ question, answer, block: b });
+      }
+    }
+    return qaPairs;
+  };
+
+  const getExactAnswerLocal = (query, qaPairs) => {
+    const qLower = query.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+    if (!qLower) return null;
+    
+    for (const qa of qaPairs) {
+       const qaLower = qa.question.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+       // Direct similarity check
+       if (qaLower === qLower) return qa.answer;
+       if (qaLower.includes(qLower) && qLower.length > 15) return qa.answer;
+       
+       // Word overlap check (80% match)
+       const qTokens = qLower.split(/\s+/).filter(w => w.length > 2);
+       const qaTokens = qaLower.split(/\s+/).filter(w => w.length > 2);
+       if (qTokens.length === 0) continue;
+       
+       let matchCount = 0;
+       for (let t of qTokens) {
+         if (qaTokens.includes(t)) matchCount++;
+       }
+       if (matchCount >= qTokens.length * 0.8) {
+           return qa.answer;
+       }
+    }
+    return null;
+  };
+
+  const getFallbackAnswer = (query, text) => {
+      const blocks = text.split(/\n\s*\n/).filter(b => b.trim().length > 10);
+      const queryTokens = query.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 2);
+      
+      let bestBlock = "I am having trouble connecting to my central servers, and I couldn't find an exact rule match in my backup memory for that query.";
+      let highestScore = 0;
+      
+      blocks.forEach(block => {
+        let score = 0;
+        const bLower = block.toLowerCase();
+        queryTokens.forEach(t => { if (bLower.includes(t)) score++; });
+        if (score > highestScore && score >= 1) {
+            highestScore = score;
+            bestBlock = block;
+        }
+      });
+      return bestBlock;
+  };
+
   const askQuestion = async (q) => {
     const query = q || question;
     if (!query) return;
@@ -241,35 +321,54 @@ export function Chat({ onBack, isOverlay = false }) {
     setDisplayedAnswer('');
 
     try {
-      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: "qwen/qwen3.6-27b",
-          messages: [
-            {
-              role: "system",
-              content: `You are the Attention TCG Companion AI. Use the provided Knowledge Base below.\n\nCRITICAL RULE: If the user's question closely matches one of the exact questions in the Knowledge Base, you MUST return the exact answer verbatim from the document. If it is a loose match or general question, provide a short, summarized answer. Do not give lengthy answers unless quoting an exact answer.\n\n=== KNOWLEDGE BASE ===\n${documentText}`
-            },
-            {
-              role: "user",
-              content: query
-            }
-          ],
-          temperature: 0.1,
-          max_tokens: 400,
-        })
-      });
-
-      const data = await response.json();
-      if (data.error) {
-        throw new Error(data.error.message);
-      }
+      let ans = "";
       
-      const ans = data.choices[0].message.content.trim();
+      // 1. Try to find an exact question match LOCALLY to save API calls and ensure 100% accuracy
+      const qaPairs = parseDocumentQA(documentText);
+      const exactLocalAnswer = getExactAnswerLocal(query, qaPairs);
+
+      if (exactLocalAnswer) {
+        // We found an exact/highly similar question in the text file! Use the exact answer.
+        ans = exactLocalAnswer;
+      } else {
+        // 2. Query is loose/general, so send to Groq for a summarized/contextual answer
+        try {
+          const relevantContext = getRelevantContext(query, documentText);
+
+          const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              model: "qwen/qwen3.6-27b",
+              messages: [
+                {
+                  role: "system",
+                  content: `You are the Attention TCG Companion AI. Use the provided Knowledge Base below to answer the user's question.\n\nCRITICAL RULE: The user's question did not exactly match our known questions, so you must provide a short, summarized answer based ONLY on the context provided. Do not hallucinate rules. Do not give lengthy answers.\n\n=== RELEVANT KNOWLEDGE BASE EXTRACTS ===\n${relevantContext}`
+                },
+                {
+                  role: "user",
+                  content: query
+                }
+              ],
+              temperature: 0.1,
+              max_tokens: 300,
+            })
+          });
+
+          const data = await response.json();
+          if (data.error) throw new Error(data.error.message);
+          
+          ans = data.choices[0].message.content.trim();
+        } catch (groqError) {
+          console.error("Groq API Failed, using local fallback:", groqError);
+          // 3. Fallback: Groq failed (token limit, network, etc.), use local fuzzy search
+          ans = getFallbackAnswer(query, documentText);
+        }
+      }
+
       setAnswer(ans);
       setChatHistory(prev => [...prev, { q: query, a: ans }]);
       setStatus('Answer received.');
