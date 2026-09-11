@@ -206,8 +206,15 @@ export function Chat({ onBack, isOverlay = false }) {
   useEffect(() => {
     if ('speechSynthesis' in window) {
       const loadVoices = () => {
-        // Filter to English voices AND ensure they are locally processed (network voices often don't support boundary events)
-        const voices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('en') && v.localService);
+        const allVoices = window.speechSynthesis.getVoices();
+        // Prefer English voices with localService, fallback to all English voices
+        let voices = allVoices.filter(v => v.lang.startsWith('en') && v.localService);
+        if (voices.length === 0) {
+          voices = allVoices.filter(v => v.lang.startsWith('en'));
+        }
+        if (voices.length === 0) {
+          voices = allVoices;
+        }
         setAvailableVoices(voices);
         // Set a smart default if none selected yet
         if (voices.length > 0 && !selectedVoiceURI) {
@@ -224,7 +231,7 @@ export function Chat({ onBack, isOverlay = false }) {
       loadVoices();
       window.speechSynthesis.onvoiceschanged = loadVoices;
     }
-  }, [selectedAvatarId]); // Removed selectedVoiceURI from deps so it doesn't constantly fight manual changes
+  }, [selectedAvatarId]);
 
   useEffect(() => {
     fetch(`${import.meta.env.BASE_URL}Knowledge Base/AI_Breakdowns.txt`)
@@ -403,259 +410,221 @@ export function Chat({ onBack, isOverlay = false }) {
     return "I couldn't find an exact rule match for that query. You can ask me about:\n• Official Rules & Game Setup (10 Action / 10 Character cards, 5 ET, 3 Crystals to win)\n• 2-Stage Clash & DP Defense (rolling 6+ on Gold dice)\n• Zombie Mode (transformation, 40 HP, +10 regen, revival tiers)\n• Energy Tokens & Claims (5 starting ET, Use It or Lose It rule)\n• Saigo No Blitz (200 AP, HP < 50 condition)\n• Mind Strength & Kontrol Card rules\n• Character Move Sets & Elemental Weaknesses";
   };
 
-  const summarizeWithGroq = async (query, rawAnswer) => {
-    const apiKey = import.meta.env.VITE_GROQ_API_KEY;
-    if (!apiKey || apiKey === 'undefined') {
-      return rawAnswer;
-    }
-
-    // Only summarize if the answer is long (more than ~280 characters or multi-paragraph)
-    if (!rawAnswer || rawAnswer.length <= 280) {
-      return rawAnswer;
-    }
-
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000); // 4-second timeout limit
-
-      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${apiKey}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
-          messages: [
-            {
-              role: "system",
-              content: `You are the official Attention TCG Companion AI rules assistant.
-Your job is to take the official game rule text provided and summarize it into a concise, beautiful, and completely accurate response.
-
-GUIDELINES:
-- Keep it concise: 2 to 4 clear sentences (or short, clean bullet points).
-- 100% COMPLETE & ACCURATE: Do NOT omit any critical game mechanics, requirements, or numbers. Do NOT give half-knowledge.
-- Beautiful presentation: Format with clear spacing and readability.
-- CRITICAL: Output ONLY the final answer directly. DO NOT include thinking steps, explanations, or <think> tags.`
-            },
-            {
-              role: "user",
-              content: `Player Question: "${query}"\n\nOfficial Rulebook Text:\n"""\n${rawAnswer}\n"""\n\nPlease provide a concise, beautifully formatted, complete summary of this official rule:`
-            }
-          ],
-          temperature: 0.2,
-          max_tokens: 350
-        }),
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-      const data = await response.json();
-      if (data.error) throw new Error(data.error.message);
-
-      let summary = data.choices[0]?.message?.content?.trim();
-      if (!summary) return rawAnswer;
-
-      summary = summary.replace(/<think>[\s\S]*?(<\/think>|$)/gi, '').trim();
-      return summary || rawAnswer;
-    } catch (err) {
-      console.warn("Groq summarization fallback to official raw answer:", err?.message || err);
-      return rawAnswer;
-    }
-  };
-
-  const speakAndStream = (ans) => {
-    setAnswer(ans);
-    setStatus('Answer received.');
-
-    const cleanForTTS = (text) => text
-      .replace(/[【】•·*]/g, ' ')        // remove special brackets, bullets, and asterisks
-      .replace(/\n\n/g, '. ')           // double newlines (2 chars) -> '. ' (2 chars) for pause
-      .replace(/\n/g, ' ');             // single newlines -> space
-
-    const cleanAns = cleanForTTS(ans);
-
-    // Visual prep, but don't start typing until the voice starts!
-    setIsSpeaking(true);
-    setIsAnimatingTalk(true);
-
-    if (streamTimer.current) clearInterval(streamTimer.current);
-
-    let usedTTS = false;
-    let onboundaryFired = false;
-
-    const startTextStream = () => {
-      if (streamTimer.current) clearInterval(streamTimer.current);
-      let i = 0;
-      const msPerChar = 55; // Matches rate 0.95
-      streamTimer.current = setInterval(() => {
-        i++;
-        setDisplayedAnswer(ans.substring(0, i));
-        setCurrentVisemeFile(getViseme(ans, i - 1, selectedAvatarId));
-
-        if (i % 20 === 0 || ['.', ',', '!'].includes(ans[i - 1])) {
-          setIsAnimatingTalk(false);
-          setCurrentVisemeFile(getVisemeFileForChar(selectedAvatarId, 'CLOSED'));
-          setTimeout(() => { if (i < ans.length) setIsAnimatingTalk(true); }, 140);
-        }
-
-        if (i >= ans.length) {
-          clearInterval(streamTimer.current);
-          setIsSpeaking(false);
-          setIsAnimatingTalk(false);
-          setCurrentVisemeFile(getVisemeFileForChar(selectedAvatarId, 'SMILE'));
-        }
-      }, msPerChar);
-    };
-
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-
-      const applyVoiceToUtterance = (utt) => {
-        const voices = window.speechSynthesis.getVoices();
-        const voice = voices.find(v => v.voiceURI === selectedVoiceURI) || voices[0];
-        if (voice) {
-          utt.voice = voice;
-          const isMale = selectedAvatarId === 'chyna' || voice.name.toLowerCase().includes('male') || ['Daniel', 'Alex', 'Fred', 'David'].some(n => voice.name.includes(n));
-          utt.pitch = isMale ? 1.0 : 1.2;
-        }
-        utt.rate = 0.95;
-        utt.volume = 1.0;
-      };
-
-      if (useExactSync) {
-        // Option A: Single Utterance with onboundary (exact sync from commit 36b89af)
-        const utterance = new SpeechSynthesisUtterance(cleanAns);
-        window.currentUtterance = utterance; // Prevent GC bug in Chromium
-        applyVoiceToUtterance(utterance);
-
-        let vInterval = null;
-
-        utterance.onstart = () => {
-          usedTTS = true;
-          setIsSpeaking(true);
-          setIsAnimatingTalk(true);
-
-          // Fallback for voices/browsers that don't support onboundary
-          setTimeout(() => {
-            if (!onboundaryFired) {
-              startTextStream();
-            }
-          }, 400);
-        };
-
-        utterance.onboundary = (event) => {
-          onboundaryFired = true;
-          if (event.name === 'word') {
-            if (vInterval) clearInterval(vInterval);
-
-            let nextSpace = cleanAns.indexOf(' ', event.charIndex);
-            if (nextSpace === -1) nextSpace = cleanAns.length;
-
-            const wordStr = cleanAns.substring(event.charIndex, nextSpace);
-
-            // Show text up to this word
-            setDisplayedAnswer(ans.substring(0, nextSpace));
-
-            // Start visemes for this word
-            let wordClean = wordStr.trim();
-            if (/^[.,!?]+$/.test(wordClean)) {
-               setCurrentVisemeFile(getVisemeFileForChar(selectedAvatarId, 'CLOSED'));
-               return;
-            }
-
-            setCurrentVisemeFile(getViseme(wordClean, 0, selectedAvatarId));
-
-            // Limit to max 3 frames per word so it doesn't animate after the voice stops
-            const maxFrames = Math.min(wordClean.length, 3);
-
-            let vIdx = 0;
-            vInterval = setInterval(() => {
-              vIdx++;
-              if (vIdx < maxFrames) {
-                const nextViseme = getViseme(wordClean, vIdx, selectedAvatarId);
-                setCurrentVisemeFile(nextViseme);
-              } else {
-                if (/[.,!?]$/.test(wordClean)) {
-                   setCurrentVisemeFile(getVisemeFileForChar(selectedAvatarId, 'CLOSED'));
-                }
-                clearInterval(vInterval);
-              }
-            }, 150);
-          }
-        };
-
-        utterance.onend = () => {
-          if (vInterval) clearInterval(vInterval);
-          setIsSpeaking(false);
-          setIsAnimatingTalk(false);
-          setCurrentVisemeFile(getVisemeFileForChar(selectedAvatarId, 'SMILE'));
-          setDisplayedAnswer(ans);
-          window.currentUtterance = null;
-        };
-
-        utterance.onerror = () => {
-          if (vInterval) clearInterval(vInterval);
-          setIsSpeaking(false);
-          setIsAnimatingTalk(false);
-          setDisplayedAnswer(ans);
-          window.currentUtterance = null;
-        };
-
-        if (window.speechSynthesis.getVoices().length > 0) {
-          window.speechSynthesis.speak(utterance);
-        } else {
-          window.speechSynthesis.onvoiceschanged = () => {
-            window.speechSynthesis.speak(utterance);
-            window.speechSynthesis.onvoiceschanged = null;
-          };
-        }
-
-        // Fallback if TTS fails to start within 500ms or browser blocked audio
-        setTimeout(() => {
-          if (!usedTTS || !onboundaryFired) startTextStream();
-        }, 500);
-
-      } else {
-        // Fallback text stream
-        startTextStream();
-      }
-    } else {
-      startTextStream();
-    }
-  };
-
   const askQuestion = async (q) => {
-    if (isSpeaking) return;
     const query = q || question;
     if (!query) return;
-
-    // Prime audio context immediately on direct user gesture
-    if ('speechSynthesis' in window) {
-      try { window.speechSynthesis.resume(); } catch (e) {}
-    }
-
+    setStatus('Asking question...');
     setQuestion('');
     setDisplayedAnswer('');
 
     try {
-      const rawAns = localSearch(query);
+      const ans = localSearch(query);
+      setAnswer(ans);
+      setChatHistory(prev => [...prev, { q: query, a: ans }]);
+      setStatus('Answer received.');
 
-      // Check if answer is too big (> 280 chars) and Groq key is available
-      const apiKey = import.meta.env.VITE_GROQ_API_KEY;
-      if (apiKey && apiKey !== 'undefined' && rawAns && rawAns.length > 280) {
-        setStatus('Summarizing answer...');
-        const summarized = await summarizeWithGroq(query, rawAns);
-        setChatHistory(prev => [...prev, { q: query, a: summarized }]);
-        speakAndStream(summarized);
+      const cleanForTTS = (text) => text
+        .replace(/[【】•·*]/g, ' ')        // remove special brackets, bullets, and asterisks
+        .replace(/\n\n/g, '. ')           // double newlines (2 chars) -> '. ' (2 chars) for pause
+        .replace(/\n/g, ' ');             // single newlines -> space
+
+      const cleanAns = cleanForTTS(ans);
+
+      // Visual prep, but don't start typing until the voice starts!
+      setIsSpeaking(true);
+      setIsAnimatingTalk(true);
+
+      if (streamTimer.current) clearInterval(streamTimer.current);
+
+      let usedTTS = false;
+      const startTextStream = () => {
+        if (streamTimer.current) clearInterval(streamTimer.current);
+        const words = ans.split(' ');
+        let wIdx = 0;
+        let charAcc = 0;
+        setIsSpeaking(true);
+        setIsAnimatingTalk(true);
+        streamTimer.current = setInterval(() => {
+          if (wIdx < words.length) {
+            const currentWord = words[wIdx];
+            charAcc += currentWord.length + (wIdx > 0 ? 1 : 0);
+            setDisplayedAnswer(ans.substring(0, charAcc));
+
+            let wordClean = currentWord.trim();
+            if (/^[.,!?]+$/.test(wordClean)) {
+              setCurrentVisemeFile(getVisemeFileForChar(selectedAvatarId, 'CLOSED'));
+            } else {
+              setCurrentVisemeFile(getViseme(wordClean, 0, selectedAvatarId));
+            }
+            wIdx++;
+          } else {
+            clearInterval(streamTimer.current);
+            setIsSpeaking(false);
+            setIsAnimatingTalk(false);
+            setCurrentVisemeFile(getVisemeFileForChar(selectedAvatarId, 'SMILE'));
+          }
+        }, 180);
+      };
+
+      if ('speechSynthesis' in window) {
+        if (window.speechSynthesis.speaking) {
+          window.speechSynthesis.cancel();
+        }
+        window.speechSynthesis.resume();
+
+        const applyVoiceToUtterance = (utt) => {
+          const voices = window.speechSynthesis.getVoices();
+          const voice = voices.find(v => v.voiceURI === selectedVoiceURI) || voices[0];
+          if (voice) {
+            utt.voice = voice;
+            const isMale = selectedAvatarId === 'chyna' || voice.name.toLowerCase().includes('male') || ['Daniel', 'Alex', 'Fred', 'David'].some(n => voice.name.includes(n));
+            utt.pitch = isMale ? 1.0 : 1.2;
+          }
+          utt.rate = 0.9;
+          utt.volume = 1.0;
+        };
+
+        if (useExactSync) {
+          // Option A: Single Utterance with onboundary (exact sync from commit 36b89af)
+          const utterance = new SpeechSynthesisUtterance(cleanAns);
+          window.currentUtterance = utterance;
+          applyVoiceToUtterance(utterance);
+
+          let vInterval = null;
+          let onboundaryFired = false;
+
+          utterance.onstart = () => {
+            usedTTS = true;
+            setIsSpeaking(true);
+            setIsAnimatingTalk(true);
+
+            // Fallback for voices that don't support onboundary
+            setTimeout(() => {
+              if (!onboundaryFired) {
+                startTextStream();
+              }
+            }, 500);
+          };
+
+          utterance.onboundary = (event) => {
+            onboundaryFired = true;
+            if (event.name === 'word') {
+              if (vInterval) clearInterval(vInterval);
+
+              let nextSpace = cleanAns.indexOf(' ', event.charIndex);
+              if (nextSpace === -1) nextSpace = cleanAns.length;
+
+              const wordStr = cleanAns.substring(event.charIndex, nextSpace);
+
+              // Show text up to this word
+              setDisplayedAnswer(ans.substring(0, nextSpace));
+
+              // Start visemes for this word
+              let wordClean = wordStr.trim();
+              // If it's just punctuation, close mouth immediately and wait
+              if (/^[.,!?]+$/.test(wordClean)) {
+                 setCurrentVisemeFile(getVisemeFileForChar(selectedAvatarId, 'CLOSED'));
+                 return;
+              }
+
+              setCurrentVisemeFile(getViseme(wordClean, 0, selectedAvatarId));
+
+              // Limit to max 3 frames per word so it doesn't animate after the voice stops
+              const maxFrames = Math.min(wordClean.length, 3);
+
+              let vIdx = 0;
+              vInterval = setInterval(() => {
+                vIdx++;
+                if (vIdx < maxFrames) {
+                  const nextViseme = getViseme(wordClean, vIdx, selectedAvatarId);
+                  // Forcing update on every letter to allow mid-word bouncing/blinking
+                  setCurrentVisemeFile(nextViseme);
+                } else {
+                  // If the word ends with punctuation, close the mouth during the TTS pause
+                  if (/[.,!?]$/.test(wordClean)) {
+                     setCurrentVisemeFile(getVisemeFileForChar(selectedAvatarId, 'CLOSED'));
+                  }
+                  clearInterval(vInterval);
+                }
+              }, 150);
+            }
+          };
+
+          utterance.onend = () => {
+            if (vInterval) clearInterval(vInterval);
+            setIsSpeaking(false);
+            setIsAnimatingTalk(false);
+            setCurrentVisemeFile(getVisemeFileForChar(selectedAvatarId, 'SMILE'));
+            setDisplayedAnswer(ans);
+            window.currentUtterance = null;
+          };
+
+          utterance.onerror = () => {
+            if (vInterval) clearInterval(vInterval);
+            setIsSpeaking(false);
+            setIsAnimatingTalk(false);
+            setDisplayedAnswer(ans);
+            window.currentUtterance = null;
+          };
+
+          if (window.speechSynthesis.getVoices().length > 0) {
+            window.speechSynthesis.speak(utterance);
+          } else {
+            window.speechSynthesis.onvoiceschanged = () => {
+              window.speechSynthesis.speak(utterance);
+              window.speechSynthesis.onvoiceschanged = null;
+            };
+          }
+
+          // Fallback if TTS fails to start within 500ms
+          setTimeout(() => {
+            if (!usedTTS) startTextStream();
+          }, 500);
+
+        } else {
+          // Option C: Hybrid Typewriter (current logic)
+          const utterance = new SpeechSynthesisUtterance(cleanAns);
+          window.currentUtterance = utterance; // Prevent Garbage Collection
+
+          const applyVoiceAndSpeak = () => {
+            applyVoiceToUtterance(utterance);
+            window.speechSynthesis.speak(utterance);
+          };
+
+          if (window.speechSynthesis.getVoices().length > 0) {
+            applyVoiceAndSpeak();
+          } else {
+            window.speechSynthesis.onvoiceschanged = () => {
+              applyVoiceAndSpeak();
+              window.speechSynthesis.onvoiceschanged = null;
+            };
+          }
+
+          utterance.onstart = () => {
+            usedTTS = true;
+            startTextStream();
+          };
+
+          utterance.onend = () => {
+            window.currentUtterance = null;
+          };
+
+          utterance.onerror = () => {
+            window.currentUtterance = null;
+            if (!usedTTS) startTextStream();
+          };
+
+          // Fallback if TTS fails to start within 500ms
+          setTimeout(() => {
+            if (!usedTTS) startTextStream();
+          }, 500);
+        }
       } else {
-        setStatus('Answering...');
-        setChatHistory(prev => [...prev, { q: query, a: rawAns }]);
-        speakAndStream(rawAns);
+        startTextStream();
       }
     } catch (err) {
       console.error(err);
-      setStatus('Error answering question.');
+      setStatus('Error asking question. Make sure a document is uploaded.');
     }
   };
 
@@ -673,7 +642,9 @@ GUIDELINES:
   const handlePresetClick = (q) => {
     setQuestion(q);
     setIsSidebarOpen(false);
-    askQuestion(q);
+    setTimeout(() => {
+      askQuestion(q);
+    }, 100);
   };
 
   const toggleSidebar = () => {
@@ -828,23 +799,16 @@ GUIDELINES:
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey && !isSpeaking && status !== 'Asking question...') {
+                if (e.key === 'Enter' && !e.shiftKey && !isSpeaking) {
                   e.preventDefault();
                   askQuestion();
                 }
               }}
               placeholder="Ask a rule question..."
-              disabled={isSpeaking || status === 'Asking question...'}
+              disabled={isSpeaking}
             />
             {!isSpeaking ? (
-              <button 
-                className="send-button" 
-                onClick={() => askQuestion()}
-                disabled={status === 'Asking question...'}
-                style={{ opacity: status === 'Asking question...' ? 0.5 : 1, cursor: status === 'Asking question...' ? 'not-allowed' : 'pointer' }}
-              >
-                <Send size={18} />
-              </button>
+              <button className="send-button" onClick={() => askQuestion()}><Send size={18} /></button>
             ) : (
               <button
                 className="send-button"
