@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Swords, Plus, Minus, ArrowLeft, RotateCw, RotateCcw,
-  Crown, X, ChevronDown, ChevronUp, Users, Info, GripVertical, Edit2
+  Crown, X, ChevronDown, ChevronUp, Users, Info, GripVertical, Edit2,
+  Settings, Shield
 } from 'lucide-react';
+import { APP_CONFIG } from '../../config';
 import { CHARACTERS, getAssetUrl } from '../data/characters';
 import { soundFX } from '../utils/audio';
 
@@ -557,7 +559,7 @@ export default function GameSetup({ onStartGame, onBack }) {
             <Swords size={26} />
           </button>
 
-          <div className="setup-version-label">v1.0.0</div>
+          <div className="setup-version-label">{APP_CONFIG.version}</div>
         </div>
       </div>
       

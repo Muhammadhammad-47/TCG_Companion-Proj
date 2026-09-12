@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Swords, HelpCircle, UserPlus, Cast, Send, Crown, Sparkles, ChevronRight,
-  RotateCw, Bot, Volume2, VolumeX, Maximize2, Minimize2
+  RotateCw, Bot, Volume2, VolumeX, Maximize2, Minimize2,
+  Play, FileText, Crosshair, Users, Coins, Shield, Zap
 } from 'lucide-react';
+import { APP_CONFIG } from '../../config';
 import { CHARACTERS, getAssetUrl } from '../data/characters';
 import { soundFX } from '../utils/audio';
 
@@ -443,7 +445,7 @@ export default function MainMenu({
         {/* Bottom Footer Info */}
         <div className="menu-footer">
 
-          <div className="version-info">v1.0.0</div>
+          <div className="version-info">{APP_CONFIG.version}</div>
         </div>
       </div>
       

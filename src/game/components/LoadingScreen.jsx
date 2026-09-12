@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Swords, Zap, Shield, Skull, Dices, Play } from 'lucide-react';
 import { soundFX } from '../utils/audio';
+import { APP_CONFIG } from '../../config';
 
 
 const LOADING_STEPS = [
@@ -125,7 +126,7 @@ export default function LoadingScreen({ onComplete }) {
 
         <footer className="menu-footer">
 
-          <span className="footer-version-tag">v1.0.0</span>
+          <span className="footer-version-tag">{APP_CONFIG.version}</span>
         </footer>
       </div>
       
