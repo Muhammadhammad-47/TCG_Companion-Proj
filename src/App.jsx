@@ -42,8 +42,8 @@ const Avatar = ({ characterId, isSpeaking, currentVisemeFile }) => {
   const imagePath = isSpeaking && currentVisemeFile
     ? `${import.meta.env.BASE_URL}${avatarConfig.talkDir}/${currentVisemeFile}`
     : isBlinking
-    ? `${import.meta.env.BASE_URL}${avatarConfig.talkDir}/${closedViseme}`
-    : `${import.meta.env.BASE_URL}${avatarConfig.idlePath}`;
+      ? `${import.meta.env.BASE_URL}${avatarConfig.talkDir}/${closedViseme}`
+      : `${import.meta.env.BASE_URL}${avatarConfig.idlePath}`;
 
   const visuals = avatarConfig.visuals || {
     enableWaves: true,
@@ -75,7 +75,7 @@ const Avatar = ({ characterId, isSpeaking, currentVisemeFile }) => {
       <div className={`avatar-gemini-container ${isSpeaking ? 'is-speaking' : ''}`}>
         {/* Ambient Character Aura (only if outline is enabled) */}
         {visuals.enableOutline && (
-          <div 
+          <div
             className="avatar-aura-glow"
             style={{
               background: avatarConfig.ringGradient || avatarConfig.themeColor || 'var(--neon-cyan)',
@@ -85,16 +85,16 @@ const Avatar = ({ characterId, isSpeaking, currentVisemeFile }) => {
 
         {/* Dynamic Glowing Ring (only if outline is enabled) */}
         {visuals.enableOutline && (
-          <div 
-            className="avatar-gemini-ring-wrapper" 
-            style={{ 
-              position: 'absolute', 
-              inset: 0, 
-              transform: `scale(${ringScale})`, 
+          <div
+            className="avatar-gemini-ring-wrapper"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              transform: `scale(${ringScale})`,
               transition: isSpeaking ? 'transform 0.1s ease-out' : 'transform 1.5s ease-out'
             }}
           >
-            <div 
+            <div
               className="avatar-gemini-ring"
               style={{
                 background: avatarConfig.ringGradient || undefined
@@ -105,9 +105,9 @@ const Avatar = ({ characterId, isSpeaking, currentVisemeFile }) => {
 
         {/* Masked Portrait with Scale/Offset */}
         <div className="avatar-gemini-mask" style={{ background: visuals.enableCircleBg ? 'var(--bg-card-solid)' : 'transparent' }}>
-          <img 
-            src={imagePath} 
-            alt={avatarConfig.name} 
+          <img
+            src={imagePath}
+            alt={avatarConfig.name}
             className="avatar-gemini-image"
             style={{
               transform: `scale(${avatarConfig.scale || 0.6}) translateY(${avatarConfig.offsetY || '0px'})`,
@@ -121,14 +121,14 @@ const Avatar = ({ characterId, isSpeaking, currentVisemeFile }) => {
       {visuals.enableWaves && (
         <div className={`avatar-audio-waves ${isSpeaking ? 'is-active' : ''}`}>
           {[1, 2, 3, 4, 5].map((i) => (
-            <div 
-              key={i} 
-              className="soundwave-bar" 
-              style={{ 
+            <div
+              key={i}
+              className="soundwave-bar"
+              style={{
                 background: avatarConfig.themeColor || 'var(--neon-cyan)',
                 height: isSpeaking ? undefined : '3px',
                 opacity: isSpeaking ? 0.95 : 0.25,
-              }} 
+              }}
             />
           ))}
         </div>
@@ -167,7 +167,7 @@ export function Chat({ onBack, isOverlay = false }) {
       if (cached && CHAT_AVATARS[cached]) {
         return getVisemeFileForChar(cached, 'CLOSED');
       }
-    } catch (e) {}
+    } catch (e) { }
     return getVisemeFileForChar('chyna', 'CLOSED');
   });
 
@@ -179,7 +179,7 @@ export function Chat({ onBack, isOverlay = false }) {
     setDisplayedAnswer('');
     setAnswer('');
     setStatus('');
-    
+
     try {
       localStorage.setItem(AVATAR_STORAGE_KEY, newAvatarId);
     } catch (e) {
@@ -246,7 +246,7 @@ export function Chat({ onBack, isOverlay = false }) {
     if (!text) return [];
     const blocks = text.split(/\n\s*\n/).filter(b => b.trim().length > 10);
     const qaPairs = [];
-    
+
     for (let b of blocks) {
       const lines = b.trim().split('\n');
       if (lines[0].trim().endsWith('?')) {
@@ -277,27 +277,27 @@ export function Chat({ onBack, isOverlay = false }) {
     if (/^(hi|hello|hey|greetings|howdy|yo|good morning|good afternoon|good evening)\b/i.test(qClean)) {
       return "Hello warrior! I am your Attention TCG Companion AI. I'm ready for battle and here to help you navigate rules, character abilities, combat clashes, and Zombie Mode. What would you like to know?";
     }
-    
+
     // 2. How are you / status
     if (qClean.includes('how are you') || qClean.includes('how are u') || qClean.includes('hows it going') || qClean.includes('whats up') || qClean.includes('what up') || qClean.includes('how do you do')) {
       return "I'm doing great and fully charged for battle! How are you doing today? Ready to test your strategies or need clarification on a move?";
     }
-    
+
     // 3. Who are you / Identity
     if (qClean.includes('who are you') || qClean.includes('what are you') || qClean.includes('who made you') || qClean.includes('what can you do') || qClean === 'help') {
       return "I am the official Attention TCG Companion AI, inspired by the Attention Anime Series! I can guide you through game setup, card rules, character stats, combat dice rolls, energy tokens, and Zombie Mode. Ask me any rule question!";
     }
-    
+
     // 4. Gratitude
     if (qClean.includes('thank you') || qClean.includes('thanks') || qClean.includes('thx') || qClean.includes('appreciate it')) {
       return "You're very welcome! May the stability crystals align in your favor. Let me know if you need anything else during your duel!";
     }
-    
+
     // 5. Farewell
     if (/^(bye|goodbye|cya|see you|farewell)\b/i.test(qClean)) {
       return "Farewell for now! Step into the arena with confidence, and return anytime you need rule guidance!";
     }
-    
+
     return null;
   };
 
@@ -419,7 +419,7 @@ export function Chat({ onBack, isOverlay = false }) {
       });
 
       const response = await groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile", // Use the latest supported Groq model
+        model: "openai/gpt-oss-120b", // User-requested model
         messages: [
           {
             role: "system",
@@ -573,8 +573,8 @@ export function Chat({ onBack, isOverlay = false }) {
               let wordClean = wordStr.trim();
               // If it's just punctuation, close mouth immediately and wait
               if (/^[.,!?]+$/.test(wordClean)) {
-                 setCurrentVisemeFile(getVisemeFileForChar(selectedAvatarId, 'CLOSED'));
-                 return;
+                setCurrentVisemeFile(getVisemeFileForChar(selectedAvatarId, 'CLOSED'));
+                return;
               }
 
               setCurrentVisemeFile(getViseme(wordClean, 0, selectedAvatarId));
@@ -592,7 +592,7 @@ export function Chat({ onBack, isOverlay = false }) {
                 } else {
                   // If the word ends with punctuation, close the mouth during the TTS pause
                   if (/[.,!?]$/.test(wordClean)) {
-                     setCurrentVisemeFile(getVisemeFileForChar(selectedAvatarId, 'CLOSED'));
+                    setCurrentVisemeFile(getVisemeFileForChar(selectedAvatarId, 'CLOSED'));
                   }
                   clearInterval(vInterval);
                 }
@@ -735,9 +735,9 @@ export function Chat({ onBack, isOverlay = false }) {
           </div>
         </div>
         <div className="nav-right" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <AvatarDropdown 
-            selectedAvatarId={selectedAvatarId} 
-            onSelectAvatar={handleSelectAvatar} 
+          <AvatarDropdown
+            selectedAvatarId={selectedAvatarId}
+            onSelectAvatar={handleSelectAvatar}
             disabled={isSpeaking || isAnimatingTalk}
           />
           <select
@@ -819,16 +819,16 @@ export function Chat({ onBack, isOverlay = false }) {
             <div className="chat-response-container">
               <div className="chat-bubble bot" style={{ margin: 0, position: 'relative' }}>
                 <div className="bot-avatar-icon" style={{ overflow: 'hidden' }}>
-                  <img 
-                    src={`${(import.meta.env.BASE_URL || '/').endsWith('/') ? (import.meta.env.BASE_URL || '/') : (import.meta.env.BASE_URL + '/')}${CHAT_AVATARS[selectedAvatarId]?.idlePath || CHAT_AVATARS.chyna?.idlePath || 'Chatbot Characters/Chyna/Idle/SILENCE.png'}`} 
-                    alt="avatar" 
-                    style={{ 
-                      width: '100%', 
-                      height: '100%', 
+                  <img
+                    src={`${(import.meta.env.BASE_URL || '/').endsWith('/') ? (import.meta.env.BASE_URL || '/') : (import.meta.env.BASE_URL + '/')}${CHAT_AVATARS[selectedAvatarId]?.idlePath || CHAT_AVATARS.chyna?.idlePath || 'Chatbot Characters/Chyna/Idle/SILENCE.png'}`}
+                    alt="avatar"
+                    style={{
+                      width: '100%',
+                      height: '100%',
                       objectFit: 'cover',
                       transform: `scale(${CHAT_AVATARS[selectedAvatarId]?.scale ? CHAT_AVATARS[selectedAvatarId].scale * 1.5 : 1})`,
                       transformOrigin: 'center center'
-                    }} 
+                    }}
                   />
                 </div>
                 <div style={{ whiteSpace: 'pre-wrap' }}>
