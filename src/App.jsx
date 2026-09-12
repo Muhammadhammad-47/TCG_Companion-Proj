@@ -419,19 +419,19 @@ export function Chat({ onBack, isOverlay = false }) {
       });
 
       const response = await groq.chat.completions.create({
-        model: "openai/gpt-oss-20b", // User-requested model
+        model: "llama3-70b-8192", // Use a high-quality model available on Groq
         messages: [
           {
             role: "system",
-            content: "You are the TCG Companion AI. Your job is to summarize long official game rules into short, punchy, and conversational answers. Keep it under 3 sentences. Do not add any new rules. Just simplify the provided text."
+            content: "You are the TCG Companion AI, a helpful, enthusiastic, and highly knowledgeable game guide. Summarize the provided official rules into a clear, engaging, and beautifully formatted answer. Use conversational language, but remain 100% accurate to the rules. Keep your response concise (3-4 sentences max). Do NOT add any new rules."
           },
           {
             role: "user",
             content: `Question: ${questionText}\n\nOfficial Rule Text: ${fullRuleText}`
           }
         ],
-        temperature: 0.3,
-        max_tokens: 150
+        temperature: 0.5,
+        max_tokens: 250
       });
 
       return response.choices[0]?.message?.content?.trim() || fullRuleText;
@@ -567,7 +567,7 @@ export function Chat({ onBack, isOverlay = false }) {
               const wordStr = cleanAns.substring(event.charIndex, nextSpace);
 
               // Show text up to this word
-              setDisplayedAnswer(ans.substring(0, nextSpace));
+              setDisplayedAnswer(finalAns.substring(0, nextSpace));
 
               // Start visemes for this word
               let wordClean = wordStr.trim();
