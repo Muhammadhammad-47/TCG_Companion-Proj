@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { Send, X, Bot, Swords } from 'lucide-react';
 import axios from 'axios';
+import { Groq } from 'groq-sdk';
 import './App.css';
 import './pages/GamePage.css';
 import { presetQuestions } from './questions.js';
@@ -410,17 +411,66 @@ export function Chat({ onBack, isOverlay = false }) {
     return "I couldn't find an exact rule match for that query. You can ask me about:\n• Official Rules & Game Setup (10 Action / 10 Character cards, 5 ET, 3 Crystals to win)\n• 2-Stage Clash & DP Defense (rolling 6+ on Gold dice)\n• Zombie Mode (transformation, 40 HP, +10 regen, revival tiers)\n• Energy Tokens & Claims (5 starting ET, Use It or Lose It rule)\n• Saigo No Blitz (200 AP, HP < 50 condition)\n• Mind Strength & Kontrol Card rules\n• Character Move Sets & Elemental Weaknesses";
   };
 
+  const summarizeWithGroq = async (questionText, fullRuleText) => {
+    try {
+      const groq = new Groq({
+        apiKey: import.meta.env.VITE_GROQ_API_KEY,
+        dangerouslyAllowBrowser: true
+      });
+
+      const response = await groq.chat.completions.create({
+        model: "openai/gpt-oss-20b", // User-requested model
+        messages: [
+          {
+            role: "system",
+            content: "You are the TCG Companion AI. Your job is to summarize long official game rules into short, punchy, and conversational answers. Keep it under 3 sentences. Do not add any new rules. Just simplify the provided text."
+          },
+          {
+            role: "user",
+            content: `Question: ${questionText}\n\nOfficial Rule Text: ${fullRuleText}`
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 150
+      });
+
+      return response.choices[0]?.message?.content?.trim() || fullRuleText;
+
+    } catch (error) {
+      console.warn("Groq SDK failed or timed out. Falling back to local text:", error);
+      return fullRuleText;
+    }
+  };
+
   const askQuestion = async (q) => {
     const query = q || question;
     if (!query) return;
+
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const primer = new SpeechSynthesisUtterance(' ');
+      primer.volume = 0;
+      window.speechSynthesis.speak(primer);
+    }
+
     setStatus('Asking question...');
     setQuestion('');
     setDisplayedAnswer('');
+    setIsSpeaking(true);
+    setIsAnimatingTalk(true);
 
     try {
-      const ans = localSearch(query);
-      setAnswer(ans);
-      setChatHistory(prev => [...prev, { q: query, a: ans }]);
+      const rawAns = localSearch(query);
+      let finalAns = rawAns;
+
+      const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+      if (apiKey && apiKey !== 'undefined' && rawAns && rawAns.length > 280) {
+        setStatus('Summarizing answer...');
+        finalAns = await summarizeWithGroq(query, rawAns);
+      }
+
+      setAnswer(finalAns);
+      setChatHistory(prev => [...prev, { q: query, a: finalAns }]);
       setStatus('Answer received.');
 
       const cleanForTTS = (text) => text
@@ -428,7 +478,7 @@ export function Chat({ onBack, isOverlay = false }) {
         .replace(/\n\n/g, '. ')           // double newlines (2 chars) -> '. ' (2 chars) for pause
         .replace(/\n/g, ' ');             // single newlines -> space
 
-      const cleanAns = cleanForTTS(ans);
+      const cleanAns = cleanForTTS(finalAns);
 
       // Visual prep, but don't start typing until the voice starts!
       setIsSpeaking(true);
@@ -439,7 +489,7 @@ export function Chat({ onBack, isOverlay = false }) {
       let usedTTS = false;
       const startTextStream = () => {
         if (streamTimer.current) clearInterval(streamTimer.current);
-        const words = ans.split(' ');
+        const words = finalAns.split(' ');
         let wIdx = 0;
         let charAcc = 0;
         setIsSpeaking(true);
@@ -448,7 +498,7 @@ export function Chat({ onBack, isOverlay = false }) {
           if (wIdx < words.length) {
             const currentWord = words[wIdx];
             charAcc += currentWord.length + (wIdx > 0 ? 1 : 0);
-            setDisplayedAnswer(ans.substring(0, charAcc));
+            setDisplayedAnswer(finalAns.substring(0, charAcc));
 
             let wordClean = currentWord.trim();
             if (/^[.,!?]+$/.test(wordClean)) {
