@@ -419,7 +419,7 @@ export function Chat({ onBack, isOverlay = false }) {
       });
 
       const response = await groq.chat.completions.create({
-        model: "llama3-70b-8192", // Valid Groq model
+        model: "llama-3.3-70b-versatile", // Use the latest supported Groq model
         messages: [
           {
             role: "system",
@@ -605,7 +605,7 @@ export function Chat({ onBack, isOverlay = false }) {
             setIsSpeaking(false);
             setIsAnimatingTalk(false);
             setCurrentVisemeFile(getVisemeFileForChar(selectedAvatarId, 'SMILE'));
-            setDisplayedAnswer(ans);
+            setDisplayedAnswer(finalAns);
             window.currentUtterance = null;
           };
 
@@ -613,7 +613,7 @@ export function Chat({ onBack, isOverlay = false }) {
             if (vInterval) clearInterval(vInterval);
             setIsSpeaking(false);
             setIsAnimatingTalk(false);
-            setDisplayedAnswer(ans);
+            setDisplayedAnswer(finalAns);
             window.currentUtterance = null;
           };
 
