@@ -419,7 +419,7 @@ export function Chat({ onBack, isOverlay = false }) {
       });
 
       const response = await groq.chat.completions.create({
-        model: "openai/gpt-oss-120b", // User-requested model
+        model: "llama3-70b-8192", // Valid Groq model
         messages: [
           {
             role: "system",
