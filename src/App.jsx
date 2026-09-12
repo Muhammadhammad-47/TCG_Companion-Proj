@@ -411,7 +411,7 @@ export function Chat({ onBack, isOverlay = false }) {
     return "I couldn't find an exact rule match for that query. You can ask me about:\n• Official Rules & Game Setup (10 Action / 10 Character cards, 5 ET, 3 Crystals to win)\n• 2-Stage Clash & DP Defense (rolling 6+ on Gold dice)\n• Zombie Mode (transformation, 40 HP, +10 regen, revival tiers)\n• Energy Tokens & Claims (5 starting ET, Use It or Lose It rule)\n• Saigo No Blitz (200 AP, HP < 50 condition)\n• Mind Strength & Kontrol Card rules\n• Character Move Sets & Elemental Weaknesses";
   };
 
-  const summarizeWithGroq = async (questionText, fullRuleText) => {
+  const summarizeWithGroq = async (questionText, fullRuleText, history = []) => {
     try {
       const groq = new Groq({
         apiKey: import.meta.env.VITE_GROQ_API_KEY,
@@ -419,19 +419,26 @@ export function Chat({ onBack, isOverlay = false }) {
       });
 
       console.log("Sending request to Groq API with model: openai/gpt-oss-120b");
+      
+      const recentHistory = history.slice(-5).map(h => [
+        { role: 'user', content: h.q },
+        { role: 'assistant', content: h.a }
+      ]).flat();
+
       const response = await groq.chat.completions.create({
         model: "openai/gpt-oss-120b", // User-requested model
         messages: [
           {
             role: "system",
-            content: "You are the TCG Companion AI, a helpful, enthusiastic, and highly knowledgeable game guide. Summarize the provided official rules into a clear, engaging, and beautifully formatted answer. Use conversational language, but remain 100% accurate to the rules. Keep your response concise (3-4 sentences max). Do NOT add any new rules."
+            content: "You are the TCG Companion AI, a helpful, conversational, and enthusiastic game guide. Answer questions about the game rules naturally, as if chatting with a friend. DO NOT sound like a programmed bot and AVOID using long bulleted lists or formatting when possible. Keep it short, punchy, and conversational (1-3 sentences max). NEVER add new rules."
           },
+          ...recentHistory,
           {
             role: "user",
-            content: `Question: ${questionText}\n\nOfficial Rule Text: ${fullRuleText}`
+            content: `Question: ${questionText}\n\nReference Rule Text: ${fullRuleText}\n\nPlease provide a very natural, conversational answer based ONLY on the reference text.`
           }
         ],
-        temperature: 0.5,
+        temperature: 0.7,
         max_tokens: 250
       });
       console.log("Groq API Response received:", response);
@@ -461,11 +468,14 @@ export function Chat({ onBack, isOverlay = false }) {
       window.speechSynthesis.speak(primer);
     }
 
-    setStatus('Asking question...');
+    setStatus('Processing message...');
     setQuestion('');
     setDisplayedAnswer('');
-    setIsSpeaking(true);
-    setIsAnimatingTalk(true);
+    setIsSpeaking(false);
+    setIsAnimatingTalk(false);
+    
+    // Minimum 2 second processing delay
+    const waitPromise = new Promise(resolve => setTimeout(resolve, 2000));
 
     try {
       const rawAns = localSearch(query);
@@ -473,9 +483,10 @@ export function Chat({ onBack, isOverlay = false }) {
 
       const apiKey = import.meta.env.VITE_GROQ_API_KEY;
       if (apiKey && apiKey !== 'undefined' && rawAns && rawAns.length > 280) {
-        setStatus('Summarizing answer...');
-        finalAns = await summarizeWithGroq(query, rawAns);
+        finalAns = await summarizeWithGroq(query, rawAns, chatHistory);
       }
+
+      await waitPromise; // Wait for at least 2 seconds
 
       setAnswer(finalAns);
       setChatHistory(prev => [...prev, { q: query, a: finalAns }]);
@@ -814,7 +825,7 @@ export function Chat({ onBack, isOverlay = false }) {
         <div className="canvas-wrapper chat-canvas-layout" style={{ width: layoutWidth, flex: 1 }}>
           <div className="chat-avatar-container">
             <Avatar characterId={selectedAvatarId} isSpeaking={isAnimatingTalk} currentVisemeFile={currentVisemeFile} />
-            {status === 'Asking question...' && (
+            {status === 'Processing message...' && (
               <div className="thinking-bubble">
                 <span className="dot"></span>
                 <span className="dot"></span>

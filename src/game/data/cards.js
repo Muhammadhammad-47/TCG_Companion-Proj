@@ -23,37 +23,37 @@ export const ACTION_CARDS = [
     id: 'poison_card',
     name: 'Poison',
     category: 'Status',
-    costET: 1,
+    costET: 0,
     icon: '☠️',
     color: '#39ff14',
-    desc: 'Inflicts 1 Poison stack (-10 HP per stack every round). 5 Poison turns target into a Zombie!'
+    desc: 'Inflicts 1 Poison stack (-10 HP per stack every round). 5 Poison turns target into a Zombie! (0 ET)'
   },
   {
     id: 'antidote_card',
     name: 'Antidote',
     category: 'Heal',
-    costET: 1,
+    costET: 0,
     icon: '🧪',
     color: '#2df6ff',
-    desc: 'Removes 1 Poison card and restores +20 HP. Cures Zombie Mode if poison drops below 5!'
+    desc: 'Removes 1 Poison card and restores +20 HP. Cures Zombie Mode if poison drops below 5! (0 ET)'
   },
   {
     id: 'shield_card',
     name: 'Shield',
     category: 'Defense',
-    costET: 1,
+    costET: 0,
     icon: '🛡️',
     color: '#3b9dff',
-    desc: 'Deploys a defensive barrier granting +30 Shield points to absorb incoming damage.'
+    desc: 'Deploys a defensive barrier granting +30 Shield points to absorb incoming damage. (0 ET)'
   },
   {
     id: 'heal_card',
     name: 'Heal',
     category: 'Heal',
-    costET: 1,
+    costET: 0,
     icon: '💖',
     color: '#ff1a9d',
-    desc: 'Restores +30 HP immediately.'
+    desc: 'Restores +30 HP immediately. (0 ET)'
   },
   {
     id: 'amplify_card',

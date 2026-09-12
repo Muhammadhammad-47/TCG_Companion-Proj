@@ -14,7 +14,9 @@ export default function CardActionModal({
   onOpenBlitz,
   onOpenRetreat
 }) {
-  const [selectedActionId, setSelectedActionId] = useState('atk_basic');
+  const [selectedInstanceId, setSelectedInstanceId] = useState(
+    activePlayer.actionCardsHand?.[0]?.instanceId || null
+  );
   const [selectedMoveId, setSelectedMoveId] = useState(null);
   const [targetPlayerId, setTargetPlayerId] = useState(
     allPlayers.find(p => p.id !== activePlayer.id)?.id || ''
@@ -29,7 +31,7 @@ export default function CardActionModal({
   const allCharMoves = isZombie ? ZOMBIE_PROFILE.moves : char.moves;
   const availableMoves = allCharMoves.filter(m => !m.id.includes('blitz') && !m.id.includes('kontrol'));
 
-  const currentAction = ACTION_CARDS.find(c => c.id === selectedActionId);
+  const currentAction = (activePlayer.actionCardsHand || []).find(c => c.instanceId === selectedInstanceId);
   const currentMove = availableMoves.find(m => m.id === selectedMoveId) || availableMoves[0];
 
   const isAttackPlay = currentAction?.category === 'Attack' || isZombie;
@@ -43,7 +45,7 @@ export default function CardActionModal({
 
   const handleActionClick = (card) => {
     soundFX.playCard();
-    setSelectedActionId(card.id);
+    setSelectedInstanceId(card.instanceId);
 
     if (card.id === 'kontrol_card' && (activePlayer.kontrolUsesLeft ?? 2) <= 0) {
       setErrorMsg('No Kontrol uses left this match.');
@@ -65,15 +67,15 @@ export default function CardActionModal({
     }
 
     if (card.id === 'kontrol_card') {
-      onOpenKontrol(activePlayer, targetPlayerId);
+      onOpenKontrol(activePlayer, targetPlayerId, card.instanceId);
       return;
     }
     if (card.id === 'blitz_card') {
-      onOpenBlitz(activePlayer);
+      onOpenBlitz(activePlayer, card.instanceId);
       return;
     }
     if (card.id === 'retreat_card') {
-      onOpenRetreat(activePlayer);
+      onOpenRetreat(activePlayer, card.instanceId);
       return;
     }
   };
@@ -118,7 +120,8 @@ export default function CardActionModal({
         sourcePlayerId: activePlayer.id,
         targetPlayerId: targetPlayer.id,
         costET: currentAction.costET,
-        amount: 1
+        amount: 1,
+        playedInstanceId: currentAction.instanceId
       });
       return;
     }
@@ -128,8 +131,9 @@ export default function CardActionModal({
       onApplyInstantEffect({
         type: 'antidote',
         sourcePlayerId: activePlayer.id,
-        targetPlayerId: activePlayer.id,
-        costET: currentAction.costET
+        targetPlayerId: targetPlayer.id,
+        costET: currentAction.costET,
+        playedInstanceId: currentAction.instanceId
       });
       return;
     }
@@ -139,9 +143,10 @@ export default function CardActionModal({
       onApplyInstantEffect({
         type: 'heal',
         sourcePlayerId: activePlayer.id,
-        targetPlayerId: activePlayer.id,
+        targetPlayerId: targetPlayer.id,
         costET: currentAction.costET,
-        amount: 30
+        amount: 30,
+        playedInstanceId: currentAction.instanceId
       });
       return;
     }
@@ -151,9 +156,10 @@ export default function CardActionModal({
       onApplyInstantEffect({
         type: 'shield',
         sourcePlayerId: activePlayer.id,
-        targetPlayerId: activePlayer.id,
+        targetPlayerId: targetPlayer.id,
         costET: currentAction.costET,
-        amount: 30
+        amount: 30,
+        playedInstanceId: currentAction.instanceId
       });
       return;
     }
@@ -163,9 +169,10 @@ export default function CardActionModal({
       onApplyInstantEffect({
         type: 'amplify',
         sourcePlayerId: activePlayer.id,
-        targetPlayerId: activePlayer.id,
-        amplifyChoice,
-        costET: 0
+        targetPlayerId: targetPlayer.id,
+        costET: currentAction.costET,
+        amplifyChoice: amplifyChoice,
+        playedInstanceId: currentAction.instanceId
       });
       return;
     }
@@ -347,13 +354,13 @@ export default function CardActionModal({
                     paddingRight: '6px'
                   }}
                 >
-                  {ACTION_CARDS.map(card => {
-                    const isSelected = selectedActionId === card.id;
+                  {(activePlayer.actionCardsHand || []).map(card => {
+                    const isSelected = selectedInstanceId === card.instanceId;
                     const disabledForZombie = isZombie && (card.id === 'kontrol_card' || card.id === 'blitz_card');
 
                     return (
                       <div
-                        key={card.id}
+                        key={card.instanceId}
                         onClick={() => !disabledForZombie && handleActionClick(card)}
                         style={{
                           background: isSelected ? 'rgba(0, 240, 255, 0.18)' : 'rgba(255, 255, 255, 0.04)',
@@ -404,7 +411,7 @@ export default function CardActionModal({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
                 {/* Amplify Choices */}
-                {selectedActionId === 'amplify_card' && (
+                {currentAction?.id === 'amplify_card' && (
                   <div style={{ background: 'rgba(255, 176, 46, 0.1)', border: '1px solid #ffb02e', borderRadius: '10px', padding: '12px' }}>
                     <div style={{ fontSize: '0.82rem', color: '#ffb02e', fontWeight: 'bold', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <Sparkles size={14} /> CHOOSE AMPLIFY BONUS

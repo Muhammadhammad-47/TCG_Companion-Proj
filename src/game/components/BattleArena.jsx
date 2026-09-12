@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CHARACTERS, ZOMBIE_PROFILE, getAssetUrl } from '../data/characters';
 import { ACTION_CARDS, GAME_LIMITS } from '../data/cards';
-import { resolveDiceCombat, advanceTurn, checkZombieStatus } from '../utils/gameEngine';
+import { resolveDiceCombat, advanceTurn, checkZombieStatus, drawRandomCards } from '../utils/gameEngine';
 import { soundFX } from '../utils/audio';
 import WinnerModal from './WinnerModal';
 import DiceRollerModal from './DiceRollerModal';
@@ -9,6 +9,9 @@ import CardActionModal from './CardActionModal';
 import KontrolModal from './KontrolModal';
 import BlitzModal from './BlitzModal';
 import RetreatModal from './RetreatModal';
+import TauntModal from './TauntModal';
+import CharacterCardModal from './CharacterCardModal';
+import CardZoneModal from './CardZoneModal';
 import ZombieBanner from './ZombieBanner';
 import LocalMatchChatModal from './LocalMatchChatModal';
 import { Chat } from '../../App';
@@ -44,6 +47,9 @@ export default function BattleArena({
   const [showInGameMenu, setShowInGameMenu] = useState(false);
   const [showRulesChatOverlay, setShowRulesChatOverlay] = useState(false);
   const [showLocalChat, setShowLocalChat] = useState(false);
+  const [showTauntModal, setShowTauntModal] = useState(false);
+  const [showCharacterCardModal, setShowCharacterCardModal] = useState(false);
+  const [activeTauntBubble, setActiveTauntBubble] = useState(null);
   const [systemError, setSystemError] = useState(null);
   const [localChatMessages, setLocalChatMessages] = useState([
     {
@@ -195,9 +201,17 @@ export default function BattleArena({
     // Update player stats
     const updatedPlayers = players.map(p => {
       if (p.id === attacker.id) {
+        let newHand = p.actionCardsHand || [];
+        if (actionCard?.instanceId) {
+          newHand = newHand.filter(c => c.instanceId !== actionCard.instanceId);
+          newHand.push(...drawRandomCards(1));
+        }
+
         return {
           ...p,
           energyTokens: Math.max(0, p.energyTokens - totalET),
+          turnActionCompleted: true,
+          actionCardsHand: newHand,
           stats: {
             ...p.stats,
             damageDealt: (p.stats?.damageDealt || 0) + damage,
@@ -289,7 +303,7 @@ export default function BattleArena({
   };
 
   // Instant card effect (Heal, Shield, Antidote, Poison, Amplify)
-  const handleApplyInstantEffect = ({ type, sourcePlayerId, targetPlayerId, costET = 0, amount = 0, amplifyChoice = null }) => {
+  const handleApplyInstantEffect = ({ type, sourcePlayerId, targetPlayerId, costET = 0, amount = 0, amplifyChoice = null, playedInstanceId }) => {
     pushStateSnapshot();
     setShowCardActionModal(false);
     setShowCardZoneModal(false);
@@ -308,9 +322,14 @@ export default function BattleArena({
     const updatedPlayers = players.map(p => {
       let updated = { ...p };
 
-      // Deduct ET from source
+      // Deduct ET and consume card from source
       if (p.id === sourcePlayerId) {
         updated.energyTokens = Math.max(0, updated.energyTokens - costET);
+        updated.turnActionCompleted = true;
+        if (playedInstanceId) {
+          updated.actionCardsHand = (updated.actionCardsHand || []).filter(c => c.instanceId !== playedInstanceId);
+          updated.actionCardsHand.push(...drawRandomCards(1));
+        }
       }
 
       // Apply effect to target
@@ -374,26 +393,77 @@ export default function BattleArena({
 
   // Complete Kontrol Action
   const handleCompleteKontrol = ({ attackerId, targetId, success, chosenOption }) => {
+    const playedInstanceId = activeKontrolData?.playedInstanceId;
     setActiveKontrolData(null);
     pushStateSnapshot();
 
     const attacker = players.find(p => p.id === attackerId);
     const target = players.find(p => p.id === targetId);
 
-    const updatedPlayers = players.map(p => {
-      if (p.id === attackerId) {
-        return {
-          ...p,
-          energyTokens: Math.max(0, p.energyTokens - 3),
-          kontrolUsesLeft: Math.max(0, (p.kontrolUsesLeft ?? 2) - 1)
-        };
+    let stolenCard = null;
+    let forceAttackVictim = null;
+    
+    if (success && chosenOption === 'steal_card') {
+      const targetHand = target.actionCardsHand || [];
+      if (targetHand.length > 0) {
+        stolenCard = targetHand[Math.floor(Math.random() * targetHand.length)];
       }
-      return p;
+    }
+    if (success && chosenOption === 'force_attack') {
+      forceAttackVictim = players.find(p => p.id !== target.id && p.id !== attacker.id) || target; // Hit another player, or hit themselves if 1v1
+    }
+
+    const updatedPlayers = players.map(p => {
+      let updated = { ...p };
+      
+      // Attacker costs & rewards
+      if (p.id === attackerId) {
+        let newHand = updated.actionCardsHand || [];
+        if (playedInstanceId) {
+          newHand = newHand.filter(c => c.instanceId !== playedInstanceId);
+          newHand.push(...drawRandomCards(1));
+        }
+        if (stolenCard) {
+          newHand.push({ ...stolenCard, instanceId: `stolen_${Date.now()}_${Math.random()}` });
+        }
+        
+        updated.energyTokens = Math.max(0, updated.energyTokens - 3);
+        updated.turnActionCompleted = true;
+        updated.actionCardsHand = newHand;
+        updated.kontrolUsesLeft = Math.max(0, (updated.kontrolUsesLeft ?? 2) - 1);
+      }
+      
+      // Target penalties
+      if (p.id === targetId) {
+        if (stolenCard) {
+          let newHand = (updated.actionCardsHand || []).filter(c => c.instanceId !== stolenCard.instanceId);
+          newHand.push(...drawRandomCards(1)); // Replenish their hand
+          updated.actionCardsHand = newHand;
+        }
+        if (forceAttackVictim && forceAttackVictim.id === targetId) {
+          // Hit themselves
+          updated.hp = Math.max(0, updated.hp - 25);
+          updated = checkZombieStatus(updated);
+        }
+      }
+      
+      // Other victim (if multiplayer)
+      if (forceAttackVictim && p.id === forceAttackVictim.id && forceAttackVictim.id !== targetId) {
+        updated.hp = Math.max(0, updated.hp - 25);
+        updated = checkZombieStatus(updated);
+      }
+      
+      return updated;
     });
 
-    const actionText = success
-      ? `Successfully Kontrolled ${target.name} (${chosenOption === 'steal_card' ? 'Stole 1 Action Card' : 'Forced attack on opponent'})`
-      : `${target.name} resisted Mind Kontrol!`;
+    let actionText = `${target.name} resisted Mind Kontrol!`;
+    if (success) {
+      if (chosenOption === 'steal_card') {
+        actionText = `Successfully Kontrolled ${target.name} (Stole 1 Action Card: ${stolenCard?.name || 'None'})`;
+      } else {
+        actionText = `Successfully Kontrolled ${target.name} (Forced them to attack ${forceAttackVictim.name} for 25 AP)`;
+      }
+    }
 
     const newLog = {
       turn: turnNum,
@@ -412,6 +482,7 @@ export default function BattleArena({
 
   // Complete Saigo No Blitz Action
   const handleCompleteBlitz = ({ attackerId, mode, targetId, damage = 200, splitDamage = 50 }) => {
+    const playedInstanceId = activeBlitzData?.playedInstanceId;
     setActiveBlitzData(null);
     pushStateSnapshot();
 
@@ -420,10 +491,17 @@ export default function BattleArena({
 
     const updatedPlayers = players.map(p => {
       if (p.id === attackerId) {
+        let newHand = p.actionCardsHand || [];
+        if (playedInstanceId) {
+          newHand = newHand.filter(c => c.instanceId !== playedInstanceId);
+          newHand.push(...drawRandomCards(1));
+        }
         return {
           ...p,
           hp: Math.max(1, p.hp - hpSacrifice),
           energyTokens: Math.max(0, p.energyTokens - 5),
+          turnActionCompleted: true,
+          actionCardsHand: newHand,
           blitzUsesLeft: Math.max(0, (p.blitzUsesLeft ?? 2) - 1)
         };
       }
@@ -455,13 +533,23 @@ export default function BattleArena({
 
   // Complete Retreat Action
   const handleCompleteRetreat = ({ playerId, success }) => {
+    const playedInstanceId = activeRetreatData?.playedInstanceId;
     setActiveRetreatData(null);
     pushStateSnapshot();
 
     const player = players.find(p => p.id === playerId);
     const updatedPlayers = players.map(p => {
       if (p.id === playerId) {
-        return { ...p, retreatedThisTurn: success };
+        let newHand = p.actionCardsHand || [];
+        if (playedInstanceId) {
+          newHand = newHand.filter(c => c.instanceId !== playedInstanceId);
+          newHand.push(...drawRandomCards(1));
+        }
+        return { 
+          ...p, 
+          retreatedThisTurn: success,
+          actionCardsHand: newHand
+        };
       }
       return p;
     });
@@ -495,22 +583,18 @@ export default function BattleArena({
   };
 
   const handleTaunt = () => {
-    pushStateSnapshot();
-    soundFX.playTaunt();
+    soundFX.playMenuHover();
+    setShowTauntModal(true);
+  };
 
-    const taunts = [
-      "Sorry sucka!",
-      "Is that all you got?",
-      "Too slow!",
-      "In your face!",
-      "Try harder next time!"
-    ];
-    const randomTaunt = taunts[Math.floor(Math.random() * taunts.length)];
+  const handleSendTaunt = (msg) => {
+    pushStateSnapshot();
+    setShowTauntModal(false);
 
     const newLog = {
       turn: turnNum,
       actor: activePlayer.name,
-      action: `TAUNTED: "${randomTaunt}"`,
+      action: `TAUNTED: "${msg}"`,
       type: 'chat',
       amount: ''
     };
@@ -519,6 +603,11 @@ export default function BattleArena({
       ...gameState,
       history: [newLog, ...(gameState.history || [])]
     });
+
+    setActiveTauntBubble({ playerId: activePlayer.id, message: msg });
+    setTimeout(() => {
+      setActiveTauntBubble(null);
+    }, 3500);
   };
 
   return (
@@ -701,15 +790,16 @@ export default function BattleArena({
               </div>
 
               <div className="effects-icons-row">
-                <div
-                  className="effect-chip effect-poison"
-                  style={{ cursor: 'default' }}
-                >
-                  <Skull size={15} color="#39ff14" />
-                  <span className="effect-name">Poison</span>
-                  <span className="effect-count">{activePlayer.poisonCards || 0}</span>
-                </div>
-
+                {activePlayer.poisonCards > 0 && (
+                  <div
+                    className="effect-chip effect-poison"
+                    style={{ cursor: 'default' }}
+                  >
+                    <Skull size={15} color="#39ff14" />
+                    <span className="effect-name">Poison</span>
+                    <span className="effect-count">{activePlayer.poisonCards}</span>
+                  </div>
+                )}
                 <button
                   className="effect-chip effect-shield"
                   onClick={() => setSelectedEffectInfo({ name: 'Shield Barrier', desc: 'Absorbs incoming attack damage before your HP is reduced.', count: `+${activePlayer.shield || 0}` })}
@@ -812,6 +902,35 @@ export default function BattleArena({
                       >
                         {i + 1}
                       </div>
+
+                      {/* Taunt Speech Bubble */}
+                      {activeTauntBubble && activeTauntBubble.playerId === p.id && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: isActive ? '-50px' : '-45px',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            background: '#fff',
+                            color: '#000',
+                            padding: '6px 12px',
+                            borderRadius: '12px',
+                            fontWeight: 'bold',
+                            fontSize: isActive ? '0.75rem' : '0.65rem',
+                            whiteSpace: 'nowrap',
+                            pointerEvents: 'none',
+                            zIndex: 20,
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                            animation: 'bounce 0.5s ease infinite alternate'
+                          }}
+                        >
+                          <div style={{
+                            position: 'absolute', bottom: '-4px', left: '50%', transform: 'translateX(-50%) rotate(45deg)',
+                            width: '8px', height: '8px', background: '#fff'
+                          }} />
+                          {activeTauntBubble.message}
+                        </div>
+                      )}
 
                       {/* Circular Avatar Frame */}
                       <div
@@ -961,6 +1080,27 @@ export default function BattleArena({
                   </div>
                 </div>
 
+                {/* Modals & Overlays */}
+                {showCharacterCardModal && (
+                  <CharacterCardModal
+                    characterId={activePlayer.characterId}
+                    onClose={() => setShowCharacterCardModal(false)}
+                  />
+                )}
+                {showCardZoneModal && (
+                  <CardZoneModal
+                    player={activePlayer}
+                    onClose={() => setShowCardZoneModal(false)}
+                  />
+                )}
+                {showTauntModal && (
+                  <TauntModal
+                    activePlayerName={activePlayer.name}
+                    onClose={() => setShowTauntModal(false)}
+                    onTaunt={handleSendTaunt}
+                  />
+                )}
+
                 {/* Bottom Overlay: Stats & Quick Moves */}
                 <div
                   style={{
@@ -1047,6 +1187,26 @@ export default function BattleArena({
                       </button>
                     ))}
                   </div>
+                  <button
+                    onClick={() => setShowCharacterCardModal(true)}
+                    style={{
+                      marginTop: '12px',
+                      width: '100%',
+                      padding: '8px',
+                      background: 'linear-gradient(90deg, #a855f7, #6366f1)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <Eye size={16} /> VIEW CHARACTER CARD
+                  </button>
                 </div>
               </div>
 
@@ -1064,8 +1224,9 @@ export default function BattleArena({
               >
                 <button
                   className="btn-play-card-cta"
+                  disabled={activePlayer.turnActionCompleted}
                   onClick={() => setShowCardActionModal(true)}
-                  style={{ padding: '12px 10px', fontSize: '0.82rem', background: 'linear-gradient(90deg, #00f0ff, #0077ff)', color: '#000', fontWeight: 'bold', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', whiteSpace: 'nowrap' }}
+                  style={{ opacity: activePlayer.turnActionCompleted ? 0.4 : 1, cursor: activePlayer.turnActionCompleted ? 'not-allowed' : 'pointer', padding: '12px 10px', fontSize: '0.82rem', background: 'linear-gradient(90deg, #00f0ff, #0077ff)', color: '#000', fontWeight: 'bold', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', whiteSpace: 'nowrap' }}
                 >
                   <Swords size={16} />
                   <span>PLAY ACTION CARD</span>
@@ -1073,13 +1234,14 @@ export default function BattleArena({
 
                 <button
                   className="btn-play-card-cta"
+                  disabled={activePlayer.turnActionCompleted}
                   onClick={() => handleInitiateCombat({
                     attacker: activePlayer,
                     defender: defaultTarget,
                     actionCard: { id: 'atk_basic', name: 'Attack', costET: 0 },
                     characterMove: activeChar.moves?.[0] || { name: 'Basic Attack', baseAP: 25, type: 'flat' }
                   })}
-                  style={{ padding: '12px 10px', fontSize: '0.82rem', background: 'linear-gradient(90deg, #ff0055, #ff5500)', color: '#fff', fontWeight: 'bold', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', whiteSpace: 'nowrap' }}
+                  style={{ opacity: activePlayer.turnActionCompleted ? 0.4 : 1, cursor: activePlayer.turnActionCompleted ? 'not-allowed' : 'pointer', padding: '12px 10px', fontSize: '0.82rem', background: 'linear-gradient(90deg, #ff0055, #ff5500)', color: '#fff', fontWeight: 'bold', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', whiteSpace: 'nowrap' }}
                 >
                   <Dices size={16} />
                   <span>ROLL COMBAT DICE</span>
@@ -1175,25 +1337,6 @@ export default function BattleArena({
                 <div>• <strong>2-Dice Defense</strong>: Defender rolls $\ge 6$ on 2 Gold dice to trigger DP armor.</div>
                 <div>• <strong>Zombie Mode</strong>: 5+ Poison cards transforms you into an Undead with 40 HP & auto-regen.</div>
                 <div>• <strong>Victory</strong>: First warrior to capture 3 Stability Crystals wins the universe!</div>
-                <button
-                  onClick={() => setShowRulesChatOverlay(true)}
-                  style={{
-                    background: 'rgba(0, 240, 255, 0.1)',
-                    border: '1px solid var(--neon-cyan)',
-                    color: 'var(--neon-cyan)',
-                    padding: '8px',
-                    borderRadius: '6px',
-                    marginTop: '8px',
-                    cursor: 'pointer',
-                    fontWeight: 'bold',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px'
-                  }}
-                >
-                  <MessageSquare size={14} /> ASK RULES ASSISTANT AI
-                </button>
               </div>
             </div>
           </aside>
@@ -1246,7 +1389,19 @@ export default function BattleArena({
           </div>
 
           <div className="bottom-right-actions">
-            <button className="btn-end-turn-cta" onClick={handleEndTurn}>
+            {activePlayer.turnActionCompleted && (
+              <div style={{ color: '#39ff14', fontSize: '0.9rem', fontWeight: 'bold', marginRight: '15px', animation: 'pulse 1s infinite' }}>
+                Action Completed! Please End Turn ➔
+              </div>
+            )}
+            <button 
+              className={`btn-end-turn-cta ${activePlayer.turnActionCompleted ? 'flashing-end-turn-cta' : ''}`}
+              style={{
+                boxShadow: activePlayer.turnActionCompleted ? '0 0 20px #39ff14' : 'none',
+                border: activePlayer.turnActionCompleted ? '2px solid #39ff14' : 'none'
+              }}
+              onClick={handleEndTurn}
+            >
               <span>END TURN ({activePlayer.name})</span>
             </button>
           </div>
@@ -1292,9 +1447,9 @@ export default function BattleArena({
               </div>
 
               <div className="modal-cards-grid-10">
-                {ACTION_CARDS.map(card => (
+                {(activePlayer.actionCardsHand || []).map(card => (
                   <div
-                    key={card.id}
+                    key={card.instanceId}
                     className="playable-card-item"
                     style={{ borderColor: card.color || 'var(--neon-cyan)' }}
                     onClick={() => {

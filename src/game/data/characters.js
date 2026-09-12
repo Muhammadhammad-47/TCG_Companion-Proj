@@ -80,7 +80,8 @@ export const CHARACTERS = {
         type: 'flat',
         baseAP: 35,
         element: 'Fire',
-        costET: 1,
+        costET: 2,
+        isSuper: true,
         desc: 'A hidden fire technique dealing 35 AP.'
       },
       {
@@ -194,7 +195,8 @@ export const CHARACTERS = {
         baseAP: 30,
         element: 'Shadow',
         costET: 1,
-        desc: 'Stealth shadow strike dealing 30 AP.'
+        desc: 'Stealth shadow strike dealing 30 AP. On successful hit, defender falls asleep and loses 1 turn.',
+        appliesStun: true
       },
       {
         id: 'k_fate',
@@ -230,7 +232,8 @@ export const CHARACTERS = {
         type: 'flat',
         baseAP: 40,
         element: 'Physical',
-        costET: 1,
+        costET: 2,
+        isSuper: true,
         desc: 'Two rapid slashes dealing 40 AP.'
       },
       {
@@ -315,7 +318,8 @@ export const CHARACTERS = {
         type: 'flat',
         baseAP: 35,
         element: 'Magic',
-        costET: 1,
+        costET: 2,
+        isSuper: true,
         desc: 'Unpredictable magic strike dealing 35 AP.'
       },
       {

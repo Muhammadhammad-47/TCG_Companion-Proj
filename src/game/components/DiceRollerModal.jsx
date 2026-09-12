@@ -63,43 +63,20 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
     setIsRolling(false);
     
     if (phase === 'clash') {
-      const atkSum = clashAtkDice[0] + clashAtkDice[1];
-      const defSum = clashDefDice[0] + clashDefDice[1];
+      const atkHasDoubles = clashAtkDice[0] === clashAtkDice[1];
+      const defHasDoubles = clashDefDice[0] === clashDefDice[1];
       
-      if (clashAtkDice[0] === clashAtkDice[1]) {
-        setDoublesAlert(true);
+      if (atkHasDoubles && defHasDoubles) {
+        setDoublesAlert('both');
+      } else if (atkHasDoubles) {
+        setDoublesAlert('attacker');
+      } else if (defHasDoubles) {
+        setDoublesAlert('defender');
       }
 
-      if (atkSum > defSum) {
-        if (isMultiplier) {
-          setPhase('multiplier');
-        } else {
-          // Flat damage, go straight to result
-          const combatResult = resolveDiceCombat({
-            attacker,
-            defender,
-            actionCard,
-            characterMove,
-            attackerRoll: [0, 0], // Not used for flat
-            clashWon: true,
-            clashDefSum: defSum,
-            amplifyBonus,
-            isSingleDieMultiplier: false
-          });
-          setResult(combatResult);
-          setPhase('result');
-          if (combatResult.damageDealt > 0) soundFX.playDamage();
-        }
-      } else {
-        // Miss or Tie (Tie counts as Miss for clash in this version unless explicitly requested, 
-        // wait, we can just say Miss to prevent infinite loops)
-        const combatResult = resolveDiceCombat({
-          attacker, defender, actionCard, characterMove,
-          clashWon: false
-        });
-        setResult(combatResult);
-        setPhase('result');
-      }
+      // Stop at a summary phase so users can see the clash outcome
+      setPhase('clash_summary');
+      
     } else if (phase === 'multiplier') {
       const combatResult = pendingResultRef.current;
       setResult(combatResult);
@@ -144,6 +121,9 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
               {attacker.name} <span style={{ color: 'var(--neon-pink)', margin: '0 8px' }}>⚔️</span> {defender.name}
             </h2>
           </div>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#ff3366', cursor: 'pointer', padding: '8px' }}>
+            <X size={28} />
+          </button>
         </div>
 
         {/* Banner */}
@@ -216,6 +196,71 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
             >
               <Dices size={22} style={{marginRight: '8px'}} />
               {isRolling ? 'CASTING CLASH...' : 'ROLL CLASH (2 RED vs 2 GOLD)'}
+            </button>
+          </div>
+        )}
+
+        {phase === 'clash_summary' && (
+          <div style={{ textAlign: 'center', margin: '15px 0 8px' }}>
+            <div style={{ color: '#00f0ff', marginBottom: '10px', fontSize: '1.2rem', fontWeight: 'bold' }}>
+              CLASH SUMMARY
+            </div>
+            
+            {doublesAlert && (
+              <div style={{ marginBottom: '10px' }}>
+                <div style={{ color: '#ffd700', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '8px', background: 'rgba(255,215,0,0.1)', padding: '8px', borderRadius: '6px' }}>
+                  {doublesAlert === 'both' ? 'Both players rolled doubles! Both claim 1 Chance Card & Re-roll available.' :
+                   doublesAlert === 'attacker' ? 'Attacker rolled doubles! Attacker claims 1 Chance Card & Re-roll available.' :
+                   'Defender rolled doubles! Defender claims 1 Chance Card & Re-roll available.'}
+                </div>
+                <button
+                  onClick={() => {
+                    setDoublesAlert(false);
+                    setPhase('clash');
+                  }}
+                  style={{
+                    width: '100%', padding: '14px', background: 'linear-gradient(90deg, #ffd700, #ffaa00)',
+                    color: '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer'
+                  }}
+                >
+                  RE-ROLL DICE (DOUBLES BONUS)
+                </button>
+              </div>
+            )}
+
+            <button
+              onClick={() => {
+                setDoublesAlert(false);
+                const atkSum = clashAtkDice[0] + clashAtkDice[1];
+                const defSum = clashDefDice[0] + clashDefDice[1];
+                
+                if (atkSum > defSum) {
+                   if (isMultiplier) {
+                     setPhase('multiplier');
+                   } else {
+                     const combatResult = resolveDiceCombat({
+                       attacker, defender, actionCard, characterMove,
+                       attackerRoll: [0, 0], clashWon: true, clashDefSum: defSum,
+                       amplifyBonus, isSingleDieMultiplier: false
+                     });
+                     setResult(combatResult);
+                     setPhase('result');
+                     if (combatResult.damageDealt > 0) soundFX.playDamage();
+                   }
+                } else {
+                   const combatResult = resolveDiceCombat({
+                     attacker, defender, actionCard, characterMove, clashWon: false
+                   });
+                   setResult(combatResult);
+                   setPhase('result');
+                }
+              }}
+              style={{
+                width: '100%', padding: '14px', background: 'linear-gradient(90deg, #00f0ff, #0077ff)',
+                color: '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer'
+              }}
+            >
+              PROCEED TO RESOLUTION
             </button>
           </div>
         )}

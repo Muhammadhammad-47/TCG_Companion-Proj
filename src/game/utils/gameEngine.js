@@ -1,6 +1,16 @@
 // TCG Card Game — Official Game Logic & State Management Engine
 import { CHARACTERS, ZOMBIE_PROFILE } from '../data/characters.js';
-import { GAME_LIMITS } from '../data/cards.js';
+import { GAME_LIMITS, ACTION_CARDS } from '../data/cards.js';
+
+export function drawRandomCards(count) {
+  const drawn = [];
+  for (let i = 0; i < count; i++) {
+    // Generate a unique ID for each card instance so React keys don't clash
+    const baseCard = ACTION_CARDS[Math.floor(Math.random() * ACTION_CARDS.length)];
+    drawn.push({ ...baseCard, instanceId: `card_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` });
+  }
+  return drawn;
+}
 
 export function createInitialGameState(playerConfigs) {
   const players = playerConfigs.map((cfg, idx) => ({
@@ -23,6 +33,8 @@ export function createInitialGameState(playerConfigs) {
     kontrolUsesLeft: 2,
     blitzUsesLeft: 2,
     claimedTurnET: false,
+    turnActionCompleted: false,
+    actionCardsHand: drawRandomCards(10),
     stats: {
       damageDealt: 0,
       damageTaken: 0,
@@ -228,7 +240,7 @@ export function resolveDiceCombat({
 
   // 7. Check special effects
   const appliesPoison = characterMove?.appliesPoison || actionCard?.id === 'poison_card' || attacker.isZombie;
-  const appliesStun = characterMove?.stun || false;
+  const appliesStun = characterMove?.appliesStun || characterMove?.stun || false;
   const revealCards = characterMove?.revealCards || false;
 
   return {
@@ -290,6 +302,7 @@ export function advanceTurn(state) {
     // Reset turn flags for next active player
     if (idx === nextIndex) {
       updated.claimedTurnET = false;
+      updated.turnActionCompleted = false;
       updated.retreatedThisTurn = false;
       updated.buffAP = 0;
       updated.buffDP = 0;
