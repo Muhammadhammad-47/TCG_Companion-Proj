@@ -554,8 +554,10 @@ export function Chat({ onBack, isOverlay = false }) {
         };
 
         if (useExactSync) {
-          // Split into sentences to prevent the Chrome TTS garbage collection bug
-          const sentences = cleanAns.match(/[^.!?]+[.!?]+/g) || [cleanAns];
+          // Robust sentence splitting (handles trailing text without punctuation and trims spaces)
+          const rawSentences = cleanAns.match(/[^.!?]+[.!?]*/g) || [cleanAns];
+          const sentences = rawSentences.map(s => s.trim()).filter(Boolean);
+          
           let sentenceIndex = 0;
           let globalCharOffset = 0;
           let vInterval = null;
@@ -641,17 +643,23 @@ export function Chat({ onBack, isOverlay = false }) {
               }
               if (vInterval) clearInterval(vInterval);
               globalCharOffset += currentSentence.length;
+              // Ensure space is added if there's more text coming
+              if (sentenceIndex < sentences.length - 1) globalCharOffset += 1;
+              
               setDisplayedAnswer(cleanAns.substring(0, globalCharOffset));
               sentenceIndex++;
-              playNextSentence();
+              // Delay next speak to prevent Chrome TTS Error loop
+              setTimeout(playNextSentence, 20);
             };
 
             utterance.onerror = (e) => {
               console.error("SpeechSynthesisUtterance Error:", e);
               if (vInterval) clearInterval(vInterval);
               globalCharOffset += currentSentence.length;
+              if (sentenceIndex < sentences.length - 1) globalCharOffset += 1;
               sentenceIndex++;
-              playNextSentence();
+              // Delay next speak to prevent Chrome TTS Error loop
+              setTimeout(playNextSentence, 20);
             };
 
             if (window.speechSynthesis.getVoices().length > 0) {
