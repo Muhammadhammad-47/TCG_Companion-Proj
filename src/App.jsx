@@ -418,6 +418,7 @@ export function Chat({ onBack, isOverlay = false }) {
         dangerouslyAllowBrowser: true
       });
 
+      console.log("Sending request to Groq API with model: openai/gpt-oss-120b");
       const response = await groq.chat.completions.create({
         model: "openai/gpt-oss-120b", // User-requested model
         messages: [
@@ -433,11 +434,18 @@ export function Chat({ onBack, isOverlay = false }) {
         temperature: 0.5,
         max_tokens: 250
       });
+      console.log("Groq API Response received:", response);
 
       return response.choices[0]?.message?.content?.trim() || fullRuleText;
 
     } catch (error) {
-      console.warn("Groq SDK failed or timed out. Falling back to local text:", error);
+      console.error("================ GROQ API ERROR ================");
+      console.error("Error Object:", error);
+      console.error("Error Message:", error.message);
+      if (error.status) console.error("Status Code:", error.status);
+      if (error.error) console.error("Groq Error Details:", error.error);
+      console.error("================================================");
+      console.warn("Groq SDK failed or timed out. Falling back to local text.");
       return fullRuleText;
     }
   };
