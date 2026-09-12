@@ -576,6 +576,7 @@ export function Chat({ onBack, isOverlay = false }) {
             applyVoiceToUtterance(utterance);
 
             let onboundaryFired = false;
+            let fallbackTimeout = null;
 
             utterance.onstart = () => {
               usedTTS = true;
@@ -583,7 +584,7 @@ export function Chat({ onBack, isOverlay = false }) {
               setIsSpeaking(true);
               setIsAnimatingTalk(true);
 
-              setTimeout(() => {
+              fallbackTimeout = setTimeout(() => {
                 if (!onboundaryFired) {
                   // Fallback if onboundary isn't supported at all
                   startTextStream();
@@ -593,6 +594,10 @@ export function Chat({ onBack, isOverlay = false }) {
 
             utterance.onboundary = (event) => {
               onboundaryFired = true;
+              if (fallbackTimeout) {
+                clearTimeout(fallbackTimeout);
+                fallbackTimeout = null;
+              }
               if (event.name === 'word') {
                 if (vInterval) clearInterval(vInterval);
 
@@ -629,6 +634,11 @@ export function Chat({ onBack, isOverlay = false }) {
             };
 
             utterance.onend = () => {
+              onboundaryFired = true; // Prevent fallback
+              if (fallbackTimeout) {
+                clearTimeout(fallbackTimeout);
+                fallbackTimeout = null;
+              }
               if (vInterval) clearInterval(vInterval);
               globalCharOffset += currentSentence.length;
               setDisplayedAnswer(cleanAns.substring(0, globalCharOffset));
@@ -832,8 +842,11 @@ export function Chat({ onBack, isOverlay = false }) {
           <div className="chat-avatar-container">
             <Avatar characterId={selectedAvatarId} isSpeaking={isAnimatingTalk} currentVisemeFile={currentVisemeFile} />
             {status === 'Processing message...' && (
-              <div className="thinking-bubble" style={{ background: 'rgba(0,0,0,0.6)', padding: '8px 16px', borderRadius: '16px', color: 'var(--neon-cyan)', border: '1px solid var(--neon-cyan)', position: 'absolute', top: '10px', left: '50%', transform: 'translateX(-50%)', zIndex: 50, fontWeight: 'bold' }}>
-                Processing...
+              <div className="thinking-bubble" style={{ background: 'rgba(0,0,0,0.85)', padding: '8px 16px', borderRadius: '16px', border: '1px solid #00f0ff', position: 'absolute', top: '10px', left: '50%', transform: 'translateX(-50%)', zIndex: 50, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{ color: '#00f0ff', fontWeight: 'bold', fontSize: '0.9rem', marginRight: '4px' }}>Thinking</span>
+                <span className="dot" style={{ backgroundColor: '#00f0ff', width: '6px', height: '6px', borderRadius: '50%', display: 'inline-block' }}></span>
+                <span className="dot" style={{ backgroundColor: '#00f0ff', width: '6px', height: '6px', borderRadius: '50%', display: 'inline-block' }}></span>
+                <span className="dot" style={{ backgroundColor: '#00f0ff', width: '6px', height: '6px', borderRadius: '50%', display: 'inline-block' }}></span>
               </div>
             )}
           </div>
