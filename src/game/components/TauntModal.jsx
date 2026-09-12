@@ -45,11 +45,11 @@ export default function TauntModal({ activePlayerName, onClose, onTaunt }) {
   return (
     <div
       style={{
-        position: 'absolute', inset: 0,
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
         backgroundColor: 'rgba(3, 7, 18, 0.85)',
         backdropFilter: 'blur(8px)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        zIndex: 999999, padding: '16px'
+        zIndex: 9999999, padding: '16px'
       }}
       onClick={onClose}
     >

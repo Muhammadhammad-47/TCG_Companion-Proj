@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ACTION_CARDS } from '../data/cards';
 import { CHARACTERS, ZOMBIE_PROFILE, getAssetUrl } from '../data/characters';
 import { soundFX } from '../utils/audio';
-import { ArrowLeft, Zap, Shield, Sparkles, Flame, Brain, Skull, Heart, Swords, Target, Play } from 'lucide-react';
+import { ArrowLeft, Zap, Shield, Sparkles, Flame, Brain, Skull, Heart, Swords, Target, Play, X } from 'lucide-react';
 
 export default function CardActionModal({
   activePlayer,
@@ -277,6 +277,7 @@ export default function CardActionModal({
                 </h2>
               </div>
             </div>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}><X size={24} /></button>
           </div>
 
           {/* Body: Physical Placement OR Selection UI */}

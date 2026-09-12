@@ -20,6 +20,8 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
 
   const [kontrolWinner, setKontrolWinner] = useState(null); // 'attacker' | 'defender'
   const [chosenOption, setChosenOption] = useState('steal_card'); // 'steal_card' | 'force_attack'
+  const [selectedStolenCardId, setSelectedStolenCardId] = useState(null);
+  const [forceAttackTargetId, setForceAttackTargetId] = useState(null);
 
   const targetPlayer = allPlayers.find(p => p.id === targetId);
   const targetChar = targetPlayer ? (CHARACTERS[targetPlayer.characterId] || CHARACTERS.chynaman) : null;
@@ -88,11 +90,22 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
   };
 
   const handleConfirm = () => {
+    if (kontrolWinner === 'attacker' && chosenOption === 'steal_card' && !selectedStolenCardId) {
+      alert("Please select a card to steal!");
+      return;
+    }
+    if (kontrolWinner === 'attacker' && chosenOption === 'force_attack' && !forceAttackTargetId) {
+      alert("Please select a target to force attack!");
+      return;
+    }
+
     onCompleteKontrol({
       attackerId: attacker.id,
       targetId: targetPlayer.id,
       success: kontrolWinner === 'attacker',
-      chosenOption
+      chosenOption,
+      stolenCardId: selectedStolenCardId,
+      forcedTargetId: forceAttackTargetId
     });
   };
 
@@ -297,29 +310,48 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
               <div style={{ color: '#ffd700', fontWeight: 'bold', marginBottom: '10px', animation: 'pulse 1s infinite' }}>TIE! RE-ROLL ROUND.</div>
             )}
 
-            <button
-              onClick={handleRoll}
-              disabled={isRolling}
-              style={{
-                width: '100%',
-                padding: '14px',
-                background: 'linear-gradient(90deg, #a855f7, #ec4899)',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '8px',
-                fontWeight: 'bold',
-                fontSize: '1rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                opacity: isRolling ? 0.7 : 1
-              }}
-            >
-              <Dices size={20} />
-              <span>{isRolling ? 'ROLLING DICE…' : `ROLL ROUND ${roundNumber}`}</span>
-            </button>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={onClose}
+                disabled={isRolling}
+                style={{
+                  width: '30%',
+                  padding: '14px',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '1rem',
+                  cursor: 'pointer'
+                }}
+              >
+                CANCEL
+              </button>
+              <button
+                onClick={handleRoll}
+                disabled={isRolling}
+                style={{
+                  flex: 1,
+                  padding: '14px',
+                  background: 'linear-gradient(90deg, #a855f7, #ec4899)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '1rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  opacity: isRolling ? 0.7 : 1
+                }}
+              >
+                <Dices size={20} />
+                {isRolling ? 'ROLLING...' : `ROLL ROUND ${roundNumber}`}
+              </button>
+            </div>
           </div>
         )}
 
@@ -365,6 +397,59 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
                     ⚔️ Force Attack
                   </button>
                 </div>
+
+                {/* Steal Card UI */}
+                {chosenOption === 'steal_card' && targetPlayer.actionCardsHand?.length > 0 && (
+                  <div style={{ marginTop: '16px', background: 'rgba(0,0,0,0.5)', padding: '12px', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '0.8rem', color: '#c084fc', marginBottom: '8px' }}>SELECT CARD TO STEAL:</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px' }}>
+                      {targetPlayer.actionCardsHand.map(card => (
+                        <div
+                          key={card.instanceId}
+                          onClick={() => setSelectedStolenCardId(card.instanceId)}
+                          style={{
+                            border: selectedStolenCardId === card.instanceId ? '2px solid #39ff14' : '1px solid rgba(255,255,255,0.2)',
+                            background: selectedStolenCardId === card.instanceId ? 'rgba(57, 255, 20, 0.1)' : 'rgba(255,255,255,0.05)',
+                            padding: '6px',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            textAlign: 'center',
+                            fontSize: '0.75rem',
+                            color: '#fff'
+                          }}
+                        >
+                          <div style={{ fontSize: '1.2rem', marginBottom: '4px' }}>{card.icon}</div>
+                          <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{card.name}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Force Attack UI */}
+                {chosenOption === 'force_attack' && (
+                  <div style={{ marginTop: '16px', background: 'rgba(0,0,0,0.5)', padding: '12px', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '0.8rem', color: '#c084fc', marginBottom: '8px' }}>SELECT VICTIM TO ATTACK:</div>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {allPlayers.filter(p => p.id !== targetPlayer.id).map(victim => (
+                        <button
+                          key={victim.id}
+                          onClick={() => setForceAttackTargetId(victim.id)}
+                          style={{
+                            background: forceAttackTargetId === victim.id ? 'rgba(255, 51, 102, 0.2)' : 'rgba(255,255,255,0.1)',
+                            border: forceAttackTargetId === victim.id ? '1.5px solid #ff3366' : '1px solid rgba(255,255,255,0.2)',
+                            color: '#fff',
+                            padding: '8px 12px',
+                            borderRadius: '6px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {victim.name} {victim.id === attacker.id ? '(Yourself)' : ''}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

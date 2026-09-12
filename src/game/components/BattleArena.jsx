@@ -392,7 +392,7 @@ export default function BattleArena({
   };
 
   // Complete Kontrol Action
-  const handleCompleteKontrol = ({ attackerId, targetId, success, chosenOption }) => {
+  const handleCompleteKontrol = ({ attackerId, targetId, success, chosenOption, stolenCardId, forcedTargetId }) => {
     const playedInstanceId = activeKontrolData?.playedInstanceId;
     setActiveKontrolData(null);
     pushStateSnapshot();
@@ -403,14 +403,12 @@ export default function BattleArena({
     let stolenCard = null;
     let forceAttackVictim = null;
     
-    if (success && chosenOption === 'steal_card') {
+    if (success && chosenOption === 'steal_card' && stolenCardId) {
       const targetHand = target.actionCardsHand || [];
-      if (targetHand.length > 0) {
-        stolenCard = targetHand[Math.floor(Math.random() * targetHand.length)];
-      }
+      stolenCard = targetHand.find(c => c.instanceId === stolenCardId);
     }
-    if (success && chosenOption === 'force_attack') {
-      forceAttackVictim = players.find(p => p.id !== target.id && p.id !== attacker.id) || target; // Hit another player, or hit themselves if 1v1
+    if (success && chosenOption === 'force_attack' && forcedTargetId) {
+      forceAttackVictim = players.find(p => p.id === forcedTargetId);
     }
 
     const updatedPlayers = players.map(p => {
@@ -908,7 +906,8 @@ export default function BattleArena({
                         <div
                           style={{
                             position: 'absolute',
-                            top: isActive ? '-50px' : '-45px',
+                            bottom: '100%',
+                            marginBottom: '10px',
                             left: '50%',
                             transform: 'translateX(-50%)',
                             background: '#fff',

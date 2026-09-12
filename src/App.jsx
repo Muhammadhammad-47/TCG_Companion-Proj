@@ -554,102 +554,107 @@ export function Chat({ onBack, isOverlay = false }) {
         };
 
         if (useExactSync) {
-          // Option A: Single Utterance with onboundary (exact sync from commit 36b89af)
-          const utterance = new SpeechSynthesisUtterance(cleanAns);
-          window.currentUtterance = utterance;
-          applyVoiceToUtterance(utterance);
-
+          // Split into sentences to prevent the Chrome TTS garbage collection bug
+          const sentences = cleanAns.match(/[^.!?]+[.!?]+/g) || [cleanAns];
+          let sentenceIndex = 0;
+          let globalCharOffset = 0;
           let vInterval = null;
-          let onboundaryFired = false;
 
-          utterance.onstart = () => {
-            usedTTS = true;
-            setStatus('Answer received.'); // Remove dots and show text box
-            setIsSpeaking(true);
-            setIsAnimatingTalk(true);
+          const playNextSentence = () => {
+            if (sentenceIndex >= sentences.length) {
+              setIsSpeaking(false);
+              setIsAnimatingTalk(false);
+              setDisplayedAnswer(finalAns);
+              setCurrentVisemeFile(getVisemeFileForChar(selectedAvatarId, 'SMILE'));
+              window.currentUtterance = null;
+              return;
+            }
 
-            // Fallback for voices that don't support onboundary
-            setTimeout(() => {
-              if (!onboundaryFired) {
-                startTextStream();
-              }
-            }, 500);
-          };
+            const currentSentence = sentences[sentenceIndex];
+            const utterance = new SpeechSynthesisUtterance(currentSentence);
+            window.currentUtterance = utterance; // Prevent GC
+            applyVoiceToUtterance(utterance);
 
-          utterance.onboundary = (event) => {
-            onboundaryFired = true;
-            if (event.name === 'word') {
-              if (vInterval) clearInterval(vInterval);
+            let onboundaryFired = false;
 
-              let nextSpace = cleanAns.indexOf(' ', event.charIndex);
-              if (nextSpace === -1) nextSpace = cleanAns.length;
+            utterance.onstart = () => {
+              usedTTS = true;
+              setStatus('Answer received.');
+              setIsSpeaking(true);
+              setIsAnimatingTalk(true);
 
-              const wordStr = cleanAns.substring(event.charIndex, nextSpace);
+              setTimeout(() => {
+                if (!onboundaryFired) {
+                  // Fallback if onboundary isn't supported at all
+                  startTextStream();
+                }
+              }, 500);
+            };
 
-              // Show text up to this word (using cleanAns to match index lengths)
-              setDisplayedAnswer(cleanAns.substring(0, nextSpace));
+            utterance.onboundary = (event) => {
+              onboundaryFired = true;
+              if (event.name === 'word') {
+                if (vInterval) clearInterval(vInterval);
 
-              // Start visemes for this word
-              let wordClean = wordStr.trim();
-              // If it's just punctuation, close mouth immediately and wait
-              if (/^[.,!?]+$/.test(wordClean)) {
-                setCurrentVisemeFile(getVisemeFileForChar(selectedAvatarId, 'CLOSED'));
-                return;
-              }
+                let nextSpace = currentSentence.indexOf(' ', event.charIndex);
+                if (nextSpace === -1) nextSpace = currentSentence.length;
 
-              setCurrentVisemeFile(getViseme(wordClean, 0, selectedAvatarId));
+                const wordStr = currentSentence.substring(event.charIndex, nextSpace);
+                
+                // Show text up to this word
+                const totalDisplayedSoFar = cleanAns.substring(0, globalCharOffset + nextSpace);
+                setDisplayedAnswer(totalDisplayedSoFar);
 
-              // Limit to max 3 frames per word so it doesn't animate after the voice stops
-              const maxFrames = Math.min(wordClean.length, 3);
+                // Start visemes for this word
+                let wordClean = wordStr.trim();
+                if (/^[.,!?]+$/.test(wordClean)) {
+                  setCurrentVisemeFile(getVisemeFileForChar(selectedAvatarId, 'CLOSED'));
+                  return;
+                }
 
-              let vIdx = 0;
-              vInterval = setInterval(() => {
-                vIdx++;
-                if (vIdx < maxFrames) {
-                  const nextViseme = getViseme(wordClean, vIdx, selectedAvatarId);
-                  // Forcing update on every letter to allow mid-word bouncing/blinking
-                  setCurrentVisemeFile(nextViseme);
-                } else {
-                  // If the word ends with punctuation, close the mouth during the TTS pause
-                  if (/[.,!?]$/.test(wordClean)) {
+                setCurrentVisemeFile(getViseme(wordClean, 0, selectedAvatarId));
+                
+                let frame = 1;
+                vInterval = setInterval(() => {
+                  const nextViseme = getViseme(wordClean, frame, selectedAvatarId);
+                  if (nextViseme) {
+                    setCurrentVisemeFile(nextViseme);
+                    frame++;
+                  } else {
+                    clearInterval(vInterval);
                     setCurrentVisemeFile(getVisemeFileForChar(selectedAvatarId, 'CLOSED'));
                   }
-                  clearInterval(vInterval);
-                }
-              }, 150);
+                }, 80); // 80ms per frame
+              }
+            };
+
+            utterance.onend = () => {
+              if (vInterval) clearInterval(vInterval);
+              globalCharOffset += currentSentence.length;
+              setDisplayedAnswer(cleanAns.substring(0, globalCharOffset));
+              sentenceIndex++;
+              playNextSentence();
+            };
+
+            utterance.onerror = (e) => {
+              console.error("SpeechSynthesisUtterance Error:", e);
+              if (vInterval) clearInterval(vInterval);
+              globalCharOffset += currentSentence.length;
+              sentenceIndex++;
+              playNextSentence();
+            };
+
+            if (window.speechSynthesis.getVoices().length > 0) {
+              window.speechSynthesis.speak(utterance);
+            } else {
+              window.speechSynthesis.onvoiceschanged = () => {
+                window.speechSynthesis.speak(utterance);
+                window.speechSynthesis.onvoiceschanged = null;
+              };
             }
           };
 
-          utterance.onend = () => {
-            if (vInterval) clearInterval(vInterval);
-            setIsSpeaking(false);
-            setIsAnimatingTalk(false);
-            setCurrentVisemeFile(getVisemeFileForChar(selectedAvatarId, 'SMILE'));
-            setDisplayedAnswer(finalAns);
-            window.currentUtterance = null;
-          };
-
-          utterance.onerror = () => {
-            if (vInterval) clearInterval(vInterval);
-            setIsSpeaking(false);
-            setIsAnimatingTalk(false);
-            setDisplayedAnswer(finalAns);
-            window.currentUtterance = null;
-          };
-
-          if (window.speechSynthesis.getVoices().length > 0) {
-            window.speechSynthesis.speak(utterance);
-          } else {
-            window.speechSynthesis.onvoiceschanged = () => {
-              window.speechSynthesis.speak(utterance);
-              window.speechSynthesis.onvoiceschanged = null;
-            };
-          }
-
-          // Fallback if TTS fails to start within 500ms
-          setTimeout(() => {
-            if (!usedTTS) startTextStream();
-          }, 500);
+          playNextSentence();
 
         } else {
           // Option C: Hybrid Typewriter (current logic)
@@ -827,10 +832,8 @@ export function Chat({ onBack, isOverlay = false }) {
           <div className="chat-avatar-container">
             <Avatar characterId={selectedAvatarId} isSpeaking={isAnimatingTalk} currentVisemeFile={currentVisemeFile} />
             {status === 'Processing message...' && (
-              <div className="thinking-bubble">
-                <span className="dot"></span>
-                <span className="dot"></span>
-                <span className="dot"></span>
+              <div className="thinking-bubble" style={{ background: 'rgba(0,0,0,0.6)', padding: '8px 16px', borderRadius: '16px', color: 'var(--neon-cyan)', border: '1px solid var(--neon-cyan)', position: 'absolute', top: '10px', left: '50%', transform: 'translateX(-50%)', zIndex: 50, fontWeight: 'bold' }}>
+                Processing...
               </div>
             )}
           </div>

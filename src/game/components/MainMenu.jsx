@@ -386,60 +386,6 @@ export default function MainMenu({
               <span className="action-btn-subtitle">Share to another device</span>
             </div>
           </button>
-
-          {/* Rules Bot Beta Card (Moved to bottom right empty space) */}
-          <div 
-            className="rules-bot-card" 
-            onClick={handleOpenRules}
-            onMouseEnter={playHoverSound}
-            style={{ marginLeft: 'auto', marginBottom: 0, padding: '10px 15px', height: '100%', flex: '0 1 350px', cursor: 'pointer', transition: 'all 0.3s ease' }}
-          >
-            <div className="rules-bot-header" style={{ marginBottom: '8px' }}>
-              <div className="bot-avatar-wrap" style={{ width: '35px', height: '35px' }}>
-                <div className="bot-robot-icon">
-                  <Bot size={20} color="var(--neon-cyan)" />
-                </div>
-              </div>
-              <div className="bot-info-meta">
-                <div className="bot-title-row">
-                  <strong className="bot-title" style={{ fontSize: '0.9rem' }}>RULES BOT</strong>
-                </div>
-              </div>
-            </div>
-
-            <div 
-              className="mini-chat-history" 
-              style={{ flex: 1, overflowY: 'hidden', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px', paddingRight: '5px', justifyContent: 'center' }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-                <div style={{
-                  maxWidth: '100%',
-                  padding: '12px 16px',
-                  borderRadius: '12px',
-                  fontSize: '0.95rem',
-                  background: 'rgba(0, 240, 255, 0.1)',
-                  border: '1px solid rgba(0, 240, 255, 0.3)',
-                  color: 'var(--neon-cyan)',
-                  wordWrap: 'break-word',
-                  textAlign: 'center'
-                }}>
-                  Need a rule clarification? Click here to open the full Rules Bot!
-                </div>
-              </div>
-            </div>
-
-            <div className="bot-query-box" style={{ marginTop: 'auto', pointerEvents: 'none', opacity: 0.7 }}>
-              <div
-                className="bot-input-field"
-                style={{ padding: '10px', display: 'flex', alignItems: 'center', color: '#fff', fontSize: '0.9rem' }}
-              >
-                Open Rules Bot...
-              </div>
-              <button type="button" className="bot-send-btn" title="Open Bot">
-                <Send size={15} />
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* Bottom Footer Info */}

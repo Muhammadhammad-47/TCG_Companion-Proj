@@ -121,8 +121,8 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
               {attacker.name} <span style={{ color: 'var(--neon-pink)', margin: '0 8px' }}>⚔️</span> {defender.name}
             </h2>
           </div>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#ff3366', cursor: 'pointer', padding: '8px' }}>
-            <X size={28} />
+          <button onClick={onClose} style={{ background: 'rgba(255, 51, 102, 0.2)', border: '1px solid #ff3366', borderRadius: '8px', color: '#ff3366', cursor: 'pointer', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold' }}>
+            <X size={16} /> CANCEL
           </button>
         </div>
 
@@ -186,17 +186,29 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
         {/* Action Buttons & Results */}
         {phase === 'clash' && (
           <div style={{ textAlign: 'center', margin: '15px 0 8px' }}>
-            <button
-              onClick={handleRollClash}
-              disabled={isRolling}
-              style={{
-                width: '100%', padding: '14px', background: 'linear-gradient(90deg, #ff0055, #ff5500)',
-                color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer'
-              }}
-            >
-              <Dices size={22} style={{marginRight: '8px'}} />
-              {isRolling ? 'CASTING CLASH...' : 'ROLL CLASH (2 RED vs 2 GOLD)'}
-            </button>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={onClose}
+                disabled={isRolling}
+                style={{
+                  width: '30%', padding: '14px', background: 'rgba(255, 255, 255, 0.1)',
+                  color: '#fff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer'
+                }}
+              >
+                CANCEL
+              </button>
+              <button
+                onClick={handleRollClash}
+                disabled={isRolling}
+                style={{
+                  flex: 1, padding: '14px', background: 'linear-gradient(90deg, #ff0055, #ff5500)',
+                  color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer'
+                }}
+              >
+                <Dices size={22} style={{marginRight: '8px'}} />
+                {isRolling ? 'CASTING CLASH...' : 'ROLL CLASH (2 RED vs 2 GOLD)'}
+              </button>
+            </div>
           </div>
         )}
 
