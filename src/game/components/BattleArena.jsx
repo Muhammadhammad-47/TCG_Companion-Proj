@@ -1080,27 +1080,6 @@ export default function BattleArena({
                   </div>
                 </div>
 
-                {/* Modals & Overlays */}
-                {showCharacterCardModal && (
-                  <CharacterCardModal
-                    characterId={activePlayer.characterId}
-                    onClose={() => setShowCharacterCardModal(false)}
-                  />
-                )}
-                {showCardZoneModal && (
-                  <CardZoneModal
-                    player={activePlayer}
-                    onClose={() => setShowCardZoneModal(false)}
-                  />
-                )}
-                {showTauntModal && (
-                  <TauntModal
-                    activePlayerName={activePlayer.name}
-                    onClose={() => setShowTauntModal(false)}
-                    onTaunt={handleSendTaunt}
-                  />
-                )}
-
                 {/* Bottom Overlay: Stats & Quick Moves */}
                 <div
                   style={{
@@ -1552,6 +1531,27 @@ export default function BattleArena({
               </div>
             </div>
           </div>
+        )}
+
+        {/* Player Modals & Overlays */}
+        {showCharacterCardModal && (
+          <CharacterCardModal
+            characterId={activePlayer.characterId}
+            onClose={() => setShowCharacterCardModal(false)}
+          />
+        )}
+        {showCardZoneModal && (
+          <CardZoneModal
+            player={activePlayer}
+            onClose={() => setShowCardZoneModal(false)}
+          />
+        )}
+        {showTauntModal && (
+          <TauntModal
+            activePlayerName={activePlayer.name}
+            onClose={() => setShowTauntModal(false)}
+            onTaunt={handleSendTaunt}
+          />
         )}
 
         {/* In-Game Menu Modal */}

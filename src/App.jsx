@@ -490,7 +490,7 @@ export function Chat({ onBack, isOverlay = false }) {
 
       setAnswer(finalAns);
       setChatHistory(prev => [...prev, { q: query, a: finalAns }]);
-      setStatus('Answer received.');
+      // DO NOT setStatus('Answer received.') here, we want the dots to stay until speech actually starts.
 
       const cleanForTTS = (text) => text
         .replace(/[【】•·*]/g, ' ')        // remove special brackets, bullets, and asterisks
@@ -517,7 +517,7 @@ export function Chat({ onBack, isOverlay = false }) {
           if (wIdx < words.length) {
             const currentWord = words[wIdx];
             charAcc += currentWord.length + (wIdx > 0 ? 1 : 0);
-            setDisplayedAnswer(finalAns.substring(0, charAcc));
+            setDisplayedAnswer(cleanAns.substring(0, charAcc));
 
             let wordClean = currentWord.trim();
             if (/^[.,!?]+$/.test(wordClean)) {
@@ -564,6 +564,7 @@ export function Chat({ onBack, isOverlay = false }) {
 
           utterance.onstart = () => {
             usedTTS = true;
+            setStatus('Answer received.'); // Remove dots and show text box
             setIsSpeaking(true);
             setIsAnimatingTalk(true);
 
@@ -585,8 +586,8 @@ export function Chat({ onBack, isOverlay = false }) {
 
               const wordStr = cleanAns.substring(event.charIndex, nextSpace);
 
-              // Show text up to this word
-              setDisplayedAnswer(finalAns.substring(0, nextSpace));
+              // Show text up to this word (using cleanAns to match index lengths)
+              setDisplayedAnswer(cleanAns.substring(0, nextSpace));
 
               // Start visemes for this word
               let wordClean = wordStr.trim();

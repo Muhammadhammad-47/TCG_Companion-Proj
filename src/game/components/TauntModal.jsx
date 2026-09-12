@@ -37,7 +37,7 @@ export default function TauntModal({ activePlayerName, onClose, onTaunt }) {
 
   const handleSend = (msg) => {
     if (!msg.trim()) return;
-    soundFX.playMenuClick();
+    soundFX.playMenuSelect();
     saveRecent(msg);
     onTaunt(msg);
   };
