@@ -9,6 +9,7 @@ export const supabase = (supabaseUrl && supabaseKey)
 
 // Track active channels by matchId
 const channels = {};
+let globalLobbyChannel = null;
 
 // Helper to broadcast state to other peers
 export const broadcastState = async (matchId, state) => {
@@ -76,6 +77,30 @@ export const subscribeToMatch = (matchId, callback, onSubscribe = null) => {
     callback({ type: 'PLAYER_JOINED', payload });
   });
 
+  channel.on('broadcast', { event: 'player_left' }, ({ payload }) => {
+    callback({ type: 'PLAYER_LEFT', payload });
+  });
+
+  channel.on('broadcast', { event: 'join_rejected' }, ({ payload }) => {
+    callback({ type: 'JOIN_REJECTED', payload });
+  });
+
+  channel.on('broadcast', { event: 'request_sync' }, ({ payload }) => {
+    callback({ type: 'REQUEST_SYNC', payload });
+  });
+
+  channel.on('broadcast', { event: 'dice_screen_open' }, ({ payload }) => {
+    callback({ type: 'DICE_SCREEN_OPEN', payload });
+  });
+
+  channel.on('broadcast', { event: 'dice_screen_close' }, ({ payload }) => {
+    callback({ type: 'DICE_SCREEN_CLOSE', payload });
+  });
+
+  channel.on('broadcast', { event: 'dice_screen_rolled' }, ({ payload }) => {
+    callback({ type: 'DICE_SCREEN_ROLLED', payload });
+  });
+
   channel.on('broadcast', { event: 'player_action' }, ({ payload }) => {
     callback(payload);
   });
@@ -105,6 +130,42 @@ export const requestJoin = async (matchId, joinData) => {
   });
 };
 
+export const rejectJoin = async (matchId, reason, targetPlayerId) => {
+  if (!channels[matchId]) return;
+  await channels[matchId].send({
+    type: 'broadcast',
+    event: 'join_rejected',
+    payload: { reason, targetPlayerId }
+  });
+};
+
+export const broadcastLeave = async (matchId, playerId) => {
+  if (!channels[matchId]) return;
+  await channels[matchId].send({
+    type: 'broadcast',
+    event: 'player_left',
+    payload: { playerId, timestamp: Date.now() }
+  });
+};
+
+export const requestSync = async (matchId, requesterId) => {
+  if (!channels[matchId]) return;
+  await channels[matchId].send({
+    type: 'broadcast',
+    event: 'request_sync',
+    payload: { requesterId }
+  });
+};
+
+export const broadcastUIEvent = async (matchId, eventName, payload) => {
+  if (!channels[matchId]) return;
+  await channels[matchId].send({
+    type: 'broadcast',
+    event: eventName,
+    payload
+  });
+};
+
 export const takeTurn = async (matchId, action) => {
   if (!channels[matchId]) return;
   await channels[matchId].send({
@@ -112,4 +173,55 @@ export const takeTurn = async (matchId, action) => {
     event: 'player_action',
     payload: action
   });
+};
+
+// Global Lobby Broadcasts (ephemeral)
+export const advertiseRoom = async (roomData) => {
+  if (!supabase) return;
+  if (!globalLobbyChannel) {
+    globalLobbyChannel = supabase.channel('global_lobby');
+    await globalLobbyChannel.subscribe();
+  }
+  await globalLobbyChannel.send({
+    type: 'broadcast',
+    event: 'room_advertised',
+    payload: { ...roomData, timestamp: Date.now() }
+  });
+};
+
+export const closeRoom = async (roomCode) => {
+  if (!supabase || !globalLobbyChannel) return;
+  await globalLobbyChannel.send({
+    type: 'broadcast',
+    event: 'room_closed',
+    payload: { roomCode, timestamp: Date.now() }
+  });
+};
+
+export const subscribeToGlobalLobby = (callback) => {
+  if (!supabase) return { unsubscribe: () => {} };
+
+  if (!globalLobbyChannel) {
+    globalLobbyChannel = supabase.channel('global_lobby');
+  }
+
+  globalLobbyChannel.on('broadcast', { event: 'room_advertised' }, ({ payload }) => {
+    callback({ type: 'ROOM_ADVERTISED', payload });
+  });
+
+  globalLobbyChannel.on('broadcast', { event: 'room_closed' }, ({ payload }) => {
+    callback({ type: 'ROOM_CLOSED', payload });
+  });
+
+  globalLobbyChannel.subscribe((status) => {
+    if (status === 'SUBSCRIBED') {
+      console.log('[Supabase] Connected to global_lobby channel');
+    }
+  });
+
+  return {
+    unsubscribe: () => {
+      // Keep channel alive if needed or leave
+    }
+  };
 };
