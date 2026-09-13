@@ -17,7 +17,9 @@ export default function KontrolaArena() {
   const [matchId, setMatchId] = useState('');
   const [gameState, setGameState] = useState(null);
   const [playerId, setPlayerId] = useState(() => `warrior_${Math.floor(100 + Math.random() * 900)}`);
+  const [playerName, setPlayerName] = useState('');
   const [isHost, setIsHost] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState(null);
   
   const [selectedCharacter, setSelectedCharacter] = useState('chynaman');
@@ -49,7 +51,7 @@ export default function KontrolaArena() {
     const subscription = subscribeToMatch(matchId, (event) => {
       // 1. Peer Joined
       if (event.type === 'PLAYER_JOINED') {
-        const { playerId: joinedId, characterId: joinedChar } = event.payload || {};
+        const { playerId: joinedId, characterId: joinedChar, playerName: joinedName } = event.payload || {};
         if (!joinedId) return;
 
         if (isHost && gameState) {
@@ -60,12 +62,17 @@ export default function KontrolaArena() {
               ...(gameState.characterSelections || {}),
               [joinedId]: joinedChar || 'bee'
             };
+            const updatedNames = {
+              ...(gameState.playerNames || {}),
+              [joinedId]: joinedName || 'Warrior'
+            };
 
             const updatedLobbyState = {
               ...gameState,
               players: updatedPlayers,
               characterSelections: updatedChars,
-              logs: [...(gameState.logs || []), `Player ${joinedId} entered the lobby!`]
+              playerNames: updatedNames,
+              logs: [...(gameState.logs || []), `${joinedName || 'Warrior'} entered the lobby!`]
             };
 
             setGameState(updatedLobbyState);
@@ -103,12 +110,18 @@ export default function KontrolaArena() {
         setActiveTauntBubble(event.payload);
         setTimeout(() => setActiveTauntBubble(null), 3500);
       }
+    }, () => {
+      // Callback fired when channel is fully SUBSCRIBED
+      if (isJoining) {
+        requestJoin(matchId, { playerId, characterId: selectedCharacter, playerName: playerName || 'Warrior' });
+        setIsJoining(false);
+      }
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [matchId, isHost, gameState, playerId]);
+  }, [matchId, isHost, gameState, playerId, isJoining, selectedCharacter, playerName]);
 
   // Host Action Resolution
   const handleActionResolution = (payload, precalculatedRolls = null) => {
@@ -193,10 +206,17 @@ export default function KontrolaArena() {
   // Host Creates Match
   const handleCreateMatch = async () => {
     playClick();
+    if (!playerName.trim()) {
+      setError('Please enter your name before creating a room.');
+      return;
+    }
     try {
       const newMatchId = Math.random().toString(36).substring(2, 8).toUpperCase();
       const initialState = await createMatch(newMatchId, playerId, selectedCharacter);
       initialState.isPremium = isPremium;
+      // Store player name mapping in gamestate
+      initialState.playerNames = { [playerId]: playerName.trim() };
+      
       setMatchId(newMatchId);
       setGameState(initialState);
       setIsHost(true);
@@ -211,18 +231,20 @@ export default function KontrolaArena() {
     if (e) e.preventDefault();
     playClick();
     if (!matchId) return;
+    if (!playerName.trim()) {
+      setError('Please enter your name before joining a room.');
+      return;
+    }
 
     try {
       const cleanId = matchId.trim().toUpperCase();
       setMatchId(cleanId);
       setIsHost(false);
+      setIsJoining(true); // Triggers requestJoin inside useEffect once connected
       
       const tempState = await joinMatch(cleanId, playerId, selectedCharacter);
+      tempState.playerNames = { [playerId]: playerName.trim() };
       setGameState(tempState);
-      
-      setTimeout(async () => {
-        await requestJoin(cleanId, { playerId, characterId: selectedCharacter });
-      }, 400);
       
       setError(null);
     } catch (err) {
@@ -244,9 +266,11 @@ export default function KontrolaArena() {
     const initialCharacterStates = {};
     gameState.players.forEach((pId) => {
       const charKey = gameState.characterSelections?.[pId] || 'chynaman';
+      const customName = gameState.playerNames?.[pId];
       const template = KONTROLA_CHARACTERS[charKey] || KONTROLA_CHARACTERS.chynaman;
       initialCharacterStates[pId] = {
         ...template,
+        name: customName || template.name,
         playerId: pId,
         hp: template.maxHp,
         shield: 0,
@@ -359,7 +383,7 @@ export default function KontrolaArena() {
   };
 
   const handleSendTaunt = (tauntText) => {
-    const msg = { text: tauntText, senderId: playerId, senderName: myCharacter?.name || 'Warrior' };
+    const msg = { text: tauntText, senderId: playerId, senderName: myCharacter?.name || playerName || 'Warrior' };
     setActiveTauntBubble(msg);
     setTimeout(() => setActiveTauntBubble(null), 3500);
     takeTurn(matchId, { type: 'PLAYER_TAUNT', payload: msg });
@@ -425,6 +449,24 @@ export default function KontrolaArena() {
             {!gameState ? (
               <div style={{ maxWidth: '900px', margin: '0 auto', zIndex: 10, display: 'flex', flexDirection: 'column', gap: '24px' }}>
                 
+                {/* Player Name Input */}
+                <div style={{ background: 'rgba(14, 22, 42, 0.85)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '18px', padding: '20px', textAlign: 'center' }}>
+                  <label style={{ display: 'block', fontFamily: 'Rajdhani, sans-serif', fontSize: '1.2rem', color: 'var(--neon-cyan)', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>
+                    ENTER YOUR WARRIOR NAME
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="E.g. ShadowSlayer99"
+                    value={playerName}
+                    onChange={e => setPlayerName(e.target.value)}
+                    maxLength={16}
+                    style={{
+                      width: '100%', maxWidth: '300px', background: 'rgba(0, 0, 0, 0.6)', border: '1.5px solid var(--neon-cyan)', borderRadius: '10px',
+                      padding: '12px', color: '#fff', fontSize: '1.1rem', textAlign: 'center', boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
                 {/* Character Selection Carousel */}
                 <div style={{ background: 'rgba(14, 22, 42, 0.85)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '18px', padding: '20px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
@@ -473,7 +515,7 @@ export default function KontrolaArena() {
                   <div style={{ background: 'rgba(14, 22, 42, 0.85)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '18px', padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                     <div>
                       <h3 style={{ margin: '0 0 8px 0', fontSize: '1.4rem', fontFamily: 'Rajdhani, sans-serif', color: 'var(--neon-cyan)' }}>
-                        HOST NEW MATCH
+                        CREATE PRIVATE ROOM
                       </h3>
                       <p style={{ margin: '0 0 16px 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
                         Create a room for up to 7 players. You control match settings and deck rules.
@@ -498,7 +540,7 @@ export default function KontrolaArena() {
                   <div style={{ background: 'rgba(14, 22, 42, 0.85)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '18px', padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                     <div>
                       <h3 style={{ margin: '0 0 8px 0', fontSize: '1.4rem', fontFamily: 'Rajdhani, sans-serif', color: 'var(--neon-gold)' }}>
-                        JOIN EXISTING MATCH
+                        JOIN PRIVATE ROOM
                       </h3>
                       <p style={{ margin: '0 0 16px 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
                         Enter the 6-character Match Room code provided by your host.
@@ -582,9 +624,9 @@ export default function KontrolaArena() {
                             </div>
                             <div>
                               <div style={{ fontWeight: 'bold', color: '#fff', fontSize: '0.95rem' }}>
-                                {charData.name} {isMe ? '(You)' : ''}
+                                {gameState.playerNames?.[pId] || charData.name} {isMe ? '(You)' : ''}
                               </div>
-                              <div style={{ fontSize: '0.75rem', opacity: 0.6 }}>{pId}</div>
+                              <div style={{ fontSize: '0.75rem', opacity: 0.6 }}>{charData.name}</div>
                             </div>
                           </div>
 
@@ -760,8 +802,9 @@ export default function KontrolaArena() {
                         style={{ position: 'relative' }}
                       >
                         {activeTauntBubble && activeTauntBubble.senderId === pId && (
-                          <div style={{ position: 'absolute', top: '-36px', left: '10px', background: '#fff', color: '#000', padding: '4px 10px', borderRadius: '16px', fontSize: '0.8rem', fontWeight: 'bold', zIndex: 10, whiteSpace: 'nowrap', boxShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
+                          <div style={{ position: 'absolute', bottom: '-42px', left: '10px', background: '#fff', color: '#000', padding: '5px 12px', borderRadius: '16px', fontSize: '0.8rem', fontWeight: 'bold', zIndex: 20, whiteSpace: 'nowrap', boxShadow: '0 4px 14px rgba(0,0,0,0.6)', border: '2px solid rgba(255,200,0,0.6)' }}>
                             🗣️ {activeTauntBubble.text}
+                            <div style={{ position: 'absolute', top: '-8px', left: '18px', width: 0, height: 0, borderLeft: '7px solid transparent', borderRight: '7px solid transparent', borderBottom: '8px solid #fff' }} />
                           </div>
                         )}
 

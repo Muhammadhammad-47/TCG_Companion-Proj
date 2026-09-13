@@ -59,7 +59,7 @@ export const joinMatch = async (matchId, playerId, characterId = 'bee') => {
   };
 };
 
-export const subscribeToMatch = (matchId, callback) => {
+export const subscribeToMatch = (matchId, callback, onSubscribe = null) => {
   if (!supabase) return { unsubscribe: () => {} };
 
   if (!channels[matchId]) {
@@ -83,6 +83,7 @@ export const subscribeToMatch = (matchId, callback) => {
   channel.subscribe((status) => {
     if (status === 'SUBSCRIBED') {
       console.log(`[Supabase] Connected to match room: match_${matchId}`);
+      if (onSubscribe) onSubscribe();
     }
   });
 
