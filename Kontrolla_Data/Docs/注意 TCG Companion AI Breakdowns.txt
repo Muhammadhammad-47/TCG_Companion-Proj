@@ -1,0 +1,1106 @@
+﻿1. GENERAL
+
+
+What is the story of this game?
+The universe we live in is imperial. A grand evil brewing about destroying worlds by sucking the life force and energy of all our worlds. Now your world is in danger of dying because not enough stability crystals to maintain its balance. It is your duty to save your world by obtaining three stability crystals by any means necessary. Whether you form alliances with other players or you must do devious treachery in order to obtain your crystals.
+
+
+Where is the story and characters based on?
+The story is based off the Anime Series: Attention 注意! that is now streaming on Youtube.
+
+
+How do you decide which player starts first?
+All players will roll two dice. Whoever rolls the highest number will start the game. If players roll the same number, they will continue to roll until one scores a higher number.
+
+
+How do you begin the game?
+* All players will roll two dice to determine who will start first. The player with the highest roll will be the first player and decide whether the rotation of players will be clockwise or counterclockwise
+* The first player may be the card shuffler or nominate another player to shuffle the Action Card deck and pass out 10 cards to each player.
+* Players will also choose one character to be for that round and have ten Character cards of the same character in their hands.
+* Players will neither nor show anyone their Action Cards and Character Cards
+* Each player will also begin with one Stability Crystal Card, which they will place in front of them. The goal is to defeat a player and collect their stability Crystal Card. The player who obtains three Stability Crystal Cards wins or ops out of the game and other players continue to battle until they win their three. If there are only two players. Two Stability Crystal Cards will be given to each player.
+* The first player will claim the character he or she wishes to be then decide the order of player decisions will be clockwise or counter clockwise. 
+* No player can be the same character, so once a character is chosen the other players must choose a different character to be.
+* Each player will receive 5 energy tokens to start with and receive one extra energy token, only if they mention it. If it is not requested and the player's turn ends, they are no longer allowed to ask or receive an energy token until their next turn.
+* The first  player will pick an Action Card and place it face up in the center of the players. He/She will then choose a character card to go along with the action they choose to make. In order for an action card to be valid, they must repent a character at the same time. Remember once the action is completed, the player must discard the Action Card and Character Card (Only if this applies)
+* Once the Action or Character has been played and discarded. The player must grab another Action card from the top of the Action Card deck.. Players must also replace another Character Card if used. Players may choose which Character Card they would like to replace the discarded one.
+* Players will always have 10 Action Cards and 10 Character Cards when playing. If the player uses two Action Cards in their turn, they must pick up two more Action Cards at the end of their turn.
+* Each player will receive 5 energy tokens. Black = 1 energy token, Red = 2 energy token, Purple = 3 energy token. All players may receive 1 energy token every turn. However, no one will remind the player to get their energy token. Once their turn has passed, they can no longer get it.
+* When a player is using an Attack Card, combined with a Character Card. The player must use an energy token.
+* Regular attacks require 1 energy token. Super attacks require 2 energy tokens Kontrol requires 3 energy tokens and Blitz requires 5 energy tokens.
+* Energy tokens may be traded to another player, if they are soul alliance or it is used as a trade for the Stability Crystal won from an Alliance battle.
+
+
+How many Actions Cards do you pass out and have in hand at all times?
+All players will have 10 Action Cards at all times. If a player uses an Action Card and discards it, he or she must grab another Action Card from the top of the Action Card deck.
+
+
+Do I show players my Action Cards?
+No, players do not reveal their Action Cards to others unless a Chance, Character, or Action Cards commands them to. The backs of the Action Cards will always face other players/opponents.
+
+
+How many Character Cards do you pass out and have in hand at all times?
+Players will always have 10 Character Cards in hand during the game. When one is discarded, the player will replenish it with their deck.
+
+
+Can I choose which Character Cards I want to use?
+At the beginning of the game, the player may choose which ten Character cards they wish to use, but afterwards must shuffle their Character deck and place them face down. When they pick another Character Card from the deck it must be the top one. Players can not shuffle the deck once the game has started.
+
+
+How many Character Cards can you have in your Character Card deck?
+Players may have as many Character Cards in their deck.
+
+
+Can more than one player be the same character?
+No, when a character is chosen by a player, that character is no longer available, until the game restarts.
+
+
+What does the Asian symbol 注意 mean?
+The asian symbols are Chinese/Mandarin characters which means “Attention”
+For more information: 注意 (chuui) for caution or paying attention, and 注目 (chuumoku) for noticing or drawing visual attention.
+
+
+What does the Asian symbol 英雄 (eiyuu) in the upper left hand corner on a Character card stand for?
+The Asian symbol stands for Hero.
+
+
+What does #AMD or #AMDUniverse stands for?
+#AMDUniverse represents - Anime. Music. Dance. One universe. Infinite Stories.
+
+
+What is the maximum number of players for this game?
+A maximum amount of seven players may play the game at one time
+
+
+What is the minimum number of players for this game?
+A minimum amount of two players may play the game at one time
+
+
+How many stability energy crystal cards do each player start out with?
+One.
+
+
+If there are only two players how many stability energy crystal cards do each player receive?
+Two.
+
+
+How do a player receive a stability energy crystal?
+A player must defeat another player in battle in order to gain another stability energy crystal
+
+
+How do I win this game?
+Once a player gains three stability energy crystal cards, he or she wins the game.
+
+
+What is Character Weakness?
+Character Weakness is an elemental or character-type disadvantage that causes a card to take additional damage from a specific type of attack.
+
+
+Characters:                Weakness:
+Katsumi                Poison Extra 15 AP damage if attack is successful
+Zabina “Bee” Sole         Magic/ Poison Extra 10 AP damage if attack is successful
+CHYNAMAN                Magic/ Poison Extra 10 AP damage if attack is successful
+Kiko the Monkey        Fire Extra 10 AP damage if attack is successful
+Poochi                        Magic/ Poison (Figure out the logic to this) 10 AP damage if attack is successful
+Queeny                        Fire 10 AP damage if attack is successful (Mis-print of Magic/Poison.. Use as glitch)
+Shroomy                Fire 10 AP damage if attack is successful
+
+
+Why are there some Character Cards with different weaknesses?
+The reason why some Characters have different weaknesses is because there are many glitches in the universe caused by the instability of all the worlds.
+More information: Every character may have a designated Weakness. When attacked with an attack type that matches the character’s Weakness, the attack deals the listed bonus damage.
+
+
+What is HP?
+HP stands for Health Points or Hit Points. Each Character starts out with a specific amount of HP
+
+
+Level 1:
+Chynaman - 100 HP
+Kiko the Monkey - 100 HP
+Shroomy - 65 HP
+Katsumi - 100 HP
+Zambina “Bee” Solé - 70 HP
+Poochi - 70 HP
+Queeny - 100 HP
+
+
+When a Character is at 0 HP, their life force is incinerated and their stability crystal becomes available to be taken by the player who defeated them.
+
+
+How do I lose in this game?
+When your Character’s HP is at 0 your Character is dead and defeated.
+
+
+What is AP?
+AP stands for Attack Points. AP determines the base power of a character’s attack. A character’s AP is used when calculating damage dealt to an opponent. AP can be found on Character Cards.
+
+
+
+
+What is DP?
+DP stands for Defense Points. DP represents a character’s ability to reduce or withstand incoming damage. DP is used when defending against an opponent’s attack.
+
+
+What is Retreat?
+Retreat is to run away from battle.
+
+
+Do I need a Retreat Action Card to do this move?
+Yes.
+
+
+How does Retreat work?
+The Retreat Action Card may be used during an attack or a while defending. 
+
+
+When Attacking:
+If you don’t like your attack roll, you may choose to Retreat before damage is resolved. The attack is then canceled, and you forfeit the battle, and your turn/attack ends. The Retreat card must be presented immediately after the Attacker rolls. Once the defender begins to roll their dice, this move is no longer valid.
+
+
+When Defending:
+After an opponent declares an attack but before damage is calculated, you may Retreat instead of resolving the battle. Your character escapes and takes 0 damage. The Retreat Card must be played before the defender rolls their dice.
+
+
+Every Character has a different Retreat Speed, which is located on single attack Character Cards. They are not present on Wild Cards, Kontrol, and No Saigo Blitz.
+
+
+CHYNAMAN - 3+
+Kiko the Monkey - 1+
+Shroomy - 1+
+Katsumi - 1+
+Zambina “Bee” Solé - 3+
+Poochi - 1+
+Queeny - 4+
+
+
+Do I have to roll a dice to determine whether the Character can retreat?
+Yes, you must roll one dice to determine whether your character is able to retreat or not.
+
+
+How many dice do I need to use to determine whether the Character can retreat?
+One.
+
+
+What does the numbers next to the Retreat text mean?
+These numbers determine what you must roll in order to retreat. For example, Chyna’s retreat is 3+. This means the player must roll a three or more in order to retreat. Another example is, Shroomy’s retreat is 1+. This means the player must roll one or above to retreat.
+
+
+What happens if a player does not roll the necessary number to Retreat?
+If the player is unsuccessful with the Retreat, the player must continue on the battle whether you are attacking or defending.
+
+
+2. DICE:
+
+
+An attacker will use two red dice to decide a winner. The defender will use two gold dice.
+
+
+What happens if I roll doubles?
+If a player rolls a double, the player is able to re-roll the dice. If they have Premium or expansion cards. When a player rolls a double, they are able to pull a Chance card from the Chance card deck.
+
+
+Do I roll two dice on Character Card/Attack?
+Once the attack is successful, the attacker will use only one dice to determine the total amount of attack damage only on basic attack with “per”. For example, When Kiko the Monkey uses Tail Whip per Whip. When the character is successful with the attack. Attacker will roll one dice multiply that by the number on the Character card and this will determine the total amount of attack damage.
+
+
+When do I roll only one dice?
+The player rolls only one dice when a player is successful in these specific Basic Attacks.
+
+
+Chynaman - Fire of Fury per Punch
+Kiko the Monkey - Tail Whip per Whip
+Shroomy - Poppers per Pop
+Katsumi - Savage Paws per Strike
+Zambina “Bee” Solé - Sting Slap per Sting
+Poochi - Glitter Sparks per Spark
+Queeny - Hair Whip per Whip
+
+
+How do I activate a Character’s basic defense?
+When a player is defending and rolls a total of six, this will activate their basic defense.
+
+
+Do I have to roll the dice to activate the Poison card?
+No dice are needed to activate the Poison card.
+
+
+Do I have to roll the dice to activate the Lightning card?
+Yes, the player must roll dice to determine whether the attack is successful or not.
+
+
+Do I have to roll the dice to activate the Fire Flame card?
+Yes, the player must roll dice to determine whether the attack is successful or not.
+
+
+Do I have to roll the dice to activate a shield?
+No, it is not necessary to roll the dice to activate a shield.
+
+
+
+
+3. ENERGY TOKEN:
+
+
+Energy Tokens (ET): Black = 1 ET/ Red = 2 ET/ Gold = 3ET 
+
+
+What are Energy Tokens?
+Energy Tokens represent the power needed to perform an attack. Players spend Energy Tokens to activate Attack Cards and special offensive abilities.
+
+
+What color is 1 ET?
+Black
+
+
+What color is 2 ET?
+Red
+
+
+What color is 3 ET?
+Gold
+
+
+How many energy tokens do each player start out in the game?
+Each player receives five energy tokens at the beginning of each game.
+
+
+Does a player receive an extra energy token after the game begins?
+Yes, players do receive one energy token after each turn. However, players must request to be given one energy token.
+
+
+Can I claim my energy token after my turn is over?
+No, players can not receive your energy token after their turn is over. The player must wait for their next turn to receive another energy token.
+
+
+Do I need Energy Tokens if I am defending?
+No, Energy Tokens are only needed when attacking. Energy Tokens are also not needed for defense, healing, retreating, or other actions unless a card specially allows it.
+
+
+How many Energy Tokens do I need to perform a Basic Attack?
+Players are required to use one Energy Token to activate this attack. 
+
+
+How many Energy Tokens do I need to perform a Super Attack?
+Players are required to use two Energy Tokens to activate this attack. 
+
+
+How many Energy Tokens do I need to perform a Kontrol Attack?
+Players are required to use three Energy Tokens to activate this attack. 
+
+
+How many Energy Tokens do I need to perform a Blitz Attack?
+Players are required to use five Energy Tokens to activate this attack. 
+
+
+4. ACTION CARDS
+
+
+What are Action Cards?
+Action Cards are a deck of cards which determines what moves the players can do, such as Attack, Defend, Heal, or any other moves. For example, Action Cards determine whether you are attacking, defending, or manipulating another player.
+
+
+More Details:
+Action Cards are divided into Basic cards or Prem/Expansion Cards (These cards are purchased separately or in Premium mode on the TCG Companion app)
+
+
+TYPES:
+
+
+ATTACK X1 - Basic
+Attach this card to a Character card  to unleash a single attack.
+
+
+ATTACK X2 - Basic
+Combine this card with two Character cards to unleash a double Character attack.
+
+
+ANTIDOTE X1 - Basic
+This card removes 1 Poison Card.
+
+
+ANTIDOTE X2 - Basic
+This card removes 2 Poison Card
+
+
+HEAL H10 - Basic
+* Player receives +10 HP
+
+
+HEAL H20 - Basic
+Player receives +20 HP
+
+
+HEAL H30 - Prem
+Player receives +30 HP
+
+
+HEAL 40 - Prem
+Player receives +40HP
+
+
+VITALITY GAIN V10 - Basic
++10 HP or level up at the start of your next turn.
+
+
+VITALITY GAIN V20 - Basic
++20 HP or level up at the start of your next turn. Can only be used at level 2.
+
+
+VITALITY GAIN V30 - Prem
++20 HP or level up at the start of your next turn. Can only be used at level 3.
+
+
+VITALITY GAIN V40 - Prem
++20 HP or level up at the start of your next turn. Can only be used at level 4.
+
+
+Chynaman - Level 1: 100  Level 2: 200  Level 3: 300  Level 4: 400
+Kiko the Monkey - Level 1: 100  Level 2: 200  Level 3: 300  Level 4: 400
+Shroomy - Level 1: 65  Level 2: 130  Level 3: 260 Level 4: 320
+Zabina “Bee” Solé - Level 1: 70  Level 2: 140  Level 3: 280  Level 4:  360
+Katusmi -  Level 1: 100  Level 2: 200  Level 3: 300  Level 4: 400
+Poochi - Level 1: 70  Level 2: 140  Level 3: 280  Level 4:  360
+Queeny - Level 1: 100  Level 2: 200  Level 3: 300  Level 4: 400
+
+
+HEAL CLEAN + RESTORE - Basic
+Removes all poison effects. Restore +20 HP.
+
+
+POSION X1 - Basic
+-10 HP per turn. (Decide which player to give it to or attach to your character)
+
+
+POSION X2 - Basic
+-20 HP per turn. (Decide which player to give it to or attach to your character)
+
+
+SLEEPY X1 - Basic
+Target character falls to a sleep and loses a turn
+
+
+SLEEPY X2 - Prem
+Target character falls to a sleep and two turn
+
+
+X-CHANGE X1 - Basic
+Players may exchange 1 Action Card with one player
+
+
+X-CHANGE FULL - Prem
+Players may exchange an Action Card with all players.
+
+
+DEFENCE COUNTER - Basic
+Receive 0% damage. Reflect 25% back to the attacker.
+
+
+DEFENCE BASIC  - Basic
+Reduce incoming damage by 25%
+
+
+SOUL ALLIANCE - Basic
+Team up with a player of your choice.
+
+
+SHIELD BASIC + 25HP - Basic
+Prevents all damage except poison and fire
+
+
+Extra Notes: No dice rolling is required to activate this card. Not immune to Poison.
+
+
+SHIELD FIRE + 50HP - Prem
+Protects your character HP from damage, until it is destroyed. 0 damage from all Fire Attacks. Not immune to Poison cards.
+
+
+Extra Notes: No dice rolling is required to activate this card. Not immune to Poison.
+
+
+SHIELD SOUL + 100HP - Prem
+Protects your character HP from damage, until it is destroyed.
+
+
+Extra Notes: No dice rolling is required to activate this card. Not immune to Poison.
+
+
+LIGHTNING X1 - Basic
+REMOVES 1 POISON CARDS -10 HP AND -1 turn
+
+
+LIGHTNING X2 - Prem
+REMOVES 1 POISON CARDS -20 HP AND -2 turns
+
+
+FIREFLAME X1 - Basic
+If the attack is successful, the opponent is burned. (Must roll doubles ) -10 HP if failed.
+
+
+Extra Notes: ChatBOT: Player continues to burn until double has been roll
+
+
+FIREFLAME X2 Roll - Prem
+If the attack is successful, the opponent is burned. (Must roll doubles ) -20 HP if failed
+ChatBOT: Player continues to burn until double has been roll
+
+
+FIRE INFERNO LOCK - Prem
+On a successful attack, the opponent is burned and must roll doubles to extinguish the flames. -20 HP if failed and spreads to players next to them. Each newly affected player must roll doubles to extinguish the flames. -5 HP until doubles are rolled.
+
+
+DODGE - BASIC - Basic
+If successful, a player evades all damages. If failed, the opponent’s attack increases by 25%
+
+
+Extra Notes: This card excludes Poison Cards and Kontrol Cards.
+
+
+DODGE - COUNTER - Prem
+Roll dice. If Win avoids all damage and attacks immediately.If loss, player receives total amount of attack damage plus 25% of attack damage.
+
+
+DODGE/ FULL - Prem
+Roll dice. If Win avoids all damage and attacks immediately.If loss, player receives total amount of attack damage plus 25% of attack damage.
+
+
+DODGE/ FULL GUARD - Prem
+Roll doubles to evade an attack. If Blitz card is active 50% of the damage will be dealt.
+
+
+BOOMERANGE/ FULL -  Basic
+On a successful defense, the attacker takes all the damage and loses their next turn.
+
+
+FREEZE X1 - Basic
+-2 on your opponent’s dice roll. The opponent is frozen and loses 1 turn.
+
+
+FREEZE X2 - Prem
+-4 on your opponent’s dice roll. The opponent is frozen and loses 2 turns.
+
+
+ZOMBIE MODE - Basic
+Immune to regular/Blitz attacks. They regenerate +10 HP after being attacked.
+Put Attack info in Attack Box: On successful attack, the opponent is now poisoned.
+
+
+MISDIRECT - Basic
+On a successful attack, this card grants you the ability to redirect an opponent’s attack. If attack fails, attacking player -20 HP.
+(This is valid for 2 turns in a smaller box on the bottom corner.)
+
+
+DRAIN - Prem
+Steal all of your opponent’s energy tokens.
+
+
+
+
+VAMPIRE: LIFE STEAL - Prem
+On a successful attack, a player may steal 1 for Energy Token and 10 HP for 3 turns from an opponent of your choice.
+Extra Notes: Must roll dice.
+
+
+ABANDON - Basic 
+Abandon your ally on defense or attack.
+
+
+BACK STAB - Basic
+Abandon your ally on defense or attack and immediately turn your attack against them..
+
+
+REVIVE - Basic
+This card brings the player back to life and receives only half of their original HP.
+
+
+RETREAT - Basic
+Use this card to escape from battle.
+Extra Notes: May be used during an attacking or defending. Must roll one die to determine success or failure.
+
+
+TIME MACHINE - Basic
+This card allows the player to receive another turn instantly.
+
+
+VISION X1 - Basic
+Players may choose 1 opponent to show all their Action Cards to all players for 15 seconds.
+
+
+VISION FULL - Prem
+All players reveal all Actions Cards for 30 seconds.
+
+
++DEFENCE D5 - Prem
+Win or Lose +5 to DP
+
+
++DEFENCE D10 - Prem
+Win or Lose +10 to DP
+
+
++DEFENCE D15 - Prem
+Win or Lose +15 to DP
+
+
++DEFENCE D20 - Prem
+Win or Lose +20 to DP
+
+
+STABILITY CRYSTAL - Basic
+Behold the Energy Stability Crystal. Gather 3 stability crystal to be able to restore balance to your world. If you fail your world will fall into ruin.
+
+
+Does a Fire Shield lose HP when attacked by a Fire Attack?
+No, a Fire Shield does not lose its HP when it is attacked by a Fire attack.
+
+
+Do I have to roll to activate a Shield Card?
+No, you are not required to roll the dice to activate a Shield card.
+
+
+Can I use the Abandon card to avoid an attack or defense?
+No, the Abandon card is similar to the Retreat card, but does not work the same. An Abandon Card can only be used while the player is in a Soul Alliance.
+
+
+5. CHARACTER CARDS
+
+
+CHYNAMAN
+FIRE OF FURY PER PUNCH -5 AP (Use only 1 dice) Example, player rolls a 3 with one dice x -5 AP = -15 AP
+FIRE TIGER SOUL PUNCH - 25 AP
+GOLDEN MIC LIGHTING - 40 AP
+WILD CARD - Variety of attacks available. Players may choose to use and add necessary energy tokens.
+KONTROL - Read Notes
+SAIGO NO BLITZ - 200 AP
+
+
+Individual Defense w/o Defense Card 10 HP less on the AP. This is only activated when the player rolls a total of six from two dices, even if the player loses the battle
+
+
+KIKO THE MONKEY
+TAIL WHIP PER WHIP -4 AP (Use only 1 dice) Example, player rolls a 3 with one dice x -4 AP = -12 AP
+MULTIPLICITY - 30 AP
+SOUL BLAST 3000 -40 AP
+WILD CARD - Variety of attacks available. Players may choose to use and add necessary energy tokens.
+KONTROL - Read Notes
+SAIGO NO BLITZ - 200 AP
+
+
+Individual Defense w/o Defense Card 10 HP less on the AP. This is only activated when the player rolls a total of six from two dices, even if the player loses the battle
+
+
+
+
+SHROOMY
+POPPERS PER POP  -4 AP (Use only 1 dice) Example, player rolls a 3 with one dice x -4 AP = -12 AP
+MS BOMBA -40 AP
+SOUL SNATCHER - 50 AP
+WILD CARD - Variety of attacks available. Players may choose to use and add necessary energy tokens.
+KONTROL - Read Notes
+SAIGO NO BLITZ -200 AP
+
+
+Individual Defense w/o Defense Card 10 HP less on the AP. This is only activated when the player rolls a total of six from two dices, even if the player loses the battle
+
+
+ZABINA “BEE” SOLE
+STING SLAP PER STING -3 AP (Use only 1 dice) Example, player rolls a 3 with one dice x -3 AP = -9 AP
+PAPARAZZI STUN -25 AP Upon successful attack, the defendant will also lose 1 turn.
+BEE DRONE BOMB -40 AP
+WILD CARD- Variety of attacks available. Players may choose to use and add necessary energy tokens.
+KONTROL- Read Notes
+SAIGO NO BLITZ -200 AP
+
+
+Individual Defense w/o Defense Card 10 HP less on the AP. This is only activated when the player rolls a total of six from two dices, even if the player loses the battle
+
+
+KATSUMI
+SAVAGE PAWS PER STRIKE (Use only 1 dice)
+SHADOW PURR
+CLAW OF FATE
+WILD CARD  - Variety of attacks available. Players may choose to use and add necessary energy tokens.
+KONTROL - Read Notes
+SAIGO NO BLITZ
+
+
+POOCHI
+GLITTER SPARKS PER SPARK  -4 AP (Use only 1 dice) Example, player rolls a 3 with one dice x -4 AP = -12 AP
+LASSO OF TRUTH - 25 AP Upon successful attack defendant also must show all his/her Action Cards
+GLITTER BURST -35 AP
+WILD CARD - Variety of attacks available. Players may choose to use and add necessary energy tokens.
+KONTROL - Read Notes
+SAIGO NO BLITZ -200 AP
+
+
+Individual Defense w/o Defense Card 10 HP less on the AP. This is only activated when the player rolls a total of six from two dices, even if the player loses the battle
+
+
+QUEENY
+HAIR WHIP PER WHIP -4 AP (Use only 1 dice) Example, player rolls a 3 with one dice x -4 AP = -12 AP
+SIREN BLAST -30 AP
+RAINBOW FAN BLAST
+WILD CARD - Variety of attacks available. Players may choose to use and add necessary energy tokens.
+KONTROL - Read Notes 
+SAIGO NO BLITZ
+
+
+SUE ELLEN’S V2
+Bonus Card: AMPLIFY. Boost your active card with 1 effect: +20 HP, +20 AP, or +DP. Execute. Discard after use. No dice roll is required. Must be paired up with an Attack Card if used as an Attack. 
+
+
+ANIME EXPRESS TV (Playable TCG Flyer card)
+This card allows the player to avoid any weaknesses while defending for one turn.
+
+
+What are Character Cards?
+A Character Card is attached or combined with an Attack -  Action Card. The Character Card determines what specific move the Character will inflict on his or her opponent.
+
+
+Can I play the game with just Character Cards?
+No, in order to play the players must have a deck of Action Cards and Character Cards, along with two sets of dice. Chance Cards are optional.
+
+
+What do the Gem colors in the upper right hand corner of a Character mean?
+The colors of the gem represents the TYPE of character and closeness in relationship. This becomes relevant in the future when creating a Soul Alliance with other players.
+
+
+1.  KONTROL CARDS
+
+
+Each character has a Mind Strength. 1 through 6. 1 is the weakest mind and 6 is the strongest mind. Whoever has a rare Kontrol Card, they can pair it with an Attack action card. In this battle both players will only use one dice. The controller must roll a number higher than the opponent’s mind strength. Example, if the opponent’s Mind Strength is 4. The controller must roll a number higher than 4 in order to control them. If the controller rolls a 4 or less they do not control the opponent and after use must discard the card. However, if they roll a number higher than the opponent’s Mental Strength, they may have the opponent attack another opponent or may force the opponent to show their Action Card and give them one Action Card of their choice. After use the Kontrol Card must be discarded.
+
+
+CHANCE Card (Only if it’s available): 
+If the opponent has the Action card: CHANCE They may roll to see if they will be controlled or not.
+If the Mind Strength is 1, Player must roll a 5+
+If the Mind Strength is 2, Player must roll a 4+
+If the Mind Strength is 3, Player must roll a  4+
+If the Mind Strength is 4, Player must roll a 2+
+If the Mind Strength is 5, Player must roll a 2+
+
+
+QUEENY has psychic power so she 2+ to her roll when attack for mind control
+The more undisciplined the character is and the more emotions and trauma they have the less mind strength the character will have.
+
+
+Kiko the monkey, Poochi, and Shroomy are magical creatures and will be given 1+ to defend their mind, since magic will be fighting magic. However, they are all passionate and often let their emotions cloud their judgement.
+
+
+NAME:                        
+Katsumi                3
+Zabina “Bee” Sole         5
+CHYNAMAN                4
+Kiko the Monkey        3
+Poochi                        2
+Queeny                        2
+Shroomy                2
+
+
+***NOTE*** Extra Card
+Some players with the Kontrol Card may also have an additional card with a QR Code, which is also playable. But must be played with the Kontrol Card and can only be used if the Kontrol attack is successful.
+
+
+“When you take control of your opponent., restore 20 HP and deal 20 HP damage to the defender. Discard this card after use.”
+
+
+Only two Kontrol Cards may be used per match or Cooldown period of 5 turns to be able to use again.
+
+
+How often can I use my Kontrol Card?
+Only two Kontrol Cards may be used per match or Cooldown period of 5 turns to be able to use again.
+
+
+Is a Kontrol Card considered a rare card?
+Yes, Kontrol Cards are considered semi rare and are a very powerful card to have.
+
+
+2. NO SAIGO BLITZ (Only if it’s available)
+
+
+USE ONLY WHEN YOUR HP IS <50. Lose 50% of your remaining HP. Destroy 1 enemy or ally our enemies. Discard after use. AP = 200 if the attack is successful.
+
+
+Players may choose to destroy only one player or they may attack all. 
+
+
+How to attack?
+One vs. One Attack. 
+Whomever rolls the highest number on the dice wins. Both Attacker and Defender will use two dice to roll.
+
+
+One vs. All Attack:
+Whomever rolls the highest number on the dice will win. Attackers will roll against all other players. Defenders who are on the roll will dodge the blast/attack. Defenders who lose will take damage.
+
+
+How is damage dealt in One vs. All Attack?
+All defenders that lost on the roll will divide the amount of 200 AP equally. For example, 5 defenders lose. Each one will be dealt -40 HP. 200 AP / 5 losing defender = -40 HP to each losing defender.. 2 defenders lose. Each one will be dealt -100 HP. 200 AP/ 2 losing defender = -100 HP  each losing defender
+
+
+Some players with the Blitz Card may also have an additional card with a QR Code, which is also playable. But must be played with the Blitz Card and can only be used if the Blitz attack is successful.
+
+
+***NOTE*** Extra Card
+Some players with the Blitz Card may also have an additional card with a QR Code, which is also playable. But must be played with the Blitz Card and can only be used if the Blitz attack is successful.
+
+
+“Upon a successful Saigo No Blitz, the battlefield shatters with an Aftershock Wave n- inflicting 20 HP damage to all enemies. Discard after use.”
+
+
+This card is effective even if the defender avoids the main attack.
+
+
+Blitz Cards may only be used the maximum of two per match.
+
+
+CHANCE Card (Only if it’s available): 
+If the opponent has thIs card: CHANCE They may roll to see if they will be controlled or not.
+If the Mind Strength is 1, Player must roll a 5+
+If the Mind Strength is 2, Player must roll a 4+
+If the Mind Strength is 3, Player must roll a  4+
+If the Mind Strength is 4, Player must roll a 2+
+If the Mind Strength is 5, Player must roll a 2+
+
+
+Can I defend a No Saigo Blitz attack?
+No, a normal/regular character can not defend a Blitz attack.
+
+
+How many times can I use a Blitz attack?
+Blitz Cards may only be used the maximum of two per match.
+
+
+Can a player roll the dice to determine whether an opponent has control over them?
+Yes, If a player rolls a double, he or she will receive a Chance card. Any Chance Card will allow them to roll to determine whether they will be controlled or not.
+
+
+6. FATE CARDS
+
+
+Luck is not always on your side.
+
+
+
+
+What are Fate Cards?
+A Fate card tests your destiny. Draw a Fate Card to trigger a random event that can help you, hurt you, or change the course of the battle.
+
+
+Can I choose which Fate Card I get?
+No, the player must pick up the Fate card on the very top of the deck. They may not reshuffle or cut the deck.
+
+
+Do I have to use my Fate Card immediately?
+No, a player can hold on to the Fate Card, until it is necessary to use.
+
+
+TYPES:
+* Receive one Energy Token.
+* You have been poisoned. Receive one Poison Card.
+* You have been poisoned. Receive two Poison Cards.
+* You have been robbed. Two energy tokens have been stolen.
+* You have been robbed. Three energy tokens have been stolen.
+* No Weakness Shield.
+* Speed Up - Increase your Retreat speed by 1 point.
+* Fate Swap - Swap your current HP with your opponent’s HP.
+* Fate Roll - Roll 1 die. 1-2 lose 20 HP/ 3-4 Recover 20 HP/ 5-6 Receive one Energy Token
+* Lucky Strike - On your next attack you automatically win the battle. This excludes Super, Kontrol, and Blitz Attacks.
+* Bad Luck - Your opponent must reroll their next attack roll (This card must be presented right after the Attacker has rolled)
+* Your Bad Luck - You must reroll your next attack or defense roll.
+* Disaster - Every active character/player loses 20 HP.
+* Jackpot - Roll 3 dice. If all three match, immediately gain 3 Energy Tokens.
+* Steal Your Fate - Randomly take 1 Action Card from your opponent’s hand.
+* Pick out a Vitality Gain Card v10 from the Action Card
+* The affected opponent must remove half of their Actions Card from hands and can not replenish Action Cards for three turns.
+* Affected opponents can not use Blitz Cards for the entirety of the game.
+* Affected opponents can not use Control Cards for the entirety of the game.
+* Affected opponent can not level up until all four turns has been completed
+* Every time phone goes off you lose -10 HP
+* The affected opponent will turn to a Zombie and will not be able to return to normal mode the entire game.
+* Instant Death - “You fucked up dumb ass” Instant death.
+* Card pulls you -20 HP while all opponents receive +20 HP
+* Steal another player’s Blitz Card even if it’s not your character.
+* The affected opponent can not replenish all Action and Character Cards for 2 turns.
+* The affected opponents discard all Character Cards in deck and can not relish Action cards. Must use cards in hand. Discard all Action/ Character Cards in Deck (except cards in hand)
+* Choose any opponent and steal their power (HP/Level) . The affected opponent will revert to your level for 3 turns.
+* In order to activate any healing card. Must roll doubles. Effected for 3 turns.
+
+
+In “Steal Your Fate” do I need to replace my Action Card that was taken by my opponent?
+Yes, the player must take another Action Card from the top deck. All players must have ten Action Cards at all times unless a special card states otherwise.
+
+
+In “Steal Your Fate” if I receive an extra Action Card from an opponent do I keep all my cards?
+No, players must only have ten Action Cards at all times. The player must choose which Action Card to discard or they may discard the Action Card they receive from their opponent.
+
+
+7. ZOMBIE MODE
+
+
+When a player has 5 Poison Cards, the dealer will give them a Zombie Mode Card. The card must be placed in front so that all other players know that the infected player is now a Zombie. Players in Zombie Mode, may not use any of their Character Cards awhile in Zombie Mode. Also, the player in Zombie Mode can not win or take a Stability Crystal Card (They must change back to regular mode before taking the Stability Crystal Card). Players in Zombie Mode must use only the Zombie attacks on the Zombie Mode card.
+
+
+* HP: 40 (However, can increase through Vitality card only)
+* Attack: Zombie deals Poison Attack called Venom Strike and if the Zombie is successful in its attack, the losing opponent will receive one Poison Card.
+* Antidote: Will stop Zombie Mode. An Antidote card can be placed only by the infected player. Antidote is used for self heal.
+* Poison: More Poison Cards can be placed on an infected player in Zombie Mode (Placement of cards can be from infected players or other players) This strategy helps the player to continue to be in Zombie Mode to avoid being killed.
+* Retreat: Zombies are super slow
+* Weakness: Lightning and Fire
+
+
+When a Zombie is successful in its attack, it will inflict Poison to their opponent, which results in the defeated opponent to receive one Poison Card.
+
+
+Revival Rules:
+If Zombie HP is depleted to 0, then…
+Zombies will revive at 10 HP (5 Poison Cards)
+Zombies will revive at 20 HP (6+ Poison Cards)
+Zombies will revive at 40 HP (8+ Poison Cards)
+
+
+Zombies can infect other players just by successfully attacking another opponent. If the Zombie is successful in its attack, the defendant will receive one Poison card and follow the rules of the Poison card. A player with one Poison Card will continue to receive -10 or -20 (depending on which Poison card they receive) each and every round until they obtain an Antidote card.
+
+
+Zombies can not be killed by regular and BLITZ Character Card attacks and even if a Character Card destroys them, they will come back to life. Zombies receive +10 HP each round regardless if they take damage or not. Kontrol Card will not work on Zombies since they have no mind.
+
+
+Once another player takes off one Poison card from the total of five Poison Cards, the infected player is no longer a zombie. They will discard the Zombie Mode Card to the current dealer and go back to the HP they had before they turned into a Zombie. All Poison Cards at this time are still valid and will continue to take effect for as long as they have it.
+
+
+Fire attacks, Fire Cards, Lightning Cards, or Lightning Attacks will remove a Poison card when the infected player is in Zombie Mode, but will not remove a Poison Card in regular mode. The Fire and Lighting attack will still deal damage.
+Zombie Mode
+When a player has 5 Poison Cards, they immediately enter Zombie Mode.
+The dealer gives that player a Zombie Mode Card, which must be placed face-up in front of them so all players know they are infected.
+While in Zombie Mode, the following rules apply:
+Character Restrictions
+* The player cannot use any Character Cards or Character Card abilities.
+* All attacks must come from the Zombie Mode Card.
+* Character-specific skills, passive effects, transformations, and ultimate attacks are disabled while in Zombie Mode.
+Winning Restrictions
+* A player in Zombie Mode cannot claim or win a Stability Crystal Card.
+* If a Zombie would earn a Stability Crystal Card, they cannot take it until they are cured and return to Regular Mode.
+________________
+
+
+Zombie Stats
+Starting HP: 40 HP
+* Zombie HP may still increase through Vitality Cards, Heal Cards, or other effects that restore HP.
+* At the beginning of each of the Zombie player's turns, they automatically recover +10 HP, even if they took damage during the previous round.
+Zombie Attack - Venom Strike
+The Zombie's primary attack is Venom Strike.
+If Venom Strike successfully defeats or damages an opponent according to your game's attack rules:
+* The defending player immediately receives 1 Poison Card.
+* That Poison Card follows all normal Poison Card rules.
+A player with Poison Cards continues to lose 10 HP or 20 HP each round, depending on the Poison Card's effect, until they use an Antidote Card.
+________________
+
+
+Infection
+Zombies spread the virus through combat.
+Whenever a Zombie successfully lands a Venom Strike:
+* The defending player gains 1 Poison Card.
+* Once a player reaches 5 Poison Cards, they immediately enter Zombie Mode.
+________________
+
+
+Antidote
+An Antidote Card cures Zombie Mode.
+Rules:
+* Only the infected player may play an Antidote on themselves.
+* Antidotes cannot be played on another player unless another card specifically allows it.
+* Once enough Poison Cards are removed so the player has fewer than 5 Poison Cards, they immediately leave Zombie Mode.
+________________
+
+
+Additional Poison
+Players already in Zombie Mode may continue receiving additional Poison Cards.
+These Poison Cards may come from:
+* Other Zombies
+* Other players
+* Card effects
+This can be used as a defensive strategy to delay being cured and remain in Zombie Mode longer.
+________________
+
+
+Retreat
+Retreat Cost: High
+Zombies are extremely slow.
+Unless another card effect states otherwise:
+* Zombies may only retreat once per turn.
+* Zombies cannot perform free retreats.
+(You may replace this with whatever retreat system your game uses.)
+________________
+
+
+Weaknesses
+Weakness: Fire ⚠️ and Lightning ⚡
+Fire and Lightning are especially effective against Zombies.
+Whenever a Zombie is hit by a Fire or Lightning attack:
+* The attack deals its normal damage.
+* The Zombie also removes 1 Poison Card.
+Important:
+Fire and Lightning only remove Poison Cards while the player is in Zombie Mode.
+They do not remove Poison Cards from players who are still in Regular/Normal Mode.
+
+
+Zombie Resilience
+Zombies are extremely difficult to eliminate.
+* Zombies cannot be permanently defeated by regular Character Card attacks or BLITZ Character Card attacks.
+* If a Zombie's HP reaches 0, they immediately revive instead of being eliminated.
+* Their automatic +10 HP regeneration each round still applies after reviving.
+Mindless
+Because Zombies have lost their minds:
+* Kontrol Cards have no effect on Zombies.
+* Any card or ability that controls, manipulates, or steals a Zombie also fails unless specifically stated otherwise.
+________________
+
+
+Returning to Regular Mode
+A Zombie immediately returns to Regular Mode when they have fewer than 5 Poison Cards.
+When this happens:
+1. Discard the Zombie Mode Card to the dealer.
+2. The player returns to the exact HP they had immediately before entering Zombie Mode.
+3. Any remaining Poison Cards stay attached to that player.
+4. Those remaining Poison Cards continue dealing their normal damage each round until removed with an Antidote or another card effect.
+Zombie Fury
+If the Zombie has 5 or more Poison Cards, Venom Strike deals +10 damage.
+Hunger
+A Zombie cannot use Heal Cards unless the card specifically says it can heal Zombies. This makes the regeneration ability their primary source of recovery.
+Undead Rage
+If the zombie is defeated or their HP is at 0, the Zombie will immediately come back alive with 10 HP
+Infection Chain
+If a Zombie with 5+ Poison Cards defeats a player with Venom Strike, that player immediately gains 2 Poison Cards instead of 1.
+Headshot Rule (Optional)
+Only Fire or Lightning attacks can permanently defeat a Zombie. If a Zombie reaches 0 HP from Fire or Lightning damage, they do not revive. This creates a unique strategy for players and gives Fire/Lightning decks a valuable role without making Zombies unstoppable.
+How do I become a zombie?
+When a player receives five Poison cards, they become a Zombie.
+
+
+Does a Heal Card remove a Poison Card?
+No, a Heal Card does not remove a Poison Card, however, it does heal HP loss. Heal Cards do not raise your maximum HP or level the player up.
+
+
+Can I use my Character Cards, moves, and attack when they are a Zombie?
+No, when a player is in Zombie mode, he or she must abide by the Zombie attack moves.
+
+
+If a Zombie is successful in its attack, how will it affect the opponent?
+
+
+Can a Zombie infect another Zombie player?
+No, a Zombie can only infect a Regular/Normal Character. However, a Zombie can damage another Zombie.
+
+
+Can I win the game as a Zombie?
+No, a player can not win the game as a Zombie. They must revert back to normal in order to claim an Stability Crystal Card.
+
+
+If I am in Zombie Mode. Do I need a Revive Card to come back alive?
+No. Zombies can not be killed by regular, super, or Blitz attacks.
+
+
+How much HP does a Zombie receive when it dies?
+10 HP
+
+
+What are some of the benefits of being a Zombie?
+Some of the benefits of being a Zombie are that regular attacks have no effect on them. Other benefits are that Zombies regenerate once they are dead. Zombies can not be controlled by Kontrol attacks.
+
+
+If a player does not have 5 Poison Cards will still be in Zombie Mode?
+No, once a player has less than five Poison Cards, the player will revert back to regular/normal character or mode. However, the remaining Poison Cards still take effect until the player receives Antidote cards to remove them.
+
+
+Who can I inflict Poison on?
+You may inflict Poison cards on any opponent of your choice. However, only one Poison Card may be used per turn. Players may also choose to take a Poison card to become a Zombie and avoid dying and certain attacks such as Regular, Super, Kontrol, and Blitz.
+
+
+If a player has 4 Poison Cards and is attacked by another player with a Kontrol Card. Can he or she use a Poison Card to become a zombie and avoid being controlled?
+That’s a very good question. At this moment a player is able to avoid being a zombie by presenting their Poison Card before any dice are rolled. In this situation, the attacker may choose a different attack and retract their Kontrol Card and use it for later use.
+
+
+8. TERMINOLOGY
+
+
+General:
+注意 : Attention
+TCG: Trading Card Game
+Stacking: Placing the same card on top of each other or using the same card at the same time during the match.
+HP (Health Points): The amount of life or vitality a player or character has. HP is reduced when damage is taken from attacks or effects. When a player’s HP reaches 0, they are defeated unless they have or is given a Revive card.
+AP (Attack Power): The amount of damage an attack deals to an opponent when the attack is successful.
+DP (Defense Power): A value that represents a player’s or character’s defensive strength, helping reduce or withstand incoming attacks.
+RP (Retreat Points): Represents a character’s ability to escape combat or reposition. The higher a character’s RP is the lower number a player has to roll. Example, if a character’s RP is 5, the player will only need to roll a 1. Only dice is used to determine whether the player can retreat or must stay and fight. If a character has a RP of 2, the player must roll 4+ on one dice. Players must have a Retreat Card in order to retreat. 
+ET (Energy Token): A resource used to activate attacks and special abilities. Energy Tokens are spent when required by a card’s effect or The spiritual force that fuels a warrior’s techniques. Spend Energy Tokens to unleash powerful attacks and devastating abilities.
+Weakness: Attacks matching its weakness gain a bonus effect, such as extra damage, status conditions, or special penalties.
+
+
+Card Types
+Action: These cards determine the moves or action such as to Attack, Defend, Heal, or any other moves.
+Character: These cards determine the type of attack a player can do. Each character has different powers and abilities. Some cards are more common than others.
+Chance: These cards test your fate. Players may receive good cards or bad cards depending on their luck.
+
+
+Turn Actions
+Activate: To enable the ability to… (Defend, Cast a spell, etc)
+
+
+LEVEL UP:
+Level UP: Players may not use their level 2 cards until they raise their health point to 150. Once a player has leveled up to 2+ He or she may use their level 1 attacks. Their HP will not go down unless they are attacked
+
+
+Ability:
+Ability: A unique effect granted by a card that can influence gameplay.
+Passive Ability: An ability that remains active without requiring activation unless otherwise stated.
+Active Ability: An ability that must be activated by meeting its requirements or paying its cost.
+Status Effect: A temporary condition, such as Poison, Burn, or Stun, that alters a player's or character's abilities.
+Cooldown: The number of turns a player must wait before using the same ability or card again.
+Turn: A player's opportunity to perform actions according to the game's turn sequence.
+Round: A complete cycle in which every player has taken one turn.
+Card Effect: The special rules or abilities printed on a card.
+Successful Attack: An attack that meets all requirements to hit and applies its effects.
+Miss: An attack that fails to hit its target and does not deal damage unless stated otherwise.
+Critical Hit: An attack that deals additional damage or gains an enhanced effect when specific conditions are met.
+Combo: A sequence of attacks or abilities that work together to create a stronger effect.
+Counter: A defensive response that interrupts, redirects, or retaliates against an opponent's action.
+Redirect: Changes the target of an attack or ability to another legal target.
+Heal: Restores lost HP. A player's HP cannot exceed its maximum value unless a card effect states otherwise.
+Victory: A player has won 3 Stability Crystals and has saved their world from destruction.
+Status Effect: A temporary or ongoing condition placed on a character that causes an additional effect beyond normal HP damage.
+
+
+9. CHARACTERS
+
+
+Why is Poochi’s weakness similar to the human characters?
+In Poochi’s past, she conjured a spell to become human, stealing human’s souls for Cacá. In a heated argument with her only close friend, Poochi accidentally stole her friend’s soul. Her soul is now combined with Poochi’s soul. Hence why she has weaknesses similar to the human characters.
+
+
+Is Poochi, Kiko the Monkey’s girl?
+At this moment it is unknown what the exact relationship is between Kiko the Monkey and Poochi. All that is known is that they came from the same world, but lived two different lives.
+
+
+Is Queeny human?
+Queeny is half human and half siren.
+
+
+Why is fire Queeny’s weakness?
+Fire is Queeny’s weakness because she is a half siren. Sirens are aquatic creatures and extreme heat can dry their bodies and damage their throat causing their hypnotic songs to weaken.
+
+
+10. POISON CARDS
+
+
+What are Poison Cards?
+Poison Cards are Action Cards that deal damage to an opponent each turn until they are cured.
+
+
+Do I have to roll dice to activate a Poison Card?
+No, Poison Cards do not require dice rolls.
+
+
+What is the maximum number of Poison Cards a player can have?
+Players may have an unlimited amount of Poison Cards during each game, but is limited to the amount of Poison Cards in the Action Card deck.
+
+
+Can I use a Poison Card on myself?
+Yes, a player may use a Poison Card on themselves to transform themselves into a Zombie.

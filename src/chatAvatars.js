@@ -36,8 +36,8 @@ export const CHAT_AVATARS = {
     quote: 'The hive always protects its own.',
     idlePath: 'Chatbot Characters/Bee/Idle/SILENCE.png',
     talkDir: 'Chatbot Characters/Bee/MouthShapes',
-    scale: 0.6,
-    offsetY: '4px',
+    scale: 0.65,
+    offsetY: '0px',
     themeColor: '#00f0ff',
     glowColor: 'rgba(0, 240, 255, 0.6)',
     ringGradient: 'conic-gradient(from 0deg, #00f0ff, #ffd700, #ffaa00, #00f0ff)',
@@ -59,10 +59,10 @@ export const CHAT_AVATARS = {
     element: 'Sonic / Lightning',
     icon: '⚡',
     quote: 'Too fast for you to catch!',
-    idlePath: 'Chatbot Characters/Kiko/Idle/SILENCE.png',
-    talkDir: 'Chatbot Characters/Kiko/MouthShapes',
-    scale: 0.55,
-    offsetY: '5px',
+    idlePath: 'Chatbot Characters/kiko/Idle/SILENCE.png',
+    talkDir: 'Chatbot Characters/kiko/MouthShapes',
+    scale: 0.65,
+    offsetY: '0px',
     themeColor: '#00e5ff',
     glowColor: 'rgba(0, 229, 255, 0.6)',
     ringGradient: 'conic-gradient(from 0deg, #00e5ff, #3d8bfd, #00ffaa, #00e5ff)',
@@ -193,12 +193,12 @@ export const preloadCharacterVisemes = (characterId) => {
 
   // Preload idle image
   const idleImg = new Image();
-  idleImg.src = `${baseUrl}${avatarConfig.idlePath}`;
+  idleImg.src = encodeURI(`${baseUrl}${avatarConfig.idlePath}`);
 
   // Preload all viseme files
   const files = Object.values(VISEME_MAP[characterId] || {});
   files.forEach((file) => {
     const img = new Image();
-    img.src = `${baseUrl}${avatarConfig.talkDir}/${file}`;
+    img.src = encodeURI(`${baseUrl}${avatarConfig.talkDir}/${file}`);
   });
 };

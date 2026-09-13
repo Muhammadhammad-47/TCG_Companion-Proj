@@ -3,6 +3,22 @@
    ========================================================================== */
 
 /* 1. APP SHELL & WEBGL 16:9 VIEWPORT CONTAINER */
+:root {
+  --neon-cyan: #00f0ff;
+  --neon-crimson: #ff3366;
+  --neon-gold: #ffe600;
+  --neon-green: #39ff14;
+  --neon-purple: #e0b0ff;
+  --neon-orange: #ff9900;
+  --bg-deep: #050a18;
+  --bg-card: rgba(14, 22, 42, 0.85);
+  --bg-card-solid: #0d1a38;
+  --border-subtle: rgba(0, 240, 255, 0.2);
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --font-display: 'Rajdhani', sans-serif;
+  --font-sub: 'Outfit', sans-serif;
+}
 .app-shell {
   width: 100vw;
   display: flex;

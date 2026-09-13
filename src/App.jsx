@@ -12,6 +12,7 @@ import { DynamicScaleWrapper } from './components/DynamicScaleWrapper.jsx';
 import { CHAT_AVATARS, getViseme, getVisemeFileForChar, preloadCharacterVisemes } from './chatAvatars';
 import { AvatarDropdown } from './components/AvatarDropdown.jsx';
 import { RULES_KNOWLEDGE } from './game/data/rulesKnowledge.js';
+import KontrolaArena from './game/kontrola/KontrolaArena.jsx';
 
 const Avatar = ({ characterId, isSpeaking, currentVisemeFile }) => {
   const avatarConfig = CHAT_AVATARS[characterId] || CHAT_AVATARS.chyna;
@@ -39,11 +40,11 @@ const Avatar = ({ characterId, isSpeaking, currentVisemeFile }) => {
   }, [isSpeaking, characterId]);
 
   const closedViseme = getVisemeFileForChar(characterId, 'CLOSED');
-  const imagePath = isSpeaking && currentVisemeFile
+  const imagePath = encodeURI(isSpeaking && currentVisemeFile
     ? `${import.meta.env.BASE_URL}${avatarConfig.talkDir}/${currentVisemeFile}`
     : isBlinking
       ? `${import.meta.env.BASE_URL}${avatarConfig.talkDir}/${closedViseme}`
-      : `${import.meta.env.BASE_URL}${avatarConfig.idlePath}`;
+      : `${import.meta.env.BASE_URL}${avatarConfig.idlePath}`);
 
   const visuals = avatarConfig.visuals || {
     enableWaves: true,
@@ -241,6 +242,7 @@ export function Chat({ onBack, isOverlay = false }) {
       .catch(err => console.error("Could not load Knowledge Base/AI_Breakdowns.txt", err));
   }, []);
   const streamTimer = useRef(null);
+  const isCancelledRef = useRef(false);
 
   const parseDocumentQA = (text) => {
     if (!text) return [];
@@ -473,6 +475,7 @@ export function Chat({ onBack, isOverlay = false }) {
     setDisplayedAnswer('');
     setIsSpeaking(false);
     setIsAnimatingTalk(false);
+    isCancelledRef.current = false;
     
     // Minimum 2 second processing delay
     const waitPromise = new Promise(resolve => setTimeout(resolve, 2000));
@@ -559,10 +562,15 @@ export function Chat({ onBack, isOverlay = false }) {
           const sentences = rawSentences.map(s => s.trim()).filter(Boolean);
           
           let sentenceIndex = 0;
-          let globalCharOffset = 0;
+          let globalCharOffset = 0; // offset in cleanAns
           let vInterval = null;
 
           const playNextSentence = () => {
+            if (isCancelledRef.current) {
+              window.currentUtterance = null;
+              return;
+            }
+
             if (sentenceIndex >= sentences.length) {
               setIsSpeaking(false);
               setIsAnimatingTalk(false);
@@ -581,13 +589,17 @@ export function Chat({ onBack, isOverlay = false }) {
             let fallbackTimeout = null;
 
             utterance.onstart = () => {
+              if (isCancelledRef.current) {
+                window.speechSynthesis.cancel();
+                return;
+              }
               usedTTS = true;
               setStatus('Answer received.');
               setIsSpeaking(true);
               setIsAnimatingTalk(true);
 
               fallbackTimeout = setTimeout(() => {
-                if (!onboundaryFired) {
+                if (!onboundaryFired && !isCancelledRef.current) {
                   // Fallback if onboundary isn't supported at all
                   startTextStream();
                 }
@@ -595,6 +607,7 @@ export function Chat({ onBack, isOverlay = false }) {
             };
 
             utterance.onboundary = (event) => {
+              if (isCancelledRef.current) return;
               onboundaryFired = true;
               if (fallbackTimeout) {
                 clearTimeout(fallbackTimeout);
@@ -608,9 +621,11 @@ export function Chat({ onBack, isOverlay = false }) {
 
                 const wordStr = currentSentence.substring(event.charIndex, nextSpace);
                 
-                // Show text up to this word
-                const totalDisplayedSoFar = cleanAns.substring(0, globalCharOffset + nextSpace);
-                setDisplayedAnswer(totalDisplayedSoFar);
+                // Show text proportionately from finalAns so markdown formatting is visible during typing
+                const currentSpokenCleanLength = globalCharOffset + nextSpace;
+                const ratio = Math.min(1, currentSpokenCleanLength / cleanAns.length);
+                const displayLength = Math.floor(finalAns.length * ratio);
+                setDisplayedAnswer(finalAns.substring(0, displayLength));
 
                 // Start visemes for this word
                 let wordClean = wordStr.trim();
@@ -623,6 +638,10 @@ export function Chat({ onBack, isOverlay = false }) {
                 
                 let frame = 1;
                 vInterval = setInterval(() => {
+                  if (isCancelledRef.current) {
+                    clearInterval(vInterval);
+                    return;
+                  }
                   const nextViseme = getViseme(wordClean, frame, selectedAvatarId);
                   if (nextViseme) {
                     setCurrentVisemeFile(nextViseme);
@@ -636,6 +655,7 @@ export function Chat({ onBack, isOverlay = false }) {
             };
 
             utterance.onend = () => {
+              if (isCancelledRef.current) return;
               onboundaryFired = true; // Prevent fallback
               if (fallbackTimeout) {
                 clearTimeout(fallbackTimeout);
@@ -646,13 +666,15 @@ export function Chat({ onBack, isOverlay = false }) {
               // Ensure space is added if there's more text coming
               if (sentenceIndex < sentences.length - 1) globalCharOffset += 1;
               
-              setDisplayedAnswer(cleanAns.substring(0, globalCharOffset));
+              const ratio = Math.min(1, globalCharOffset / cleanAns.length);
+              setDisplayedAnswer(finalAns.substring(0, Math.floor(finalAns.length * ratio)));
               sentenceIndex++;
               // Delay next speak to prevent Chrome TTS Error loop
               setTimeout(playNextSentence, 20);
             };
 
             utterance.onerror = (e) => {
+              if (isCancelledRef.current) return;
               console.error("SpeechSynthesisUtterance Error:", e);
               if (vInterval) clearInterval(vInterval);
               globalCharOffset += currentSentence.length;
@@ -722,6 +744,7 @@ export function Chat({ onBack, isOverlay = false }) {
   };
 
   const stopSpeaking = () => {
+    isCancelledRef.current = true;
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
@@ -774,7 +797,7 @@ export function Chat({ onBack, isOverlay = false }) {
         <div className="nav-left" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <button className="burger-button" onClick={toggleSidebar} style={{ background: 'none', border: 'none', color: 'var(--neon-cyan)', fontSize: '1.5rem', cursor: 'pointer' }}>☰</button>
           <div className="nav-logo" style={{ color: 'var(--text-light)', fontFamily: 'Orbitron, sans-serif' }}>
-            <h2 style={{ margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}><span className="brand-pill-badge" style={{ fontSize: '0.6rem', padding: '2px 6px' }}>注意!</span> RULES BOT</h2>
+            <h2 style={{ margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}><span className="brand-pill-badge" style={{ fontSize: '0.6rem', padding: '2px 6px' }}>注意!</span> TCG Chatbot</h2>
           </div>
         </div>
         <div className="nav-right" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -864,7 +887,7 @@ export function Chat({ onBack, isOverlay = false }) {
               <div className="chat-bubble bot" style={{ margin: 0, position: 'relative' }}>
                 <div className="bot-avatar-icon" style={{ overflow: 'hidden' }}>
                   <img
-                    src={`${(import.meta.env.BASE_URL || '/').endsWith('/') ? (import.meta.env.BASE_URL || '/') : (import.meta.env.BASE_URL + '/')}${CHAT_AVATARS[selectedAvatarId]?.idlePath || CHAT_AVATARS.chyna?.idlePath || 'Chatbot Characters/Chyna/Idle/SILENCE.png'}`}
+                    src={encodeURI(`${(import.meta.env.BASE_URL || '/').endsWith('/') ? (import.meta.env.BASE_URL || '/') : (import.meta.env.BASE_URL + '/')}${CHAT_AVATARS[selectedAvatarId]?.idlePath || CHAT_AVATARS.chyna?.idlePath || 'Chatbot Characters/Chyna/Idle/SILENCE.png'}`)}
                     alt="avatar"
                     style={{
                       width: '100%',
@@ -989,7 +1012,7 @@ export function Hub() {
               <button className="btn-enter-game-cta" onClick={() => navigate('/chat')} style={{ width: '100%', padding: '30px 40px', borderRadius: '24px' }}>
                 <div style={{ marginRight: '20px', display: 'flex', alignItems: 'center' }}><Bot size={48} /></div>
                 <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '8px' }}>RULES BOT</div>
+                  <div style={{ fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '8px' }}>TCG Chatbot</div>
                   <div style={{ fontSize: '1.2rem', opacity: 0.8, fontWeight: 'normal' }}>Chat Companion & Card Knowledge</div>
                 </div>
               </button>
@@ -1008,8 +1031,27 @@ export function Hub() {
               >
                 <div style={{ marginRight: '20px', display: 'flex', alignItems: 'center' }}><Swords size={48} /></div>
                 <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '8px' }}>BATTLE ARENA</div>
+                  <div style={{ fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '8px' }}>Score Calculator</div>
                   <div style={{ fontSize: '1.2rem', opacity: 0.8, fontWeight: 'normal' }}>Interactive Tabletop Simulator</div>
+                </div>
+              </button>
+
+              <button
+                className="btn-enter-game-cta"
+                onClick={() => {
+                  try {
+                    if (screen.orientation && screen.orientation.lock) {
+                      screen.orientation.lock('landscape').catch(() => { });
+                    }
+                  } catch (e) { }
+                  navigate('/kontrola');
+                }}
+                style={{ width: '100%', padding: '30px 40px', borderRadius: '24px', background: 'linear-gradient(90deg, #2a0845 0%, #6441A5 100%)', border: '2px solid #e0b0ff', color: '#e0b0ff' }}
+              >
+                <div style={{ marginRight: '20px', display: 'flex', alignItems: 'center' }}><Swords size={48} /></div>
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '8px' }}>Kontrola Game (Premium)</div>
+                  <div style={{ fontSize: '1.2rem', opacity: 0.8, fontWeight: 'normal' }}>Online Multiplayer Card Battles</div>
                 </div>
               </button>
             </div>
@@ -1027,6 +1069,7 @@ function App() {
       <Route path="/" element={<Hub />} />
       <Route path="/chat" element={<Chat onBack={() => navigate('/')} />} />
       <Route path="/game" element={<GamePage />} />
+      <Route path="/kontrola" element={<KontrolaArena />} />
     </Routes>
   );
 }

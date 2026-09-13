@@ -87,7 +87,7 @@ export function AvatarDropdown({ selectedAvatarId, onSelectAvatar, disabled }) {
           }}
         >
           <img
-            src={`${import.meta.env.BASE_URL}${currentAvatar.idlePath}`}
+            src={encodeURI(`${import.meta.env.BASE_URL}${currentAvatar.idlePath}`)}
             alt={currentAvatar.name}
             style={{
               width: '100%',
@@ -213,7 +213,7 @@ export function AvatarDropdown({ selectedAvatarId, onSelectAvatar, disabled }) {
                   }}
                 >
                   <img
-                    src={`${import.meta.env.BASE_URL}${avatar.idlePath}`}
+                    src={encodeURI(`${import.meta.env.BASE_URL}${avatar.idlePath}`)}
                     alt={avatar.name}
                     style={{
                       width: '100%',

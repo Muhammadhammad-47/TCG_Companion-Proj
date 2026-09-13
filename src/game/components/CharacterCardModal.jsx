@@ -37,27 +37,27 @@ export default function CharacterCardModal({ characterId, onClose }) {
     >
       <div
         style={{
-          width: '100%', maxWidth: '380px', height: '560px',
+          width: '100%', maxWidth: '380px', maxHeight: '90vh', minHeight: '600px',
           background: charData.bgGradient,
           border: `2px solid ${charData.themeColor}`,
           borderRadius: '20px',
           boxShadow: `0 20px 60px rgba(0,0,0,0.9), 0 0 40px ${charData.themeColor}40`,
           position: 'relative',
           display: 'flex', flexDirection: 'column',
-          overflow: 'hidden'
+          overflow: 'visible'
         }}
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(0,0,0,0.5)', border: 'none', color: '#fff', borderRadius: '50%', padding: '6px', cursor: 'pointer', zIndex: 10 }}
+          style={{ position: 'absolute', top: '-10px', right: '-50px', background: 'rgba(0,0,0,0.7)', border: `2px solid ${charData.themeColor}`, color: '#fff', borderRadius: '50%', padding: '8px', cursor: 'pointer', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
-          <X size={20} />
+          <X size={24} />
         </button>
 
         {/* Card Header (Image) */}
-        <div style={{ height: '220px', width: '100%', position: 'relative', borderBottom: `2px solid ${charData.themeColor}` }}>
-          <img src={getAssetUrl(charData.image)} alt={charData.name} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85 }} />
+        <div style={{ height: '280px', width: '100%', position: 'relative', borderBottom: `2px solid ${charData.themeColor}`, backgroundColor: 'rgba(0,0,0,0.6)', borderTopLeftRadius: '18px', borderTopRightRadius: '18px', overflow: 'hidden' }}>
+          <img src={getAssetUrl(charData.image)} alt={charData.name} style={{ width: '100%', height: '100%', objectFit: 'contain', opacity: 0.95 }} />
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.9), transparent)', padding: '20px 16px 10px 16px' }}>
             <h2 style={{ margin: 0, color: '#fff', fontSize: '1.6rem', fontFamily: 'Orbitron, sans-serif', textShadow: '2px 2px 4px #000' }}>{charData.name}</h2>
             <div style={{ color: charData.themeColor, fontSize: '0.85rem', fontWeight: 'bold' }}>{charData.title}</div>
