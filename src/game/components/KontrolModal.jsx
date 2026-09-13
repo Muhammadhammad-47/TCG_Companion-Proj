@@ -22,6 +22,7 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
   const [chosenOption, setChosenOption] = useState('steal_card'); // 'steal_card' | 'force_attack'
   const [selectedStolenCardId, setSelectedStolenCardId] = useState(null);
   const [forceAttackTargetId, setForceAttackTargetId] = useState(null);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const targetPlayer = allPlayers.find(p => p.id === targetId);
   const targetChar = targetPlayer ? (CHARACTERS[targetPlayer.characterId] || CHARACTERS.chynaman) : null;
@@ -31,9 +32,10 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
 
   const handleRoll = () => {
     if (isTargetZombie) {
-      alert('Zombies are immune to Kontrol.');
+      setErrorMsg('Zombies are immune to Kontrol.');
       return;
     }
+    setErrorMsg('');
 
     setIsRolling(true);
     setRoundResult('');
@@ -91,11 +93,11 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
 
   const handleConfirm = () => {
     if (kontrolWinner === 'attacker' && chosenOption === 'steal_card' && !selectedStolenCardId) {
-      alert("Please select a card to steal!");
+      setErrorMsg("Please select a card to steal!");
       return;
     }
     if (kontrolWinner === 'attacker' && chosenOption === 'force_attack' && !forceAttackTargetId) {
-      alert("Please select a target to force attack!");
+      setErrorMsg("Please select a target to force attack!");
       return;
     }
 
@@ -158,6 +160,14 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}><X size={20} /></button>
         </div>
+
+        {/* Error Notice */}
+        {errorMsg && (
+          <div style={{ background: 'rgba(255, 51, 102, 0.2)', border: '1px solid #ff3366', color: '#ff88aa', padding: '10px 14px', borderRadius: '8px', fontSize: '0.85rem', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
+            <AlertTriangle size={18} />
+            <span>{errorMsg}</span>
+          </div>
+        )}
 
         <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.75)', margin: '0 0 14px 0' }}>
           <strong>Best of 3 Dice Roll Battle!</strong> Both players roll a die simultaneously. The first to win 2 rounds wins the Kontrol.

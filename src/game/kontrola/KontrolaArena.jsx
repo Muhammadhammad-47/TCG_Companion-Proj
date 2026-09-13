@@ -45,6 +45,15 @@ export default function KontrolaArena() {
   const [isJoining, setIsJoining] = useState(false);
   const [isSpectator, setIsSpectator] = useState(false);
   const [error, setError] = useState(null);
+  const [inAppNotice, setInAppNotice] = useState(null);
+
+  // In-app floating alert/toast helper
+  const showNotice = (msg, type = 'warning') => {
+    setInAppNotice({ msg, type });
+    setTimeout(() => {
+      setInAppNotice(null);
+    }, 4000);
+  };
 
   // Lobby Tab Navigation ('browse' | 'create' | 'join')
   const [lobbyTab, setLobbyTab] = useState('browse');
@@ -604,7 +613,19 @@ export default function KontrolaArena() {
   // Claim +1 ET on turn
   const handleClaimTurnET = () => {
     playClick();
-    if (!gameState || !isMyTurn || myCharacter?.claimedTurnET || isSpectator) return;
+    if (isSpectator) {
+      showNotice('Spectators cannot claim Energy Tokens.', 'info');
+      return;
+    }
+    if (!isMyTurn) {
+      showNotice("Wait for your turn to claim your turn's Energy Token.", 'warning');
+      return;
+    }
+    if (myCharacter?.claimedTurnET) {
+      showNotice('You have already claimed your +1 Energy Token for this turn!', 'info');
+      return;
+    }
+    if (!gameState) return;
 
     const updatedChar = {
       ...myCharacter,
@@ -630,13 +651,29 @@ export default function KontrolaArena() {
   // ==========================================
   const playTurn = () => {
     playClick();
-    if (!selectedActionCard || !isMyTurn || isSpectator) return;
+    if (isSpectator) {
+      showNotice('Spectator mode: you are observing this match.', 'info');
+      return;
+    }
+    if (!isMyTurn) {
+      showNotice("It's not your turn! Please wait for the current warrior.", 'warning');
+      return;
+    }
+    if (!selectedActionCard) {
+      showNotice('Please select an Action Card from your hand first.', 'warning');
+      return;
+    }
 
     const isAttack = selectedActionCard.type === 'ATTACK';
     const isAoE = selectedActionCard.name.includes('BLITZ');
 
     if (isAttack && !isAoE && !selectedTargetId) {
+      showNotice('Please select a target opponent warrior first!', 'warning');
       return; // Must select target
+    }
+    if (isAttack && !isAoE && !selectedCharacterAttack) {
+      showNotice('Please select a character attack move to strike with!', 'warning');
+      return;
     }
 
     const payload = {
@@ -1449,6 +1486,53 @@ export default function KontrolaArena() {
           className={`webgl-screen arena-screen ${isShaking ? 'shake-animation damage-flash-overlay' : ''} ${turnFlash ? 'turn-flash-pulse' : ''}`}
           style={{ width: '100%', height: '100%' }}
         >
+          {/* Floating In-App Notice / Toast (No Browser Alerts) */}
+          {inAppNotice && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '56px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 999999,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                padding: '10px 20px',
+                borderRadius: '10px',
+                background: inAppNotice.type === 'error'
+                  ? 'linear-gradient(90deg, #ff2a55 0%, #c00028 100%)'
+                  : inAppNotice.type === 'info'
+                  ? 'linear-gradient(90deg, #00f0ff 0%, #0077ff 100%)'
+                  : 'linear-gradient(90deg, #ffe600 0%, #ff9900 100%)',
+                color: '#000',
+                fontWeight: '900',
+                fontFamily: 'Rajdhani, sans-serif',
+                fontSize: '1.05rem',
+                letterSpacing: '0.5px',
+                boxShadow: '0 8px 30px rgba(0,0,0,0.8), 0 0 20px rgba(0, 240, 255, 0.4)',
+                border: '1.5px solid rgba(255, 255, 255, 0.6)'
+              }}
+            >
+              <AlertTriangle size={18} />
+              <span>{inAppNotice.msg}</span>
+              <button
+                onClick={() => setInAppNotice(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#000',
+                  cursor: 'pointer',
+                  padding: '0 0 0 6px',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+          )}
+
           {/* Leave Confirmation Modal */}
           {showLeaveConfirm && (
             <div className="arena-modal-backdrop" onClick={() => setShowLeaveConfirm(false)}>

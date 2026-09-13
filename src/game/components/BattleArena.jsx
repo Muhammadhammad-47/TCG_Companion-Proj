@@ -118,7 +118,7 @@ export default function BattleArena({
   // Claim +1 ET at turn start
   const handleClaimTurnET = () => {
     if (activePlayer.claimedTurnET) {
-      alert('You have already claimed your +1 Energy Token for this turn!');
+      setSystemError('You have already claimed your +1 Energy Token for this turn!');
       return;
     }
     pushStateSnapshot();

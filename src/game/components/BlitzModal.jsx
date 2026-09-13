@@ -8,6 +8,7 @@ export default function BlitzModal({ attacker, allPlayers, onClose, onCompleteBl
   const [targetId, setTargetId] = useState(
     allPlayers.find(p => p.id !== attacker.id)?.id || ''
   );
+  const [errorNotice, setErrorNotice] = useState('');
 
   const canUseBlitz = attacker.hp < 50 && attacker.energyTokens >= 5;
   const opponents = allPlayers.filter(p => p.id !== attacker.id && !p.isDefeated);
@@ -15,7 +16,7 @@ export default function BlitzModal({ attacker, allPlayers, onClose, onCompleteBl
 
   const handleExecuteBlitz = () => {
     if (!canUseBlitz) {
-      alert('Saigo No Blitz requires HP < 50 and 5 ET.');
+      setErrorNotice('Saigo No Blitz requires HP < 50 and 5 ET.');
       return;
     }
 
@@ -69,6 +70,14 @@ export default function BlitzModal({ attacker, allPlayers, onClose, onCompleteBl
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}><X size={20} /></button>
         </div>
+
+        {/* Error Notice */}
+        {errorNotice && (
+          <div style={{ background: 'rgba(255, 51, 102, 0.2)', border: '1px solid #ff3366', color: '#ff88aa', padding: '10px 14px', borderRadius: '8px', fontSize: '0.85rem', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
+            <AlertOctagon size={18} />
+            <span>{errorNotice}</span>
+          </div>
+        )}
 
         {/* HP Warning */}
         {attacker.hp >= 50 && (
