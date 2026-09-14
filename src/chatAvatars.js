@@ -59,8 +59,9 @@ export const CHAT_AVATARS = {
     element: 'Sonic / Lightning',
     icon: '⚡',
     quote: 'Too fast for you to catch!',
-    idlePath: 'Chatbot Characters/kiko/Idle/SILENCE.png',
-    talkDir: 'Chatbot Characters/kiko/MouthShapes',
+    // NOTE: git tracks as 'Kiko' (capital K) — must match exactly for GitHub Pages (Linux)
+    idlePath: 'Chatbot Characters/Kiko/Idle/SILENCE.png',
+    talkDir: 'Chatbot Characters/Kiko/MouthShapes',
     scale: 0.65,
     offsetY: '0px',
     themeColor: '#00e5ff',
@@ -103,38 +104,111 @@ export const CHAT_AVATARS = {
   },
 };
 
-const defaultVisemeMap = {
-  CLOSED: 'CLOSED (BLINK).png',
-  SMILE: 'SMILE.png',
-  SILENCE: 'CLOSED (BLINK).png',
-  CH_J_SH: 'CH, J, SH.png',
-  EE: 'EE.png',
-  OO: 'OO.png',
-  TH: 'TH.png',
-  AY: 'AY.png',
-  AI: 'AI.png',
-  OW: 'OW.png',
-  OH: 'OH.png',
-  B_P: 'B, P.png',
-  M: 'M.png',
+// Each map uses the EXACT filenames (case-sensitive) as they appear in git.
+// Checked via: git ls-files "public/Chatbot Characters"
+// GitHub Pages is Linux (case-sensitive) so paths must match exactly.
+
+const chynaVisemeMap = {
+  CLOSED:    'CLOSED (BLINK).png',
+  SILENCE:   'CLOSED (BLINK).png',
+  SMILE:     'SMILE.png',
+  CH_J_SH:   'CH, J, SH.png',
+  EE:        'EE.png',
+  OO:        'OO.png',
+  TH:        'TH.png',
+  AY:        'AY.png',
+  AI:        'AI.png',
+  OW:        'OW.png',
+  OH:        'OH.png',
+  B_P:       'B, P.png',
+  M:         'M.png',
   D_T_N_K_G: 'D, T, N, K, G.png',
-  F_V: 'F, V.png',
-  L: 'L.png',
-  R: 'R.png',
-  S_Z: 'S, Z.png',
-  W_Q: 'W, Q.png',
-  Y: 'Y.png',
-  A_I: 'A, I.png',
-  E: 'E.png',
-  O: 'O.png',
-  U: 'U.png',
+  F_V:       'F, V.png',
+  L:         'L.png',
+  R:         'R.png',
+  S_Z:       'S, Z.png',
+  W_Q:       'W, Q.png',
+  Y:         'Y.png',
+  A_I:       'A, I.png',
+  E:         'E.png',
+  O:         'O.png',
+  U:         'U.png',
+};
+
+// Bee: identical to Chyna except SMILE → Smile.png, OO → oo.png
+const beeVisemeMap = {
+  ...chynaVisemeMap,
+  SMILE:  'Smile.png',
+  OO:     'oo.png',
+  CLOSED: 'CLOSED (BLINK).png',
+  SILENCE:'CLOSED (BLINK).png',
+};
+
+// Kiko: 'Closed (Blink).png', 'Smile.png', 'OO.png', 'o.png', 'u.png' (no AY, OO→OO.png exists, no U→u.png)
+// Exact git files: A, I | AI | AY | B, P | CH, J, SH | Closed (Blink) | D, T, N, K, G |
+//                  E | EE | F, V | L | M | OH | OO | OW | R | S, Z | Smile | TH | W, Q | Y | o | u
+const kikoVisemeMap = {
+  CLOSED:    'Closed (Blink).png',
+  SILENCE:   'Closed (Blink).png',
+  SMILE:     'Smile.png',
+  CH_J_SH:   'CH, J, SH.png',
+  EE:        'EE.png',
+  OO:        'OO.png',
+  TH:        'TH.png',
+  AY:        'AY.png',
+  AI:        'AI.png',
+  OW:        'OW.png',
+  OH:        'OH.png',
+  B_P:       'B, P.png',
+  M:         'M.png',
+  D_T_N_K_G: 'D, T, N, K, G.png',
+  F_V:       'F, V.png',
+  L:         'L.png',
+  R:         'R.png',
+  S_Z:       'S, Z.png',
+  W_Q:       'W, Q.png',
+  Y:         'Y.png',
+  A_I:       'A, I.png',
+  E:         'E.png',
+  O:         'o.png',
+  U:         'u.png',
+};
+
+// Katsumi: CLOSED (BLINK).png | A, I | AI | Ay | B, P | CH, J, SH | D, T, N, K, G |
+//          E | F, V | L | M | OH | OW | S, Z | W, Q | Y | ee | o | oo | r | smile | th | u
+// Missing from git: AY (use Ay), EE (use ee), OO (use oo), R (use r), SMILE (use smile), TH (use th), U (use u), O (use o)
+const katsumiVisemeMap = {
+  CLOSED:    'CLOSED (BLINK).png',
+  SILENCE:   'CLOSED (BLINK).png',
+  SMILE:     'smile.png',
+  CH_J_SH:   'CH, J, SH.png',
+  EE:        'ee.png',
+  OO:        'oo.png',
+  TH:        'th.png',
+  AY:        'Ay.png',
+  AI:        'AI.png',
+  OW:        'OW.png',
+  OH:        'OH.png',
+  B_P:       'B, P.png',
+  M:         'M.png',
+  D_T_N_K_G: 'D, T, N, K, G.png',
+  F_V:       'F, V.png',
+  L:         'L.png',
+  R:         'r.png',
+  S_Z:       'S, Z.png',
+  W_Q:       'W, Q.png',
+  Y:         'Y.png',
+  A_I:       'A, I.png',
+  E:         'E.png',
+  O:         'o.png',
+  U:         'u.png',
 };
 
 export const VISEME_MAP = {
-  chyna: defaultVisemeMap,
-  bee: defaultVisemeMap,
-  kiko: defaultVisemeMap,
-  katsumi: defaultVisemeMap,
+  chyna:   chynaVisemeMap,
+  bee:     beeVisemeMap,
+  kiko:    kikoVisemeMap,
+  katsumi: katsumiVisemeMap,
 };
 
 export const getLogicalViseme = (text, index) => {
@@ -197,7 +271,8 @@ export const preloadCharacterVisemes = (characterId) => {
 
   // Preload all viseme files
   const files = Object.values(VISEME_MAP[characterId] || {});
-  files.forEach((file) => {
+  const uniqueFiles = [...new Set(files)];
+  uniqueFiles.forEach((file) => {
     const img = new Image();
     img.src = encodeURI(`${baseUrl}${avatarConfig.talkDir}/${file}`);
   });
