@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
-import { Send, X, Bot, Swords } from 'lucide-react';
+import { Send, X, Bot, Swords, ArrowLeft } from 'lucide-react';
 import axios from 'axios';
 import { Groq } from 'groq-sdk';
 import './App.css';
@@ -188,15 +188,20 @@ export function Chat({ onBack, isOverlay = false }) {
     }
     setCurrentVisemeFile(getVisemeFileForChar(newAvatarId, 'CLOSED'));
 
+    // Disallowed and preferred voice filters per client specification
+    const DISALLOWED_VOICES = ['fred', 'junior', 'superstar'];
+    const isVoiceAllowed = (v) => !DISALLOWED_VOICES.some(bad => v.name.toLowerCase().includes(bad));
+
     // Automatically switch voice based on character gender
     if (availableVoices.length > 0) {
       let voice;
       if (newAvatarId === 'chyna') {
-        // Chyna is male
-        voice = availableVoices.find(v => v.name.toLowerCase().includes('male') || ['Daniel', 'Alex', 'Fred', 'David'].some(n => v.name.includes(n)));
+        // Chyna is male (exclude Fred/Junior/Superstar, prefer Daniel/Alex/David)
+        voice = availableVoices.find(v => isVoiceAllowed(v) && (v.name.toLowerCase().includes('male') || ['Daniel', 'Alex', 'David'].some(n => v.name.includes(n))));
       } else {
-        // Others are female
-        voice = availableVoices.find(v => v.name.toLowerCase().includes('female') || ['Samantha', 'Victoria', 'Karen', 'Zira'].some(n => v.name.includes(n)));
+        // Others are female (prefer Samantha / Moira)
+        voice = availableVoices.find(v => isVoiceAllowed(v) && ['Samantha', 'Moira'].some(n => v.name.includes(n))) ||
+                availableVoices.find(v => isVoiceAllowed(v) && (v.name.toLowerCase().includes('female') || ['Victoria', 'Karen', 'Zira'].some(n => v.name.includes(n))));
       }
       if (voice) {
         setSelectedVoiceURI(voice.voiceURI);
@@ -209,22 +214,30 @@ export function Chat({ onBack, isOverlay = false }) {
     if ('speechSynthesis' in window) {
       const loadVoices = () => {
         const allVoices = window.speechSynthesis.getVoices();
+        const DISALLOWED_VOICES = ['fred', 'junior', 'superstar'];
+        const isVoiceAllowed = (v) => !DISALLOWED_VOICES.some(bad => v.name.toLowerCase().includes(bad));
+
         // Prefer English voices with localService, fallback to all English voices
-        let voices = allVoices.filter(v => v.lang.startsWith('en') && v.localService);
+        let voices = allVoices.filter(v => v.lang.startsWith('en') && v.localService && isVoiceAllowed(v));
         if (voices.length === 0) {
-          voices = allVoices.filter(v => v.lang.startsWith('en'));
+          voices = allVoices.filter(v => v.lang.startsWith('en') && isVoiceAllowed(v));
         }
         if (voices.length === 0) {
-          voices = allVoices;
+          voices = allVoices.filter(isVoiceAllowed);
+        }
+        if (voices.length === 0) {
+          voices = allVoices; // Final safety fallback
         }
         setAvailableVoices(voices);
+
         // Set a smart default if none selected yet
         if (voices.length > 0 && !selectedVoiceURI) {
           let defaultVoice;
           if (selectedAvatarId === 'chyna') {
-            defaultVoice = voices.find(v => v.name.toLowerCase().includes('male') || ['Daniel', 'Alex', 'Fred', 'David'].some(n => v.name.includes(n)));
+            defaultVoice = voices.find(v => isVoiceAllowed(v) && (v.name.toLowerCase().includes('male') || ['Daniel', 'Alex', 'David'].some(n => v.name.includes(n))));
           } else {
-            defaultVoice = voices.find(v => v.name.toLowerCase().includes('female') || ['Samantha', 'Victoria', 'Karen', 'Zira'].some(n => v.name.includes(n)));
+            defaultVoice = voices.find(v => isVoiceAllowed(v) && ['Samantha', 'Moira'].some(n => v.name.includes(n))) ||
+                           voices.find(v => isVoiceAllowed(v) && (v.name.toLowerCase().includes('female') || ['Victoria', 'Karen', 'Zira'].some(n => v.name.includes(n))));
           }
           if (defaultVoice) setSelectedVoiceURI(defaultVoice.voiceURI);
           else setSelectedVoiceURI(voices[0].voiceURI);
@@ -432,7 +445,7 @@ export function Chat({ onBack, isOverlay = false }) {
         messages: [
           {
             role: "system",
-            content: "You are the TCG Companion AI, a helpful, conversational, and enthusiastic game guide. Answer questions about the game rules naturally, as if chatting with a friend. DO NOT sound like a programmed bot and AVOID using long bulleted lists or formatting when possible. Keep it short, punchy, and conversational (1-3 sentences max). NEVER add new rules."
+            content: "You are the TCG Companion AI, a helpful, conversational, and enthusiastic game guide. Answer questions about the game rules naturally, as if chatting with a friend. In Attention TCG, 'HP' strictly stands for 'Health Points' (NEVER call it 'Horse Power'). 'ET' stands for 'Energy Tokens', 'DP' stands for 'Defense Points', and 'AP' stands for 'Attack Power'. DO NOT sound like a programmed bot and AVOID using long bulleted lists or formatting when possible. Keep it short, punchy, and conversational (1-3 sentences max). NEVER add new rules."
           },
           ...recentHistory,
           {
@@ -581,7 +594,12 @@ export function Chat({ onBack, isOverlay = false }) {
             }
 
             const currentSentence = sentences[sentenceIndex];
-            const utterance = new SpeechSynthesisUtterance(currentSentence);
+            const spokenSentence = currentSentence
+              .replace(/\bHP\b/g, 'Health Points')
+              .replace(/\bET\b/g, 'Energy Tokens')
+              .replace(/\bDP\b/g, 'Defense Points')
+              .replace(/\bAP\b/g, 'Attack Power');
+            const utterance = new SpeechSynthesisUtterance(spokenSentence);
             window.currentUtterance = utterance; // Prevent GC
             applyVoiceToUtterance(utterance);
 
@@ -698,7 +716,12 @@ export function Chat({ onBack, isOverlay = false }) {
 
         } else {
           // Option C: Hybrid Typewriter (current logic)
-          const utterance = new SpeechSynthesisUtterance(cleanAns);
+          const spokenAns = cleanAns
+            .replace(/\bHP\b/g, 'Health Points')
+            .replace(/\bET\b/g, 'Energy Tokens')
+            .replace(/\bDP\b/g, 'Defense Points')
+            .replace(/\bAP\b/g, 'Attack Power');
+          const utterance = new SpeechSynthesisUtterance(spokenAns);
           window.currentUtterance = utterance; // Prevent Garbage Collection
 
           const applyVoiceAndSpeak = () => {
@@ -832,7 +855,28 @@ export function Chat({ onBack, isOverlay = false }) {
               </option>
             ))}
           </select>
-          <button onClick={() => { stopSpeaking(); onBack(); }} style={{ background: 'none', border: 'none', color: 'var(--neon-pink)', fontSize: '2rem', cursor: 'pointer', padding: '0 10px', lineHeight: '1' }}>×</button>
+          <button
+            onClick={() => { stopSpeaking(); onBack(); }}
+            style={{
+              background: 'rgba(10, 25, 50, 0.85)',
+              border: '1.5px solid rgba(0, 240, 255, 0.4)',
+              borderRadius: '8px',
+              color: 'var(--neon-cyan)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              fontSize: '0.85rem',
+              fontWeight: 'bold',
+              fontFamily: 'Rajdhani, sans-serif',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              boxShadow: '0 0 12px rgba(0, 240, 255, 0.2)'
+            }}
+          >
+            <ArrowLeft size={16} />
+            <span>BACK TO HUB</span>
+          </button>
         </div>
       </header>
 

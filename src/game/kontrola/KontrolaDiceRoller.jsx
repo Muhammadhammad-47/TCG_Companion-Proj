@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { soundFX } from '../utils/audio';
-import { Dices, Shield, Swords, Check, Zap, X, Sparkles, AlertCircle, Clock, Eye } from 'lucide-react';
+import { Dices, Shield, Swords, Check, Zap, X, Sparkles, AlertCircle, Clock, Eye, RotateCcw } from 'lucide-react';
 import { getCardGraphicUrl, getCharacterAttackGraphicUrl } from './kontrolaAssets';
 
 // Helper to draw authentic dice face texture matching ThreeDiceArena.jsx exactly
@@ -240,15 +240,46 @@ export default function KontrolaDiceRoller({
 
   const handleRollClash = () => {
     if (isRolling) return;
-    if (precalculatedRolls) {
-      setClashAtkDice(precalculatedRolls.attackerRoll.rolls);
-      setClashDefDice(precalculatedRolls.defenderRoll.rolls);
+    let atkRolls = precalculatedRolls?.attackerRoll?.rolls;
+    let defRolls = precalculatedRolls?.defenderRoll?.rolls;
+    if (!atkRolls) {
+      atkRolls = [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
     }
+    if (!defRolls) {
+      defRolls = [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
+    }
+    setClashAtkDice(atkRolls);
+    setClashDefDice(defRolls);
     setLocalRolling(true);
     if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
 
     if (onTriggerRoll) {
-      onTriggerRoll();
+      onTriggerRoll({
+        attackerRoll: { rolls: atkRolls, total: atkRolls[0] + atkRolls[1] },
+        defenderRoll: { rolls: defRolls, total: defRolls[0] + defRolls[1] }
+      });
+    }
+
+    setTimeout(() => {
+      setLocalRolling(false);
+      setPhase('clash_summary');
+    }, 1000);
+  };
+
+  const handleReRoll = () => {
+    if (isRolling) return;
+    const atkRolls = [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
+    const defRolls = [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
+    setClashAtkDice(atkRolls);
+    setClashDefDice(defRolls);
+    setLocalRolling(true);
+    if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
+
+    if (onTriggerRoll) {
+      onTriggerRoll({
+        attackerRoll: { rolls: atkRolls, total: atkRolls[0] + atkRolls[1] },
+        defenderRoll: { rolls: defRolls, total: defRolls[0] + defRolls[1] }
+      });
     }
 
     setTimeout(() => {
@@ -259,7 +290,12 @@ export default function KontrolaDiceRoller({
 
   const atkSum = clashAtkDice[0] + clashAtkDice[1];
   const defSum = clashDefDice[0] + clashDefDice[1];
-  const atkWon = atkSum >= defSum;
+  const isTie = atkSum === defSum;
+  const atkWon = !isTie && atkSum > defSum;
+  const defWon = !isTie && defSum > atkSum;
+  const selectedAttackInfo = atkChar?.attacks?.[attackSelectionName];
+  const hasMultiplierDie = selectedAttackInfo && selectedAttackInfo.dice > 0;
+  const multiplierDie = precalculatedRolls?.dRoll?.total || 1;
 
   const cardImg = attackSelectionName
     ? getCharacterAttackGraphicUrl(attackSelectionName)
@@ -676,25 +712,37 @@ export default function KontrolaDiceRoller({
           {phase === 'clash_summary' && (
             <div
               style={{
-                background: 'rgba(0, 0, 0, 0.55)',
-                border: atkWon ? '2px solid var(--neon-cyan)' : '2px solid var(--neon-gold)',
+                background: isTie
+                  ? 'rgba(255, 230, 0, 0.12)'
+                  : atkWon
+                  ? 'rgba(0, 240, 255, 0.12)'
+                  : 'rgba(255, 42, 85, 0.12)',
+                border: isTie
+                  ? '2px solid var(--neon-gold)'
+                  : atkWon
+                  ? '2px solid var(--neon-cyan)'
+                  : '2px solid #ff2a55',
                 borderRadius: '16px',
                 padding: '20px 28px',
                 textAlign: 'center',
-                boxShadow: atkWon ? '0 0 30px rgba(0, 240, 255, 0.25)' : '0 0 30px rgba(255, 224, 102, 0.25)'
+                boxShadow: isTie
+                  ? '0 0 30px rgba(255, 230, 0, 0.25)'
+                  : atkWon
+                  ? '0 0 30px rgba(0, 240, 255, 0.25)'
+                  : '0 0 30px rgba(255, 42, 85, 0.25)'
               }}
             >
               <h3
                 style={{
                   margin: '0 0 8px 0',
                   fontSize: '1.6rem',
-                  color: atkWon ? 'var(--neon-cyan)' : 'var(--neon-gold)',
+                  color: isTie ? 'var(--neon-gold)' : atkWon ? 'var(--neon-cyan)' : '#ff8899',
                   fontFamily: 'Rajdhani, sans-serif',
                   fontWeight: '900',
                   letterSpacing: '1px'
                 }}
               >
-                {atkWon ? '⚔️ ATTACK SUCCESSFUL!' : '🛡️ DEFENDER RESISTED / BLOCKED!'}
+                {isTie ? '⚔️ CLASH TIED! (STALEMATE)' : atkWon ? '⚔️ ATTACK SUCCESSFUL!' : '🛡️ DEFENDER RESISTED / BLOCKED!'}
               </h3>
               <p
                 style={{
@@ -704,36 +752,92 @@ export default function KontrolaDiceRoller({
                   opacity: 0.95
                 }}
               >
-                {atkWon
+                {isTie
+                  ? `Both warriors rolled ${atkSum}! Stalemate reached. Re-roll the dice to determine who prevails!`
+                  : atkWon
                   ? `Attacker roll (${atkSum}) beat Defender roll (${defSum}). Combat damage will be resolved!`
                   : `Defender roll (${defSum}) resisted Attacker roll (${atkSum}). Attack deflected!`
                 }
               </p>
 
-              {/* Only Attacker or Host can resolve, or anyone can confirm if spectator */}
-              <button
-                onClick={onCombatComplete}
-                style={{
-                  background: '#39ff14',
-                  color: '#000',
-                  border: 'none',
-                  padding: '14px 38px',
+              {/* Show Multiplier Die Section if Attacker Won and move has dice multiplier */}
+              {atkWon && hasMultiplierDie && (
+                <div style={{
+                  margin: '10px auto 20px auto',
+                  padding: '12px 20px',
+                  background: 'rgba(0,0,0,0.5)',
                   borderRadius: '12px',
-                  fontSize: '1.15rem',
-                  fontWeight: '900',
-                  cursor: 'pointer',
+                  border: '1px solid rgba(0, 240, 255, 0.4)',
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '10px',
-                  fontFamily: 'Rajdhani, sans-serif',
-                  letterSpacing: '1px',
-                  boxShadow: '0 0 25px rgba(57, 255, 20, 0.45)',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                <Check size={22} />
-                <span>APPLY RESULT & CONTINUE</span>
-              </button>
+                  gap: '16px'
+                }}>
+                  <div style={{ textAlign: 'left' }}>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--neon-cyan)', fontWeight: 'bold' }}>
+                      {attackSelectionName}
+                    </div>
+                    <div style={{ fontSize: '0.95rem', color: '#fff' }}>
+                      Multiplier Roll: <strong>{multiplierDie}</strong> × {selectedAttackInfo.ap} AP = <strong style={{ color: '#39ff14' }}>{multiplierDie * selectedAttackInfo.ap} AP Damage</strong>
+                    </div>
+                  </div>
+                  <PipDie face={multiplierDie} isRed={true} size={44} />
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div>
+                {isTie ? (
+                  (isAttacker || !isSpectator) && (
+                    <button
+                      onClick={handleReRoll}
+                      style={{
+                        background: 'linear-gradient(135deg, #ffd700, #ff8800)',
+                        color: '#000',
+                        border: 'none',
+                        padding: '14px 38px',
+                        borderRadius: '12px',
+                        fontSize: '1.15rem',
+                        fontWeight: '900',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        fontFamily: 'Rajdhani, sans-serif',
+                        letterSpacing: '1px',
+                        boxShadow: '0 0 25px rgba(255, 215, 0, 0.55)',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <RotateCcw size={22} />
+                      <span>🎲 RE-ROLL CLASH</span>
+                    </button>
+                  )
+                ) : (
+                  <button
+                    onClick={onCombatComplete}
+                    style={{
+                      background: '#39ff14',
+                      color: '#000',
+                      border: 'none',
+                      padding: '14px 38px',
+                      borderRadius: '12px',
+                      fontSize: '1.15rem',
+                      fontWeight: '900',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      fontFamily: 'Rajdhani, sans-serif',
+                      letterSpacing: '1px',
+                      boxShadow: '0 0 25px rgba(57, 255, 20, 0.45)',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <Check size={22} />
+                    <span>APPLY RESULT & CONTINUE</span>
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </div>

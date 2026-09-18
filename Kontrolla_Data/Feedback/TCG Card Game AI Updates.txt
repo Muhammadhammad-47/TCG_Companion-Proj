@@ -1,0 +1,67 @@
+﻿TCG Card Game
+AI Information Update:
+
+
+Note:
+* AI Chatbot calls HP as “Horse Power”, which is incorrect. HP is “Health Points”
+* Let’s create a back button to return to the home page, instead of the X icon.
+* In Score Calculator, how do you determine who goes first? Do they need to roll the physical dice or are we missing that in the system?
+* Please take out Fred’s voice which is the default for Chynaman character. You can take out Junior’s voice too.
+* Samantha’s voice is pleasing. Keep her voice in.
+* In the private rooms. How do we decide who goes first besides the host chooses the character?
+* ***Once the first character is chosen, he or she can not be chosen by another player until the next game.***
+* In the Kontrola Mode, the group chat does not work. When you send a message. It sends the message of “VICTORY ACHIEVED! Jay restored balance and emerged victorious in Kontrola!” Return to Hub. (The game has not been played.) Image reference will be sent to WhatsApp
+* The DICE system is glitching. It says that the defender won, but the dice never roll. Reference is sent through Whatsapp.
+* Vision X1 Card is not working properly. It is supposed to show the attacker the defenders card for about 15 seconds (I believe.)
+* Even when the attack is won. The HP does not decrease for defender.
+* Poison Card is not doing it’s affect on player per turn of -10 HP per turn, until player uses an Antidote card.
+* Players need the option to use a Defence Card when a player is attacking. Also, basic defense needs to be activated when the player is defending. As long as they roll a 6+ their basic defense is activated.
+* In Zabina “Bee” Solé (Need to add an accent on the E) Sending reference image. There are too many heal.
+* With the Lightning Action Card (This card is acting like an Attack Card), there should be no selection of Character Move. All it needs to do is Roll the Dice to see if it was successful.
+* In Chynaman Fire of Fire per Punch when trying to roll. The dice has already been rolled. It allows too many turns.
+* When trying to play player 2, it freezes and I can’t play it.
+* VITALITY GAIN V20 can be used only when the character is at level 2
+* When using a Sleepy X1 card. In 2 player mode. It should cause the opponent to lose a turn and the turn goes automatically to the Attacker.
+* When using an Attack Card the selection for Select Target/ Character Move/ Etc is in the lower right corner and meshed in with Roll Combat Clash. You can’t scroll down for more etc. We should also note that the actual card needs to be placed.
+* When you use an Action Card, it doesn’t disappear or change.
+* HEAL cards should not increase the player’s HP when it is at it’s max HP. VITALITY GAIN V10 is the only card that will increase the player’s HP when it is at it’s max.
+* The Dice System is incorrect for all the Character Cards with per strike or punch are incorrect.
+* Antidote Card works well!
+
+
+Please remove these voices:
+Fred
+Junior
+Superstar
+Keep these voices:
+Moira
+Samantha
+
+
+What are Kontrol/Control Cards?
+Kontrol cards are Character Cards that allow you control or command any opponent’s actions. If successful in your Kontrol attack you may take any Action Card of your opponent or ask your opponent to attack another opponent.
+
+
+How do I Kontrol/Control an opponent?
+To control an opponent, you must first own a Kontrol Character Card of your character. When it is your turn. Combine your Attack Action Card with your character’s Kontrol Card. Whoever rolls the higher number dice will determine whether the attack is successful or not. This is best out of three rolls.
+
+
+Can an opponent roll their own die to determine if a Kontrol attack is successful?
+Yes, if the opponent has a Fate Card that allows you to roll a die to determine if the attack is successful or not. Every character’s mind strength is different from each other. Example, if a character has a 3 mind strength. He or she must roll a 4+ to defeat the mind control. If a character has 1. He or she must roll a 5+ to defeat the mind control.
+
+
+Mind Strength:                        Must Roll a:
+1                                5+
+2                                4+
+3                                3+
+4                                2+
+5                                1+
+6                                0
+
+
+Some Kontrol Cards come with an extra card that has a QR code. Is that card playable in this game?
+Yes, this card is either a magnetic system that is attached with the Kontrol Card or it is in a hidden pouch. If your Kontrol attack is successful, the extra card allows the attacker to receive +20HP and -20HP on the opponent.
+
+
+Why does Poochi have the same weaknesses as human characters such as Chynaman and Zabina “Bee” Solé?
+Poochi carries two souls. When another magical force enters her body, the human soul and the monkey spirit fight for control. Because two magical energies exist inside her body, outside magic can disrupt her balance. Her magical body was once immune to poison, but the human soul changed her biology. She inherited the weaknesses of the soul she carries.

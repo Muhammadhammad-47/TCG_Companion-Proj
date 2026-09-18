@@ -96,7 +96,7 @@ export const CHARACTERS = {
   },
   bee: {
     id: 'bee',
-    name: 'Zabina "Bee" Sole',
+    name: 'Zabina "Bee" Solé',
     title: 'Queen of the Hive',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/BEE WILD CARD GOLD.png',
     avatar: '🐝👑',

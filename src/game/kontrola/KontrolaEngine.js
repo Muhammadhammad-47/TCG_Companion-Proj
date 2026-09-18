@@ -22,7 +22,7 @@ export const KONTROLA_CHARACTERS = {
   },
   bee: {
     id: 'bee',
-    name: 'Zabina "Bee" Sole',
+    name: 'Zabina "Bee" Solé',
     title: 'Queen of the Hive',
     maxHp: 100,
     mind: 5,
@@ -154,7 +154,7 @@ export const ACTION_CARDS_BASIC = [
   { name: 'REVIVE', type: 'HEAL', count: 6, costET: 0, desc: 'Brings player back to life with 50% HP.' },
   { name: 'SLEEPY X1', type: 'OTHERS', count: 6, costET: 0, desc: 'Target falls asleep and skips 1 turn.' },
   { name: 'VISION X1', type: 'OTHERS', count: 6, costET: 0, desc: 'Target reveals Action Cards for 15s.' },
-  { name: 'VITALITY GAIN V20', type: 'HEAL', count: 6, costET: 0, desc: '+20 HP or level up to Level 2.' },
+  { name: 'VITALITY GAIN V20', type: 'HEAL', count: 6, costET: 0, minLevel: 2, desc: '+20 HP or level up to Level 2 (Requires Level 2).' },
   { name: 'X-CHANGE X1', type: 'OTHERS', count: 6, costET: 0, desc: 'Exchange 1 Action Card with an opponent.' },
   { name: 'DEFENCE - COUNTER', type: 'DEFENSE', count: 1, costET: 0, desc: '0% damage taken, reflect 25% back.' },
   { name: 'FIRE FLAME X1', type: 'ATTACK', count: 1, costET: 1, desc: 'Burns target on hit (-10 HP/turn).' },
@@ -287,12 +287,16 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       }
     }
   }
-  // 3. ATTACK CARDS (With Character Combat Moves)
+  // 3. ATTACK CARDS (With Character Combat Moves or Standalone Elemental Spells)
   else if (actionCard.type === 'ATTACK') {
     let baseAP = 15;
     let attackElement = 'Physical';
 
-    if (isAttackerZombie) {
+    if (cardName.includes('LIGHTNING')) {
+      baseAP = cardName.includes('X2') ? 20 : 10;
+      attackElement = 'Lightning';
+      log += ` [${actionCard.name}: Elemental Lightning strike dealing ${baseAP} AP]`;
+    } else if (isAttackerZombie) {
       baseAP = 20; // Zombie Venom Strike
       attackElement = 'Poison';
     } else if (attackSelectionName && attackerChar?.attacks?.[attackSelectionName]) {
@@ -307,10 +311,13 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     }
 
     // Clash Contest: Attacker 2 dice vs Defender 2 dice
-    const atkWin = attackerRoll.total >= defenderRoll.total;
+    const isClashTie = attackerRoll.total === defenderRoll.total;
+    const atkWin = !isClashTie && attackerRoll.total > defenderRoll.total;
     log += ` Clash: Attacker ${attackerRoll.total} vs Defender ${defenderRoll.total}.`;
 
-    if (atkWin) {
+    if (isClashTie) {
+      log += ` Clash Tied (${attackerRoll.total} vs ${defenderRoll.total})! Attack neutralized.`;
+    } else if (atkWin) {
       let finalDamage = baseAP;
 
       // Weakness Bonus (+10 or +15 AP)
@@ -323,10 +330,10 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         }
       }
 
-      // Innate Defense: Defender rolled total of 6 -> -10 HP less
-      if (defenderRoll.total === 6) {
+      // Innate Defense: Defender rolled total of 6 or higher -> -10 HP less
+      if (defenderRoll.total >= 6) {
         finalDamage = Math.max(0, finalDamage - 10);
-        log += ` Defender rolled a 6! Innate DP reduced damage by 10!`;
+        log += ` Defender rolled ${defenderRoll.total} (6+)! Innate DP reduced damage by 10!`;
       }
 
       // Shield Absorption
@@ -341,6 +348,13 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       if (newDefenderState) {
         newDefenderState.hp = Math.max(0, newDefenderState.hp - finalDamage);
         log += ` Attack lands! ${newDefenderState.name} takes ${finalDamage} damage.`;
+
+        // Lightning effect: shocks defender causing them to lose turns
+        if (cardName.includes('LIGHTNING')) {
+          const skipTurns = cardName.includes('X2') ? 2 : 1;
+          newDefenderState.sleepTurns = (newDefenderState.sleepTurns || 0) + skipTurns;
+          log += ` Lightning shock! ${newDefenderState.name} loses ${skipTurns} turn(s)!`;
+        }
 
         // If Zombie is hit by Fire or Lightning -> removes 1 poison card
         if (isDefenderZombie && ['Fire', 'Lightning'].includes(attackElement)) {
@@ -383,15 +397,34 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       newAttackerState.hp = Math.min(newAttackerState.maxHp || 100, newAttackerState.hp + 20);
     }
   }
-  // 6. HEAL CARDS
-  else if (cardName.includes('HEAL') || cardName.includes('VITALITY')) {
+  // 6. HEAL CARDS (Strictly capped at maxHp - cannot overheal)
+  else if (cardName.includes('HEAL')) {
     let healAmount = 10;
-    if (cardName.includes('H20') || cardName.includes('V20')) healAmount = 20;
-    else if (cardName.includes('H30') || cardName.includes('V30')) healAmount = 30;
-    else if (cardName.includes('H40') || cardName.includes('V40')) healAmount = 40;
+    if (cardName.includes('H20')) healAmount = 20;
+    else if (cardName.includes('H30')) healAmount = 30;
+    else if (cardName.includes('H40')) healAmount = 40;
     
-    newAttackerState.hp = Math.min(200, newAttackerState.hp + healAmount);
-    log += ` Restored +${healAmount} HP. (Current HP: ${newAttackerState.hp})`;
+    const maxAllowed = newAttackerState.maxHp || 100;
+    if (newAttackerState.hp >= maxAllowed) {
+      log += ` HP already at maximum capacity (${maxAllowed} HP). Heal card used but cannot overheal.`;
+    } else {
+      newAttackerState.hp = Math.min(maxAllowed, newAttackerState.hp + healAmount);
+      log += ` Restored +${healAmount} HP. (Current HP: ${newAttackerState.hp}/${maxAllowed})`;
+    }
+  }
+  // 6b. VITALITY GAIN CARDS (Increases maxHp and allows HP to exceed 100)
+  else if (cardName.includes('VITALITY')) {
+    let vitAmount = 10;
+    if (cardName.includes('V20')) {
+      if ((newAttackerState.level || 1) < 2) {
+        log += ` VITALITY GAIN V20 requires Character Level 2! (Current Level: ${newAttackerState.level || 1}).`;
+        return { newAttackerState, newDefenderState, log };
+      }
+      vitAmount = 20;
+    }
+    newAttackerState.maxHp = (newAttackerState.maxHp || 100) + vitAmount;
+    newAttackerState.hp += vitAmount;
+    log += ` Vitality expanded Max HP by +${vitAmount}! (Current HP: ${newAttackerState.hp}/${newAttackerState.maxHp})`;
   }
   // 7. SHIELD CARDS
   else if (cardName.includes('SHIELD')) {
@@ -406,6 +439,20 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   else if (actionCard.type === 'DEFENSE') {
     newAttackerState.shield = (newAttackerState.shield || 0) + 15;
     log += ` Fortified defense (+15 temporary barrier).`;
+  }
+  // 9. SLEEPY CARDS
+  else if (cardName.includes('SLEEPY')) {
+    const sleepRounds = cardName.includes('X2') ? 2 : 1;
+    if (newDefenderState) {
+      newDefenderState.sleepTurns = (newDefenderState.sleepTurns || 0) + sleepRounds;
+      log += ` 💤 Put ${newDefenderState.name} to sleep for ${sleepRounds} turn(s)!`;
+    }
+  }
+  // 10. VISION CARDS
+  else if (cardName.includes('VISION')) {
+    if (newDefenderState) {
+      log += ` 👁️ Vision activated! Revealing ${newDefenderState.name}'s Action Cards for 15 seconds.`;
+    }
   }
 
   // Zombie State Transition Check

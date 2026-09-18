@@ -28,7 +28,7 @@ export const CHAT_AVATARS = {
   },
   bee: {
     id: 'bee',
-    name: 'Zabina "Bee" Sole',
+    name: 'Zabina "Bee" Solé',
     shortName: 'Bee',
     subtitle: 'Queen of the Hive',
     element: 'Lightning',

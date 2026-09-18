@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Swords, Plus, Minus, ArrowLeft, RotateCw, RotateCcw,
   Crown, X, ChevronDown, ChevronUp, Users, Info, GripVertical, Edit2,
-  Settings, Shield
+  Settings, Shield, Dices
 } from 'lucide-react';
 import { APP_CONFIG } from '../../config';
 import { CHARACTERS, getAssetUrl } from '../data/characters';
@@ -53,6 +53,31 @@ export default function GameSetup({ onStartGame, onBack }) {
     setDraggedIdx(null);
   };
   const [startingPlayerIndex, setStartingPlayerIndex] = useState(0);
+  const [firstPlayerRolls, setFirstPlayerRolls] = useState(null);
+  const [isRollingFirst, setIsRollingFirst] = useState(false);
+
+  const handleRollForFirstPlayer = () => {
+    soundFX.playDiceRoll();
+    setIsRollingFirst(true);
+    setTimeout(() => {
+      let rolls = {};
+      let highestRoll = -1;
+      let winningIdx = 0;
+      players.forEach((p, idx) => {
+        const d1 = Math.floor(Math.random() * 6) + 1;
+        const d2 = Math.floor(Math.random() * 6) + 1;
+        const total = d1 + d2;
+        rolls[idx] = { d1, d2, total };
+        if (total > highestRoll) {
+          highestRoll = total;
+          winningIdx = idx;
+        }
+      });
+      setFirstPlayerRolls(rolls);
+      setStartingPlayerIndex(winningIdx);
+      setIsRollingFirst(false);
+    }, 800);
+  };
   const [turnDirection, setTurnDirection] = useState('clockwise');
   const [selectedDeckProfile, setSelectedDeckProfile] = useState('Chynaman');
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
@@ -335,7 +360,44 @@ export default function GameSetup({ onStartGame, onBack }) {
           <div className="setup-col-right">
             {/* Starting Player Selector */}
             <div className="setup-box-block">
-              <span className="setup-section-label">STARTING PLAYER</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span className="setup-section-label" style={{ margin: 0 }}>STARTING PLAYER</span>
+                <button
+                  onClick={handleRollForFirstPlayer}
+                  disabled={isRollingFirst}
+                  style={{
+                    background: isRollingFirst ? 'rgba(0, 240, 255, 0.3)' : 'rgba(0, 240, 255, 0.15)',
+                    border: '1.5px solid var(--neon-cyan)',
+                    color: 'var(--neon-cyan)',
+                    borderRadius: '8px',
+                    padding: '4px 10px',
+                    fontSize: '0.78rem',
+                    fontWeight: 'bold',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    cursor: isRollingFirst ? 'wait' : 'pointer',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 0 10px rgba(0, 240, 255, 0.2)'
+                  }}
+                  title="Roll 2 dice for each player to decide who goes first per official rules"
+                >
+                  <Dices size={14} className={isRollingFirst ? 'animate-spin' : ''} />
+                  <span>{isRollingFirst ? 'ROLLING 2 DICE...' : 'ROLL 2 DICE TO DECIDE'}</span>
+                </button>
+              </div>
+
+              {firstPlayerRolls && (
+                <div style={{ background: 'rgba(0, 240, 255, 0.08)', border: '1px solid rgba(0, 240, 255, 0.3)', borderRadius: '8px', padding: '6px 10px', marginBottom: '10px', fontSize: '0.75rem', display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+                  <span style={{ color: 'var(--neon-gold)', fontWeight: 'bold' }}>🎲 Dice Roll-Off:</span>
+                  {players.map((p, i) => (
+                    <span key={i} style={{ color: i === startingPlayerIndex ? '#39ff14' : 'rgba(255,255,255,0.7)', fontWeight: i === startingPlayerIndex ? 'bold' : 'normal' }}>
+                      P{i + 1} ({firstPlayerRolls[i]?.d1}+{firstPlayerRolls[i]?.d2}={firstPlayerRolls[i]?.total}) {i === startingPlayerIndex ? '👑 Winner!' : ''}
+                    </span>
+                  ))}
+                </div>
+              )}
+
               <div className="starting-player-dropdown-box">
                 <div className="starting-player-selected">
                   <div className={`player-num-pill pill-${startingPlayerIndex + 1}`}>
