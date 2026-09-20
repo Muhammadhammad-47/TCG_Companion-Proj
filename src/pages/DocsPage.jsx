@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Shield, Copy, Check, Server, Key, Terminal, Code2,
@@ -14,6 +14,27 @@ export default function DocsPage() {
   const [copiedKey, setCopiedKey] = useState('');
   const [searchFilter, setSearchFilter] = useState('');
   const mainScrollRef = useRef(null);
+
+  // Lock landscape orientation on mobile
+  useEffect(() => {
+    try {
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(() => {});
+      }
+    } catch (e) {}
+  }, []);
+
+  const LandscapeOverlay = () => (
+    <div className="rotate-device-overlay">
+      <div className="rotate-content">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="rotate-icon">
+          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.21l5.6 5.6"/>
+        </svg>
+        <h2>Please Rotate Your Device</h2>
+        <p>The Attention TCG Developer Docs are optimized for landscape mode.</p>
+      </div>
+    </div>
+  );
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://wyraulajgkonsukrtcvq.supabase.co';
   const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
@@ -406,17 +427,21 @@ curl -X POST '${supabaseUrl}/rest/v1/user_questions' \\
   };
 
   return (
-    <div
-      style={{
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        background: '#040816',
-        color: '#f8fafc',
-        fontFamily: 'var(--font-sub, "Outfit", sans-serif)',
-        overflow: 'hidden'
-      }}
-    >
+    <>
+      <LandscapeOverlay />
+      <div className="webgl-canvas-frame landscape-mode" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'hidden' }}>
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            background: '#040816',
+            color: '#f8fafc',
+            fontFamily: 'var(--font-sub, "Outfit", sans-serif)',
+            overflow: 'hidden'
+          }}
+        >
       <style>{`
         /* Custom sleek cyberpunk scrollbars */
         ::-webkit-scrollbar {
@@ -1038,5 +1063,7 @@ Content-Type: application/json
         </main>
       </div>
     </div>
+  </div>
+</>
   );
 }

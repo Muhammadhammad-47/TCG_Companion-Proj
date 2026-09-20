@@ -694,15 +694,14 @@ export default function KontrolaArena() {
   // ==========================================
   const handleCreateMatch = async () => {
     playClick();
-    if (!playerName.trim()) {
-      setError('Please enter your warrior name first.');
-      return;
-    }
+    const finalName = (playerName || userProfile?.username || currentUser?.user_metadata?.username || 'Warrior').trim();
+    if (playerName !== finalName) setPlayerName(finalName);
+
     try {
       const newMatchId = generateRoomCode();
       const initialState = await createMatch(newMatchId, playerId, selectedCharacter);
       initialState.isPremium = isPremium;
-      initialState.playerNames = { [playerId]: playerName.trim() };
+      initialState.playerNames = { [playerId]: finalName };
 
       setMatchId(newMatchId);
       setGameState(initialState);
@@ -713,7 +712,7 @@ export default function KontrolaArena() {
       // Advertise room immediately to global lobby
       advertiseRoom({
         roomCode: newMatchId,
-        hostName: playerName.trim(),
+        hostName: finalName,
         hostPlayerId: playerId,
         playersCount: 1,
         maxPlayers: 7,
@@ -726,10 +725,9 @@ export default function KontrolaArena() {
 
   const handleJoinByCode = async (codeToJoin = matchId) => {
     playClick();
-    if (!playerName.trim()) {
-      setError('Please enter your warrior name first.');
-      return;
-    }
+    const finalName = (playerName || userProfile?.username || currentUser?.user_metadata?.username || 'Warrior').trim();
+    if (playerName !== finalName) setPlayerName(finalName);
+
     if (!codeToJoin) {
       setError('Please provide a valid 6-character room code.');
       return;
@@ -742,7 +740,7 @@ export default function KontrolaArena() {
       setIsJoining(true); // Triggers requestJoin inside useEffect once channel connects
 
       const tempState = await joinMatch(cleanId, playerId, selectedCharacter);
-      tempState.playerNames = { [playerId]: playerName.trim() };
+      tempState.playerNames = { [playerId]: finalName };
       setGameState(tempState);
       setError(null);
     } catch (err) {

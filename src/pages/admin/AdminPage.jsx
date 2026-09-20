@@ -77,6 +77,27 @@ export default function AdminPage() {
   const [questionFilter, setQuestionFilter] = useState('all');
   const [promotedSuccess, setPromotedSuccess] = useState('');
 
+  // Lock landscape orientation on mobile
+  useEffect(() => {
+    try {
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(() => {});
+      }
+    } catch (e) {}
+  }, []);
+
+  const LandscapeOverlay = () => (
+    <div className="rotate-device-overlay">
+      <div className="rotate-content">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="rotate-icon">
+          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.21l5.6 5.6"/>
+        </svg>
+        <h2>Please Rotate Your Device</h2>
+        <p>The Attention TCG Command Deck is optimized for landscape mode.</p>
+      </div>
+    </div>
+  );
+
   // Load Admin Session on Mount
   useEffect(() => {
     let isMounted = true;
@@ -325,28 +346,30 @@ export default function AdminPage() {
   // =========================================================================
   if (!isAdmin) {
     return (
-      <div
-        style={{
-          width: '100vw',
-          height: '100vh',
-          minHeight: '100vh',
-          background: 'radial-gradient(circle at 50% 20%, #111a36 0%, #080d1e 60%, #040710 100%)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '20px',
-          boxSizing: 'border-box',
-          fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
-          position: 'relative',
-          overflow: 'hidden'
-        }}
-      >
-        <div className="menu-bg-elements" style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
-          <div className="neon-streak-red" style={{ opacity: 0.4 }}></div>
-          <div className="neon-streak-blue" style={{ opacity: 0.4 }}></div>
-          <div className="subtle-watermark-card left-wm" style={{ opacity: 0.3 }}></div>
-          <div className="subtle-watermark-card right-wm" style={{ opacity: 0.3 }}></div>
-        </div>
+      <>
+        <LandscapeOverlay />
+        <div className="webgl-canvas-frame landscape-mode" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'hidden' }}>
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              background: 'radial-gradient(circle at 50% 20%, #111a36 0%, #080d1e 60%, #040710 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '20px',
+              boxSizing: 'border-box',
+              fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+          >
+            <div className="menu-bg-elements" style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
+              <div className="neon-streak-red" style={{ opacity: 0.4 }}></div>
+              <div className="neon-streak-blue" style={{ opacity: 0.4 }}></div>
+              <div className="subtle-watermark-card left-wm" style={{ opacity: 0.3 }}></div>
+              <div className="subtle-watermark-card right-wm" style={{ opacity: 0.3 }}></div>
+            </div>
 
         <div
           style={{
@@ -494,7 +517,9 @@ export default function AdminPage() {
           </div>
         </div>
       </div>
-    );
+    </div>
+  </>
+);
   }
 
   // =========================================================================
@@ -518,21 +543,23 @@ export default function AdminPage() {
   });
 
   return (
-    <div
-      style={{
-        width: '100vw',
-        height: '100vh',
-        minHeight: '100vh',
-        background: 'radial-gradient(circle at 50% 20%, #111a36 0%, #080d1e 60%, #040710 100%)',
-        color: 'var(--text-main, #f8fafc)',
-        fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
-        position: 'relative',
-        overflowX: 'hidden',
-        overflowY: 'auto',
-        boxSizing: 'border-box',
-        paddingBottom: '50px'
-      }}
-    >
+    <>
+      <LandscapeOverlay />
+      <div className="webgl-canvas-frame landscape-mode" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'hidden' }}>
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            background: 'radial-gradient(circle at 50% 20%, #111a36 0%, #080d1e 60%, #040710 100%)',
+            color: 'var(--text-main, #f8fafc)',
+            fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
+            position: 'relative',
+            overflowX: 'hidden',
+            overflowY: 'auto',
+            boxSizing: 'border-box',
+            paddingBottom: '50px'
+          }}
+        >
       <style>{`
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: rgba(3, 7, 18, 0.95); }
@@ -1478,6 +1505,8 @@ export default function AdminPage() {
         </div>
       )}
 
-    </div>
+        </div>
+      </div>
+    </>
   );
 }
