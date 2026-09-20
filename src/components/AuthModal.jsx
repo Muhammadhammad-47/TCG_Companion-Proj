@@ -52,7 +52,11 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
         setSuccessMsg('Password recovery email sent! Check your inbox to reset your password.');
       }
     } catch (err) {
-      setErrorMsg(err.message || 'Authentication failed. Please check your credentials.');
+      if (err?.status === 429 || (err?.message && (err.message.includes('429') || err.message.toLowerCase().includes('rate limit')))) {
+        setErrorMsg('Too many attempts from this IP. For security, please wait 60 seconds before trying again.');
+      } else {
+        setErrorMsg(err.message || 'Authentication failed. Please check your credentials.');
+      }
     } finally {
       setLoading(false);
     }
@@ -275,6 +279,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="e.g. BlazingTiger"
+                  autoComplete="username"
                   required
                   style={{
                     width: '100%',
@@ -304,6 +309,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="warrior@attentiontcg.com"
+                autoComplete="email"
                 required
                 style={{
                   width: '100%',
@@ -352,6 +358,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
+                  autoComplete={authMode === 'signup' ? 'new-password' : 'current-password'}
                   required
                   style={{
                     width: '100%',

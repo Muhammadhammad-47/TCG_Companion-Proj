@@ -362,7 +362,8 @@ export default function AdminPage() {
                 type="email"
                 value={adminEmail}
                 onChange={(e) => setAdminEmail(e.target.value)}
-                placeholder="Admin@TCgcomapnion.com"
+                placeholder="admin@tcgcompanion.com"
+                autoComplete="email"
                 required
                 style={{
                   width: '100%',
@@ -387,7 +388,8 @@ export default function AdminPage() {
                 type="password"
                 value={adminPassword}
                 onChange={(e) => setAdminPassword(e.target.value)}
-                placeholder="admin@TcgCompanion"
+                placeholder="••••••••"
+                autoComplete="current-password"
                 required
                 style={{
                   width: '100%',
