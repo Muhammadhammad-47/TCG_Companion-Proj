@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
-import { Send, X, Bot, Swords, ArrowLeft } from 'lucide-react';
+import { Send, X, Bot, Swords, ArrowLeft, ThumbsUp, ThumbsDown, User, Shield, LogOut, Check } from 'lucide-react';
 import axios from 'axios';
 import { Groq } from 'groq-sdk';
 import './App.css';
@@ -13,6 +13,11 @@ import { CHAT_AVATARS, getViseme, getVisemeFileForChar, preloadCharacterVisemes 
 import { AvatarDropdown } from './components/AvatarDropdown.jsx';
 import { RULES_KNOWLEDGE } from './game/data/rulesKnowledge.js';
 import KontrolaArena from './game/kontrola/KontrolaArena.jsx';
+import { AuthModal } from './components/AuthModal.jsx';
+import AdminPage from './pages/admin/AdminPage.jsx';
+import DocsPage from './pages/DocsPage.jsx';
+import { authService } from './services/authService.js';
+import { knowledgeService } from './services/knowledgeService.js';
 
 const Avatar = ({ characterId, isSpeaking, currentVisemeFile }) => {
   const avatarConfig = CHAT_AVATARS[characterId] || CHAT_AVATARS.chyna;
@@ -171,6 +176,49 @@ export function Chat({ onBack, isOverlay = false }) {
     } catch (e) { }
     return getVisemeFileForChar('chyna', 'CLOSED');
   });
+  const [activeRules, setActiveRules] = useState(RULES_KNOWLEDGE);
+  const [lastQuestionId, setLastQuestionId] = useState(null);
+  const [userFeedback, setUserFeedback] = useState(null);
+  const [showCorrectionModal, setShowCorrectionModal] = useState(false);
+  const [suggestedAnswer, setSuggestedAnswer] = useState('');
+  const [feedbackSuccessMsg, setFeedbackSuccessMsg] = useState('');
+  const [currentUser, setCurrentUser] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
+
+  useEffect(() => {
+    // Load dynamic knowledge base from Supabase with instant fallback
+    knowledgeService.fetchRulesKnowledge().then((loaded) => {
+      if (loaded && loaded.length > 0) setActiveRules(loaded);
+    });
+
+    // Check user session
+    authService.getCurrentUser().then((user) => {
+      if (user) {
+        setCurrentUser(user);
+        authService.getProfile(user.id).then((prof) => setUserProfile(prof));
+      }
+    });
+  }, []);
+
+  const handleRateAnswer = async (rating) => {
+    setUserFeedback(rating);
+    if (lastQuestionId) {
+      await knowledgeService.submitFeedback(lastQuestionId, rating);
+      setFeedbackSuccessMsg('Thank you for rating!');
+      setTimeout(() => setFeedbackSuccessMsg(''), 2500);
+    }
+  };
+
+  const handleSubmitCorrection = async (e) => {
+    e.preventDefault();
+    if (!suggestedAnswer.trim() || !lastQuestionId) return;
+    setUserFeedback('unhelpful');
+    await knowledgeService.submitFeedback(lastQuestionId, 'unhelpful', suggestedAnswer.trim());
+    setShowCorrectionModal(false);
+    setSuggestedAnswer('');
+    setFeedbackSuccessMsg('Correction submitted to Game Masters for review!');
+    setTimeout(() => setFeedbackSuccessMsg(''), 3000);
+  };
 
   const handleSelectAvatar = (newAvatarId) => {
     if (newAvatarId === selectedAvatarId) return;
@@ -372,12 +420,14 @@ export function Chat({ onBack, isOverlay = false }) {
     let bestKnowledge = null;
     let highestScore = 0;
 
-    for (const item of RULES_KNOWLEDGE) {
+    for (const item of activeRules) {
       let score = 0;
-      for (const k of item.keywords) {
-        if (qLower.includes(k)) {
+      const kwList = Array.isArray(item.keywords) ? item.keywords : [];
+      for (const k of kwList) {
+        const kStr = String(k || '').toLowerCase();
+        if (kStr && qLower.includes(kStr)) {
           // Exact phrase or multi-word keyword gets much higher weight
-          score += k.includes(' ') ? 5 : (k.length >= 5 ? 3 : 2);
+          score += kStr.includes(' ') ? 5 : (kStr.length >= 5 ? 3 : 2);
         }
       }
       if (score > highestScore) {
@@ -387,7 +437,8 @@ export function Chat({ onBack, isOverlay = false }) {
     }
 
     if (bestKnowledge && highestScore >= 2) {
-      return `${bestKnowledge.shortAnswer}\n\n${bestKnowledge.details}`;
+      const shortAns = bestKnowledge.shortAnswer || bestKnowledge.short_answer || '';
+      return `${shortAns}\n\n${bestKnowledge.details}`;
     }
 
     // 6. Fallback Rulebook / AI_Breakdowns Paragraph Search (with Stopword filtering)
@@ -506,7 +557,20 @@ export function Chat({ onBack, isOverlay = false }) {
 
       setAnswer(finalAns);
       setChatHistory(prev => [...prev, { q: query, a: finalAns }]);
-      // DO NOT setStatus('Answer received.') here, we want the dots to stay until speech actually starts.
+      setUserFeedback(null);
+      setSuggestedAnswer('');
+
+      // Background question logging to Supabase (fire-and-forget)
+      knowledgeService.logUserQuestion({
+        userId: currentUser?.id || null,
+        userName: userProfile?.username || 'Guest Warrior',
+        questionText: query,
+        aiAnswer: finalAns,
+        matchedTopic: 'Attention TCG Rules',
+        appSource: 'companion_hub'
+      }).then((qId) => {
+        if (qId) setLastQuestionId(qId);
+      });
 
       const cleanForTTS = (text) => text
         .replace(/[【】•·*]/g, ' ')        // remove special brackets, bullets, and asterisks
@@ -946,6 +1010,139 @@ export function Chat({ onBack, isOverlay = false }) {
                   {isSpeaking ? displayedAnswer : answer}
                   {isSpeaking && <span className="cursor-blink">|</span>}
                 </div>
+
+                {/* Question Feedback Controls */}
+                {answer && !isSpeaking && (
+                  <div style={{
+                    marginTop: '12px',
+                    paddingTop: '8px',
+                    borderTop: '1px solid rgba(255,255,255,0.12)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '8px'
+                  }}>
+                    <span style={{ fontSize: '0.74rem', color: feedbackSuccessMsg ? '#39ff14' : 'rgba(255,255,255,0.5)', fontWeight: feedbackSuccessMsg ? 'bold' : 'normal' }}>
+                      {feedbackSuccessMsg || 'Was this rule accurate?'}
+                    </span>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button
+                        onClick={() => handleRateAnswer('helpful')}
+                        disabled={userFeedback === 'helpful'}
+                        style={{
+                          background: userFeedback === 'helpful' ? 'rgba(57, 255, 20, 0.25)' : 'rgba(255, 255, 255, 0.06)',
+                          border: userFeedback === 'helpful' ? '1px solid #39ff14' : '1px solid rgba(255, 255, 255, 0.15)',
+                          color: userFeedback === 'helpful' ? '#39ff14' : 'rgba(255, 255, 255, 0.7)',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          fontSize: '0.75rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        <ThumbsUp size={12} /> {userFeedback === 'helpful' ? 'Helpful ✓' : 'Yes'}
+                      </button>
+                      <button
+                        onClick={() => setShowCorrectionModal(true)}
+                        style={{
+                          background: userFeedback === 'unhelpful' ? 'rgba(255, 51, 102, 0.25)' : 'rgba(255, 255, 255, 0.06)',
+                          border: userFeedback === 'unhelpful' ? '1px solid var(--neon-crimson)' : '1px solid rgba(255, 255, 255, 0.15)',
+                          color: userFeedback === 'unhelpful' ? '#ff6688' : 'rgba(255, 255, 255, 0.7)',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          fontSize: '0.75rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        <ThumbsDown size={12} /> Suggest Fix
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* User Rule Correction Modal */}
+          {showCorrectionModal && (
+            <div
+              style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'rgba(2, 6, 18, 0.85)',
+                backdropFilter: 'blur(6px)',
+                zIndex: 999999,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '20px'
+              }}
+              onClick={() => setShowCorrectionModal(false)}
+            >
+              <div
+                style={{
+                  width: '100%',
+                  maxWidth: '460px',
+                  background: '#0a1428',
+                  border: '2px solid var(--neon-gold)',
+                  borderRadius: '16px',
+                  padding: '24px',
+                  boxShadow: '0 0 40px rgba(255, 215, 0, 0.25)',
+                  fontFamily: 'Rajdhani, sans-serif'
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 style={{ margin: '0 0 8px 0', color: 'var(--neon-gold)', fontSize: '1.4rem' }}>
+                  ✍️ SUGGEST OFFICIAL RULE CORRECTION
+                </h3>
+                <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.88rem', margin: '0 0 14px 0' }}>
+                  Help make Attention TCG rules airtight. What should the verified answer be?
+                </p>
+
+                <form onSubmit={handleSubmitCorrection}>
+                  <textarea
+                    rows={4}
+                    value={suggestedAnswer}
+                    onChange={(e) => setSuggestedAnswer(e.target.value)}
+                    placeholder="Enter the official rule explanation..."
+                    required
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      padding: '10px 12px',
+                      background: 'rgba(0,0,0,0.5)',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      borderRadius: '8px',
+                      color: '#fff',
+                      fontSize: '0.9rem',
+                      fontFamily: 'inherit',
+                      resize: 'vertical',
+                      marginBottom: '14px'
+                    }}
+                  />
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowCorrectionModal(false)}
+                      style={{ padding: '8px 14px', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', borderRadius: '6px', cursor: 'pointer' }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      style={{ padding: '8px 18px', background: 'var(--neon-gold)', border: 'none', color: '#000', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
+                    >
+                      Submit to Game Masters
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
           )}
@@ -1013,6 +1210,9 @@ export function Chat({ onBack, isOverlay = false }) {
 
 export function Hub() {
   const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   React.useLayoutEffect(() => {
     try {
@@ -1021,6 +1221,28 @@ export function Hub() {
       }
     } catch (e) { }
   }, []);
+
+  useEffect(() => {
+    authService.getCurrentUser().then((user) => {
+      if (user) {
+        setCurrentUser(user);
+        authService.getProfile(user.id).then((prof) => setUserProfile(prof));
+      }
+    });
+
+    const { data: { subscription } } = authService.onAuthStateChange((event, session, profile) => {
+      setCurrentUser(session?.user || null);
+      setUserProfile(profile);
+    });
+
+    return () => subscription?.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await authService.signOut();
+    setCurrentUser(null);
+    setUserProfile(null);
+  };
 
   const PortraitOverlay = () => (
     <div className="force-portrait-overlay">
@@ -1035,7 +1257,93 @@ export function Hub() {
       <PortraitOverlay />
       <div className="webgl-canvas-frame portrait-mode" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
         <DynamicScaleWrapper>
-          <div className="webgl-screen menu-screen" style={{ justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%', padding: '0 40px', boxSizing: 'border-box' }}>
+          <div className="webgl-screen menu-screen" style={{ justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%', padding: '0 40px', boxSizing: 'border-box', position: 'relative' }}>
+            
+            {/* Top Auth / Profile Bar */}
+            <div style={{ position: 'absolute', top: '24px', right: '32px', zIndex: 100, display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {currentUser ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(8, 16, 36, 0.85)', padding: '6px 14px', borderRadius: '12px', border: '1px solid rgba(0, 240, 255, 0.3)', backdropFilter: 'blur(8px)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <span style={{ fontSize: '1rem' }}>💎</span>
+                    <span style={{ fontWeight: 'bold', color: 'var(--neon-cyan)', fontSize: '0.85rem' }}>{userProfile?.crystals_collected || 0}</span>
+                  </div>
+                  <div style={{ borderLeft: '1px solid rgba(255,255,255,0.2)', paddingLeft: '8px', fontSize: '0.88rem', fontWeight: 'bold', color: '#fff' }}>
+                    {userProfile?.username || 'Warrior'}
+                  </div>
+                  {userProfile?.is_admin && (
+                    <button
+                      onClick={() => navigate('/admin')}
+                      style={{
+                        background: 'rgba(255, 215, 0, 0.15)',
+                        border: '1px solid var(--neon-gold)',
+                        color: 'var(--neon-gold)',
+                        borderRadius: '6px',
+                        padding: '4px 8px',
+                        fontSize: '0.75rem',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      <Shield size={12} /> ADMIN
+                    </button>
+                  )}
+                  <button
+                    onClick={handleLogout}
+                    style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
+                    title="Sign Out"
+                  >
+                    <LogOut size={16} />
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={() => setIsAuthModalOpen(true)}
+                    style={{
+                      background: 'rgba(0, 240, 255, 0.15)',
+                      border: '1.5px solid var(--neon-cyan)',
+                      color: 'var(--neon-cyan)',
+                      borderRadius: '10px',
+                      padding: '8px 16px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontFamily: 'Rajdhani, sans-serif',
+                      fontSize: '0.95rem',
+                      boxShadow: '0 0 15px rgba(0, 240, 255, 0.25)'
+                    }}
+                  >
+                    <User size={16} />
+                    <span>WARRIOR LOGIN</span>
+                  </button>
+                  <button
+                    onClick={() => navigate('/admin')}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.06)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      borderRadius: '10px',
+                      padding: '8px 12px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '0.85rem'
+                    }}
+                    title="Admin Portal"
+                  >
+                    <Shield size={14} /> Admin
+                  </button>
+                </div>
+              )}
+            </div>
+
             <div className="menu-bg-elements" style={{ width: '100%', height: '100%' }}>
               <div className="neon-streak-red"></div>
               <div className="neon-streak-blue"></div>
@@ -1102,6 +1410,19 @@ export function Hub() {
           </div>
         </DynamicScaleWrapper>
       </div>
+
+      {/* Player Auth Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onAuthSuccess={async (u) => {
+          setCurrentUser(u);
+          if (u) {
+            const prof = await authService.getProfile(u.id);
+            setUserProfile(prof);
+          }
+        }}
+      />
     </>
   );
 }
@@ -1114,6 +1435,10 @@ function App() {
       <Route path="/chat" element={<Chat onBack={() => navigate('/')} />} />
       <Route path="/game" element={<GamePage />} />
       <Route path="/kontrola" element={<KontrolaArena />} />
+      <Route path="/admin" element={<AdminPage />} />
+      <Route path="/admin/*" element={<AdminPage />} />
+      <Route path="/docs" element={<DocsPage />} />
+      <Route path="/docs/*" element={<DocsPage />} />
     </Routes>
   );
 }
