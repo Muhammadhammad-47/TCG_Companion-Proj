@@ -273,12 +273,15 @@ export default function AdminPage() {
     return (
       <div
         style={{
+          width: '100vw',
+          height: '100vh',
           minHeight: '100vh',
           background: 'radial-gradient(circle at 50% 20%, #0d1a38 0%, #050a18 70%, #02040c 100%)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           padding: '20px',
+          boxSizing: 'border-box',
           fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
           position: 'relative',
           overflow: 'hidden'
@@ -362,7 +365,7 @@ export default function AdminPage() {
                 type="email"
                 value={adminEmail}
                 onChange={(e) => setAdminEmail(e.target.value)}
-                placeholder="admin@tcgcompanion.com"
+                placeholder="Enter administrator email..."
                 autoComplete="email"
                 required
                 style={{
@@ -388,7 +391,7 @@ export default function AdminPage() {
                 type="password"
                 value={adminPassword}
                 onChange={(e) => setAdminPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="Enter password..."
                 autoComplete="current-password"
                 required
                 style={{
@@ -469,12 +472,16 @@ export default function AdminPage() {
   return (
     <div
       style={{
+        width: '100vw',
+        height: '100vh',
         minHeight: '100vh',
         background: 'radial-gradient(circle at 50% 20%, #0d1a38 0%, #050a18 70%, #02040c 100%)',
         color: 'var(--text-main, #f8fafc)',
         fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
         position: 'relative',
         overflowX: 'hidden',
+        overflowY: 'auto',
+        boxSizing: 'border-box',
         paddingBottom: '50px'
       }}
     >
