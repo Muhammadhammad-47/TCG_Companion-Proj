@@ -277,5 +277,226 @@ export const knowledgeService = {
     const createdRule = await this.createRule(ruleData);
     await this.updateQuestionStatus(questionId, 'approved_for_kb', ruleData.shortAnswer);
     return createdRule;
+  },
+
+  // =========================================================================
+  // DOCUMENT-BASED KNOWLEDGE BASE (AI_Breakdowns.txt & Custom Expansions)
+  // =========================================================================
+
+  async fetchMasterDocumentFromDisk() {
+    const baseUrl = import.meta.env.BASE_URL || '/';
+    const cleanBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+    const url = `${cleanBase}Knowledge Base/AI_Breakdowns.txt`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status} loading ${url}`);
+    const text = await res.text();
+    return text;
+  },
+
+  async fetchDocuments() {
+    try {
+      const stored = localStorage.getItem('tcg_knowledge_documents_v2');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.warn('Failed parsing stored knowledge documents:', e);
+    }
+
+    // Default: Load local master document public/Knowledge Base/AI_Breakdowns.txt
+    try {
+      const masterContent = await this.fetchMasterDocumentFromDisk();
+      const masterDoc = {
+        id: 'ai-breakdowns-master',
+        filename: 'AI_Breakdowns.txt',
+        title: 'Attention TCG Master Rulebook & AI Breakdowns',
+        category: 'Master Rulebook',
+        content: masterContent,
+        charCount: masterContent.length,
+        estimatedTokens: Math.ceil(masterContent.length / 4),
+        isMaster: true,
+        isActive: true,
+        updatedAt: new Date().toISOString()
+      };
+      localStorage.setItem('tcg_knowledge_documents_v2', JSON.stringify([masterDoc]));
+      return [masterDoc];
+    } catch (err) {
+      console.error('Failed to load initial AI_Breakdowns.txt from disk:', err);
+      return [{
+        id: 'ai-breakdowns-master',
+        filename: 'AI_Breakdowns.txt',
+        title: 'Attention TCG Master Rulebook & AI Breakdowns',
+        category: 'Master Rulebook',
+        content: '',
+        charCount: 0,
+        estimatedTokens: 0,
+        isMaster: true,
+        isActive: true,
+        updatedAt: new Date().toISOString()
+      }];
+    }
+  },
+
+  async saveDocument(docId, updates) {
+    const docs = await this.fetchDocuments();
+    const docIndex = docs.findIndex((d) => d.id === docId);
+    if (docIndex === -1) throw new Error(`Document with ID ${docId} not found.`);
+
+    const target = docs[docIndex];
+    const newContent = updates.content !== undefined ? updates.content : target.content;
+    const charCount = newContent.length;
+    const estimatedTokens = Math.ceil(charCount / 4);
+
+    const updatedDoc = {
+      ...target,
+      ...updates,
+      content: newContent,
+      charCount,
+      estimatedTokens,
+      updatedAt: new Date().toISOString()
+    };
+
+    docs[docIndex] = updatedDoc;
+    localStorage.setItem('tcg_knowledge_documents_v2', JSON.stringify(docs));
+    return updatedDoc;
+  },
+
+  async appendSectionToDocument(docId, { title, content, type = 'qa' }) {
+    const docs = await this.fetchDocuments();
+    const doc = docs.find((d) => d.id === docId);
+    if (!doc) throw new Error(`Document with ID ${docId} not found.`);
+
+    let addition = '';
+    if (type === 'qa') {
+      const q = title.trim().endsWith('?') ? title.trim() : `${title.trim()}?`;
+      addition = `\n\n${q}\n${content.trim()}\n`;
+    } else {
+      addition = `\n\n${title.trim().toUpperCase()}\n\n${content.trim()}\n`;
+    }
+
+    const newContent = (doc.content || '').trimEnd() + addition;
+    return this.saveDocument(docId, { content: newContent });
+  },
+
+  async createDocument({ filename, title, category = 'Custom Expansion', content = '' }) {
+    const docs = await this.fetchDocuments();
+    const cleanName = filename.trim().replace(/[^a-zA-Z0-9_\-\.]/g, '_');
+    const safeFilename = cleanName.endsWith('.txt') ? cleanName : `${cleanName}.txt`;
+    const charCount = content.length;
+    const newDoc = {
+      id: `doc-${Date.now()}`,
+      filename: safeFilename,
+      title: (title || safeFilename).trim(),
+      category: (category || 'General').trim(),
+      content,
+      charCount,
+      estimatedTokens: Math.ceil(charCount / 4),
+      isMaster: false,
+      isActive: true,
+      updatedAt: new Date().toISOString()
+    };
+
+    const updatedList = [...docs, newDoc];
+    localStorage.setItem('tcg_knowledge_documents_v2', JSON.stringify(updatedList));
+    return newDoc;
+  },
+
+  async deleteDocument(docId) {
+    const docs = await this.fetchDocuments();
+    const target = docs.find((d) => d.id === docId);
+    if (!target) throw new Error('Document not found');
+    if (target.isMaster || target.id === 'ai-breakdowns-master') {
+      throw new Error('Master document AI_Breakdowns.txt cannot be deleted. You can reset it to original default instead.');
+    }
+    const filtered = docs.filter((d) => d.id !== docId);
+    localStorage.setItem('tcg_knowledge_documents_v2', JSON.stringify(filtered));
+    return true;
+  },
+
+  async resetMasterDocument() {
+    const masterContent = await this.fetchMasterDocumentFromDisk();
+    const docs = await this.fetchDocuments();
+    const masterIndex = docs.findIndex((d) => d.isMaster || d.id === 'ai-breakdowns-master');
+    const masterDoc = {
+      id: 'ai-breakdowns-master',
+      filename: 'AI_Breakdowns.txt',
+      title: 'Attention TCG Master Rulebook & AI Breakdowns',
+      category: 'Master Rulebook',
+      content: masterContent,
+      charCount: masterContent.length,
+      estimatedTokens: Math.ceil(masterContent.length / 4),
+      isMaster: true,
+      isActive: true,
+      updatedAt: new Date().toISOString()
+    };
+
+    if (masterIndex >= 0) {
+      docs[masterIndex] = masterDoc;
+    } else {
+      docs.unshift(masterDoc);
+    }
+    localStorage.setItem('tcg_knowledge_documents_v2', JSON.stringify(docs));
+    return masterDoc;
+  },
+
+  async loadActiveKnowledgeText() {
+    try {
+      const docs = await this.fetchDocuments();
+      const activeDocs = docs.filter((d) => d.isActive !== false);
+      if (activeDocs.length > 0) {
+        return activeDocs.map((d) => d.content).join('\n\n');
+      }
+    } catch (e) {
+      console.warn('Error loading active knowledge text:', e);
+    }
+    return this.fetchMasterDocumentFromDisk();
   }
 };
+
+// =========================================================================
+// GROQ RUBRIC LIMITS & METRICS CALCULATOR
+// =========================================================================
+export const GROQ_LIMITS = {
+  MODEL: 'openai/gpt-oss-120b',
+  MAX_CONTEXT_TOKENS: 32768,
+  MAX_CONTEXT_CHARS: 131072, // 32,768 tokens * 4 chars/token
+  SAFE_PROMPT_CHARS: 32768,  // 8,192 tokens safe single-turn prompt budget
+  RECOMMENDED_MAX_CHUNK_CHARS: 4000, // Safe maximum single-turn rule chunk (~1000 tokens)
+  WARNING_THRESHOLD_PERCENT: 80
+};
+
+export const calculateGroqMetrics = (text = '') => {
+  const safeText = typeof text === 'string' ? text : '';
+  const charCount = safeText.length;
+  const wordCount = safeText.trim() ? safeText.trim().split(/\s+/).length : 0;
+  const estimatedTokens = Math.ceil(charCount / 4);
+  const utilizationPercent = Math.min(100, Math.round((charCount / GROQ_LIMITS.MAX_CONTEXT_CHARS) * 100));
+
+  let status = 'SAFE'; // 'SAFE' | 'WARNING' | 'EXCEEDED'
+  let message = 'Within Groq context budget';
+
+  if (charCount > GROQ_LIMITS.MAX_CONTEXT_CHARS) {
+    status = 'EXCEEDED';
+    message = `Exceeds Groq context limit of ${GROQ_LIMITS.MAX_CONTEXT_CHARS.toLocaleString()} chars (${GROQ_LIMITS.MAX_CONTEXT_TOKENS.toLocaleString()} tokens)`;
+  } else if (charCount > GROQ_LIMITS.MAX_CONTEXT_CHARS * (GROQ_LIMITS.WARNING_THRESHOLD_PERCENT / 100)) {
+    status = 'WARNING';
+    message = `Approaching Groq context rubric threshold (>${GROQ_LIMITS.WARNING_THRESHOLD_PERCENT}%)`;
+  }
+
+  return {
+    charCount,
+    wordCount,
+    estimatedTokens,
+    utilizationPercent,
+    status,
+    message,
+    maxChars: GROQ_LIMITS.MAX_CONTEXT_CHARS,
+    maxTokens: GROQ_LIMITS.MAX_CONTEXT_TOKENS,
+    recommendedMaxChunkChars: GROQ_LIMITS.RECOMMENDED_MAX_CHUNK_CHARS,
+    model: GROQ_LIMITS.MODEL
+  };
+};
+

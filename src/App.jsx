@@ -297,10 +297,17 @@ export function Chat({ onBack, isOverlay = false }) {
   }, [selectedAvatarId]);
 
   useEffect(() => {
-    fetch(`${import.meta.env.BASE_URL}Knowledge Base/AI_Breakdowns.txt`)
-      .then(res => res.text())
-      .then(text => setDocumentText(text))
-      .catch(err => console.error("Could not load Knowledge Base/AI_Breakdowns.txt", err));
+    knowledgeService.loadActiveKnowledgeText()
+      .then(text => {
+        if (text) setDocumentText(text);
+      })
+      .catch(err => {
+        console.warn("Could not load knowledge text via knowledgeService, falling back to disk:", err);
+        fetch(`${import.meta.env.BASE_URL}Knowledge Base/AI_Breakdowns.txt`)
+          .then(res => res.text())
+          .then(text => setDocumentText(text))
+          .catch(e => console.error("Could not load Knowledge Base/AI_Breakdowns.txt", e));
+      });
   }, []);
   const streamTimer = useRef(null);
   const isCancelledRef = useRef(false);
