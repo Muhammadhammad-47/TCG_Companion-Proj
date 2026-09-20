@@ -1,19 +1,20 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Shield, Copy, Check, Server, Key, Terminal, Code2,
   Database, UserCheck, Sparkles, Flame, BookOpen, Layers, RefreshCw,
   Send, Trophy, Lock, HelpCircle, ChevronRight, Search, ExternalLink,
-  Info, AlertTriangle, CheckCircle2, FileText, Cpu, Smartphone, Globe
+  Info, AlertTriangle, CheckCircle2, FileText, Cpu, Smartphone, Globe,
+  FileCode, Play, Award, Zap
 } from 'lucide-react';
 
 export default function DocsPage() {
   const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState('overview');
+  // Dedicated page switching: 'overview' | 'auth' | 'player' | 'rules' | 'questions' | 'sdks'
+  const [activePage, setActivePage] = useState('overview');
   const [activeSdk, setActiveSdk] = useState('js');
   const [copiedKey, setCopiedKey] = useState('');
   const [searchFilter, setSearchFilter] = useState('');
-  const mainScrollRef = useRef(null);
 
   // Lock landscape orientation on mobile
   useEffect(() => {
@@ -45,84 +46,163 @@ export default function DocsPage() {
     setTimeout(() => setCopiedKey(''), 2500);
   };
 
-  const scrollTo = (id) => {
-    setActiveSection(id);
-    const element = document.getElementById(id);
-    if (element && mainScrollRef.current) {
-      const container = mainScrollRef.current;
-      const containerRect = container.getBoundingClientRect();
-      const elemRect = element.getBoundingClientRect();
-      const offsetTop = elemRect.top - containerRect.top + container.scrollTop - 24;
-      container.scrollTo({ top: offsetTop, behavior: 'smooth' });
-    }
-  };
-
-  // Syntax highlighting simulated tokens for JSON/Code
-  const HighlightedJson = ({ code }) => {
-    return (
+  // Syntax highlighting / Code Block
+  const CodeBlock = ({ code, label, copyId }) => (
+    <div style={{ background: '#020510', border: '1px solid rgba(255, 255, 255, 0.09)', borderRadius: '10px', padding: '14px', position: 'relative', marginTop: '10px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', paddingBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <span style={{ fontSize: '0.72rem', color: 'var(--neon-cyan, #00f0ff)', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+          {label || 'HTTP / JSON PAYLOAD'}
+        </span>
+        {copyId && (
+          <button
+            onClick={() => handleCopy(code, copyId)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: copiedKey === copyId ? '#39ff14' : 'rgba(255,255,255,0.55)',
+              cursor: 'pointer',
+              fontSize: '0.75rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              fontFamily: 'var(--font-sub, "Outfit", sans-serif)'
+            }}
+          >
+            {copiedKey === copyId ? <Check size={13} /> : <Copy size={13} />}
+            {copiedKey === copyId ? 'COPIED' : 'COPY'}
+          </button>
+        )}
+      </div>
       <pre
         style={{
           margin: 0,
           fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-          fontSize: '0.86rem',
-          lineHeight: '1.65',
+          fontSize: '0.84rem',
+          lineHeight: '1.6',
           color: '#e2e8f0',
           whiteSpace: 'pre-wrap',
-          wordBreak: 'break-word'
+          wordBreak: 'break-word',
+          maxHeight: '340px',
+          overflowY: 'auto'
         }}
       >
         {code}
       </pre>
-    );
+    </div>
+  );
+
+  // Minimal Table Component
+  const ParamTable = ({ headers = ['PARAMETER', 'TYPE', 'REQUIRED', 'DESCRIPTION'], rows = [] }) => (
+    <div style={{ background: 'rgba(5, 10, 24, 0.65)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '10px', overflow: 'hidden', margin: '12px 0 16px 0' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.86rem' }}>
+        <thead>
+          <tr style={{ background: 'rgba(10, 20, 45, 0.8)', borderBottom: '1px solid rgba(0, 240, 255, 0.2)', textAlign: 'left', color: 'var(--neon-cyan, #00f0ff)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', fontSize: '0.78rem', letterSpacing: '1px' }}>
+            {headers.map((h, i) => (
+              <th key={i} style={{ padding: '10px 14px' }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, rIdx) => (
+            <tr key={rIdx} style={{ borderBottom: rIdx < rows.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+              <td style={{ padding: '9px 14px', color: '#fff' }}><code>{row[0]}</code></td>
+              <td style={{ padding: '9px 14px', color: '#39ff14', fontSize: '0.8rem' }}>{row[1]}</td>
+              <td style={{ padding: '9px 14px', color: row[2] === 'Required' ? 'var(--neon-crimson, #ff3366)' : 'rgba(255,255,255,0.45)', fontSize: '0.8rem', fontWeight: row[2] === 'Required' ? 'bold' : 'normal' }}>
+                {row[2]}
+              </td>
+              <td style={{ padding: '9px 14px', color: '#94a3b8', fontSize: '0.84rem' }}>{row[3]}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  const methodBadge = (method) => {
+    switch (method) {
+      case 'GET':
+        return <span style={{ background: 'rgba(0, 240, 255, 0.15)', color: 'var(--neon-cyan, #00f0ff)', border: '1px solid rgba(0, 240, 255, 0.4)', padding: '2px 8px', borderRadius: '5px', fontSize: '0.72rem', fontWeight: 'bold' }}>GET</span>;
+      case 'POST':
+        return <span style={{ background: 'rgba(57, 255, 20, 0.15)', color: '#39ff14', border: '1px solid rgba(57, 255, 20, 0.4)', padding: '2px 8px', borderRadius: '5px', fontSize: '0.72rem', fontWeight: 'bold' }}>POST</span>;
+      case 'PATCH':
+        return <span style={{ background: 'rgba(255, 230, 0, 0.15)', color: 'var(--neon-gold, #ffe600)', border: '1px solid rgba(255, 230, 0, 0.4)', padding: '2px 8px', borderRadius: '5px', fontSize: '0.72rem', fontWeight: 'bold' }}>PATCH</span>;
+      default:
+        return null;
+    }
   };
 
-  const navGroups = [
+  // Dedicated Pages Configuration for the Left Sidebar
+  const docPages = [
     {
-      title: 'GETTING STARTED',
-      items: [
-        { id: 'overview', label: 'Architecture & Overview' },
-        { id: 'auth-headers', label: 'Headers & Security (RLS)' },
-        { id: 'project-config', label: 'Base URL & Project Keys' }
-      ]
+      id: 'overview',
+      title: 'Architecture & Security',
+      subtitle: 'Shared ecosystem, base host & RLS auth',
+      icon: Shield,
+      badge: 'Core'
     },
     {
-      title: 'WARRIOR IDENTITY & AUTH',
-      items: [
-        { id: 'auth-signup', label: 'Register Warrior (POST /signup)', method: 'POST' },
-        { id: 'auth-login', label: 'Warrior Login (POST /token)', method: 'POST' },
-        { id: 'auth-refresh', label: 'Refresh Session Token', method: 'POST' },
-        { id: 'auth-recover', label: 'Password Recovery (POST /recover)', method: 'POST' }
-      ]
+      id: 'auth',
+      title: 'Warrior Identity & Auth',
+      subtitle: 'Registration, tokens, password recovery',
+      icon: UserCheck,
+      badge: '4 Endpoints'
     },
     {
-      title: 'PLAYER DATA & MATCH SAVE',
-      items: [
-        { id: 'player-get', label: 'Get Player Profile & Stats', method: 'GET' },
-        { id: 'player-save', label: 'Save Match & Crystals', method: 'PATCH' },
-        { id: 'player-leaderboard', label: 'Global Hall of Fame', method: 'GET' }
-      ]
+      id: 'player',
+      title: 'Player Stats & Match Save',
+      subtitle: 'Profiles, crystals & global hall of fame',
+      icon: Trophy,
+      badge: '3 Endpoints'
     },
     {
-      title: 'RULES KNOWLEDGE ENGINE',
-      items: [
-        { id: 'rules-all', label: 'Query Active Game Rules', method: 'GET' },
-        { id: 'rules-category', label: 'Category & Keyword Filter', method: 'GET' }
-      ]
+      id: 'rules',
+      title: 'Rules Knowledge Engine',
+      subtitle: 'Live rules queries & keyword search',
+      icon: BookOpen,
+      badge: '2 Endpoints'
     },
     {
-      title: 'AI CHAT & LEARNING LOOP',
-      items: [
-        { id: 'questions-log', label: 'Log Sister App Query', method: 'POST' },
-        { id: 'questions-feedback', label: 'Submit Rating & Correction', method: 'PATCH' }
-      ]
+      id: 'questions',
+      title: 'AI Chat & Feedback Loop',
+      subtitle: 'Log player queries & feedback submissions',
+      icon: HelpCircle,
+      badge: '2 Endpoints'
     },
     {
-      title: 'CLIENT SDK LIBRARIES',
-      items: [
-        { id: 'sdk-section', label: 'JS, Flutter, Swift, Unity, cURL' }
-      ]
+      id: 'sdks',
+      title: 'Client SDK Libraries',
+      subtitle: 'JS, Unity C#, iOS Swift, Flutter, cURL',
+      icon: Code2,
+      badge: '5 SDKs'
     }
   ];
+
+  // All endpoints for global search
+  const allEndpoints = [
+    { page: 'overview', label: 'Architecture & Synchronized Universe', route: 'Architecture', method: 'DOC' },
+    { page: 'overview', label: 'Host Config & Base URL', route: supabaseUrl, method: 'CONFIG' },
+    { page: 'overview', label: 'HTTP Headers & RLS Security', route: 'Authorization: Bearer', method: 'RLS' },
+    { page: 'auth', label: 'Register Warrior Account', route: '/auth/v1/signup', method: 'POST' },
+    { page: 'auth', label: 'Warrior Password Login', route: '/auth/v1/token?grant_type=password', method: 'POST' },
+    { page: 'auth', label: 'Refresh Session Token', route: '/auth/v1/token?grant_type=refresh_token', method: 'POST' },
+    { page: 'auth', label: 'Password Recovery Link', route: '/auth/v1/recover', method: 'POST' },
+    { page: 'player', label: 'Get Warrior Profile & Stats', route: '/rest/v1/profiles?id=eq.{uuid}', method: 'GET' },
+    { page: 'player', label: 'Save Match Victory & Award Crystals', route: '/rest/v1/profiles?id=eq.{uuid}', method: 'PATCH' },
+    { page: 'player', label: 'Global Hall of Fame Leaderboard', route: '/rest/v1/profiles?order=crystals_collected.desc', method: 'GET' },
+    { page: 'rules', label: 'Query Active Game Rules', route: '/rest/v1/rules_knowledge?is_active=eq.true', method: 'GET' },
+    { page: 'rules', label: 'Filter Rules by Category & Keyword', route: '/rest/v1/rules_knowledge?category=eq.{name}', method: 'GET' },
+    { page: 'questions', label: 'Log Sister App Query to Inbox', route: '/rest/v1/user_questions', method: 'POST' },
+    { page: 'questions', label: 'Submit Rating & Suggested Correction', route: '/rest/v1/user_questions?id=eq.{id}', method: 'PATCH' },
+    { page: 'sdks', label: 'JavaScript / TypeScript SDK', route: 'npm install @supabase/supabase-js', method: 'SDK' },
+    { page: 'sdks', label: 'Unity (C#) Client Script', route: 'AttentionTcgClient.cs', method: 'SDK' },
+    { page: 'sdks', label: 'iOS / Swift Package', route: 'AttentionTcgEcosystem.swift', method: 'SDK' },
+    { page: 'sdks', label: 'Flutter / Dart Service', route: 'TcgEcosystemService.dart', method: 'SDK' },
+    { page: 'sdks', label: 'cURL & Raw HTTP Specification', route: 'Terminal Shell', method: 'CURL' }
+  ];
+
+  const searchResults = searchFilter.trim()
+    ? allEndpoints.filter(e => e.label.toLowerCase().includes(searchFilter.toLowerCase()) || e.route.toLowerCase().includes(searchFilter.toLowerCase()))
+    : [];
 
   const sdkCode = {
     js: `// =========================================================================
@@ -204,104 +284,6 @@ export async function fetchRules() {
   return data;
 }`,
 
-    flutter: `// =========================================================================
-// ATTENTION TCG: COMPLETE FLUTTER / DART SDK INTEGRATION
-// pubspec.yaml: supabase_flutter: ^2.8.0
-// =========================================================================
-import 'package:supabase_flutter/supabase_flutter.dart';
-
-class TcgEcosystemService {
-  static Future<void> initialize() async {
-    await Supabase.initialize(
-      url: '${supabaseUrl}',
-      anonKey: '${anonKey}',
-    );
-  }
-
-  static SupabaseClient get client => Supabase.instance.client;
-
-  // 1. WARRIOR LOGIN
-  static Future<AuthResponse> login(String email, String password) async {
-    return await client.auth.signInWithPassword(
-      email: email.trim(),
-      password: password,
-    );
-  }
-
-  // 2. SAVE MATCH OUTCOME & CRYSTALS
-  static Future<void> saveMatchResult({
-    required String userId,
-    required bool wonMatch,
-    int crystalsWon = 1,
-  }) async {
-    final current = await client.from('profiles').select().eq('id', userId).single();
-    final played = (current['matches_played'] ?? 0) as int;
-    final won = (current['matches_won'] ?? 0) as int;
-    final crystals = (current['crystals_collected'] ?? 0) as int;
-
-    await client.from('profiles').update({
-      'matches_played': played + 1,
-      'matches_won': won + (wonMatch ? 1 : 0),
-      'crystals_collected': crystals + crystalsWon,
-      'last_active_app': 'sister_flutter_app',
-      'updated_at': DateTime.now().toUtc().toIso8601String(),
-    }).eq('id', userId);
-  }
-
-  // 3. FETCH RULES
-  static Future<List<Map<String, dynamic>>> getRules() async {
-    final List<dynamic> data = await client
-        .from('rules_knowledge')
-        .select()
-        .eq('is_active', true)
-        .order('order_index');
-    return List<Map<String, dynamic>>.from(data);
-  }
-}`,
-
-    swift: `// =========================================================================
-// ATTENTION TCG: COMPLETE SWIFT / IOS SDK INTEGRATION
-// SPM: https://github.com/supabase/supabase-swift
-// =========================================================================
-import Foundation
-import Supabase
-
-public final class AttentionTcgEcosystem {
-    public static let shared = AttentionTcgEcosystem()
-    public let client: SupabaseClient
-
-    private init() {
-        self.client = SupabaseClient(
-            supabaseURL: URL(string: "${supabaseUrl}")!,
-            supabaseKey: "${anonKey}"
-        )
-    }
-
-    // 1. WARRIOR LOGIN
-    public func login(email: String, pass: String) async throws -> Session {
-        return try await client.auth.signIn(email: email, password: pass)
-    }
-
-    // 2. FETCH ACTIVE RULES
-    public func fetchRules() async throws -> [Rule] {
-        return try await client
-            .from("rules_knowledge")
-            .select()
-            .eq("is_active", value: true)
-            .order("order_index")
-            .execute()
-            .value
-    }
-}
-
-public struct Rule: Codable, Identifiable {
-    public let id: String
-    public let topic: String
-    public let category: String
-    public let short_answer: String
-    public let details: String
-}`,
-
     unity: `// =========================================================================
 // ATTENTION TCG: COMPLETE UNITY (C#) SISTER APP INTEGRATION
 // =========================================================================
@@ -356,6 +338,104 @@ public class AttentionTcgClient : MonoBehaviour
             }
         }
     }
+}`,
+
+    swift: `// =========================================================================
+// ATTENTION TCG: COMPLETE SWIFT / IOS SDK INTEGRATION
+// SPM: https://github.com/supabase/supabase-swift
+// =========================================================================
+import Foundation
+import Supabase
+
+public final class AttentionTcgEcosystem {
+    public static let shared = AttentionTcgEcosystem()
+    public let client: SupabaseClient
+
+    private init() {
+        self.client = SupabaseClient(
+            supabaseURL: URL(string: "${supabaseUrl}")!,
+            supabaseKey: "${anonKey}"
+        )
+    }
+
+    // 1. WARRIOR LOGIN
+    public func login(email: String, pass: String) async throws -> Session {
+        return try await client.auth.signIn(email: email, password: pass)
+    }
+
+    // 2. FETCH ACTIVE RULES
+    public func fetchRules() async throws -> [Rule] {
+        return try await client
+            .from("rules_knowledge")
+            .select()
+            .eq("is_active", value: true)
+            .order("order_index")
+            .execute()
+            .value
+    }
+}
+
+public struct Rule: Codable, Identifiable {
+    public let id: String
+    public let topic: String
+    public let category: String
+    public let short_answer: String
+    public let details: String
+}`,
+
+    flutter: `// =========================================================================
+// ATTENTION TCG: COMPLETE FLUTTER / DART SDK INTEGRATION
+// pubspec.yaml: supabase_flutter: ^2.8.0
+// =========================================================================
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+class TcgEcosystemService {
+  static Future<void> initialize() async {
+    await Supabase.initialize(
+      url: '${supabaseUrl}',
+      anonKey: '${anonKey}',
+    );
+  }
+
+  static SupabaseClient get client => Supabase.instance.client;
+
+  // 1. WARRIOR LOGIN
+  static Future<AuthResponse> login(String email, String password) async {
+    return await client.auth.signInWithPassword(
+      email: email.trim(),
+      password: password,
+    );
+  }
+
+  // 2. SAVE MATCH OUTCOME & CRYSTALS
+  static Future<void> saveMatchResult({
+    required String userId,
+    required bool wonMatch,
+    int crystalsWon = 1,
+  }) async {
+    final current = await client.from('profiles').select().eq('id', userId).single();
+    final played = (current['matches_played'] ?? 0) as int;
+    final won = (current['matches_won'] ?? 0) as int;
+    final crystals = (current['crystals_collected'] ?? 0) as int;
+
+    await client.from('profiles').update({
+      'matches_played': played + 1,
+      'matches_won': won + (wonMatch ? 1 : 0),
+      'crystals_collected': crystals + crystalsWon,
+      'last_active_app': 'sister_flutter_app',
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    }).eq('id', userId);
+  }
+
+  // 3. FETCH RULES
+  static Future<List<Map<String, dynamic>>> getRules() async {
+    final List<dynamic> data = await client
+        .from('rules_knowledge')
+        .select()
+        .eq('is_active', true)
+        .order('order_index');
+    return List<Map<String, dynamic>>.from(data);
+  }
 }`,
 
     curl: `# =========================================================================
@@ -415,21 +495,6 @@ curl -X POST '${supabaseUrl}/rest/v1/user_questions' \\
   }'`
   };
 
-  const methodBadge = (method) => {
-    switch (method) {
-      case 'GET':
-        return <span style={{ background: 'rgba(0, 240, 255, 0.15)', color: 'var(--neon-cyan, #00f0ff)', border: '1px solid rgba(0, 240, 255, 0.4)', padding: '2px 8px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 'bold' }}>GET</span>;
-      case 'POST':
-        return <span style={{ background: 'rgba(57, 255, 20, 0.15)', color: '#39ff14', border: '1px solid rgba(57, 255, 20, 0.4)', padding: '2px 8px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 'bold' }}>POST</span>;
-      case 'PATCH':
-        return <span style={{ background: 'rgba(255, 230, 0, 0.15)', color: 'var(--neon-gold, #ffe600)', border: '1px solid rgba(255, 230, 0, 0.4)', padding: '2px 8px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 'bold' }}>PATCH</span>;
-      case 'DELETE':
-        return <span style={{ background: 'rgba(255, 51, 102, 0.15)', color: 'var(--neon-crimson, #ff3366)', border: '1px solid rgba(255, 51, 102, 0.4)', padding: '2px 8px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 'bold' }}>DELETE</span>;
-      default:
-        return null;
-    }
-  };
-
   return (
     <>
       <LandscapeOverlay />
@@ -455,376 +520,411 @@ curl -X POST '${supabaseUrl}/rest/v1/user_questions' \\
             <div className="subtle-watermark-card right-wm" style={{ opacity: 0.25 }}></div>
           </div>
 
-      <style>{`
-        /* Custom sleek cyberpunk scrollbars */
-        ::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-          background: rgba(3, 7, 18, 0.95);
-        }
-        ::-webkit-scrollbar-thumb {
-          background: rgba(0, 240, 255, 0.3);
-          border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-          background: rgba(0, 240, 255, 0.6);
-        }
-        .docs-nav-link:hover {
-          background: rgba(0, 240, 255, 0.12) !important;
-          color: var(--neon-cyan, #00f0ff) !important;
-          border-color: rgba(0, 240, 255, 0.4) !important;
-        }
-        .docs-endpoint-card {
-          transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
-        }
-        .docs-endpoint-card:hover {
-          border-color: rgba(0, 240, 255, 0.45) !important;
-          box-shadow: 0 0 30px rgba(0, 240, 255, 0.15);
-        }
-      `}</style>
+          <style>{`
+            ::-webkit-scrollbar { width: 6px; height: 6px; }
+            ::-webkit-scrollbar-track { background: rgba(3, 7, 18, 0.95); }
+            ::-webkit-scrollbar-thumb { background: rgba(0, 240, 255, 0.3); border-radius: 4px; }
+            ::-webkit-scrollbar-thumb:hover { background: rgba(0, 240, 255, 0.6); }
+            .sidebar-page-btn {
+              transition: all 0.2s ease;
+            }
+            .sidebar-page-btn:hover {
+              background: rgba(0, 240, 255, 0.1) !important;
+              color: var(--neon-cyan, #00f0ff) !important;
+            }
+            .endpoint-card {
+              transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            }
+            .endpoint-card:hover {
+              border-color: rgba(0, 240, 255, 0.38) !important;
+              box-shadow: 0 4px 20px rgba(0, 240, 255, 0.08);
+            }
+          `}</style>
 
-      {/* Top Sticky Navigation Bar */}
-      <header
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '14px 28px',
-          background: 'rgba(10, 20, 45, 0.92)',
-          borderBottom: '1.5px solid rgba(0, 240, 255, 0.28)',
-          backdropFilter: 'blur(14px)',
-          zIndex: 100,
-          flexShrink: 0
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <button
-            onClick={() => navigate('/')}
+          {/* TOP HEADER */}
+          <header
             style={{
-              background: 'rgba(10, 25, 50, 0.85)',
-              border: '1.5px solid rgba(0, 240, 255, 0.4)',
-              borderRadius: '8px',
-              color: 'var(--neon-cyan, #00f0ff)',
+              height: '56px',
               display: 'flex',
+              justifyContent: 'space-between',
               alignItems: 'center',
-              gap: '6px',
-              padding: '6px 14px',
-              fontSize: '0.88rem',
-              fontWeight: 'bold',
-              fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              boxShadow: '0 0 12px rgba(0, 240, 255, 0.2)'
+              padding: '0 24px',
+              background: 'rgba(10, 20, 45, 0.92)',
+              borderBottom: '1.5px solid rgba(0, 240, 255, 0.28)',
+              backdropFilter: 'blur(14px)',
+              zIndex: 100,
+              flexShrink: 0
             }}
           >
-            <ArrowLeft size={16} /> BACK TO HUB
-          </button>
-          <div className="brand-pill-badge" style={{ fontSize: '0.85rem', padding: '3px 10px' }}>注意!</div>
-          <div>
-            <div style={{ fontSize: '1.35rem', fontWeight: '900', letterSpacing: '1.5px', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', color: '#fff' }}>
-              ATTENTION TCG <span style={{ color: 'var(--neon-cyan, #00f0ff)' }}>DEVELOPER PORTAL</span>
-            </div>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button
-            onClick={() => handleCopy(supabaseUrl, 'top_url')}
-            style={{
-              background: 'rgba(0, 240, 255, 0.08)',
-              border: '1px solid rgba(0, 240, 255, 0.3)',
-              color: 'var(--neon-cyan, #00f0ff)',
-              padding: '7px 14px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '0.82rem',
-              fontWeight: 'bold',
-              fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            {copiedKey === 'top_url' ? <Check size={14} color="#39ff14" /> : <Copy size={14} />}
-            <span>COPY BASE REST URL</span>
-          </button>
-
-          <button
-            onClick={() => navigate('/admin')}
-            style={{
-              background: 'rgba(255, 230, 0, 0.12)',
-              border: '1px solid var(--neon-gold, #ffe600)',
-              color: 'var(--neon-gold, #ffe600)',
-              padding: '7px 14px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: 'bold',
-              fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '0.88rem'
-            }}
-          >
-            <Shield size={14} /> COMMAND DECK
-          </button>
-        </div>
-      </header>
-
-      {/* Body: Sidebar + Main Content */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
-        
-        {/* LEFT SIDEBAR NAVIGATION */}
-        <aside
-          style={{
-            width: '280px',
-            background: 'rgba(6, 12, 28, 0.95)',
-            borderRight: '1px solid rgba(255, 255, 255, 0.08)',
-            display: 'flex',
-            flexDirection: 'column',
-            flexShrink: 0,
-            overflowY: 'auto'
-          }}
-        >
-          {/* Quick Filter */}
-          <div style={{ padding: '16px 16px 8px 16px' }}>
-            <div style={{ position: 'relative' }}>
-              <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.4)' }} />
-              <input
-                type="text"
-                placeholder="Search endpoints..."
-                value={searchFilter}
-                onChange={(e) => setSearchFilter(e.target.value)}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <button
+                onClick={() => navigate('/')}
                 style={{
-                  width: '100%',
-                  boxSizing: 'border-box',
-                  padding: '7px 10px 7px 32px',
-                  background: 'rgba(0,0,0,0.5)',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  borderRadius: '6px',
-                  color: '#fff',
+                  background: 'rgba(10, 25, 50, 0.85)',
+                  border: '1.5px solid rgba(0, 240, 255, 0.4)',
+                  borderRadius: '8px',
+                  color: 'var(--neon-cyan, #00f0ff)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '5px 12px',
                   fontSize: '0.85rem',
-                  outline: 'none'
+                  fontWeight: 'bold',
+                  fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap'
                 }}
-              />
+              >
+                <ArrowLeft size={15} /> HUB
+              </button>
+              <div className="brand-pill-badge" style={{ fontSize: '0.8rem', padding: '2px 8px' }}>注意!</div>
+              <div style={{ fontSize: '1.25rem', fontWeight: '900', letterSpacing: '1.5px', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', color: '#fff' }}>
+                DEVELOPER PORTAL <span style={{ color: 'var(--neon-cyan, #00f0ff)', fontSize: '0.85rem', fontWeight: 'normal', letterSpacing: '1px' }}>// ECOSYSTEM SPEC</span>
+              </div>
             </div>
-          </div>
 
-          {/* Navigation Tree */}
-          <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
-            {navGroups.map((group, gIdx) => {
-              const filteredItems = group.items.filter((item) =>
-                item.label.toLowerCase().includes(searchFilter.toLowerCase())
-              );
-              if (filteredItems.length === 0) return null;
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <button
+                onClick={() => handleCopy(supabaseUrl, 'header_url')}
+                style={{
+                  background: 'rgba(0, 240, 255, 0.08)',
+                  border: '1px solid rgba(0, 240, 255, 0.3)',
+                  color: 'var(--neon-cyan, #00f0ff)',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '0.8rem',
+                  fontWeight: 'bold',
+                  fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                {copiedKey === 'header_url' ? <Check size={13} color="#39ff14" /> : <Copy size={13} />}
+                <span>COPY REST URL</span>
+              </button>
 
-              return (
-                <div key={gIdx}>
-                  <div style={{ fontSize: '0.72rem', letterSpacing: '1.5px', color: 'rgba(255,255,255,0.45)', fontWeight: 'bold', padding: '0 8px 6px 8px', textTransform: 'uppercase' }}>
-                    {group.title}
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    {filteredItems.map((item) => {
-                      const isSel = activeSection === item.id;
-                      return (
+              <button
+                onClick={() => navigate('/admin')}
+                style={{
+                  background: 'rgba(255, 230, 0, 0.12)',
+                  border: '1px solid var(--neon-gold, #ffe600)',
+                  color: 'var(--neon-gold, #ffe600)',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '0.85rem'
+                }}
+              >
+                <Shield size={14} /> COMMAND DECK
+              </button>
+            </div>
+          </header>
+
+          {/* BODY: SIDEBAR + DEDICATED PAGES VIEWPORT */}
+          <div style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative', zIndex: 10 }}>
+
+            {/* DEDICATED LEFT SIDEBAR */}
+            <aside
+              style={{
+                width: '260px',
+                background: 'rgba(8, 14, 30, 0.95)',
+                borderRight: '1px solid rgba(0, 240, 255, 0.18)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                flexShrink: 0,
+                padding: '16px 12px',
+                boxSizing: 'border-box'
+              }}
+            >
+              <div>
+                {/* Search Bar */}
+                <div style={{ position: 'relative', marginBottom: '14px' }}>
+                  <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.4)' }} />
+                  <input
+                    type="text"
+                    placeholder="Search all endpoints..."
+                    value={searchFilter}
+                    onChange={(e) => setSearchFilter(e.target.value)}
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      padding: '7px 10px 7px 30px',
+                      background: 'rgba(5, 10, 24, 0.85)',
+                      border: '1px solid rgba(0, 240, 255, 0.25)',
+                      borderRadius: '8px',
+                      color: '#fff',
+                      fontSize: '0.82rem',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+
+                {/* If searching: show direct search results dropdown/list */}
+                {searchFilter.trim() ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '420px', overflowY: 'auto' }}>
+                    <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold', padding: '0 4px 6px 4px', letterSpacing: '1px' }}>
+                      SEARCH RESULTS ({searchResults.length})
+                    </div>
+                    {searchResults.length === 0 ? (
+                      <div style={{ padding: '12px 8px', fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)' }}>
+                        No matching endpoints found.
+                      </div>
+                    ) : (
+                      searchResults.map((sr, idx) => (
                         <button
-                          key={item.id}
-                          className="docs-nav-link"
-                          onClick={() => scrollTo(item.id)}
+                          key={idx}
+                          onClick={() => {
+                            setActivePage(sr.page);
+                            setSearchFilter('');
+                          }}
                           style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
+                            background: 'rgba(14, 22, 42, 0.8)',
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            borderRadius: '8px',
                             padding: '8px 10px',
-                            borderRadius: '6px',
-                            border: 'none',
-                            background: isSel ? 'rgba(0, 240, 255, 0.14)' : 'transparent',
-                            color: isSel ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255, 255, 255, 0.75)',
                             textAlign: 'left',
                             cursor: 'pointer',
-                            fontSize: '0.86rem',
-                            fontWeight: isSel ? 'bold' : 'normal',
-                            transition: 'all 0.15s'
+                            color: '#fff',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '2px'
                           }}
                         >
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {item.label}
-                          </span>
-                          {item.method && methodBadge(item.method)}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--neon-cyan, #00f0ff)' }}>{sr.label}</span>
+                            <span style={{ fontSize: '0.68rem', background: 'rgba(255,255,255,0.1)', padding: '1px 5px', borderRadius: '4px' }}>{sr.method}</span>
+                          </div>
+                          <code style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{sr.route}</code>
                         </button>
-                      );
-                    })}
+                      ))
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ fontSize: '0.72rem', letterSpacing: '1.5px', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold', padding: '0 8px 10px 8px', textTransform: 'uppercase' }}>
+                      PORTAL MODULES
+                    </div>
+
+                    {/* Dedicated Page Buttons */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      {docPages.map((page) => {
+                        const Icon = page.icon;
+                        const isSel = activePage === page.id;
+                        return (
+                          <button
+                            key={page.id}
+                            className="sidebar-page-btn"
+                            onClick={() => setActivePage(page.id)}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '10px 12px',
+                              borderRadius: '10px',
+                              border: isSel ? '1px solid var(--neon-cyan, #00f0ff)' : '1px solid transparent',
+                              background: isSel ? 'rgba(0, 240, 255, 0.15)' : 'transparent',
+                              color: isSel ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255, 255, 255, 0.75)',
+                              cursor: 'pointer',
+                              fontWeight: isSel ? 'bold' : 'normal',
+                              textAlign: 'left',
+                              width: '100%',
+                              boxSizing: 'border-box'
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <Icon size={16} />
+                              <div>
+                                <div style={{ fontSize: '0.88rem', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '0.5px' }}>
+                                  {page.title}
+                                </div>
+                              </div>
+                            </div>
+                            <span
+                              style={{
+                                fontSize: '0.68rem',
+                                background: isSel ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255, 255, 255, 0.1)',
+                                color: isSel ? '#050a18' : 'rgba(255, 255, 255, 0.6)',
+                                padding: '2px 6px',
+                                borderRadius: '8px',
+                                fontWeight: 'bold',
+                                whiteSpace: 'nowrap'
+                              }}
+                            >
+                              {page.badge}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Sidebar Footer: Quick Connection Status */}
+              <div style={{ background: 'rgba(5, 10, 24, 0.6)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '10px', padding: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#39ff14', boxShadow: '0 0 8px #39ff14' }}></span>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#39ff14' }}>REST GATEWAY READY</span>
+                </div>
+                <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)' }}>
+                  Supabase v2.8+ · JWT Bearer Verification
+                </div>
+              </div>
+            </aside>
+
+            {/* MAIN WORKSPACE: RENDERS DEDICATED CLEAN PAGE */}
+            <main
+              style={{
+                flex: 1,
+                overflowY: 'auto',
+                padding: '24px 32px 60px 32px',
+                boxSizing: 'border-box'
+              }}
+            >
+
+              {/* =========================================================================
+                  PAGE 1: ARCHITECTURE & OVERVIEW
+              ========================================================================= */}
+              {activePage === 'overview' && (
+                <div>
+                  <div style={{ marginBottom: '22px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '0.75rem', color: '#39ff14', fontWeight: 'bold', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
+                        SYSTEM ARCHITECTURE & SECURITY
+                      </span>
+                    </div>
+                    <h1 style={{ fontSize: '1.8rem', fontWeight: '900', color: '#fff', margin: '0 0 4px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px' }}>
+                      SHARED ECOSYSTEM SPECIFICATION
+                    </h1>
+                    <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', margin: 0, maxWidth: '850px', lineHeight: '1.5' }}>
+                      Attention TCG powers a unified universe. Players register from any sister app (Unity 3D tabletop, Flutter tournament companion, or Kontrola Arena) and retain their single callsign, shared Stability Crystals, and access to the dynamic Game Rules database.
+                    </p>
+                  </div>
+
+                  {/* Top Minimal KPI Cards */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px', marginBottom: '24px' }}>
+                    <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.25)', borderRadius: '12px', padding: '16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--neon-cyan, #00f0ff)', fontWeight: 'bold', fontSize: '0.95rem', marginBottom: '6px' }}>
+                        <Zap size={16} /> Single Warrior Identity
+                      </div>
+                      <div style={{ color: '#94a3b8', fontSize: '0.82rem', lineHeight: '1.5' }}>
+                        Sign up once; your callsign, match statistics, and crystal balance automatically sync across every client.
+                      </div>
+                    </div>
+
+                    <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(255, 230, 0, 0.25)', borderRadius: '12px', padding: '16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--neon-gold, #ffe600)', fontWeight: 'bold', fontSize: '0.95rem', marginBottom: '6px' }}>
+                        <BookOpen size={16} /> Live Rules Engine
+                      </div>
+                      <div style={{ color: '#94a3b8', fontSize: '0.82rem', lineHeight: '1.5' }}>
+                        Game Masters update rules in the Command Deck; sister apps query live endpoints with zero client rebuilds.
+                      </div>
+                    </div>
+
+                    <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(57, 255, 20, 0.25)', borderRadius: '12px', padding: '16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#39ff14', fontWeight: 'bold', fontSize: '0.95rem', marginBottom: '6px' }}>
+                        <HelpCircle size={16} /> Continuous Learning Loop
+                      </div>
+                      <div style={{ color: '#94a3b8', fontSize: '0.82rem', lineHeight: '1.5' }}>
+                        In-game player inquiries feed directly into the central inbox for GM review and 1-click rule promotion.
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Project Host & Keys Minimal Cards */}
+                  <div style={{ marginBottom: '24px' }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--neon-cyan, #00f0ff)', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                      PROJECT HOST & ENVIRONMENT CONFIGURATION
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '12px' }}>
+                      <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '14px' }}>
+                        <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)', marginBottom: '4px' }}>BASE REST / AUTH GATEWAY</div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <code style={{ color: '#fff', fontSize: '0.88rem' }}>{supabaseUrl}</code>
+                          <button onClick={() => handleCopy(supabaseUrl, 'cfg_url')} style={{ background: 'none', border: 'none', color: copiedKey === 'cfg_url' ? '#39ff14' : 'var(--neon-cyan, #00f0ff)', cursor: 'pointer' }}>
+                            {copiedKey === 'cfg_url' ? <Check size={14} /> : <Copy size={14} />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '14px' }}>
+                        <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)', marginBottom: '4px' }}>ANON CLIENT PUBLIC KEY</div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <code style={{ color: 'var(--neon-gold, #ffe600)', fontSize: '0.84rem' }}>{anonKey.substring(0, 34)}...</code>
+                          <button onClick={() => handleCopy(anonKey, 'cfg_key')} style={{ background: 'none', border: 'none', color: copiedKey === 'cfg_key' ? '#39ff14' : 'var(--neon-gold, #ffe600)', cursor: 'pointer' }}>
+                            {copiedKey === 'cfg_key' ? <Check size={14} /> : <Copy size={14} />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Headers & RLS Minimal Table */}
+                  <div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--neon-cyan, #00f0ff)', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                      MANDATORY HTTP HEADERS & ROW LEVEL SECURITY (RLS)
+                    </div>
+                    <ParamTable
+                      headers={['HEADER', 'EXPECTED VALUE', 'REQUIRED FOR', 'SECURITY CONTEXT']}
+                      rows={[
+                        ['apikey', 'ANON_PUBLIC_KEY', 'All Requests', 'Routes through Supabase API gateway safely from any client.'],
+                        ['Authorization', 'Bearer <USER_JWT_TOKEN>', 'Authenticated Writes', 'Used by Postgres RLS to verify the user only edits their own profile/crystals.'],
+                        ['Content-Type', 'application/json', 'POST / PATCH', 'Required for sending JSON request bodies.']
+                      ]}
+                    />
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </aside>
+              )}
 
-        {/* MAIN DOCUMENTATION CONTENT */}
-        <main
-          ref={mainScrollRef}
-          style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: '40px 48px 100px 48px',
-            maxWidth: '1100px',
-            margin: '0 auto',
-            boxSizing: 'border-box'
-          }}
-        >
-          {/* SECTION 1: ARCHITECTURE OVERVIEW */}
-          <section id="overview" style={{ marginBottom: '56px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <span style={{ fontSize: '0.8rem', color: '#39ff14', fontWeight: 'bold', letterSpacing: '1px' }}>
-                ARCHITECTURE & SYNC
-              </span>
-            </div>
-            <h1 style={{ fontSize: '2.6rem', fontWeight: '900', letterSpacing: '1px', margin: '0 0 16px 0', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
-              Sister Applications & Shared Ecosystem
-            </h1>
-            <p style={{ fontSize: '1.05rem', lineHeight: '1.75', color: '#cbd5e1', margin: '0 0 20px 0' }}>
-              The Attention TCG backend powers a synchronized universe. Players can register from any sister app (mobile tournament organizer, companion hub, or Unity 3D tabletop) and retain their single unified identity, shared <strong>Stability Crystals</strong>, deck statistics, and access to the dynamic <strong>Knowledge Base</strong>.
-            </p>
+              {/* =========================================================================
+                  PAGE 2: WARRIOR IDENTITY & AUTH
+              ========================================================================= */}
+              {activePage === 'auth' && (
+                <div>
+                  <div style={{ marginBottom: '20px' }}>
+                    <h1 style={{ fontSize: '1.8rem', fontWeight: '900', color: '#fff', margin: '0 0 4px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px' }}>
+                      WARRIOR IDENTITY & AUTHENTICATION API
+                    </h1>
+                    <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', margin: 0 }}>
+                      Endpoints for registering warrior accounts, authenticating duels, managing sessions, and recovering credentials.
+                    </p>
+                  </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', marginTop: '24px' }}>
-              <div style={{ background: 'rgba(14, 22, 42, 0.7)', border: '1px solid rgba(0, 240, 255, 0.2)', padding: '18px', borderRadius: '12px' }}>
-                <div style={{ color: 'var(--neon-cyan, #00f0ff)', fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '6px' }}>Single Player Identity</div>
-                <div style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: '1.6' }}>Sign in once, play everywhere. Player stats and crystal inventory sync automatically across all sister apps.</div>
-              </div>
-              <div style={{ background: 'rgba(14, 22, 42, 0.7)', border: '1px solid rgba(255, 230, 0, 0.2)', padding: '18px', borderRadius: '12px' }}>
-                <div style={{ color: 'var(--neon-gold, #ffe600)', fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '6px' }}>Live Game Rules</div>
-                <div style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: '1.6' }}>Game Masters update rules in the Admin Portal; sister apps query live endpoints so rule changes deploy instantly with zero app re-builds.</div>
-              </div>
-              <div style={{ background: 'rgba(14, 22, 42, 0.7)', border: '1px solid rgba(57, 255, 20, 0.2)', padding: '18px', borderRadius: '12px' }}>
-                <div style={{ color: '#39ff14', fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '6px' }}>Continuous Learning</div>
-                <div style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: '1.6' }}>Questions asked in your sister apps feed directly into the central learning loop for admin review and 1-click promotion.</div>
-              </div>
-            </div>
-          </section>
+                  {/* 1. Register Warrior */}
+                  <div className="endpoint-card" style={{ background: 'rgba(14, 22, 42, 0.8)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {methodBadge('POST')}
+                        <code style={{ fontSize: '1rem', color: '#fff', fontWeight: 'bold' }}>/auth/v1/signup</code>
+                      </div>
+                      <span style={{ fontSize: '0.72rem', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', padding: '2px 8px', borderRadius: '4px' }}>Public (Anon Key)</span>
+                    </div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff', marginBottom: '6px' }}>Register New Warrior Account</div>
+                    <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0 0 12px 0', lineHeight: '1.5' }}>
+                      Creates the warrior identity and triggers Postgres row generation in <code>profiles</code> with verified callsign, 0 crystals, and default stats.
+                    </p>
 
-          {/* SECTION 2: HEADERS & RLS */}
-          <section id="auth-headers" style={{ marginBottom: '56px' }}>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: '800', margin: '0 0 12px 0', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
-              Headers & Row Level Security (RLS)
-            </h2>
-            <p style={{ color: '#cbd5e1', lineHeight: '1.7', margin: '0 0 16px 0' }}>
-              Every HTTP request to the backend must include the public anon <code>apikey</code> header. For authenticated write operations (such as saving match crystals or updating a warrior profile), include the player's signed JWT token in the <code>Authorization: Bearer &lt;token&gt;</code> header.
-            </p>
+                    <ParamTable
+                      rows={[
+                        ['email', 'string', 'Required', 'Valid email address for warrior identity.'],
+                        ['password', 'string', 'Required', 'Account password (minimum 6 characters).'],
+                        ['data.username', 'string', 'Required', 'Unique warrior callsign (case-insensitive enforced in database).'],
+                        ['data.registered_app', 'string', 'Optional', 'Name of the sister client (e.g. "sister_unity_arena").']
+                      ]}
+                    />
 
-            <div style={{ background: '#030712', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', padding: '16px', overflowX: 'auto', marginBottom: '20px' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', textAlign: 'left', color: 'var(--neon-cyan, #00f0ff)' }}>
-                    <th style={{ padding: '8px' }}>HEADER NAME</th>
-                    <th style={{ padding: '8px' }}>VALUE</th>
-                    <th style={{ padding: '8px' }}>PURPOSE</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <td style={{ padding: '10px 8px' }}><code>apikey</code></td>
-                    <td style={{ padding: '10px 8px', color: 'var(--neon-gold, #ffe600)' }}>ANON_PUBLIC_KEY</td>
-                    <td style={{ padding: '10px 8px', color: '#94a3b8' }}>Mandatory on all requests to route through Supabase API gateway.</td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <td style={{ padding: '10px 8px' }}><code>Authorization</code></td>
-                    <td style={{ padding: '10px 8px', color: '#39ff14' }}>Bearer &lt;USER_JWT_OR_ANON&gt;</td>
-                    <td style={{ padding: '10px 8px', color: '#94a3b8' }}>Used by Postgres RLS to verify that players can only edit their own data.</td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '10px 8px' }}><code>Content-Type</code></td>
-                    <td style={{ padding: '10px 8px', color: '#cbd5e1' }}>application/json</td>
-                    <td style={{ padding: '10px 8px', color: '#94a3b8' }}>Required for all POST and PATCH payloads.</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          {/* SECTION 3: PROJECT CONFIG */}
-          <section id="project-config" style={{ marginBottom: '56px' }}>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: '800', margin: '0 0 12px 0', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
-              Host Config & Environment Variables
-            </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '14px' }}>
-              <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '16px' }}>
-                <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginBottom: '4px' }}>BASE REST / AUTH HOST</div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <code style={{ color: '#fff', fontSize: '0.9rem' }}>{supabaseUrl}</code>
-                  <button onClick={() => handleCopy(supabaseUrl, 'cfg_url')} style={{ background: 'none', border: 'none', color: copiedKey === 'cfg_url' ? '#39ff14' : 'var(--neon-cyan, #00f0ff)', cursor: 'pointer' }}>
-                    {copiedKey === 'cfg_url' ? <Check size={16} /> : <Copy size={16} />}
-                  </button>
-                </div>
-              </div>
-
-              <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '16px' }}>
-                <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginBottom: '4px' }}>ANON CLIENT KEY</div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <code style={{ color: 'var(--neon-gold, #ffe600)', fontSize: '0.85rem' }}>{anonKey.substring(0, 32)}...</code>
-                  <button onClick={() => handleCopy(anonKey, 'cfg_key')} style={{ background: 'none', border: 'none', color: copiedKey === 'cfg_key' ? '#39ff14' : 'var(--neon-gold, #ffe600)', cursor: 'pointer' }}>
-                    {copiedKey === 'cfg_key' ? <Check size={16} /> : <Copy size={16} />}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* =========================================================================
-              ENDPOINT 1: WARRIOR REGISTRATION (SIGN UP)
-          ========================================================================= */}
-          <section id="auth-signup" className="docs-endpoint-card" style={{ background: 'rgba(14, 22, 42, 0.85)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '18px', padding: '28px', marginBottom: '40px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-              {methodBadge('POST')}
-              <code style={{ fontSize: '1.1rem', color: '#fff', fontWeight: 'bold' }}>/auth/v1/signup</code>
-              <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '4px', color: 'rgba(255,255,255,0.5)' }}>Public (Anon Key)</span>
-            </div>
-            <h3 style={{ margin: '0 0 10px 0', fontSize: '1.4rem', color: '#fff' }}>Register New Warrior</h3>
-            <p style={{ color: '#cbd5e1', lineHeight: '1.6', margin: '0 0 18px 0' }}>
-              Call this endpoint when a player registers in your sister app. It creates the authentication account and automatically generates their profile record in the <code>profiles</code> table with initial stats (0 crystals, 0 matches, and selected avatar).
-            </p>
-
-            {/* Parameters Table */}
-            <div style={{ marginBottom: '18px' }}>
-              <div style={{ fontSize: '0.8rem', color: 'var(--neon-cyan, #00f0ff)', fontWeight: 'bold', marginBottom: '6px', letterSpacing: '1px' }}>REQUEST BODY PARAMETERS</div>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem', background: '#020612', borderRadius: '8px', overflow: 'hidden' }}>
-                <tbody>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                    <td style={{ padding: '8px 12px', color: '#fff', width: '140px' }}><code>email</code></td>
-                    <td style={{ padding: '8px 12px', color: '#39ff14', width: '90px' }}>string</td>
-                    <td style={{ padding: '8px 12px', color: 'var(--neon-crimson, #ff3366)', width: '80px' }}>Required</td>
-                    <td style={{ padding: '8px 12px', color: '#94a3b8' }}>Warrior email address.</td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                    <td style={{ padding: '8px 12px', color: '#fff' }}><code>password</code></td>
-                    <td style={{ padding: '8px 12px', color: '#39ff14' }}>string</td>
-                    <td style={{ padding: '8px 12px', color: 'var(--neon-crimson, #ff3366)' }}>Required</td>
-                    <td style={{ padding: '8px 12px', color: '#94a3b8' }}>Password (minimum 6 characters).</td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '8px 12px', color: '#fff' }}><code>data.username</code></td>
-                    <td style={{ padding: '8px 12px', color: '#39ff14' }}>string</td>
-                    <td style={{ padding: '8px 12px', color: 'var(--neon-crimson, #ff3366)' }}>Required</td>
-                    <td style={{ padding: '8px 12px', color: '#94a3b8' }}>Display name chosen by the warrior.</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            {/* Code Sample */}
-            <div style={{ background: '#020510', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '16px', position: 'relative' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--neon-gold, #ffe600)', letterSpacing: '1px' }}>EXAMPLE JSON PAYLOAD:</span>
-                <button
-                  onClick={() => handleCopy(`{\n  "email": "warrior@example.com",\n  "password": "Password123!",\n  "data": {\n    "username": "ShadowNinja",\n    "registered_app": "sister_tournament"\n  }\n}`, 'req_signup')}
-                  style={{ background: 'none', border: 'none', color: copiedKey === 'req_signup' ? '#39ff14' : 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '4px' }}
-                >
-                  {copiedKey === 'req_signup' ? <Check size={14} /> : <Copy size={14} />} Copy
-                </button>
-              </div>
-              <HighlightedJson code={`POST ${supabaseUrl}/auth/v1/signup
+                    <CodeBlock
+                      label="POST /auth/v1/signup"
+                      copyId="auth_signup_curl"
+                      code={`POST ${supabaseUrl}/auth/v1/signup
 apikey: ${anonKey}
 Content-Type: application/json
 
@@ -833,255 +933,409 @@ Content-Type: application/json
   "password": "Password123!",
   "data": {
     "username": "ShadowNinja",
-    "avatar_id": "chynaman",
-    "registered_app": "sister_tournament_app"
+    "registered_app": "sister_tournament_client"
   }
-}`} />
-            </div>
-          </section>
+}`}
+                    />
+                  </div>
 
-          {/* =========================================================================
-              ENDPOINT 2: WARRIOR LOGIN
-          ========================================================================= */}
-          <section id="auth-login" className="docs-endpoint-card" style={{ background: 'rgba(14, 22, 42, 0.85)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '18px', padding: '28px', marginBottom: '40px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-              {methodBadge('POST')}
-              <code style={{ fontSize: '1.1rem', color: '#fff', fontWeight: 'bold' }}>/auth/v1/token?grant_type=password</code>
-              <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '4px', color: 'rgba(255,255,255,0.5)' }}>Public (Anon Key)</span>
-            </div>
-            <h3 style={{ margin: '0 0 10px 0', fontSize: '1.4rem', color: '#fff' }}>Warrior Sign In (Get JWT Session Token)</h3>
-            <p style={{ color: '#cbd5e1', lineHeight: '1.6', margin: '0 0 18px 0' }}>
-              Authenticates an existing player with email & password. Returns a signed JWT <code>access_token</code> and <code>refresh_token</code>. Save the <code>access_token</code> to authorize subsequent match results and profile updates.
-            </p>
+                  {/* 2. Warrior Login */}
+                  <div className="endpoint-card" style={{ background: 'rgba(14, 22, 42, 0.8)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {methodBadge('POST')}
+                        <code style={{ fontSize: '1rem', color: '#fff', fontWeight: 'bold' }}>/auth/v1/token?grant_type=password</code>
+                      </div>
+                      <span style={{ fontSize: '0.72rem', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', padding: '2px 8px', borderRadius: '4px' }}>Public (Anon Key)</span>
+                    </div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff', marginBottom: '6px' }}>Warrior Login (Fetch Session JWT)</div>
+                    <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0 0 12px 0', lineHeight: '1.5' }}>
+                      Authenticates credentials and returns the warrior's JWT <code>access_token</code> required for saving match outcomes.
+                    </p>
 
-            <div style={{ background: '#020510', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '16px' }}>
-              <HighlightedJson code={`POST ${supabaseUrl}/auth/v1/token?grant_type=password
-apikey: ${anonKey}
-Content-Type: application/json
+                    <ParamTable
+                      rows={[
+                        ['email', 'string', 'Required', 'Registered warrior email.'],
+                        ['password', 'string', 'Required', 'Warrior account password.']
+                      ]}
+                    />
 
-{
-  "email": "warrior@example.com",
-  "password": "Password123!"
-}
-
-# --- RESPONSE 200 OK ---
-{
+                    <CodeBlock
+                      label="RESPONSE (200 OK)"
+                      copyId="auth_login_resp"
+                      code={`{
   "access_token": "eyJhbGciOiJIUzI1NiIsIn...",
   "token_type": "bearer",
   "expires_in": 3600,
-  "refresh_token": "r_982ab1...",
+  "refresh_token": "u4Q...",
   "user": {
-    "id": "c7a8b9e0-1234-5678-90ab-cdef12345678",
-    "email": "warrior@example.com"
-  }
-}`} />
-            </div>
-          </section>
-
-          {/* =========================================================================
-              ENDPOINT 3: GET PLAYER PROFILE & CRYSTALS
-          ========================================================================= */}
-          <section id="player-get" className="docs-endpoint-card" style={{ background: 'rgba(14, 22, 42, 0.85)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '18px', padding: '28px', marginBottom: '40px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-              {methodBadge('GET')}
-              <code style={{ fontSize: '1.1rem', color: '#fff', fontWeight: 'bold' }}>/rest/v1/profiles?id=eq.&#123;uuid&#125;</code>
-              <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '4px', color: 'rgba(255,255,255,0.5)' }}>Public / Authenticated</span>
-            </div>
-            <h3 style={{ margin: '0 0 10px 0', fontSize: '1.4rem', color: '#fff' }}>Fetch Warrior Profile & Stability Crystals</h3>
-            <p style={{ color: '#cbd5e1', lineHeight: '1.6', margin: '0 0 18px 0' }}>
-              Retrieves the player's lifetime statistics, matches won, matches played, and current balance of <strong>Stability Crystals</strong> (the primary victory asset in Attention TCG).
-            </p>
-
-            <div style={{ background: '#020510', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '16px' }}>
-              <HighlightedJson code={`GET ${supabaseUrl}/rest/v1/profiles?id=eq.c7a8b9e0-1234-5678-90ab-cdef12345678
-apikey: ${anonKey}
-Authorization: Bearer ${anonKey}
-
-# --- RESPONSE 200 OK ---
-[
-  {
-    "id": "c7a8b9e0-1234-5678-90ab-cdef12345678",
+    "id": "782fc912-3490-48e2-...",
     "email": "warrior@example.com",
-    "username": "ShadowNinja",
-    "avatar_id": "chynaman",
-    "is_admin": false,
-    "crystals_collected": 7,
-    "matches_played": 14,
-    "matches_won": 10,
-    "registered_app": "sister_tournament_app",
-    "last_active_app": "companion_hub"
+    "user_metadata": { "username": "ShadowNinja" }
   }
-]`} />
-            </div>
-          </section>
+}`}
+                    />
+                  </div>
 
-          {/* =========================================================================
-              ENDPOINT 4: SAVE MATCH RESULT & CRYSTALS
-          ========================================================================= */}
-          <section id="player-save" className="docs-endpoint-card" style={{ background: 'rgba(14, 22, 42, 0.85)', border: '1.5px solid rgba(255, 230, 0, 0.3)', borderRadius: '18px', padding: '28px', marginBottom: '40px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-              {methodBadge('PATCH')}
-              <code style={{ fontSize: '1.1rem', color: 'var(--neon-gold, #ffe600)', fontWeight: 'bold' }}>/rest/v1/profiles?id=eq.&#123;uuid&#125;</code>
-              <span style={{ fontSize: '0.75rem', background: 'rgba(255, 230, 0, 0.15)', border: '1px solid rgba(255, 230, 0, 0.3)', padding: '2px 8px', borderRadius: '4px', color: 'var(--neon-gold, #ffe600)' }}>Requires Player JWT</span>
-            </div>
-            <h3 style={{ margin: '0 0 10px 0', fontSize: '1.4rem', color: '#fff' }}>Save Match Results & Update Stability Crystals</h3>
-            <p style={{ color: '#cbd5e1', lineHeight: '1.6', margin: '0 0 18px 0' }}>
-              Call this endpoint when a match ends in your sister mobile, tournament, or Unity arena. It updates the warrior's match record and increments crystals won. Protected by Row Level Security (players can only update their own record).
-            </p>
+                  {/* 3. Session Refresh & Recovery in 2-column minimal row */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '16px' }}>
+                    <div className="endpoint-card" style={{ background: 'rgba(14, 22, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', padding: '16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                        {methodBadge('POST')}
+                        <code style={{ fontSize: '0.88rem', color: '#fff' }}>/auth/v1/token?grant_type=refresh_token</code>
+                      </div>
+                      <div style={{ fontWeight: 'bold', color: '#fff', fontSize: '0.95rem', marginBottom: '4px' }}>Refresh Access Token</div>
+                      <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: '0 0 10px 0' }}>
+                        Pass <code>refresh_token</code> to obtain a fresh 1-hour access token without prompting player for password.
+                      </p>
+                    </div>
 
-            <div style={{ background: '#020510', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '16px' }}>
-              <HighlightedJson code={`PATCH ${supabaseUrl}/rest/v1/profiles?id=eq.c7a8b9e0-1234-5678-90ab-cdef12345678
+                    <div className="endpoint-card" style={{ background: 'rgba(14, 22, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', padding: '16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                        {methodBadge('POST')}
+                        <code style={{ fontSize: '0.88rem', color: '#fff' }}>/auth/v1/recover</code>
+                      </div>
+                      <div style={{ fontWeight: 'bold', color: '#fff', fontSize: '0.95rem', marginBottom: '4px' }}>Password Recovery Email</div>
+                      <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: '0 0 10px 0' }}>
+                        Pass <code>email</code> to send a secure password reset link to the warrior.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* =========================================================================
+                  PAGE 3: PLAYER STATS & MATCH SAVE
+              ========================================================================= */}
+              {activePage === 'player' && (
+                <div>
+                  <div style={{ marginBottom: '20px' }}>
+                    <h1 style={{ fontSize: '1.8rem', fontWeight: '900', color: '#fff', margin: '0 0 4px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px' }}>
+                      PLAYER DATA & MATCH OUTCOME API
+                    </h1>
+                    <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', margin: 0 }}>
+                      Sync Stability Crystals, log match outcomes from sister tabletop arenas, and query global rankings.
+                    </p>
+                  </div>
+
+                  {/* 1. Get Player Profile */}
+                  <div className="endpoint-card" style={{ background: 'rgba(14, 22, 42, 0.8)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {methodBadge('GET')}
+                        <code style={{ fontSize: '1rem', color: '#fff', fontWeight: 'bold' }}>/rest/v1/profiles?id=eq.YOUR_USER_UUID</code>
+                      </div>
+                      <span style={{ fontSize: '0.72rem', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', padding: '2px 8px', borderRadius: '4px' }}>Anon or User Bearer</span>
+                    </div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff', marginBottom: '6px' }}>Fetch Warrior Profile & Stability Crystals</div>
+                    <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0 0 12px 0' }}>
+                      Returns the current warrior record containing callsign, crystals balance, total duels, and account status.
+                    </p>
+
+                    <CodeBlock
+                      label="RESPONSE (200 OK)"
+                      copyId="profile_get_resp"
+                      code={`[
+  {
+    "id": "782fc912-3490-48e2-...",
+    "username": "ShadowNinja",
+    "crystals_collected": 12,
+    "matches_played": 15,
+    "matches_won": 11,
+    "avatar_id": "chynaman",
+    "is_banned": false,
+    "last_active_app": "sister_unity_arena"
+  }
+]`}
+                    />
+                  </div>
+
+                  {/* 2. Save Match Outcome */}
+                  <div className="endpoint-card" style={{ background: 'rgba(14, 22, 42, 0.8)', border: '1px solid rgba(255, 230, 0, 0.25)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {methodBadge('PATCH')}
+                        <code style={{ fontSize: '1rem', color: '#fff', fontWeight: 'bold' }}>/rest/v1/profiles?id=eq.YOUR_USER_UUID</code>
+                      </div>
+                      <span style={{ fontSize: '0.72rem', background: 'rgba(255, 230, 0, 0.15)', color: 'var(--neon-gold, #ffe600)', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
+                        Requires User JWT Bearer
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff', marginBottom: '6px' }}>Update Stats & Award Stability Crystals</div>
+                    <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0 0 12px 0' }}>
+                      Called by sister apps upon match conclusion. Enforced by Postgres RLS so players can only update their own record.
+                    </p>
+
+                    <ParamTable
+                      rows={[
+                        ['crystals_collected', 'integer', 'Optional', 'New total crystal balance after duel award.'],
+                        ['matches_played', 'integer', 'Optional', 'Incremented match count.'],
+                        ['matches_won', 'integer', 'Optional', 'Incremented victory count if player won.'],
+                        ['last_active_app', 'string', 'Optional', 'Sister app identifier (e.g. "sister_unity_arena").']
+                      ]}
+                    />
+
+                    <CodeBlock
+                      label="PATCH /rest/v1/profiles?id=eq.YOUR_USER_UUID"
+                      copyId="profile_patch_curl"
+                      code={`PATCH ${supabaseUrl}/rest/v1/profiles?id=eq.YOUR_USER_UUID
 apikey: ${anonKey}
-Authorization: Bearer USER_JWT_ACCESS_TOKEN
+Authorization: Bearer YOUR_WARRIOR_JWT_TOKEN
 Content-Type: application/json
 
 {
-  "matches_played": 15,
-  "matches_won": 11,
-  "crystals_collected": 10,
+  "crystals_collected": 13,
+  "matches_played": 16,
+  "matches_won": 12,
   "last_active_app": "sister_unity_arena"
-}`} />
-            </div>
-          </section>
+}`}
+                    />
+                  </div>
 
-          {/* =========================================================================
-              ENDPOINT 5: RULES ENCYCLOPEDIA QUERY
-          ========================================================================= */}
-          <section id="rules-all" className="docs-endpoint-card" style={{ background: 'rgba(14, 22, 42, 0.85)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '18px', padding: '28px', marginBottom: '40px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-              {methodBadge('GET')}
-              <code style={{ fontSize: '1.1rem', color: '#fff', fontWeight: 'bold' }}>/rest/v1/rules_knowledge?is_active=eq.true</code>
-              <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '4px', color: 'rgba(255,255,255,0.5)' }}>Public (Anon Key)</span>
-            </div>
-            <h3 style={{ margin: '0 0 10px 0', fontSize: '1.4rem', color: '#fff' }}>Query Active Rules Encyclopedia</h3>
-            <p style={{ color: '#cbd5e1', lineHeight: '1.6', margin: '0 0 18px 0' }}>
-              Returns all active Attention TCG game rules (Combat, Setup, Zombie Mode, Energy Tokens, Saigo No Blitz, DP defense checks). Use this to render dynamic rulebook screens in your sister applications.
-            </p>
+                  {/* 3. Leaderboard */}
+                  <div className="endpoint-card" style={{ background: 'rgba(14, 22, 42, 0.8)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '14px', padding: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {methodBadge('GET')}
+                        <code style={{ fontSize: '1rem', color: '#fff', fontWeight: 'bold' }}>/rest/v1/profiles?order=crystals_collected.desc&limit=10</code>
+                      </div>
+                      <span style={{ fontSize: '0.72rem', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', padding: '2px 8px', borderRadius: '4px' }}>Public (Anon Key)</span>
+                    </div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff', marginBottom: '6px' }}>Global Hall of Fame Leaderboard</div>
+                    <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: 0 }}>
+                      Queries the top 10 warriors across the Attention TCG ecosystem ranked by Stability Crystals collected.
+                    </p>
+                  </div>
+                </div>
+              )}
 
-            <div style={{ background: '#020510', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '16px' }}>
-              <HighlightedJson code={`GET ${supabaseUrl}/rest/v1/rules_knowledge?is_active=eq.true&order=order_index.asc
-apikey: ${anonKey}
-Authorization: Bearer ${anonKey}
+              {/* =========================================================================
+                  PAGE 4: RULES KNOWLEDGE ENGINE
+              ========================================================================= */}
+              {activePage === 'rules' && (
+                <div>
+                  <div style={{ marginBottom: '20px' }}>
+                    <h1 style={{ fontSize: '1.8rem', fontWeight: '900', color: '#fff', margin: '0 0 4px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px' }}>
+                      RULES KNOWLEDGE ENGINE API
+                    </h1>
+                    <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', margin: 0 }}>
+                      The live rules database queried by the AI Rulekeeper and all sister companion applications.
+                    </p>
+                  </div>
 
-# --- RESPONSE 200 OK (Array of Rule Objects) ---
-[
+                  <div className="endpoint-card" style={{ background: 'rgba(14, 22, 42, 0.8)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {methodBadge('GET')}
+                        <code style={{ fontSize: '1rem', color: '#fff', fontWeight: 'bold' }}>/rest/v1/rules_knowledge?is_active=eq.true&order=order_index.asc</code>
+                      </div>
+                      <span style={{ fontSize: '0.72rem', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', padding: '2px 8px', borderRadius: '4px' }}>Public (Anon Key)</span>
+                    </div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff', marginBottom: '6px' }}>Fetch Active Rules Knowledge Base</div>
+                    <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0 0 12px 0' }}>
+                      Returns all active, approved game rules sorted by display priority for offline caching or in-game rule popups.
+                    </p>
+
+                    <CodeBlock
+                      label="RESPONSE (200 OK)"
+                      copyId="rules_get_resp"
+                      code={`[
   {
-    "id": "a901f4c2-...",
-    "topic": "2-Stage Clash Roll & Defense Point (DP) Rule",
+    "id": "e4f8d221-...",
+    "topic": "Clash Phase Dice",
     "category": "Combat",
-    "keywords": ["dice", "clash", "dp", "defense", "6"],
-    "short_answer": "Attacker rolls 2 red dice, defender rolls 2 gold dice. Defender DP activates if gold dice sum to 6 or higher.",
-    "details": "Combat Resolution Breakdown:\\n1. Clash: Attacker higher sum wins.\\n2. Multiplier: Roll 1 die for AP.\\n3. DP Armor: -10 or -15 AP if defender rolled 6+.",
-    "order_index": 4,
+    "keywords": ["clash", "dice", "roll", "combat"],
+    "short_answer": "Attacker rolls 2 red dice, defender rolls 2 gold dice.",
+    "details": "When a clash is declared, both players roll their respective dice concurrently...",
+    "order_index": 1,
     "is_active": true
   }
-]`} />
-            </div>
-          </section>
+]`}
+                    />
+                  </div>
 
-          {/* =========================================================================
-              ENDPOINT 6: CONTINUOUS LEARNING LOOP
-          ========================================================================= */}
-          <section id="questions-log" className="docs-endpoint-card" style={{ background: 'rgba(14, 22, 42, 0.85)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '18px', padding: '28px', marginBottom: '40px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-              {methodBadge('POST')}
-              <code style={{ fontSize: '1.1rem', color: '#fff', fontWeight: 'bold' }}>/rest/v1/user_questions</code>
-              <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '4px', color: 'rgba(255,255,255,0.5)' }}>Public / Authenticated</span>
-            </div>
-            <h3 style={{ margin: '0 0 10px 0', fontSize: '1.4rem', color: '#fff' }}>Log In-Game Question & Rating</h3>
-            <p style={{ color: '#cbd5e1', lineHeight: '1.6', margin: '0 0 18px 0' }}>
-              When a player asks an in-game question in your sister app, send it to this endpoint. If they click 👎 (Flag Inaccurate) and enter a correction, send a <code>PATCH /rest/v1/user_questions?id=eq.&#123;id&#125;</code>. It immediately appears in the Admin Portal inbox for 1-click promotion to the official rulebook!
-            </p>
+                  <div className="endpoint-card" style={{ background: 'rgba(14, 22, 42, 0.8)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '14px', padding: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {methodBadge('GET')}
+                        <code style={{ fontSize: '1rem', color: '#fff', fontWeight: 'bold' }}>/rest/v1/rules_knowledge?category=eq.Combat&topic=ilike.*dice*</code>
+                      </div>
+                      <span style={{ fontSize: '0.72rem', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', padding: '2px 8px', borderRadius: '4px' }}>Public (Anon Key)</span>
+                    </div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff', marginBottom: '6px' }}>Filter Rules by Category & Keyword</div>
+                    <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: 0 }}>
+                      Supports Postgres Full-Text and ILIKE filters for instant contextual search inside sister client search bars.
+                    </p>
+                  </div>
+                </div>
+              )}
 
-            <div style={{ background: '#020510', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '16px' }}>
-              <HighlightedJson code={`POST ${supabaseUrl}/rest/v1/user_questions
+              {/* =========================================================================
+                  PAGE 5: AI CHAT & FEEDBACK LOOP
+              ========================================================================= */}
+              {activePage === 'questions' && (
+                <div>
+                  <div style={{ marginBottom: '20px' }}>
+                    <h1 style={{ fontSize: '1.8rem', fontWeight: '900', color: '#fff', margin: '0 0 4px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px' }}>
+                      AI CHAT & CONTINUOUS LEARNING LOOP
+                    </h1>
+                    <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', margin: 0 }}>
+                      Log in-game questions from players and submit feedback so Game Masters can review answers and promote them into official rules.
+                    </p>
+                  </div>
+
+                  {/* 1. Log In-Game Question */}
+                  <div className="endpoint-card" style={{ background: 'rgba(14, 22, 42, 0.8)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {methodBadge('POST')}
+                        <code style={{ fontSize: '1rem', color: '#fff', fontWeight: 'bold' }}>/rest/v1/user_questions</code>
+                      </div>
+                      <span style={{ fontSize: '0.72rem', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', padding: '2px 8px', borderRadius: '4px' }}>Public (Anon Key)</span>
+                    </div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff', marginBottom: '6px' }}>Log In-Game Player Query</div>
+                    <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0 0 12px 0' }}>
+                      Stores the player's query and the AI assistant's generated response in the Command Deck inbox.
+                    </p>
+
+                    <ParamTable
+                      rows={[
+                        ['question_text', 'string', 'Required', 'The raw question asked by the combatant.'],
+                        ['ai_answer', 'string', 'Optional', 'The answer provided by the in-game chatbot.'],
+                        ['app_source', 'string', 'Optional', 'Client identifier (e.g. "sister_tournament_flutter").']
+                      ]}
+                    />
+
+                    <CodeBlock
+                      label="POST /rest/v1/user_questions"
+                      copyId="questions_post_curl"
+                      code={`POST ${supabaseUrl}/rest/v1/user_questions
 apikey: ${anonKey}
-Authorization: Bearer ${anonKey}
 Content-Type: application/json
 
 {
-  "user_id": "c7a8b9e0-1234-5678-90ab-cdef12345678",
-  "user_name": "ShadowNinja",
-  "question_text": "How much AP damage does Saigo No Blitz inflict?",
-  "ai_answer": "Saigo No Blitz unleashes an unstoppable 200 AP blast to all opponents and costs 5 Energy Tokens.",
+  "question_text": "Can I counter a Special Attack with a Barrier?",
+  "ai_answer": "Yes, Barrier counters all physical and special strikes unless specified Unblockable.",
   "app_source": "sister_tournament_client"
-}`} />
-            </div>
-          </section>
+}`}
+                    />
+                  </div>
 
-          {/* =========================================================================
-              SDK SECTION
-          ========================================================================= */}
-          <section id="sdk-section" style={{ background: 'rgba(14, 22, 42, 0.9)', border: '1.5px solid rgba(0, 240, 255, 0.3)', borderRadius: '20px', padding: '28px', marginBottom: '40px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-              <div>
-                <h3 style={{ margin: '0 0 4px 0', fontSize: '1.6rem', color: 'var(--neon-cyan, #00f0ff)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
-                  Complete Client SDK Samples
-                </h3>
-                <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.92rem' }}>
-                  Drop-in code snippets with authentication, data persistence, and rules fetching.
-                </p>
-              </div>
+                  {/* 2. Submit Rating & Correction */}
+                  <div className="endpoint-card" style={{ background: 'rgba(14, 22, 42, 0.8)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '14px', padding: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {methodBadge('PATCH')}
+                        <code style={{ fontSize: '1rem', color: '#fff', fontWeight: 'bold' }}>/rest/v1/user_questions?id=eq.QUESTION_UUID</code>
+                      </div>
+                      <span style={{ fontSize: '0.72rem', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', padding: '2px 8px', borderRadius: '4px' }}>Public (Anon Key)</span>
+                    </div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff', marginBottom: '6px' }}>Submit Rating & Player Suggested Answer</div>
+                    <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0 0 12px 0' }}>
+                      Allows players to thumbs-down inaccurate answers and propose corrections for admin review.
+                    </p>
 
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {[
-                  { id: 'js', label: 'JavaScript / React' },
-                  { id: 'flutter', label: 'Flutter (Dart)' },
-                  { id: 'swift', label: 'Swift (iOS)' },
-                  { id: 'unity', label: 'Unity (C#)' },
-                  { id: 'curl', label: 'cURL / Shell' }
-                ].map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => setActiveSdk(s.id)}
-                    style={{
-                      padding: '8px 14px',
-                      borderRadius: '8px',
-                      border: activeSdk === s.id ? '1.5px solid var(--neon-cyan, #00f0ff)' : '1px solid rgba(255,255,255,0.12)',
-                      background: activeSdk === s.id ? 'rgba(0, 240, 255, 0.18)' : 'rgba(0,0,0,0.4)',
-                      color: activeSdk === s.id ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.7)',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      fontSize: '0.85rem'
-                    }}
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+                    <ParamTable
+                      rows={[
+                        ['is_helpful', 'boolean', 'Optional', 'True for thumbs-up, false for thumbs-down.'],
+                        ['user_suggested_answer', 'string', 'Optional', 'Warrior-submitted clarification or rulebook correction.']
+                      ]}
+                    />
+                  </div>
+                </div>
+              )}
 
-            <div style={{ background: '#020510', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '20px', position: 'relative' }}>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
-                <button
-                  onClick={() => handleCopy(sdkCode[activeSdk], 'sdk_copy')}
-                  style={{
-                    background: 'rgba(0, 240, 255, 0.12)',
-                    border: '1px solid var(--neon-cyan, #00f0ff)',
-                    color: 'var(--neon-cyan, #00f0ff)',
-                    padding: '6px 14px',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '0.82rem',
-                    fontWeight: 'bold',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
-                >
-                  {copiedKey === 'sdk_copy' ? <Check size={14} /> : <Copy size={14} />}
-                  <span>{copiedKey === 'sdk_copy' ? 'COPIED TO CLIPBOARD!' : 'COPY SDK SNIPPET'}</span>
-                </button>
-              </div>
+              {/* =========================================================================
+                  PAGE 6: CLIENT SDK LIBRARIES
+              ========================================================================= */}
+              {activePage === 'sdks' && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+                    <div>
+                      <h1 style={{ fontSize: '1.8rem', fontWeight: '900', color: '#fff', margin: '0 0 4px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px' }}>
+                        SISTER APP CLIENT SDKs
+                      </h1>
+                      <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', margin: 0 }}>
+                        Production-ready integration modules in JavaScript, Unity C#, iOS Swift, Flutter Dart, and cURL.
+                      </p>
+                    </div>
 
-              <HighlightedJson code={sdkCode[activeSdk]} />
-            </div>
-          </section>
+                    {/* SDK Language Switcher Tabs */}
+                    <div style={{ display: 'flex', gap: '6px', background: 'rgba(5, 10, 24, 0.85)', padding: '4px', borderRadius: '10px', border: '1px solid rgba(0, 240, 255, 0.2)' }}>
+                      {[
+                        { id: 'js', label: 'JavaScript' },
+                        { id: 'unity', label: 'Unity (C#)' },
+                        { id: 'swift', label: 'Swift (iOS)' },
+                        { id: 'flutter', label: 'Flutter' },
+                        { id: 'curl', label: 'cURL / HTTP' }
+                      ].map((sdk) => (
+                        <button
+                          key={sdk.id}
+                          onClick={() => setActiveSdk(sdk.id)}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '8px',
+                            border: activeSdk === sdk.id ? '1px solid var(--neon-cyan, #00f0ff)' : '1px solid transparent',
+                            background: activeSdk === sdk.id ? 'rgba(0, 240, 255, 0.18)' : 'transparent',
+                            color: activeSdk === sdk.id ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255, 255, 255, 0.65)',
+                            cursor: 'pointer',
+                            fontWeight: 'bold',
+                            fontSize: '0.82rem',
+                            fontFamily: 'var(--font-display, "Rajdhani", sans-serif)'
+                          }}
+                        >
+                          {sdk.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
-        </main>
+                  <div className="endpoint-card" style={{ background: 'rgba(14, 22, 42, 0.85)', border: '1px solid rgba(0, 240, 255, 0.25)', borderRadius: '14px', padding: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FileCode size={18} color="var(--neon-cyan, #00f0ff)" />
+                        <span style={{ fontSize: '1rem', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '0.5px' }}>
+                          {activeSdk === 'js' && 'JavaScript / TypeScript (@supabase/supabase-js)'}
+                          {activeSdk === 'unity' && 'Unity C# (UnityEngine.Networking)'}
+                          {activeSdk === 'swift' && 'Swift iOS (Supabase-Swift SPM)'}
+                          {activeSdk === 'flutter' && 'Flutter Dart (supabase_flutter)'}
+                          {activeSdk === 'curl' && 'cURL & Raw HTTP Specification'}
+                        </span>
+                      </div>
+
+                      <button
+                        onClick={() => handleCopy(sdkCode[activeSdk], `sdk_${activeSdk}`)}
+                        style={{
+                          background: 'rgba(0, 240, 255, 0.1)',
+                          border: '1px solid rgba(0, 240, 255, 0.35)',
+                          color: 'var(--neon-cyan, #00f0ff)',
+                          padding: '5px 12px',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          fontSize: '0.78rem',
+                          fontWeight: 'bold',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        {copiedKey === `sdk_${activeSdk}` ? <Check size={13} color="#39ff14" /> : <Copy size={13} />}
+                        <span>{copiedKey === `sdk_${activeSdk}` ? 'COPIED TO CLIPBOARD' : 'COPY SDK CODE'}</span>
+                      </button>
+                    </div>
+
+                    <CodeBlock
+                      label="COMPLETE CLIENT IMPLEMENTATION"
+                      code={sdkCode[activeSdk]}
+                    />
+                  </div>
+                </div>
+              )}
+
+            </main>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-</>
+    </>
   );
 }
