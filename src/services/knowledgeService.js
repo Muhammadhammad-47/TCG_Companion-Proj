@@ -60,16 +60,62 @@ export const knowledgeService = {
     }
   },
 
-  // Admin: Fetch all rules including inactive
+  // Admin: Fetch all rules including inactive (with automatic fallback to official GDD rules)
   async fetchAllRulesForAdmin() {
-    if (!supabase) return FALLBACK_RULES;
-    const { data, error } = await supabase
-      .from('rules_knowledge')
-      .select('*')
-      .order('order_index', { ascending: true });
+    let dbRules = [];
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('rules_knowledge')
+          .select('*')
+          .order('order_index', { ascending: true });
 
-    if (error) throw error;
-    return data || [];
+        if (!error && data && data.length > 0) {
+          dbRules = data;
+        }
+      } catch (err) {
+        console.warn('knowledgeService: Supabase query error, using fallback rules:', err);
+      }
+    }
+
+    // If Supabase table is empty or unseeded, populate with official Attention TCG rules
+    if (dbRules.length === 0) {
+      return FALLBACK_RULES.map((r, idx) => {
+        let cat = 'Combat';
+        const t = (r.topic || '').toLowerCase();
+        if (t.includes('setup') || t.includes('start') || t.includes('begin') || t.includes('hand')) cat = 'Setup';
+        else if (t.includes('energy') || t.includes('et')) cat = 'Energy';
+        else if (t.includes('lore') || t.includes('story') || t.includes('objective') || t.includes('caca')) cat = 'Lore';
+        else if (t.includes('character') || t.includes('move') || t.includes('abilities') || t.includes('wild')) cat = 'Characters';
+        else if (t.includes('zombie') || t.includes('poison') || t.includes('antidote')) cat = 'Combat';
+
+        return {
+          id: `rule-${idx + 1}`,
+          topic: r.topic,
+          category: r.category || cat,
+          keywords: Array.isArray(r.keywords) ? r.keywords : [],
+          short_answer: r.short_answer || r.shortAnswer || '',
+          details: r.details || '',
+          order_index: r.order_index || r.orderIndex || idx + 1,
+          is_active: r.is_active !== undefined ? r.is_active : true
+        };
+      });
+    }
+
+    return dbRules.map((r, idx) => ({
+      id: r.id,
+      topic: r.topic || 'Untitled Rule',
+      category: r.category || 'Combat',
+      keywords: Array.isArray(r.keywords) ? r.keywords : (r.keywords ? [r.keywords] : []),
+      short_answer: r.short_answer || r.shortAnswer || '',
+      details: r.details || '',
+      order_index: r.order_index ?? idx + 1,
+      is_active: r.is_active !== false
+    }));
+  },
+
+  async fetchKnowledgeBase() {
+    return this.fetchAllRulesForAdmin();
   },
 
   // Admin: Create new rule

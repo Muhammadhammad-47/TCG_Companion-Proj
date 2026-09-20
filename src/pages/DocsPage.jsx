@@ -191,7 +191,7 @@ export default function DocsPage() {
     { page: 'player', label: 'Global Hall of Fame Leaderboard', route: '/rest/v1/profiles?order=crystals_collected.desc', method: 'GET' },
     { page: 'rules', label: 'Query Active Game Rules', route: '/rest/v1/rules_knowledge?is_active=eq.true', method: 'GET' },
     { page: 'rules', label: 'Filter Rules by Category & Keyword', route: '/rest/v1/rules_knowledge?category=eq.{name}', method: 'GET' },
-    { page: 'questions', label: 'Log Sister App Query to Inbox', route: '/rest/v1/user_questions', method: 'POST' },
+    { page: 'questions', label: 'Log TCG App Query to Inbox', route: '/rest/v1/user_questions', method: 'POST' },
     { page: 'questions', label: 'Submit Rating & Suggested Correction', route: '/rest/v1/user_questions?id=eq.{id}', method: 'PATCH' },
     { page: 'sdks', label: 'JavaScript / TypeScript SDK', route: 'npm install @supabase/supabase-js', method: 'SDK' },
     { page: 'sdks', label: 'Unity (C#) Client Script', route: 'AttentionTcgClient.cs', method: 'SDK' },
@@ -217,7 +217,7 @@ export const tcgClient = createClient(
 );
 
 // 1. REGISTER NEW WARRIOR
-export async function registerWarrior(email, password, username, appSource = 'sister_web') {
+export async function registerWarrior(email, password, username, appSource = 'tcg_web') {
   const { data, error } = await tcgClient.auth.signUp({
     email,
     password,
@@ -255,7 +255,7 @@ export async function getWarriorProfile(userId) {
 }
 
 // 4. SAVE MATCH RESULT & INCREMENT CRYSTALS
-export async function recordMatchVictory(userId, wonMatch, crystalsWon = 1, appSource = 'sister_web') {
+export async function recordMatchVictory(userId, wonMatch, crystalsWon = 1, appSource = 'tcg_web') {
   const current = await getWarriorProfile(userId);
   const { data, error } = await tcgClient
     .from('profiles')
@@ -285,7 +285,7 @@ export async function fetchRules() {
 }`,
 
     unity: `// =========================================================================
-// ATTENTION TCG: COMPLETE UNITY (C#) SISTER APP INTEGRATION
+// ATTENTION TCG: COMPLETE UNITY (C#) TCG CLIENT INTEGRATION
 // =========================================================================
 using System;
 using System.Collections;
@@ -422,7 +422,7 @@ class TcgEcosystemService {
       'matches_played': played + 1,
       'matches_won': won + (wonMatch ? 1 : 0),
       'crystals_collected': crystals + crystalsWon,
-      'last_active_app': 'sister_flutter_app',
+      'last_active_app': 'tcg_flutter_app',
       'updated_at': DateTime.now().toUtc().toIso8601String(),
     }).eq('id', userId);
   }
@@ -449,7 +449,7 @@ curl -X POST '${supabaseUrl}/auth/v1/signup' \\
   -d '{
     "email": "warrior@example.com",
     "password": "Password123!",
-    "data": { "username": "CyberDragon", "registered_app": "sister_tournament" }
+    "data": { "username": "CyberDragon", "registered_app": "tcg_tournament" }
   }'
 
 # 2. WARRIOR LOGIN (Fetch User JWT Bearer Token)
@@ -475,7 +475,7 @@ curl -X PATCH '${supabaseUrl}/rest/v1/profiles?id=eq.YOUR_USER_UUID' \\
     "crystals_collected": 5,
     "matches_played": 8,
     "matches_won": 6,
-    "last_active_app": "sister_unity_arena"
+    "last_active_app": "tcg_unity_arena"
   }'
 
 # 5. FETCH ACTIVE RULES ENCYCLOPEDIA
@@ -491,7 +491,7 @@ curl -X POST '${supabaseUrl}/rest/v1/user_questions' \\
   -d '{
     "question_text": "How many dice do I roll for the clash?",
     "ai_answer": "Attacker rolls 2 red dice, defender rolls 2 gold dice.",
-    "app_source": "sister_tournament_client"
+    "app_source": "tcg_tournament_client"
   }'`
   };
 
@@ -541,7 +541,7 @@ curl -X POST '${supabaseUrl}/rest/v1/user_questions' \\
             }
           `}</style>
 
-          {/* TOP HEADER */}
+          {/* TOP HEADER - CLEAN & NON-REDUNDANT */}
           <header
             style={{
               height: '56px',
@@ -579,10 +579,11 @@ curl -X POST '${supabaseUrl}/rest/v1/user_questions' \\
               </button>
               <div className="brand-pill-badge" style={{ fontSize: '0.8rem', padding: '2px 8px' }}>注意!</div>
               <div style={{ fontSize: '1.25rem', fontWeight: '900', letterSpacing: '1.5px', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', color: '#fff' }}>
-                DEVELOPER PORTAL <span style={{ color: 'var(--neon-cyan, #00f0ff)', fontSize: '0.85rem', fontWeight: 'normal', letterSpacing: '1px' }}>// ECOSYSTEM SPEC</span>
+                DEVELOPER PORTAL <span style={{ color: 'var(--neon-cyan, #00f0ff)', fontSize: '0.85rem', fontWeight: 'normal', letterSpacing: '1px' }}>// TCG APIS</span>
               </div>
             </div>
 
+            {/* Top Right: Only utility copy URL button (NO REDUNDANT COMMAND DECK BUTTON) */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <button
                 onClick={() => handleCopy(supabaseUrl, 'header_url')}
@@ -590,10 +591,10 @@ curl -X POST '${supabaseUrl}/rest/v1/user_questions' \\
                   background: 'rgba(0, 240, 255, 0.08)',
                   border: '1px solid rgba(0, 240, 255, 0.3)',
                   color: 'var(--neon-cyan, #00f0ff)',
-                  padding: '6px 12px',
+                  padding: '6px 14px',
                   borderRadius: '8px',
                   cursor: 'pointer',
-                  fontSize: '0.8rem',
+                  fontSize: '0.82rem',
                   fontWeight: 'bold',
                   fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
                   display: 'flex',
@@ -603,26 +604,6 @@ curl -X POST '${supabaseUrl}/rest/v1/user_questions' \\
               >
                 {copiedKey === 'header_url' ? <Check size={13} color="#39ff14" /> : <Copy size={13} />}
                 <span>COPY REST URL</span>
-              </button>
-
-              <button
-                onClick={() => navigate('/admin')}
-                style={{
-                  background: 'rgba(255, 230, 0, 0.12)',
-                  border: '1px solid var(--neon-gold, #ffe600)',
-                  color: 'var(--neon-gold, #ffe600)',
-                  padding: '6px 12px',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold',
-                  fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '0.85rem'
-                }}
-              >
-                <Shield size={14} /> COMMAND DECK
               </button>
             </div>
           </header>
@@ -667,7 +648,7 @@ curl -X POST '${supabaseUrl}/rest/v1/user_questions' \\
                   />
                 </div>
 
-                {/* If searching: show direct search results dropdown/list */}
+                {/* Search results or modules list */}
                 {searchFilter.trim() ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '420px', overflowY: 'auto' }}>
                     <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold', padding: '0 4px 6px 4px', letterSpacing: '1px' }}>
@@ -710,10 +691,9 @@ curl -X POST '${supabaseUrl}/rest/v1/user_questions' \\
                 ) : (
                   <div>
                     <div style={{ fontSize: '0.72rem', letterSpacing: '1.5px', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold', padding: '0 8px 10px 8px', textTransform: 'uppercase' }}>
-                      PORTAL MODULES
+                      TCG API MODULES
                     </div>
 
-                    {/* Dedicated Page Buttons */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       {docPages.map((page) => {
                         const Icon = page.icon;
@@ -772,7 +752,7 @@ curl -X POST '${supabaseUrl}/rest/v1/user_questions' \\
               <div style={{ background: 'rgba(5, 10, 24, 0.6)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '10px', padding: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
                   <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#39ff14', boxShadow: '0 0 8px #39ff14' }}></span>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#39ff14' }}>REST GATEWAY READY</span>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#39ff14' }}>TCG REST GATEWAY READY</span>
                 </div>
                 <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)' }}>
                   Supabase v2.8+ · JWT Bearer Verification
@@ -802,10 +782,10 @@ curl -X POST '${supabaseUrl}/rest/v1/user_questions' \\
                       </span>
                     </div>
                     <h1 style={{ fontSize: '1.8rem', fontWeight: '900', color: '#fff', margin: '0 0 4px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px' }}>
-                      SHARED ECOSYSTEM SPECIFICATION
+                      ATTENTION TCG APIS SPECIFICATION
                     </h1>
                     <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', margin: 0, maxWidth: '850px', lineHeight: '1.5' }}>
-                      Attention TCG powers a unified universe. Players register from any sister app (Unity 3D tabletop, Flutter tournament companion, or Kontrola Arena) and retain their single callsign, shared Stability Crystals, and access to the dynamic Game Rules database.
+                      Attention TCG powers a unified universe. Players register from any TCG app (Unity 3D tabletop, Flutter tournament companion, or Kontrola Arena) and retain their single callsign, shared Stability Crystals, and access to the dynamic Game Rules database.
                     </p>
                   </div>
 
@@ -825,7 +805,7 @@ curl -X POST '${supabaseUrl}/rest/v1/user_questions' \\
                         <BookOpen size={16} /> Live Rules Engine
                       </div>
                       <div style={{ color: '#94a3b8', fontSize: '0.82rem', lineHeight: '1.5' }}>
-                        Game Masters update rules in the Command Deck; sister apps query live endpoints with zero client rebuilds.
+                        Game Masters update rules in the Command Deck; TCG apps query live endpoints with zero client rebuilds.
                       </div>
                     </div>
 
@@ -917,7 +897,7 @@ curl -X POST '${supabaseUrl}/rest/v1/user_questions' \\
                         ['email', 'string', 'Required', 'Valid email address for warrior identity.'],
                         ['password', 'string', 'Required', 'Account password (minimum 6 characters).'],
                         ['data.username', 'string', 'Required', 'Unique warrior callsign (case-insensitive enforced in database).'],
-                        ['data.registered_app', 'string', 'Optional', 'Name of the sister client (e.g. "sister_unity_arena").']
+                        ['data.registered_app', 'string', 'Optional', 'Name of the TCG client (e.g. "tcg_unity_arena").']
                       ]}
                     />
 
@@ -933,7 +913,7 @@ Content-Type: application/json
   "password": "Password123!",
   "data": {
     "username": "ShadowNinja",
-    "registered_app": "sister_tournament_client"
+    "registered_app": "tcg_tournament_client"
   }
 }`}
                     />
@@ -977,7 +957,7 @@ Content-Type: application/json
                     />
                   </div>
 
-                  {/* 3. Session Refresh & Recovery in 2-column minimal row */}
+                  {/* 3. Session Refresh & Recovery */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '16px' }}>
                     <div className="endpoint-card" style={{ background: 'rgba(14, 22, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', padding: '16px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
@@ -1014,7 +994,7 @@ Content-Type: application/json
                       PLAYER DATA & MATCH OUTCOME API
                     </h1>
                     <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', margin: 0 }}>
-                      Sync Stability Crystals, log match outcomes from sister tabletop arenas, and query global rankings.
+                      Sync Stability Crystals, log match outcomes from TCG tabletop arenas, and query global rankings.
                     </p>
                   </div>
 
@@ -1044,7 +1024,7 @@ Content-Type: application/json
     "matches_won": 11,
     "avatar_id": "chynaman",
     "is_banned": false,
-    "last_active_app": "sister_unity_arena"
+    "last_active_app": "tcg_unity_arena"
   }
 ]`}
                     />
@@ -1063,7 +1043,7 @@ Content-Type: application/json
                     </div>
                     <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff', marginBottom: '6px' }}>Update Stats & Award Stability Crystals</div>
                     <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0 0 12px 0' }}>
-                      Called by sister apps upon match conclusion. Enforced by Postgres RLS so players can only update their own record.
+                      Called by TCG apps upon match conclusion. Enforced by Postgres RLS so players can only update their own record.
                     </p>
 
                     <ParamTable
@@ -1071,7 +1051,7 @@ Content-Type: application/json
                         ['crystals_collected', 'integer', 'Optional', 'New total crystal balance after duel award.'],
                         ['matches_played', 'integer', 'Optional', 'Incremented match count.'],
                         ['matches_won', 'integer', 'Optional', 'Incremented victory count if player won.'],
-                        ['last_active_app', 'string', 'Optional', 'Sister app identifier (e.g. "sister_unity_arena").']
+                        ['last_active_app', 'string', 'Optional', 'TCG app identifier (e.g. "tcg_unity_arena").']
                       ]}
                     />
 
@@ -1087,7 +1067,7 @@ Content-Type: application/json
   "crystals_collected": 13,
   "matches_played": 16,
   "matches_won": 12,
-  "last_active_app": "sister_unity_arena"
+  "last_active_app": "tcg_unity_arena"
 }`}
                     />
                   </div>
@@ -1119,7 +1099,7 @@ Content-Type: application/json
                       RULES KNOWLEDGE ENGINE API
                     </h1>
                     <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', margin: 0 }}>
-                      The live rules database queried by the AI Rulekeeper and all sister companion applications.
+                      The live rules database queried by the AI Rulekeeper and all Attention TCG companion applications.
                     </p>
                   </div>
 
@@ -1141,12 +1121,12 @@ Content-Type: application/json
                       copyId="rules_get_resp"
                       code={`[
   {
-    "id": "e4f8d221-...",
-    "topic": "Clash Phase Dice",
-    "category": "Combat",
-    "keywords": ["clash", "dice", "roll", "combat"],
-    "short_answer": "Attacker rolls 2 red dice, defender rolls 2 gold dice.",
-    "details": "When a clash is declared, both players roll their respective dice concurrently...",
+    "id": "rule-1",
+    "topic": "Official Attention TCG Rules & Overview",
+    "category": "Setup",
+    "keywords": ["rules", "core rules", "overview", "setup"],
+    "short_answer": "In Attention TCG, players roll 2 dice for turn order, start with 5 Energy Tokens...",
+    "details": "1. Game Objective: Defeat opponents to claim their Stability Crystals...",
     "order_index": 1,
     "is_active": true
   }
@@ -1164,7 +1144,7 @@ Content-Type: application/json
                     </div>
                     <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff', marginBottom: '6px' }}>Filter Rules by Category & Keyword</div>
                     <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: 0 }}>
-                      Supports Postgres Full-Text and ILIKE filters for instant contextual search inside sister client search bars.
+                      Supports Postgres Full-Text and ILIKE filters for instant contextual search inside TCG client search bars.
                     </p>
                   </div>
                 </div>
@@ -1202,7 +1182,7 @@ Content-Type: application/json
                       rows={[
                         ['question_text', 'string', 'Required', 'The raw question asked by the combatant.'],
                         ['ai_answer', 'string', 'Optional', 'The answer provided by the in-game chatbot.'],
-                        ['app_source', 'string', 'Optional', 'Client identifier (e.g. "sister_tournament_flutter").']
+                        ['app_source', 'string', 'Optional', 'Client identifier (e.g. "tcg_tournament_client").']
                       ]}
                     />
 
@@ -1216,7 +1196,7 @@ Content-Type: application/json
 {
   "question_text": "Can I counter a Special Attack with a Barrier?",
   "ai_answer": "Yes, Barrier counters all physical and special strikes unless specified Unblockable.",
-  "app_source": "sister_tournament_client"
+  "app_source": "tcg_tournament_client"
 }`}
                     />
                   </div>
@@ -1253,7 +1233,7 @@ Content-Type: application/json
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
                     <div>
                       <h1 style={{ fontSize: '1.8rem', fontWeight: '900', color: '#fff', margin: '0 0 4px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px' }}>
-                        SISTER APP CLIENT SDKs
+                        TCG APP CLIENT SDKs
                       </h1>
                       <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', margin: 0 }}>
                         Production-ready integration modules in JavaScript, Unity C#, iOS Swift, Flutter Dart, and cURL.

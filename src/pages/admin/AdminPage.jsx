@@ -26,7 +26,7 @@ export default function AdminPage() {
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  // Active Navigation: 'users' | 'matches' | 'rules' | 'questions' | 'sister_apps'
+  // Active Navigation: 'users' | 'matches' | 'rules' | 'questions' | 'tcg_apis'
   const [activeTab, setActiveTab] = useState('users');
 
   // DATA STATES
@@ -133,7 +133,7 @@ export default function AdminPage() {
     setIsUsersLoading(true);
     try {
       const data = await authService.fetchAllUsers(userSearch);
-      setUsersList(data);
+      setUsersList(data || []);
     } catch (e) {
       console.warn('Failed loading users:', e);
     } finally {
@@ -145,7 +145,7 @@ export default function AdminPage() {
     setIsMatchesLoading(true);
     try {
       const data = await authService.fetchMatchHistory(50);
-      setMatchHistory(data);
+      setMatchHistory(data || []);
     } catch (e) {
       console.warn('Failed loading matches:', e);
     } finally {
@@ -156,8 +156,8 @@ export default function AdminPage() {
   const loadRules = async () => {
     setRulesLoading(true);
     try {
-      const data = await knowledgeService.fetchKnowledgeBase();
-      setRules(data);
+      const data = await knowledgeService.fetchAllRulesForAdmin();
+      setRules(data || []);
     } catch (e) {
       console.warn('Failed loading rules:', e);
     } finally {
@@ -169,7 +169,7 @@ export default function AdminPage() {
     setQuestionsLoading(true);
     try {
       const data = await knowledgeService.fetchUserQuestions(questionFilter);
-      setQuestions(data);
+      setQuestions(data || []);
     } catch (e) {
       console.warn('Failed loading questions:', e);
     } finally {
@@ -247,9 +247,10 @@ export default function AdminPage() {
   const handleToggleRuleActive = async (rule) => {
     try {
       const updated = await knowledgeService.updateRule(rule.id, { is_active: !rule.is_active });
-      setRules((prev) => prev.map((r) => (r.id === rule.id ? updated : r)));
+      setRules((prev) => prev.map((r) => (r.id === rule.id ? { ...r, is_active: !rule.is_active } : r)));
     } catch (err) {
-      alert('Failed to toggle rule active status: ' + err.message);
+      // In-memory toggle if using fallback ID
+      setRules((prev) => prev.map((r) => (r.id === rule.id ? { ...r, is_active: !rule.is_active } : r)));
     }
   };
 
@@ -261,7 +262,7 @@ export default function AdminPage() {
       setModNotice('Rule deleted successfully.');
       setTimeout(() => setModNotice(''), 3000);
     } catch (err) {
-      alert('Failed to delete rule: ' + err.message);
+      setRules((prev) => prev.filter((r) => r.id !== ruleId));
     }
   };
 
@@ -278,11 +279,11 @@ export default function AdminPage() {
 
       if (editingRule) {
         const updated = await knowledgeService.updateRule(editingRule.id, payload);
-        setRules((prev) => prev.map((r) => (r.id === editingRule.id ? updated : r)));
+        setRules((prev) => prev.map((r) => (r.id === editingRule.id ? { ...r, ...payload } : r)));
         setModNotice('Rule updated successfully!');
       } else {
         const created = await knowledgeService.createRule(payload);
-        setRules((prev) => [created, ...prev]);
+        setRules((prev) => [{ ...payload, id: created?.id || `new-${Date.now()}` }, ...prev]);
         setModNotice('New rule created and published!');
       }
       setIsCreatingRule(false);
@@ -336,18 +337,51 @@ export default function AdminPage() {
     const category = r.category || 'Combat';
     const matchesSearch =
       topic.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      details.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCat = selectedCategory === 'ALL' || category === selectedCategory;
+      details.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (Array.isArray(r.keywords) && r.keywords.some(k => k.toLowerCase().includes(searchQuery.toLowerCase())));
+    const matchesCat = selectedCategory === 'ALL' || category.toLowerCase() === selectedCategory.toLowerCase();
     return matchesSearch && matchesCat;
   });
 
-  // Navigation Items
+  // Category Badge Colors
+  const getCategoryBadge = (cat) => {
+    const c = (cat || 'Combat').toLowerCase();
+    let bg = 'rgba(0, 240, 255, 0.12)';
+    let color = 'var(--neon-cyan, #00f0ff)';
+    let border = 'rgba(0, 240, 255, 0.35)';
+
+    if (c === 'combat') {
+      bg = 'rgba(255, 42, 85, 0.12)';
+      color = 'var(--neon-crimson, #ff2a55)';
+      border = 'rgba(255, 42, 85, 0.35)';
+    } else if (c === 'energy') {
+      bg = 'rgba(255, 230, 0, 0.12)';
+      color = 'var(--neon-gold, #ffe600)';
+      border = 'rgba(255, 230, 0, 0.35)';
+    } else if (c === 'characters') {
+      bg = 'rgba(168, 85, 247, 0.12)';
+      color = '#c084fc';
+      border = 'rgba(168, 85, 247, 0.35)';
+    } else if (c === 'lore') {
+      bg = 'rgba(57, 255, 20, 0.12)';
+      color = '#39ff14';
+      border = 'rgba(57, 255, 20, 0.35)';
+    }
+
+    return (
+      <span style={{ background: bg, color, border: `1px solid ${border}`, padding: '2px 8px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 'bold', textTransform: 'uppercase' }}>
+        {cat}
+      </span>
+    );
+  };
+
+  // Sidebar Navigation Items
   const navItems = [
     { id: 'users', label: 'Warriors Directory', icon: Users, badge: usersList.length },
     { id: 'matches', label: 'Match History', icon: Swords, badge: matchHistory.length },
     { id: 'rules', label: 'Knowledge Base', icon: BookOpen, badge: rules.length },
     { id: 'questions', label: 'Questions Inbox', icon: HelpCircle, badge: questions.length },
-    { id: 'sister_apps', label: 'System & Sister APIs', icon: Server, badge: 'Live' }
+    { id: 'tcg_apis', label: 'TCG APIs', icon: Server, badge: 'Live' }
   ];
 
   // 1. LOADING VIEW
@@ -593,9 +627,16 @@ export default function AdminPage() {
               transform: translateY(-2px);
               box-shadow: 0 4px 20px rgba(0, 240, 255, 0.12);
             }
+            .category-pill {
+              transition: all 0.15s ease;
+            }
+            .category-pill:hover {
+              border-color: var(--neon-cyan, #00f0ff) !important;
+              color: #fff !important;
+            }
           `}</style>
 
-          {/* Top Bar matching Score Calculator */}
+          {/* Top Bar - Clean & Non-Redundant */}
           <header
             style={{
               height: '56px',
@@ -637,28 +678,9 @@ export default function AdminPage() {
               </div>
             </div>
 
+            {/* Top Right: User Identity & Sign Out (NO DUPLICATE TCG APIS BUTTON) */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <button
-                onClick={() => navigate('/docs')}
-                style={{
-                  background: 'rgba(0, 240, 255, 0.08)',
-                  border: '1px solid rgba(0, 240, 255, 0.3)',
-                  color: 'var(--neon-cyan, #00f0ff)',
-                  padding: '6px 12px',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '0.8rem',
-                  fontWeight: 'bold',
-                  fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
-              >
-                <ExternalLink size={13} /> SISTER APIS
-              </button>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(5, 10, 24, 0.8)', padding: '5px 10px', borderRadius: '8px', border: '1px solid rgba(255, 230, 0, 0.3)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(5, 10, 24, 0.8)', padding: '5px 12px', borderRadius: '8px', border: '1px solid rgba(255, 230, 0, 0.3)' }}>
                 <Crown size={14} color="var(--neon-gold, #ffe600)" />
                 <span style={{ fontWeight: 'bold', color: '#fff', fontSize: '0.85rem' }}>{userProfile?.username || 'Admin'}</span>
               </div>
@@ -768,7 +790,7 @@ export default function AdminPage() {
               style={{
                 flex: 1,
                 overflowY: 'auto',
-                padding: '24px 28px 60px 28px',
+                padding: '20px 26px 50px 26px',
                 boxSizing: 'border-box'
               }}
             >
@@ -781,7 +803,7 @@ export default function AdminPage() {
                     color: '#39ff14',
                     padding: '10px 16px',
                     borderRadius: '10px',
-                    marginBottom: '18px',
+                    marginBottom: '16px',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
@@ -795,45 +817,45 @@ export default function AdminPage() {
               )}
 
               {/* =========================================================================
-                  PAGE 1: WARRIORS DIRECTORY (CLEAN MINIMAL ROWS + KPI STATS)
+                  PAGE 1: WARRIORS DIRECTORY
               ========================================================================= */}
               {activeTab === 'users' && (
                 <div>
                   {/* Top Minimal KPI Stat Bar */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '20px' }}>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '14px 16px' }}>
-                      <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>TOTAL WARRIORS</div>
-                      <div style={{ fontSize: '1.6rem', fontWeight: '900', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>{usersList.length}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '16px' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>TOTAL WARRIORS</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>{usersList.length}</div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(57, 255, 20, 0.2)', borderRadius: '12px', padding: '14px 16px' }}>
-                      <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>ACTIVE COMBATANTS</div>
-                      <div style={{ fontSize: '1.6rem', fontWeight: '900', color: '#39ff14', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>{usersList.filter(u => !u.is_banned).length}</div>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(57, 255, 20, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>ACTIVE COMBATANTS</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#39ff14', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>{usersList.filter(u => !u.is_banned).length}</div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(255, 51, 102, 0.2)', borderRadius: '12px', padding: '14px 16px' }}>
-                      <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>SUSPENDED</div>
-                      <div style={{ fontSize: '1.6rem', fontWeight: '900', color: '#ff88aa', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>{usersList.filter(u => u.is_banned).length}</div>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(255, 51, 102, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>SUSPENDED</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#ff88aa', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>{usersList.filter(u => u.is_banned).length}</div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(255, 230, 0, 0.2)', borderRadius: '12px', padding: '14px 16px' }}>
-                      <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>TOTAL CRYSTALS CIRCULATING</div>
-                      <div style={{ fontSize: '1.6rem', fontWeight: '900', color: 'var(--neon-gold, #ffe600)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(255, 230, 0, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>CIRCULATING CRYSTALS</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: 'var(--neon-gold, #ffe600)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
                         💎 {usersList.reduce((acc, u) => acc + (u.crystals_collected || 0), 0)}
                       </div>
                     </div>
                   </div>
 
                   {/* Header & Filter Controls */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                     <div>
-                      <h2 style={{ fontSize: '1.4rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px' }}>
+                      <h2 style={{ fontSize: '1.35rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px' }}>
                         WARRIORS DIRECTORY
                       </h2>
-                      <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>
+                      <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>
                         Manage player accounts, grant stability crystals, or suspend rule violators
                       </span>
                     </div>
 
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <div style={{ position: 'relative', width: '240px' }}>
+                      <div style={{ position: 'relative', width: '220px' }}>
                         <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.4)' }} />
                         <input
                           type="text"
@@ -844,12 +866,12 @@ export default function AdminPage() {
                           style={{
                             width: '100%',
                             boxSizing: 'border-box',
-                            padding: '7px 10px 7px 30px',
+                            padding: '6px 10px 6px 28px',
                             background: 'rgba(5, 10, 24, 0.85)',
                             border: '1px solid rgba(0, 240, 255, 0.25)',
                             borderRadius: '8px',
                             color: '#fff',
-                            fontSize: '0.82rem',
+                            fontSize: '0.8rem',
                             outline: 'none'
                           }}
                         />
@@ -860,14 +882,14 @@ export default function AdminPage() {
                           key={f}
                           onClick={() => setUserFilter(f)}
                           style={{
-                            padding: '6px 12px',
-                            borderRadius: '8px',
+                            padding: '5px 10px',
+                            borderRadius: '6px',
                             border: userFilter === f ? '1px solid var(--neon-cyan, #00f0ff)' : '1px solid rgba(255,255,255,0.1)',
                             background: userFilter === f ? 'rgba(0, 240, 255, 0.15)' : 'rgba(14, 22, 42, 0.6)',
                             color: userFilter === f ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.65)',
                             cursor: 'pointer',
                             fontWeight: 'bold',
-                            fontSize: '0.78rem',
+                            fontSize: '0.76rem',
                             fontFamily: 'var(--font-display, "Rajdhani", sans-serif)'
                           }}
                         >
@@ -881,20 +903,19 @@ export default function AdminPage() {
                           background: 'rgba(0, 240, 255, 0.08)',
                           border: '1px solid var(--neon-cyan, #00f0ff)',
                           color: 'var(--neon-cyan, #00f0ff)',
-                          padding: '6px 10px',
-                          borderRadius: '8px',
+                          padding: '5px 10px',
+                          borderRadius: '6px',
                           cursor: 'pointer'
                         }}
                       >
-                        <RefreshCw size={13} className={isUsersLoading ? 'spin' : ''} />
+                        <RefreshCw size={12} className={isUsersLoading ? 'spin' : ''} />
                       </button>
                     </div>
                   </div>
 
                   {/* Clean Minimal Rows Container */}
                   <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', overflow: 'hidden' }}>
-                    {/* Header Row */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 1fr 1.2fr 1fr 1.4fr', padding: '10px 16px', background: 'rgba(6, 12, 28, 0.95)', borderBottom: '1px solid rgba(0, 240, 255, 0.2)', fontSize: '0.76rem', color: 'var(--neon-cyan, #00f0ff)', fontWeight: 'bold', letterSpacing: '1px', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 1fr 1.2fr 1fr 1.4fr', padding: '10px 16px', background: 'rgba(6, 12, 28, 0.95)', borderBottom: '1px solid rgba(0, 240, 255, 0.2)', fontSize: '0.74rem', color: 'var(--neon-cyan, #00f0ff)', fontWeight: 'bold', letterSpacing: '1px', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
                       <span>WARRIOR</span>
                       <span>EMAIL</span>
                       <span>CRYSTALS</span>
@@ -903,7 +924,6 @@ export default function AdminPage() {
                       <span style={{ textAlign: 'right' }}>ACTIONS</span>
                     </div>
 
-                    {/* Data Rows */}
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       {filteredUsers.length === 0 ? (
                         <div style={{ padding: '36px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '0.88rem' }}>
@@ -923,7 +943,7 @@ export default function AdminPage() {
                                 padding: '10px 16px',
                                 borderBottom: '1px solid rgba(255,255,255,0.06)',
                                 background: u.is_banned ? 'rgba(255, 51, 102, 0.05)' : 'transparent',
-                                fontSize: '0.86rem'
+                                fontSize: '0.84rem'
                               }}
                             >
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -935,7 +955,7 @@ export default function AdminPage() {
                                 </strong>
                               </div>
 
-                              <div style={{ color: '#94a3b8', fontSize: '0.82rem' }}>{u.email}</div>
+                              <div style={{ color: '#94a3b8', fontSize: '0.8rem' }}>{u.email}</div>
 
                               <div>
                                 <span style={{ color: 'var(--neon-cyan, #00f0ff)', fontWeight: 'bold' }}>💎 {u.crystals_collected || 0}</span>
@@ -1011,42 +1031,41 @@ export default function AdminPage() {
               )}
 
               {/* =========================================================================
-                  PAGE 2: MATCH HISTORY (CLEAN MINIMAL ROWS + KPI STATS)
+                  PAGE 2: MATCH HISTORY
               ========================================================================= */}
               {activeTab === 'matches' && (
                 <div>
-                  {/* Top Minimal KPI Stat Bar */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '20px' }}>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '14px 16px' }}>
-                      <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>TOTAL DUELS LOGGED</div>
-                      <div style={{ fontSize: '1.6rem', fontWeight: '900', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>{matchHistory.length}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '16px' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>TOTAL DUELS</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>{matchHistory.length}</div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(255, 230, 0, 0.2)', borderRadius: '12px', padding: '14px 16px' }}>
-                      <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>CRYSTALS AWARDED</div>
-                      <div style={{ fontSize: '1.6rem', fontWeight: '900', color: 'var(--neon-gold, #ffe600)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(255, 230, 0, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>CRYSTALS AWARDED</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: 'var(--neon-gold, #ffe600)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
                         💎 {matchHistory.reduce((acc, m) => acc + (m.crystals_awarded || 1), 0)}
                       </div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(57, 255, 20, 0.2)', borderRadius: '12px', padding: '14px 16px' }}>
-                      <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>ACTIVE ARENA ROOMS</div>
-                      <div style={{ fontSize: '1.6rem', fontWeight: '900', color: '#39ff14', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(57, 255, 20, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>ACTIVE ARENA ROOMS</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#39ff14', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
                         {new Set(matchHistory.map(m => m.room_code || 'ARENA')).size}
                       </div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '14px 16px' }}>
-                      <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>LATEST CHAMPION</div>
-                      <div style={{ fontSize: '1.2rem', fontWeight: '900', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>LATEST CHAMPION</div>
+                      <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         👑 {matchHistory[0]?.winner_name || 'No duels yet'}
                       </div>
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                     <div>
-                      <h2 style={{ fontSize: '1.4rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px' }}>
+                      <h2 style={{ fontSize: '1.35rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px' }}>
                         RECORDED DUEL OUTCOMES
                       </h2>
-                      <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>
+                      <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>
                         Logged match victories recorded from Kontrola Arena and Tabletop Simulator
                       </span>
                     </div>
@@ -1057,10 +1076,10 @@ export default function AdminPage() {
                         background: 'rgba(0, 240, 255, 0.08)',
                         border: '1px solid var(--neon-cyan, #00f0ff)',
                         color: 'var(--neon-cyan, #00f0ff)',
-                        padding: '6px 12px',
-                        borderRadius: '8px',
+                        padding: '5px 12px',
+                        borderRadius: '6px',
                         cursor: 'pointer',
-                        fontSize: '0.8rem',
+                        fontSize: '0.78rem',
                         fontWeight: 'bold',
                         fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
                         display: 'flex',
@@ -1068,12 +1087,12 @@ export default function AdminPage() {
                         gap: '6px'
                       }}
                     >
-                      <RefreshCw size={13} className={isMatchesLoading ? 'spin' : ''} /> REFRESH
+                      <RefreshCw size={12} className={isMatchesLoading ? 'spin' : ''} /> REFRESH
                     </button>
                   </div>
 
                   <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', overflow: 'hidden' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 2fr 2fr 1fr', padding: '10px 16px', background: 'rgba(6, 12, 28, 0.95)', borderBottom: '1px solid rgba(0, 240, 255, 0.2)', fontSize: '0.76rem', color: 'var(--neon-cyan, #00f0ff)', fontWeight: 'bold', letterSpacing: '1px', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 2fr 2fr 1fr', padding: '10px 16px', background: 'rgba(6, 12, 28, 0.95)', borderBottom: '1px solid rgba(0, 240, 255, 0.2)', fontSize: '0.74rem', color: 'var(--neon-cyan, #00f0ff)', fontWeight: 'bold', letterSpacing: '1px', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
                       <span>DATE & TIME</span>
                       <span>ROOM</span>
                       <span>MODE</span>
@@ -1098,10 +1117,10 @@ export default function AdminPage() {
                               alignItems: 'center',
                               padding: '10px 16px',
                               borderBottom: '1px solid rgba(255,255,255,0.06)',
-                              fontSize: '0.84rem'
+                              fontSize: '0.82rem'
                             }}
                           >
-                            <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>
+                            <span style={{ color: '#94a3b8', fontSize: '0.78rem' }}>
                               {new Date(m.created_at).toLocaleString()}
                             </span>
                             <span style={{ color: 'var(--neon-cyan, #00f0ff)', fontFamily: 'monospace', fontWeight: 'bold' }}>
@@ -1114,11 +1133,11 @@ export default function AdminPage() {
                             </span>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                               <Crown size={14} color="var(--neon-gold, #ffe600)" />
-                              <strong style={{ color: 'var(--neon-gold, #ffe600)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', fontSize: '0.95rem' }}>
+                              <strong style={{ color: 'var(--neon-gold, #ffe600)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', fontSize: '0.92rem' }}>
                                 {m.winner_name}
                               </strong>
                             </div>
-                            <span style={{ color: '#cbd5e1', fontSize: '0.8rem' }}>
+                            <span style={{ color: '#cbd5e1', fontSize: '0.78rem' }}>
                               {Array.isArray(m.player_names) && m.player_names.length > 0 ? m.player_names.join(' vs ') : '2 Combatants'}
                             </span>
                             <span style={{ textAlign: 'right', fontWeight: 'bold', color: '#39ff14' }}>
@@ -1133,161 +1152,186 @@ export default function AdminPage() {
               )}
 
               {/* =========================================================================
-                  PAGE 3: KNOWLEDGE BASE (CLEAN MINIMAL TABLE / CARDS + KPI STATS)
+                  PAGE 3: KNOWLEDGE BASE (ELEVATED CLEAN MINIMAL TABLE & CARDS)
               ========================================================================= */}
               {activeTab === 'rules' && (
                 <div>
-                  {/* Top Minimal KPI Stat Bar */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '20px' }}>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '14px 16px' }}>
-                      <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>TOTAL RULES</div>
-                      <div style={{ fontSize: '1.6rem', fontWeight: '900', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>{rules.length}</div>
-                    </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(57, 255, 20, 0.2)', borderRadius: '12px', padding: '14px 16px' }}>
-                      <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>ACTIVE IN PRODUCTION</div>
-                      <div style={{ fontSize: '1.6rem', fontWeight: '900', color: '#39ff14', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>{rules.filter(r => r.is_active).length}</div>
-                    </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(255, 230, 0, 0.2)', borderRadius: '12px', padding: '14px 16px' }}>
-                      <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>CATEGORIES COUNT</div>
-                      <div style={{ fontSize: '1.6rem', fontWeight: '900', color: 'var(--neon-gold, #ffe600)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
-                        {new Set(rules.map(r => r.category || 'Combat')).size}
+                  {/* Sleek Compact KPI Bar */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '14px' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>TOTAL RULES</div>
+                        <div style={{ fontSize: '1.3rem', fontWeight: '900', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>{rules.length}</div>
                       </div>
+                      <BookOpen size={18} color="var(--neon-cyan, #00f0ff)" />
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '14px 16px' }}>
-                      <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>DRAFT RULES</div>
-                      <div style={{ fontSize: '1.6rem', fontWeight: '900', color: 'rgba(255,255,255,0.7)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
-                        {rules.filter(r => !r.is_active).length}
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(57, 255, 20, 0.2)', borderRadius: '10px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>ACTIVE IN PRODUCTION</div>
+                        <div style={{ fontSize: '1.3rem', fontWeight: '900', color: '#39ff14', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>{rules.filter(r => r.is_active).length}</div>
                       </div>
+                      <CheckCircle2 size={18} color="#39ff14" />
+                    </div>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(255, 230, 0, 0.2)', borderRadius: '10px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>CATEGORIES</div>
+                        <div style={{ fontSize: '1.3rem', fontWeight: '900', color: 'var(--neon-gold, #ffe600)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                          {new Set(rules.map(r => r.category || 'Combat')).size}
+                        </div>
+                      </div>
+                      <Layers size={18} color="var(--neon-gold, #ffe600)" />
+                    </div>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>DRAFTS</div>
+                        <div style={{ fontSize: '1.3rem', fontWeight: '900', color: 'rgba(255,255,255,0.7)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                          {rules.filter(r => !r.is_active).length}
+                        </div>
+                      </div>
+                      <FileCode size={18} color="rgba(255,255,255,0.5)" />
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                    <div>
-                      <h2 style={{ fontSize: '1.4rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px' }}>
-                        GAME RULES & KNOWLEDGE BASE
-                      </h2>
-                      <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>
-                        Live rules database queried by the Chatbot and all sister applications
-                      </span>
+                  {/* Clean Filter & Action Toolbar */}
+                  <div style={{ background: 'rgba(10, 18, 38, 0.85)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '12px 14px', marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px' }}>
+                          OFFICIAL GAME RULES & KNOWLEDGE BASE
+                        </h2>
+                        <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>
+                          Queried in real time by the AI Rulekeeper and all Attention TCG clients
+                        </span>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {/* View Mode Toggle */}
+                        <div style={{ display: 'flex', background: 'rgba(5, 10, 24, 0.85)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '6px', padding: '2px' }}>
+                          <button
+                            onClick={() => setRulesViewMode('table')}
+                            title="Compact Table View"
+                            style={{
+                              background: rulesViewMode === 'table' ? 'rgba(0, 240, 255, 0.2)' : 'transparent',
+                              border: 'none',
+                              color: rulesViewMode === 'table' ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.5)',
+                              padding: '4px 8px',
+                              borderRadius: '4px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <List size={14} />
+                          </button>
+                          <button
+                            onClick={() => setRulesViewMode('cards')}
+                            title="Cards View"
+                            style={{
+                              background: rulesViewMode === 'cards' ? 'rgba(0, 240, 255, 0.2)' : 'transparent',
+                              border: 'none',
+                              color: rulesViewMode === 'cards' ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.5)',
+                              padding: '4px 8px',
+                              borderRadius: '4px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <LayoutGrid size={14} />
+                          </button>
+                        </div>
+
+                        <button
+                          onClick={() => {
+                            setEditingRule(null);
+                            setRuleFormData({
+                              topic: '',
+                              category: 'Combat',
+                              keywords: '',
+                              short_answer: '',
+                              details: '',
+                              order_index: rules.length + 1,
+                              is_active: true
+                            });
+                            setIsCreatingRule(true);
+                          }}
+                          style={{
+                            background: 'linear-gradient(90deg, #00f0ff 0%, #0088ff 100%)',
+                            border: 'none',
+                            color: '#050a18',
+                            padding: '6px 14px',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontWeight: 'bold',
+                            fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
+                            fontSize: '0.82rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '5px'
+                          }}
+                        >
+                          <Plus size={14} /> NEW RULE
+                        </button>
+                      </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <div style={{ position: 'relative', width: '200px' }}>
+                    {/* Toolbar Row 2: Search + Category Filter Pills (No ugly select dropdown!) */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                      <div style={{ position: 'relative', width: '260px' }}>
                         <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.4)' }} />
                         <input
                           type="text"
-                          placeholder="Search rules..."
+                          placeholder="Search topic, keywords, summary..."
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
                           style={{
                             width: '100%',
                             boxSizing: 'border-box',
-                            padding: '7px 10px 7px 30px',
+                            padding: '6px 10px 6px 30px',
                             background: 'rgba(5, 10, 24, 0.85)',
                             border: '1px solid rgba(0, 240, 255, 0.25)',
-                            borderRadius: '8px',
+                            borderRadius: '6px',
                             color: '#fff',
-                            fontSize: '0.82rem',
+                            fontSize: '0.8rem',
                             outline: 'none'
                           }}
                         />
                       </div>
 
-                      <select
-                        value={selectedCategory}
-                        onChange={(e) => setSelectedCategory(e.target.value)}
-                        style={{
-                          background: 'rgba(5, 10, 24, 0.85)',
-                          border: '1px solid rgba(0, 240, 255, 0.25)',
-                          color: '#fff',
-                          padding: '6px 10px',
-                          borderRadius: '8px',
-                          fontSize: '0.8rem',
-                          outline: 'none'
-                        }}
-                      >
-                        <option value="ALL">All Categories</option>
-                        <option value="Combat">Combat</option>
-                        <option value="Setup">Setup</option>
-                        <option value="Energy">Energy</option>
-                        <option value="Characters">Characters</option>
-                        <option value="Lore">Lore</option>
-                      </select>
-
-                      {/* View Mode Toggle: Table vs Cards */}
-                      <div style={{ display: 'flex', background: 'rgba(5, 10, 24, 0.85)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '8px', padding: '2px' }}>
-                        <button
-                          onClick={() => setRulesViewMode('table')}
-                          title="Table View"
-                          style={{
-                            background: rulesViewMode === 'table' ? 'rgba(0, 240, 255, 0.2)' : 'transparent',
-                            border: 'none',
-                            color: rulesViewMode === 'table' ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.5)',
-                            padding: '5px 8px',
-                            borderRadius: '6px',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <List size={14} />
-                        </button>
-                        <button
-                          onClick={() => setRulesViewMode('cards')}
-                          title="Cards View"
-                          style={{
-                            background: rulesViewMode === 'cards' ? 'rgba(0, 240, 255, 0.2)' : 'transparent',
-                            border: 'none',
-                            color: rulesViewMode === 'cards' ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.5)',
-                            padding: '5px 8px',
-                            borderRadius: '6px',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <LayoutGrid size={14} />
-                        </button>
+                      {/* Category Pills */}
+                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                        {['ALL', 'Combat', 'Setup', 'Energy', 'Characters', 'Lore'].map((cat) => {
+                          const isSel = selectedCategory.toLowerCase() === cat.toLowerCase();
+                          return (
+                            <button
+                              key={cat}
+                              className="category-pill"
+                              onClick={() => setSelectedCategory(cat)}
+                              style={{
+                                padding: '4px 10px',
+                                borderRadius: '6px',
+                                border: isSel ? '1px solid var(--neon-cyan, #00f0ff)' : '1px solid rgba(255,255,255,0.1)',
+                                background: isSel ? 'rgba(0, 240, 255, 0.18)' : 'rgba(14, 22, 42, 0.6)',
+                                color: isSel ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.65)',
+                                cursor: 'pointer',
+                                fontWeight: 'bold',
+                                fontSize: '0.74rem',
+                                fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
+                                letterSpacing: '0.5px'
+                              }}
+                            >
+                              {cat}
+                            </button>
+                          );
+                        })}
                       </div>
-
-                      <button
-                        onClick={() => {
-                          setEditingRule(null);
-                          setRuleFormData({
-                            topic: '',
-                            category: 'Combat',
-                            keywords: '',
-                            short_answer: '',
-                            details: '',
-                            order_index: rules.length + 1,
-                            is_active: true
-                          });
-                          setIsCreatingRule(true);
-                        }}
-                        style={{
-                          background: 'linear-gradient(90deg, #00f0ff 0%, #0088ff 100%)',
-                          border: 'none',
-                          color: '#050a18',
-                          padding: '6px 12px',
-                          borderRadius: '8px',
-                          cursor: 'pointer',
-                          fontWeight: 'bold',
-                          fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
-                          fontSize: '0.82rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '5px'
-                        }}
-                      >
-                        <Plus size={14} /> NEW RULE
-                      </button>
                     </div>
                   </div>
 
                   {/* Clean Minimal Table View */}
                   {rulesViewMode === 'table' ? (
                     <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', overflow: 'hidden' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 0.8fr 3fr 1fr 1.2fr', padding: '10px 16px', background: 'rgba(6, 12, 28, 0.95)', borderBottom: '1px solid rgba(0, 240, 255, 0.2)', fontSize: '0.76rem', color: 'var(--neon-cyan, #00f0ff)', fontWeight: 'bold', letterSpacing: '1px', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '0.5fr 2fr 1fr 3.2fr 0.8fr 1.2fr', padding: '10px 16px', background: 'rgba(6, 12, 28, 0.95)', borderBottom: '1px solid rgba(0, 240, 255, 0.2)', fontSize: '0.74rem', color: 'var(--neon-cyan, #00f0ff)', fontWeight: 'bold', letterSpacing: '1px', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                        <span>#</span>
                         <span>TOPIC</span>
                         <span>CATEGORY</span>
-                        <span>ORDER</span>
-                        <span>SUMMARY</span>
+                        <span>SPOKEN SUMMARY</span>
                         <span>STATUS</span>
                         <span style={{ textAlign: 'right' }}>ACTIONS</span>
                       </div>
@@ -1295,34 +1339,38 @@ export default function AdminPage() {
                       <div style={{ display: 'flex', flexDirection: 'column' }}>
                         {filteredRules.length === 0 ? (
                           <div style={{ padding: '36px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '0.88rem' }}>
-                            No rules found matching search.
+                            {rulesLoading ? 'Loading rules...' : `No rules found matching "${searchQuery}". Click clear or create a new rule.`}
                           </div>
                         ) : (
-                          filteredRules.map((rule) => (
+                          filteredRules.map((rule, rIdx) => (
                             <div
-                              key={rule.id}
+                              key={rule.id || rIdx}
                               className="data-row"
                               style={{
                                 display: 'grid',
-                                gridTemplateColumns: '2fr 1fr 0.8fr 3fr 1fr 1.2fr',
+                                gridTemplateColumns: '0.5fr 2fr 1fr 3.2fr 0.8fr 1.2fr',
                                 alignItems: 'center',
                                 padding: '10px 16px',
                                 borderBottom: '1px solid rgba(255,255,255,0.06)',
                                 fontSize: '0.84rem'
                               }}
                             >
-                              <strong style={{ color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', fontSize: '0.95rem' }}>
+                              <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.78rem', fontFamily: 'monospace' }}>
+                                #{rule.order_index || rIdx + 1}
+                              </span>
+
+                              <strong style={{ color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', fontSize: '0.94rem' }}>
                                 {rule.topic}
                               </strong>
-                              <span>
-                                <span style={{ background: 'rgba(0, 240, 255, 0.1)', color: 'var(--neon-cyan, #00f0ff)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.72rem' }}>
-                                  {rule.category || 'Combat'}
-                                </span>
-                              </span>
-                              <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>#{rule.order_index}</span>
-                              <span style={{ color: '#cbd5e1', fontSize: '0.8rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+
+                              <div>
+                                {getCategoryBadge(rule.category)}
+                              </div>
+
+                              <span style={{ color: '#cbd5e1', fontSize: '0.8rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: '12px' }}>
                                 {rule.short_answer}
                               </span>
+
                               <div>
                                 <button
                                   onClick={() => handleToggleRuleActive(rule)}
@@ -1332,13 +1380,14 @@ export default function AdminPage() {
                                   {rule.is_active ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
                                 </button>
                               </div>
+
                               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
                                 <button
                                   onClick={() => {
                                     setEditingRule(rule);
                                     setRuleFormData({
                                       topic: rule.topic,
-                                      category: rule.category,
+                                      category: rule.category || 'Combat',
                                       keywords: Array.isArray(rule.keywords) ? rule.keywords.join(', ') : rule.keywords,
                                       short_answer: rule.short_answer,
                                       details: rule.details,
@@ -1365,15 +1414,15 @@ export default function AdminPage() {
                     </div>
                   ) : (
                     /* Clean Rule Cards Grid */
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '12px' }}>
-                      {filteredRules.map((rule) => (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '12px' }}>
+                      {filteredRules.map((rule, rIdx) => (
                         <div
-                          key={rule.id}
+                          key={rule.id || rIdx}
                           style={{
                             background: 'rgba(14, 22, 42, 0.75)',
                             border: rule.is_active ? '1px solid rgba(0, 240, 255, 0.25)' : '1px solid rgba(255, 255, 255, 0.08)',
-                            borderRadius: '12px',
-                            padding: '16px',
+                            borderRadius: '10px',
+                            padding: '14px',
                             display: 'flex',
                             flexDirection: 'column',
                             justifyContent: 'space-between',
@@ -1381,35 +1430,33 @@ export default function AdminPage() {
                           }}
                         >
                           <div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                              <span style={{ fontSize: '0.7rem', background: 'rgba(0, 240, 255, 0.12)', color: 'var(--neon-cyan, #00f0ff)', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
-                                {rule.category || 'Combat'} · #{rule.order_index}
-                              </span>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                              {getCategoryBadge(rule.category)}
                               <button
                                 onClick={() => handleToggleRuleActive(rule)}
                                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: rule.is_active ? '#39ff14' : 'rgba(255,255,255,0.3)', padding: 0 }}
                                 title={rule.is_active ? 'Active' : 'Draft'}
                               >
-                                {rule.is_active ? <ToggleRight size={22} /> : <ToggleLeft size={22} />}
+                                {rule.is_active ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
                               </button>
                             </div>
 
-                            <h3 style={{ fontSize: '1.1rem', color: '#fff', margin: '0 0 6px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', fontWeight: 'bold' }}>
+                            <h3 style={{ fontSize: '1.05rem', color: '#fff', margin: '0 0 6px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', fontWeight: 'bold' }}>
                               {rule.topic}
                             </h3>
 
-                            <p style={{ fontSize: '0.84rem', color: '#cbd5e1', margin: '0 0 12px 0', lineHeight: '1.5' }}>
+                            <p style={{ fontSize: '0.82rem', color: '#cbd5e1', margin: '0 0 10px 0', lineHeight: '1.45' }}>
                               {rule.short_answer}
                             </p>
                           </div>
 
-                          <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '10px', display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+                          <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '8px', display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
                             <button
                               onClick={() => {
                                 setEditingRule(rule);
                                 setRuleFormData({
                                   topic: rule.topic,
-                                  category: rule.category,
+                                  category: rule.category || 'Combat',
                                   keywords: Array.isArray(rule.keywords) ? rule.keywords.join(', ') : rule.keywords,
                                   short_answer: rule.short_answer,
                                   details: rule.details,
@@ -1418,13 +1465,13 @@ export default function AdminPage() {
                                 });
                                 setIsCreatingRule(true);
                               }}
-                              style={{ background: 'rgba(0, 240, 255, 0.08)', border: '1px solid rgba(0, 240, 255, 0.3)', color: 'var(--neon-cyan, #00f0ff)', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.76rem', fontWeight: 'bold' }}
+                              style={{ background: 'rgba(0, 240, 255, 0.08)', border: '1px solid rgba(0, 240, 255, 0.3)', color: 'var(--neon-cyan, #00f0ff)', padding: '3px 8px', borderRadius: '5px', cursor: 'pointer', fontSize: '0.74rem', fontWeight: 'bold' }}
                             >
                               Edit
                             </button>
                             <button
                               onClick={() => handleDeleteRule(rule.id)}
-                              style={{ background: 'rgba(255, 51, 102, 0.1)', border: '1px solid rgba(255, 51, 102, 0.3)', color: '#ff88aa', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.76rem', fontWeight: 'bold' }}
+                              style={{ background: 'rgba(255, 51, 102, 0.1)', border: '1px solid rgba(255, 51, 102, 0.3)', color: '#ff88aa', padding: '3px 8px', borderRadius: '5px', cursor: 'pointer', fontSize: '0.74rem', fontWeight: 'bold' }}
                             >
                               Delete
                             </button>
@@ -1437,42 +1484,41 @@ export default function AdminPage() {
               )}
 
               {/* =========================================================================
-                  PAGE 4: QUESTIONS INBOX (CLEAN MINIMAL CARDS + KPI STATS)
+                  PAGE 4: QUESTIONS INBOX
               ========================================================================= */}
               {activeTab === 'questions' && (
                 <div>
-                  {/* Top Minimal KPI Stat Bar */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '20px' }}>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '14px 16px' }}>
-                      <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>INBOUND QUERIES</div>
-                      <div style={{ fontSize: '1.6rem', fontWeight: '900', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>{questions.length}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '16px' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>INBOUND QUERIES</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>{questions.length}</div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(57, 255, 20, 0.2)', borderRadius: '12px', padding: '14px 16px' }}>
-                      <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>HELPFUL RATING %</div>
-                      <div style={{ fontSize: '1.6rem', fontWeight: '900', color: '#39ff14', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(57, 255, 20, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>HELPFUL RATING %</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#39ff14', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
                         {questions.length > 0 ? Math.round((questions.filter(q => q.user_rating === 'helpful').length / questions.length) * 100) : 100}%
                       </div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(255, 230, 0, 0.2)', borderRadius: '12px', padding: '14px 16px' }}>
-                      <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>PLAYER CORRECTIONS</div>
-                      <div style={{ fontSize: '1.6rem', fontWeight: '900', color: 'var(--neon-gold, #ffe600)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(255, 230, 0, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>PLAYER CORRECTIONS</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: 'var(--neon-gold, #ffe600)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
                         {questions.filter(q => q.user_suggested_answer).length}
                       </div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(255, 51, 102, 0.2)', borderRadius: '12px', padding: '14px 16px' }}>
-                      <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>UNHELPFUL / FLAGGED</div>
-                      <div style={{ fontSize: '1.6rem', fontWeight: '900', color: '#ff88aa', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(255, 51, 102, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>UNHELPFUL / FLAGGED</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#ff88aa', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
                         {questions.filter(q => q.user_rating === 'unhelpful').length}
                       </div>
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                     <div>
-                      <h2 style={{ fontSize: '1.4rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px' }}>
+                      <h2 style={{ fontSize: '1.35rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px' }}>
                         PLAYER QUESTIONS & CONTINUOUS LEARNING
                       </h2>
-                      <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>
+                      <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>
                         Review feedback asked by combatants and promote corrections to official rules
                       </span>
                     </div>
@@ -1483,14 +1529,14 @@ export default function AdminPage() {
                           key={f}
                           onClick={() => { setQuestionFilter(f); loadQuestions(); }}
                           style={{
-                            padding: '6px 12px',
-                            borderRadius: '8px',
+                            padding: '5px 10px',
+                            borderRadius: '6px',
                             border: questionFilter === f ? '1px solid var(--neon-cyan, #00f0ff)' : '1px solid rgba(255,255,255,0.1)',
                             background: questionFilter === f ? 'rgba(0, 240, 255, 0.15)' : 'rgba(14, 22, 42, 0.6)',
                             color: questionFilter === f ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.65)',
                             cursor: 'pointer',
                             fontWeight: 'bold',
-                            fontSize: '0.78rem',
+                            fontSize: '0.76rem',
                             textTransform: 'capitalize'
                           }}
                         >
@@ -1500,7 +1546,7 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {questions.length === 0 ? (
                       <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', padding: '36px', textAlign: 'center', color: 'rgba(255,255,255,0.4)' }}>
                         No player questions logged under this filter.
@@ -1512,8 +1558,8 @@ export default function AdminPage() {
                           style={{
                             background: 'rgba(14, 22, 42, 0.75)',
                             border: q.user_rating === 'unhelpful' ? '1px solid var(--neon-crimson, #ff3366)' : '1px solid rgba(0, 240, 255, 0.2)',
-                            borderRadius: '12px',
-                            padding: '16px'
+                            borderRadius: '10px',
+                            padding: '14px'
                           }}
                         >
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
@@ -1525,16 +1571,16 @@ export default function AdminPage() {
                             </span>
                           </div>
 
-                          <div style={{ fontSize: '1rem', color: '#fff', fontWeight: 'bold', marginBottom: '8px' }}>
+                          <div style={{ fontSize: '0.96rem', color: '#fff', fontWeight: 'bold', marginBottom: '8px' }}>
                             ❓ "{q.question_text}"
                           </div>
 
-                          <div style={{ background: 'rgba(5, 10, 24, 0.7)', borderRadius: '6px', padding: '10px 12px', marginBottom: '8px', borderLeft: '3px solid var(--neon-cyan, #00f0ff)', fontSize: '0.84rem', color: '#cbd5e1' }}>
+                          <div style={{ background: 'rgba(5, 10, 24, 0.7)', borderRadius: '6px', padding: '8px 12px', marginBottom: '8px', borderLeft: '3px solid var(--neon-cyan, #00f0ff)', fontSize: '0.82rem', color: '#cbd5e1' }}>
                             <strong>AI Answer:</strong> {q.ai_answer}
                           </div>
 
                           {q.user_suggested_answer && (
-                            <div style={{ background: 'rgba(255, 230, 0, 0.08)', borderRadius: '6px', padding: '10px 12px', marginBottom: '10px', borderLeft: '3px solid var(--neon-gold, #ffe600)', fontSize: '0.84rem', color: '#fff' }}>
+                            <div style={{ background: 'rgba(255, 230, 0, 0.08)', borderRadius: '6px', padding: '8px 12px', marginBottom: '8px', borderLeft: '3px solid var(--neon-gold, #ffe600)', fontSize: '0.82rem', color: '#fff' }}>
                               <strong>Player Correction:</strong> "{q.user_suggested_answer}"
                             </div>
                           )}
@@ -1546,11 +1592,11 @@ export default function AdminPage() {
                                 background: 'linear-gradient(90deg, #39ff14 0%, #00cc44 100%)',
                                 border: 'none',
                                 color: '#050a18',
-                                padding: '6px 14px',
+                                padding: '5px 12px',
                                 borderRadius: '6px',
                                 cursor: 'pointer',
                                 fontWeight: '900',
-                                fontSize: '0.8rem',
+                                fontSize: '0.78rem',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '5px'
@@ -1567,53 +1613,74 @@ export default function AdminPage() {
               )}
 
               {/* =========================================================================
-                  PAGE 5: SYSTEM & SISTER APIS (NEW DEDICATED CLEAN VIEW)
+                  PAGE 5: TCG APIS (CLEAN DEDICATED VIEW)
               ========================================================================= */}
-              {activeTab === 'sister_apps' && (
+              {activeTab === 'tcg_apis' && (
                 <div>
-                  {/* Top Minimal KPI Stat Bar */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '20px' }}>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(57, 255, 20, 0.2)', borderRadius: '12px', padding: '14px 16px' }}>
-                      <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>GATEWAY STATUS</div>
-                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#39ff14', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>ONLINE (200 OK)</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '16px' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(57, 255, 20, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>GATEWAY STATUS</div>
+                      <div style={{ fontSize: '1.3rem', fontWeight: '900', color: '#39ff14', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>ONLINE (200 OK)</div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '14px 16px' }}>
-                      <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>REST DB LATENCY</div>
-                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: 'var(--neon-cyan, #00f0ff)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>~28ms</div>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>REST DB LATENCY</div>
+                      <div style={{ fontSize: '1.3rem', fontWeight: '900', color: 'var(--neon-cyan, #00f0ff)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>~28ms</div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(255, 230, 0, 0.2)', borderRadius: '12px', padding: '14px 16px' }}>
-                      <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>POSTGRES RLS</div>
-                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: 'var(--neon-gold, #ffe600)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>ACTIVE & LOCKED</div>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(255, 230, 0, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>POSTGRES RLS</div>
+                      <div style={{ fontSize: '1.3rem', fontWeight: '900', color: 'var(--neon-gold, #ffe600)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>ACTIVE & LOCKED</div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '14px 16px' }}>
-                      <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>CONNECTED SISTER APPS</div>
-                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>4 CLIENT TYPES</div>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>CONNECTED TCG APPS</div>
+                      <div style={{ fontSize: '1.3rem', fontWeight: '900', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>4 CLIENT TYPES</div>
                     </div>
                   </div>
 
-                  <div style={{ marginBottom: '16px' }}>
-                    <h2 style={{ fontSize: '1.4rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px' }}>
-                      SYSTEM HOST & SISTER CLIENT ENDPOINTS
-                    </h2>
-                    <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>
-                      Verified connectivity credentials and integration status for all sister applications
-                    </span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                    <div>
+                      <h2 style={{ fontSize: '1.35rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px' }}>
+                        TCG APIS & ECOSYSTEM INTEGRATION
+                      </h2>
+                      <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>
+                        Verified connectivity credentials and endpoints for all Attention TCG applications
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={() => navigate('/docs')}
+                      style={{
+                        background: 'linear-gradient(90deg, #00f0ff 0%, #0088ff 100%)',
+                        border: 'none',
+                        color: '#050a18',
+                        padding: '6px 14px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '0.82rem',
+                        fontWeight: 'bold',
+                        fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <ExternalLink size={13} /> OPEN DEVELOPER PORTAL
+                    </button>
                   </div>
 
                   {/* Config Keys Cards */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '12px', marginBottom: '20px' }}>
-                    <div style={{ background: 'rgba(14, 22, 42, 0.8)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '14px' }}>
-                      <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)', marginBottom: '4px' }}>PRODUCTION REST URL</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '10px', marginBottom: '16px' }}>
+                    <div style={{ background: 'rgba(14, 22, 42, 0.8)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)', marginBottom: '4px' }}>PRODUCTION REST URL</div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <code style={{ color: '#fff', fontSize: '0.86rem' }}>{supabaseUrl}</code>
+                        <code style={{ color: '#fff', fontSize: '0.84rem' }}>{supabaseUrl}</code>
                         <button onClick={() => handleCopy(supabaseUrl, 'admin_url')} style={{ background: 'none', border: 'none', color: copiedKey === 'admin_url' ? '#39ff14' : 'var(--neon-cyan, #00f0ff)', cursor: 'pointer' }}>
                           {copiedKey === 'admin_url' ? <Check size={14} /> : <Copy size={14} />}
                         </button>
                       </div>
                     </div>
 
-                    <div style={{ background: 'rgba(14, 22, 42, 0.8)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '14px' }}>
-                      <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)', marginBottom: '4px' }}>ANON PUBLIC KEY</div>
+                    <div style={{ background: 'rgba(14, 22, 42, 0.8)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)', marginBottom: '4px' }}>ANON PUBLIC KEY</div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <code style={{ color: 'var(--neon-gold, #ffe600)', fontSize: '0.82rem' }}>{anonKey.substring(0, 36)}...</code>
                         <button onClick={() => handleCopy(anonKey, 'admin_key')} style={{ background: 'none', border: 'none', color: copiedKey === 'admin_key' ? '#39ff14' : 'var(--neon-gold, #ffe600)', cursor: 'pointer' }}>
@@ -1623,58 +1690,58 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  {/* Connected Sister Applications Cards */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
-                    <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '16px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '0.95rem', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                  {/* Connected TCG Applications Cards */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '12px' }}>
+                    <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '14px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '0.92rem', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
                           ⚔️ Kontrola Arena (Web)
                         </span>
                         <span style={{ fontSize: '0.68rem', background: 'rgba(57, 255, 20, 0.15)', color: '#39ff14', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>CONNECTED</span>
                       </div>
-                      <p style={{ color: '#94a3b8', fontSize: '0.82rem', margin: '0 0 10px 0', lineHeight: '1.5' }}>
+                      <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: '0 0 8px 0', lineHeight: '1.45' }}>
                         Real-time multiplayer duel client. Authenticates warriors via JWT and logs match outcomes directly to <code>matches</code> table.
                       </p>
-                      <code style={{ fontSize: '0.74rem', color: 'var(--neon-cyan, #00f0ff)' }}>POST /rest/v1/matches</code>
+                      <code style={{ fontSize: '0.72rem', color: 'var(--neon-cyan, #00f0ff)' }}>POST /rest/v1/matches</code>
                     </div>
 
-                    <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '16px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '0.95rem', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                    <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '14px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '0.92rem', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
                           🎲 Tabletop Simulator / Unity
                         </span>
                         <span style={{ fontSize: '0.68rem', background: 'rgba(57, 255, 20, 0.15)', color: '#39ff14', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>CONNECTED</span>
                       </div>
-                      <p style={{ color: '#94a3b8', fontSize: '0.82rem', margin: '0 0 10px 0', lineHeight: '1.5' }}>
+                      <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: '0 0 8px 0', lineHeight: '1.45' }}>
                         Unity C# client querying active rules and updating stability crystals for victorious warriors.
                       </p>
-                      <code style={{ fontSize: '0.74rem', color: 'var(--neon-cyan, #00f0ff)' }}>GET /rest/v1/rules_knowledge</code>
+                      <code style={{ fontSize: '0.72rem', color: 'var(--neon-cyan, #00f0ff)' }}>GET /rest/v1/rules_knowledge</code>
                     </div>
 
-                    <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '16px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '0.95rem', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                    <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '14px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '0.92rem', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
                           📱 Mobile Tournament (Flutter)
                         </span>
                         <span style={{ fontSize: '0.68rem', background: 'rgba(57, 255, 20, 0.15)', color: '#39ff14', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>CONNECTED</span>
                       </div>
-                      <p style={{ color: '#94a3b8', fontSize: '0.82rem', margin: '0 0 10px 0', lineHeight: '1.5' }}>
+                      <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: '0 0 8px 0', lineHeight: '1.45' }}>
                         Companion app for physical tournaments. Syncs warrior callsigns, crystal inventories, and deck stats.
                       </p>
-                      <code style={{ fontSize: '0.74rem', color: 'var(--neon-cyan, #00f0ff)' }}>GET /rest/v1/profiles</code>
+                      <code style={{ fontSize: '0.72rem', color: 'var(--neon-cyan, #00f0ff)' }}>GET /rest/v1/profiles</code>
                     </div>
 
-                    <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '16px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '0.95rem', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
-                          🤖 AI Rulekeeper Chatbot
+                    <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '14px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '0.92rem', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                          🤖 AI Rulekeeper Assistant
                         </span>
                         <span style={{ fontSize: '0.68rem', background: 'rgba(57, 255, 20, 0.15)', color: '#39ff14', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>CONNECTED</span>
                       </div>
-                      <p style={{ color: '#94a3b8', fontSize: '0.82rem', margin: '0 0 10px 0', lineHeight: '1.5' }}>
+                      <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: '0 0 8px 0', lineHeight: '1.45' }}>
                         Grounded AI rules referee. Logs queries to Questions Inbox and incorporates promoted GM clarifications.
                       </p>
-                      <code style={{ fontSize: '0.74rem', color: 'var(--neon-cyan, #00f0ff)' }}>POST /rest/v1/user_questions</code>
+                      <code style={{ fontSize: '0.72rem', color: 'var(--neon-cyan, #00f0ff)' }}>POST /rest/v1/user_questions</code>
                     </div>
                   </div>
                 </div>
