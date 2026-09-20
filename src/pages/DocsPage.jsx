@@ -48,8 +48,12 @@ export default function DocsPage() {
   const scrollTo = (id) => {
     setActiveSection(id);
     const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (element && mainScrollRef.current) {
+      const container = mainScrollRef.current;
+      const containerRect = container.getBoundingClientRect();
+      const elemRect = element.getBoundingClientRect();
+      const offsetTop = elemRect.top - containerRect.top + container.scrollTop - 24;
+      container.scrollTo({ top: offsetTop, behavior: 'smooth' });
     }
   };
 
@@ -436,12 +440,21 @@ curl -X POST '${supabaseUrl}/rest/v1/user_questions' \\
             height: '100%',
             display: 'flex',
             flexDirection: 'column',
-            background: '#040816',
+            background: 'radial-gradient(circle at 50% 20%, #111a36 0%, #080d1e 60%, #040710 100%)',
             color: '#f8fafc',
             fontFamily: 'var(--font-sub, "Outfit", sans-serif)',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            position: 'relative'
           }}
         >
+          {/* Background diagonal neon streaks & particle glow matching Score Calculator */}
+          <div className="menu-bg-elements" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
+            <div className="neon-streak-red" style={{ opacity: 0.35 }}></div>
+            <div className="neon-streak-blue" style={{ opacity: 0.35 }}></div>
+            <div className="subtle-watermark-card left-wm" style={{ opacity: 0.25 }}></div>
+            <div className="subtle-watermark-card right-wm" style={{ opacity: 0.25 }}></div>
+          </div>
+
       <style>{`
         /* Custom sleek cyberpunk scrollbars */
         ::-webkit-scrollbar {
@@ -459,15 +472,16 @@ curl -X POST '${supabaseUrl}/rest/v1/user_questions' \\
           background: rgba(0, 240, 255, 0.6);
         }
         .docs-nav-link:hover {
-          background: rgba(0, 240, 255, 0.08) !important;
+          background: rgba(0, 240, 255, 0.12) !important;
           color: var(--neon-cyan, #00f0ff) !important;
+          border-color: rgba(0, 240, 255, 0.4) !important;
         }
         .docs-endpoint-card {
-          transition: border-color 0.2s, box-shadow 0.2s;
+          transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
         }
         .docs-endpoint-card:hover {
-          border-color: rgba(0, 240, 255, 0.4) !important;
-          box-shadow: 0 0 25px rgba(0, 240, 255, 0.08);
+          border-color: rgba(0, 240, 255, 0.45) !important;
+          box-shadow: 0 0 30px rgba(0, 240, 255, 0.15);
         }
       `}</style>
 
@@ -477,10 +491,10 @@ curl -X POST '${supabaseUrl}/rest/v1/user_questions' \\
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: '12px 24px',
-          background: 'rgba(10, 18, 38, 0.96)',
-          borderBottom: '1px solid rgba(0, 240, 255, 0.22)',
-          backdropFilter: 'blur(12px)',
+          padding: '14px 28px',
+          background: 'rgba(10, 20, 45, 0.92)',
+          borderBottom: '1.5px solid rgba(0, 240, 255, 0.28)',
+          backdropFilter: 'blur(14px)',
           zIndex: 100,
           flexShrink: 0
         }}
@@ -489,25 +503,27 @@ curl -X POST '${supabaseUrl}/rest/v1/user_questions' \\
           <button
             onClick={() => navigate('/')}
             style={{
-              background: 'rgba(0, 240, 255, 0.08)',
-              border: '1px solid rgba(0, 240, 255, 0.3)',
-              color: 'var(--neon-cyan, #00f0ff)',
-              padding: '6px 12px',
+              background: 'rgba(10, 25, 50, 0.85)',
+              border: '1.5px solid rgba(0, 240, 255, 0.4)',
               borderRadius: '8px',
-              cursor: 'pointer',
+              color: 'var(--neon-cyan, #00f0ff)',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              fontWeight: '700',
+              padding: '6px 14px',
+              fontSize: '0.88rem',
+              fontWeight: 'bold',
               fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
-              fontSize: '0.9rem'
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              boxShadow: '0 0 12px rgba(0, 240, 255, 0.2)'
             }}
           >
-            <ArrowLeft size={16} /> HUB
+            <ArrowLeft size={16} /> BACK TO HUB
           </button>
-          <div className="brand-pill-badge" style={{ fontSize: '0.8rem', padding: '2px 8px' }}>注意!</div>
+          <div className="brand-pill-badge" style={{ fontSize: '0.85rem', padding: '3px 10px' }}>注意!</div>
           <div>
-            <div style={{ fontSize: '1.25rem', fontWeight: '900', letterSpacing: '1px', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+            <div style={{ fontSize: '1.35rem', fontWeight: '900', letterSpacing: '1.5px', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', color: '#fff' }}>
               ATTENTION TCG <span style={{ color: 'var(--neon-cyan, #00f0ff)' }}>DEVELOPER PORTAL</span>
             </div>
           </div>
@@ -517,40 +533,42 @@ curl -X POST '${supabaseUrl}/rest/v1/user_questions' \\
           <button
             onClick={() => handleCopy(supabaseUrl, 'top_url')}
             style={{
-              background: 'rgba(255, 255, 255, 0.06)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              color: '#e2e8f0',
-              padding: '6px 12px',
+              background: 'rgba(0, 240, 255, 0.08)',
+              border: '1px solid rgba(0, 240, 255, 0.3)',
+              color: 'var(--neon-cyan, #00f0ff)',
+              padding: '7px 14px',
               borderRadius: '8px',
               cursor: 'pointer',
               fontSize: '0.82rem',
+              fontWeight: 'bold',
+              fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
               display: 'flex',
               alignItems: 'center',
               gap: '6px'
             }}
           >
             {copiedKey === 'top_url' ? <Check size={14} color="#39ff14" /> : <Copy size={14} />}
-            <span>Copy Base URL</span>
+            <span>COPY BASE REST URL</span>
           </button>
 
           <button
             onClick={() => navigate('/admin')}
             style={{
-              background: 'rgba(255, 230, 0, 0.1)',
-              border: '1px solid rgba(255, 230, 0, 0.3)',
+              background: 'rgba(255, 230, 0, 0.12)',
+              border: '1px solid var(--neon-gold, #ffe600)',
               color: 'var(--neon-gold, #ffe600)',
-              padding: '6px 14px',
+              padding: '7px 14px',
               borderRadius: '8px',
               cursor: 'pointer',
+              fontWeight: 'bold',
+              fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              fontWeight: '700',
-              fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
-              fontSize: '0.9rem'
+              fontSize: '0.88rem'
             }}
           >
-            <Shield size={14} /> ADMIN
+            <Shield size={14} /> COMMAND DECK
           </button>
         </div>
       </header>
