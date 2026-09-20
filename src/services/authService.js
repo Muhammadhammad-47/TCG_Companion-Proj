@@ -67,7 +67,7 @@ export const authService = {
   },
 
   // Sign in existing player or administrator
-  // Sign in existing player or administrator
+  // Sign in existing player or administrator against Supabase Auth
   async signIn(email, password, appSource = 'companion_hub') {
     if (!isSupabaseConfigured || !supabase) {
       throw new Error('Supabase is not configured.');
@@ -95,74 +95,6 @@ export const authService = {
     return data;
   },
 
-  // Dedicated Admin Authentication with auto-registration if account not yet created in Supabase
-  async signInOrRegisterAdmin(email, password) {
-    if (!isSupabaseConfigured || !supabase) {
-      throw new Error('Supabase is not configured.');
-    }
-
-    const cleanEmail = email.trim().toLowerCase();
-    const isDesignatedAdmin = cleanEmail === 'admin@tcgcompanion.com';
-
-    let result = null;
-    let lastError = null;
-
-    // 1. First attempt direct sign-in
-    try {
-      const signInRes = await supabase.auth.signInWithPassword({
-        email: cleanEmail,
-        password: password
-      });
-      if (signInRes.error) throw signInRes.error;
-      result = signInRes.data;
-    } catch (err) {
-      lastError = err;
-      // 2. If designated admin credentials and user doesn't exist, auto-register!
-      if (isDesignatedAdmin) {
-        try {
-          const signUpRes = await supabase.auth.signUp({
-            email: cleanEmail,
-            password: password,
-            options: {
-              data: {
-                username: 'TCG_Admin',
-                is_admin: true,
-                registered_app: 'admin_portal'
-              }
-            }
-          });
-          if (signUpRes.error) throw signUpRes.error;
-          result = signUpRes.data;
-        } catch (regErr) {
-          throw new Error(err.message || regErr.message || 'Admin authentication failed.');
-        }
-      } else {
-        throw err;
-      }
-    }
-
-    // 3. Ensure profiles table row has is_admin = true for this user
-    if (result?.user) {
-      try {
-        await supabase
-          .from('profiles')
-          .upsert({
-            id: result.user.id,
-            email: cleanEmail,
-            username: result.user.user_metadata?.username || 'TCG_Admin',
-            is_admin: true,
-            registered_app: 'admin_portal',
-            last_active_app: 'admin_portal',
-            updated_at: new Date().toISOString()
-          }, { onConflict: 'id' });
-      } catch (upsertErr) {
-        console.warn('Admin profile upsert warning:', upsertErr);
-      }
-    }
-
-    return result;
-  },
-
   // Sign out
   async signOut() {
     if (!supabase) return;
@@ -178,7 +110,7 @@ export const authService = {
     return user;
   },
 
-  // Get profile by user ID
+  // Get profile strictly from the database
   async getProfile(userId) {
     if (!supabase || !userId) return null;
     const { data, error } = await supabase
@@ -188,13 +120,8 @@ export const authService = {
       .maybeSingle();
 
     if (error) {
-      console.warn('Error fetching profile:', error);
+      console.warn('Error fetching profile from database:', error);
       return null;
-    }
-
-    // Automatic admin guarantee for designated admin email
-    if (data && data.email && data.email.toLowerCase() === 'admin@tcgcompanion.com') {
-      data.is_admin = true;
     }
 
     return data;
@@ -217,16 +144,10 @@ export const authService = {
     return data;
   },
 
-  // Check if current user is an administrator
-  async checkIsAdmin(userId, userEmail) {
-    if (userEmail && userEmail.toLowerCase() === 'admin@tcgcompanion.com') {
-      return true;
-    }
+  // Check if user is an administrator strictly from their database profile
+  async checkIsAdmin(userId) {
     if (!supabase || !userId) return false;
     const profile = await this.getProfile(userId);
-    if (profile?.email && profile.email.toLowerCase() === 'admin@tcgcompanion.com') {
-      return true;
-    }
     return Boolean(profile && profile.is_admin);
   },
 

@@ -16,9 +16,9 @@ export default function AdminPage() {
   const [userProfile, setUserProfile] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
 
-  // Admin login credentials (pre-filled with designated admin credentials)
-  const [adminEmail, setAdminEmail] = useState('Admin@TCgcomapnion.com');
-  const [adminPassword, setAdminPassword] = useState('admin@TcgCompanion');
+  // Admin login credentials (empty by default, authenticated securely against Supabase DB)
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
@@ -70,11 +70,8 @@ export default function AdminPage() {
     return () => { isMounted = false; };
   }, []);
 
-  // 2. Load Data when authenticated as admin
-  const isAdmin = Boolean(
-    userProfile?.is_admin ||
-    currentUser?.email?.toLowerCase() === 'admin@tcgcompanion.com'
-  );
+  // 2. Load Data when authenticated as admin strictly from DB profile
+  const isAdmin = Boolean(userProfile?.is_admin);
 
   useEffect(() => {
     if (isAdmin) {
@@ -107,19 +104,23 @@ export default function AdminPage() {
     }
   };
 
-  // Handle Admin Login with auto-provisioning
+  // Handle Admin Login strictly against database
   const handleAdminLogin = async (e) => {
     if (e) e.preventDefault();
     setLoginError('');
     setIsLoggingIn(true);
     try {
-      const authData = await authService.signInOrRegisterAdmin(adminEmail, adminPassword);
+      const authData = await authService.signIn(adminEmail, adminPassword, 'admin_portal');
       if (!authData?.user) {
         throw new Error('Authentication failed. Please verify credentials.');
       }
-      setCurrentUser(authData.user);
       const profile = await authService.getProfile(authData.user.id);
-      setUserProfile(profile || { username: 'TCG_Admin', is_admin: true });
+      if (!profile || !profile.is_admin) {
+        await authService.signOut();
+        throw new Error('Access Denied: You do not possess Administrator privileges in the database.');
+      }
+      setCurrentUser(authData.user);
+      setUserProfile(profile);
     } catch (err) {
       setLoginError(err.message || 'Login failed');
     } finally {
@@ -329,26 +330,6 @@ export default function AdminPage() {
             <p style={{ color: 'var(--text-muted, #94a3b8)', fontSize: '0.95rem', margin: 0, fontFamily: 'var(--font-sub, "Outfit", sans-serif)' }}>
               Attention TCG Knowledge Engine & Questions Command
             </p>
-          </div>
-
-          {/* Quick Notice: Credentials pre-configured */}
-          <div
-            style={{
-              background: 'rgba(0, 240, 255, 0.08)',
-              border: '1px solid rgba(0, 240, 255, 0.3)',
-              borderRadius: '12px',
-              padding: '10px 14px',
-              marginBottom: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              fontSize: '0.85rem'
-            }}
-          >
-            <Key size={16} color="var(--neon-cyan, #00f0ff)" />
-            <div style={{ fontFamily: 'var(--font-sub, "Outfit", sans-serif)', color: '#e2e8f0' }}>
-              Designated Admin Credentials pre-loaded. Click below to enter.
-            </div>
           </div>
 
           {loginError && (

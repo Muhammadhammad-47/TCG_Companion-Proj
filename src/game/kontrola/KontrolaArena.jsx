@@ -104,6 +104,19 @@ export default function KontrolaArena() {
   const [turnSecondsLeft, setTurnSecondsLeft] = useState(60);
   const [revealedVision, setRevealedVision] = useState(null);
 
+  // Hoisted Derived Match & Turn State (safe for all effects, handlers, and renders)
+  const isMyTurn = Boolean(gameState?.turn === playerId && !isSpectator);
+  const myCharacter = gameState?.characterStates?.[playerId] || KONTROLA_CHARACTERS[selectedCharacter];
+  const myHand = gameState?.hands?.[playerId] || [];
+  const opponents = gameState?.players ? gameState.players.filter((p) => p !== playerId) : [];
+  const turnNum = gameState?.turnNumber || 1;
+  const roundNum = gameState?.roundNumber || 1;
+  const activeTurnPlayerName =
+    gameState?.playerNames?.[gameState?.turn] ||
+    gameState?.characterStates?.[gameState?.turn]?.name ||
+    'Warrior';
+  const activeTurnChar = gameState?.characterStates?.[gameState?.turn];
+
   // Sound effects on interaction
   const playClick = () => {
     if (soundFX?.playMenuHover) soundFX.playMenuHover();
@@ -1695,17 +1708,6 @@ export default function KontrolaArena() {
   // ==========================================
   // VIEW 2: ACTIVE MULTIPLAYER BATTLE ARENA
   // ==========================================
-  const myHand = gameState.hands?.[playerId] || [];
-  const myCharacter = gameState.characterStates?.[playerId] || KONTROLA_CHARACTERS[selectedCharacter];
-  const isMyTurn = gameState.turn === playerId && !isSpectator;
-  const opponents = gameState.players.filter((p) => p !== playerId);
-  const turnNum = gameState.turnNumber || 1;
-  const roundNum = gameState.roundNumber || 1;
-  const activeTurnPlayerName =
-    gameState.playerNames?.[gameState.turn] ||
-    gameState.characterStates?.[gameState.turn]?.name ||
-    'Warrior';
-  const activeTurnChar = gameState.characterStates?.[gameState.turn];
 
   return (
     <div className="webgl-canvas-frame portrait-mode" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
