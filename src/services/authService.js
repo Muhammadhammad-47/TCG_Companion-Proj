@@ -144,6 +144,81 @@ export const authService = {
     return data;
   },
 
+  // Send password reset email
+  async resetPassword(email) {
+    if (!isSupabaseConfigured || !supabase) {
+      throw new Error('Supabase is not configured.');
+    }
+    const cleanEmail = email.trim().toLowerCase();
+    const redirectUrl = window.location.origin + window.location.pathname;
+    const { data, error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+      redirectTo: redirectUrl
+    });
+    if (error) throw error;
+    return data;
+  },
+
+  // Update password (when authenticated or in recovery session)
+  async updatePassword(newPassword) {
+    if (!isSupabaseConfigured || !supabase) {
+      throw new Error('Supabase is not configured.');
+    }
+    if (!newPassword || newPassword.length < 6) {
+      throw new Error('Password must be at least 6 characters long.');
+    }
+    const { data, error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+    if (error) throw error;
+    return data;
+  },
+
+  // Save player match result and update crystals
+  async savePlayerMatchResult(userId, { won = false, crystalsDelta = 0, appSource = 'companion_hub' } = {}) {
+    if (!supabase || !userId) return null;
+    const current = await this.getProfile(userId);
+    if (!current) return null;
+
+    const newPlayed = (current.matches_played || 0) + 1;
+    const newWon = (current.matches_won || 0) + (won ? 1 : 0);
+    const newCrystals = Math.max(0, (current.crystals_collected || 0) + crystalsDelta);
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({
+        matches_played: newPlayed,
+        matches_won: newWon,
+        crystals_collected: newCrystals,
+        last_active_app: appSource,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) {
+      console.warn('Failed to save match result:', error);
+      return null;
+    }
+    return data;
+  },
+
+  // Query top warriors leaderboard
+  async getLeaderboard(limit = 10) {
+    if (!supabase) return [];
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, username, avatar_id, crystals_collected, matches_won, matches_played')
+      .order('crystals_collected', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.warn('Failed to fetch leaderboard:', error);
+      return [];
+    }
+    return data || [];
+  },
+
   // Check if user is an administrator strictly from their database profile
   async checkIsAdmin(userId) {
     if (!supabase || !userId) return false;

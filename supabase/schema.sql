@@ -78,10 +78,14 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- Ensure pre-existing Admin@TCgcomapnion.com account receives admin status
+-- Auto-confirm email in auth.users and ensure is_admin = true on database
+update auth.users
+set email_confirmed_at = coalesce(email_confirmed_at, now())
+where lower(email) in ('admin@tcgcompanion.com', 'admin@tcgcomapnion.com');
+
 update public.profiles
 set is_admin = true
-where lower(email) = 'admin@tcgcompanion.com';
+where lower(email) in ('admin@tcgcompanion.com', 'admin@tcgcomapnion.com');
 
 
 -- 2. RULES KNOWLEDGE TABLE (Dynamic Rules Knowledge Base)

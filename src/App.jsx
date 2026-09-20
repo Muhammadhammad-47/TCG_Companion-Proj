@@ -1429,12 +1429,68 @@ export function Hub() {
 
 function App() {
   const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    authService.getCurrentUser().then(async (u) => {
+      if (isMounted) {
+        setCurrentUser(u);
+        if (u) {
+          const prof = await authService.getProfile(u.id);
+          setUserProfile(prof);
+        }
+        setAuthLoading(false);
+      }
+    });
+
+    const { data: { subscription } } = authService.onAuthStateChange(async (event, session, profile) => {
+      setCurrentUser(session?.user || null);
+      setUserProfile(profile);
+      setAuthLoading(false);
+    });
+
+    return () => subscription?.unsubscribe();
+  }, []);
+
+  // Full App Guard: requires authenticated warrior to access companion features
+  const ProtectedRoute = ({ children }) => {
+    if (authLoading) {
+      return (
+        <div style={{ minHeight: '100vh', background: 'radial-gradient(circle at 50% 20%, #0d1a38 0%, #050a18 70%, #02040c 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--neon-cyan)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div className="brand-pill-badge" style={{ margin: '0 auto 12px auto', fontSize: '0.9rem', padding: '3px 12px' }}>注意!</div>
+            <div style={{ fontSize: '1.3rem', letterSpacing: '2px', fontWeight: 'bold' }}>VERIFYING WARRIOR ACCESS...</div>
+          </div>
+        </div>
+      );
+    }
+    if (!currentUser) {
+      return (
+        <AuthModal
+          isOpen={true}
+          preventClose={true}
+          onAuthSuccess={async (u) => {
+            setCurrentUser(u);
+            if (u) {
+              const prof = await authService.getProfile(u.id);
+              setUserProfile(prof);
+            }
+          }}
+        />
+      );
+    }
+    return children;
+  };
+
   return (
     <Routes>
-      <Route path="/" element={<Hub />} />
-      <Route path="/chat" element={<Chat onBack={() => navigate('/')} />} />
-      <Route path="/game" element={<GamePage />} />
-      <Route path="/kontrola" element={<KontrolaArena />} />
+      <Route path="/" element={<ProtectedRoute><Hub /></ProtectedRoute>} />
+      <Route path="/chat" element={<ProtectedRoute><Chat onBack={() => navigate('/')} /></ProtectedRoute>} />
+      <Route path="/game" element={<ProtectedRoute><GamePage /></ProtectedRoute>} />
+      <Route path="/kontrola" element={<ProtectedRoute><KontrolaArena /></ProtectedRoute>} />
       <Route path="/admin" element={<AdminPage />} />
       <Route path="/admin/*" element={<AdminPage />} />
       <Route path="/docs" element={<DocsPage />} />
