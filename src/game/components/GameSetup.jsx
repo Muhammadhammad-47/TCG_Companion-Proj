@@ -14,15 +14,18 @@ export default function GameSetup({ onStartGame, onBack }) {
   
   const [players, setPlayers] = useState(() => {
     let cachedNames = {};
+    let warriorCallsign = '';
     try {
       cachedNames = JSON.parse(localStorage.getItem('tcg_player_names_cache')) || {};
+      warriorCallsign = localStorage.getItem('tcg_warrior_username') || '';
     } catch (e) {}
 
     return charKeys.map((key, idx) => {
       const c = CHARACTERS[key] || CHARACTERS.chynaman;
+      const defaultName = idx === 0 && warriorCallsign ? warriorCallsign : c.name;
       return {
         id: `p-${idx + 1}`,
-        name: cachedNames[key] || c.name,
+        name: cachedNames[key] || defaultName,
         characterId: key,
         startingHP: 100,
         startingET: 5,

@@ -15,9 +15,16 @@ create table if not exists public.profiles (
   matches_played integer default 0,
   matches_won integer default 0,
   crystals_collected integer default 0,
+  is_banned boolean default false,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
+
+-- Ensure is_banned exists if re-running on an existing table
+alter table public.profiles add column if not exists is_banned boolean default false;
+
+-- Case-insensitive unique callsign index
+create unique index if not exists idx_profiles_lower_username on public.profiles (lower(trim(username)));
 
 -- Enable RLS for profiles
 alter table public.profiles enable row level security;
@@ -315,3 +322,34 @@ Doubles Rule: If a player rolls doubles during the clash, they claim 1 Chance Ca
   7
 )
 on conflict do nothing;
+
+
+-- 4. MATCHES TABLE (Match History & Who Won tracking across all modules)
+create table if not exists public.matches (
+  id uuid default gen_random_uuid() primary key,
+  room_code text,
+  winner_id uuid references public.profiles(id) on delete set null,
+  winner_name text not null,
+  player_ids uuid[] default '{}',
+  player_names text[] default '{}',
+  game_mode text default 'kontrola', -- 'kontrola' | 'tabletop_calculator'
+  crystals_awarded integer default 1,
+  duration_seconds integer default 0,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.matches enable row level security;
+
+drop policy if exists "Public matches viewable by everyone" on public.matches;
+create policy "Public matches viewable by everyone"
+  on public.matches for select using (true);
+
+drop policy if exists "Authenticated users can log matches" on public.matches;
+create policy "Authenticated users can log matches"
+  on public.matches for insert with check (auth.role() = 'authenticated');
+
+drop policy if exists "Admins can manage matches" on public.matches;
+create policy "Admins can manage matches"
+  on public.matches for all using (
+    exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
+  );

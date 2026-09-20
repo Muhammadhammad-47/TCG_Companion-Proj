@@ -1,7 +1,52 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 
 export const authService = {
-  // Sign up a new player
+  // Validate warrior username format and check unique availability
+  async checkUsernameAvailable(username, excludeUserId = null) {
+    if (!isSupabaseConfigured || !supabase) {
+      return { available: true };
+    }
+
+    const cleanUsername = (username || '').trim();
+    if (!cleanUsername) {
+      return { available: false, error: 'Callsign cannot be blank.' };
+    }
+
+    if (cleanUsername.length < 3 || cleanUsername.length > 20) {
+      return { available: false, error: 'Callsign must be between 3 and 20 characters.' };
+    }
+
+    const validCharsRegex = /^[a-zA-Z0-9_-]+$/;
+    if (!validCharsRegex.test(cleanUsername)) {
+      return { available: false, error: 'Callsign can only contain letters, numbers, hyphens, and underscores.' };
+    }
+
+    let query = supabase
+      .from('profiles')
+      .select('id')
+      .ilike('username', cleanUsername);
+
+    if (excludeUserId) {
+      query = query.neq('id', excludeUserId);
+    }
+
+    const { data, error } = await query.maybeSingle();
+    if (error) {
+      console.warn('Error checking username availability:', error);
+      return { available: true };
+    }
+
+    if (data) {
+      return {
+        available: false,
+        error: `The warrior callsign "${cleanUsername}" is already taken. Please choose a unique name.`
+      };
+    }
+
+    return { available: true };
+  },
+
+  // Sign up a new player with unique username verification
   async signUp(email, password, username, appSource = 'companion_hub') {
     if (!isSupabaseConfigured || !supabase) {
       throw new Error('Supabase is not configured. Please check your .env settings.');
@@ -10,19 +55,10 @@ export const authService = {
     const cleanEmail = email.trim().toLowerCase();
     const cleanUsername = username.trim();
 
-    if (!cleanUsername) {
-      throw new Error('Please choose a warrior username.');
-    }
-
-    // 1. Check if username is already taken in profiles
-    const { data: existingUser, error: checkError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('username', cleanUsername)
-      .maybeSingle();
-
-    if (existingUser) {
-      throw new Error('That username is already claimed by another warrior! Please choose another.');
+    // 1. Pre-validate unique username (case-insensitive)
+    const availability = await this.checkUsernameAvailable(cleanUsername);
+    if (!availability.available) {
+      throw new Error(availability.error);
     }
 
     // 2. Register user with Supabase Auth
@@ -41,7 +77,7 @@ export const authService = {
 
     const user = data?.user;
     if (user) {
-      // 3. Insert or update the player profile
+      // 3. Upsert initial warrior profile
       const { error: profileError } = await supabase
         .from('profiles')
         .upsert({
@@ -50,6 +86,7 @@ export const authService = {
           username: cleanUsername,
           avatar_id: 'chynaman',
           is_admin: false,
+          is_banned: false,
           registered_app: appSource,
           last_active_app: appSource,
           matches_played: 0,
@@ -59,14 +96,13 @@ export const authService = {
         });
 
       if (profileError) {
-        console.warn('Profile creation error during signup:', profileError);
+        console.warn('Profile creation warning during signup:', profileError);
       }
     }
 
     return data;
   },
 
-  // Sign in existing player or administrator
   // Sign in existing player or administrator against Supabase Auth
   async signIn(email, password, appSource = 'companion_hub') {
     if (!isSupabaseConfigured || !supabase) {
@@ -82,6 +118,13 @@ export const authService = {
     if (error) throw error;
 
     if (data?.user) {
+      // Check if user is suspended/banned
+      const profile = await this.getProfile(data.user.id);
+      if (profile?.is_banned) {
+        await this.signOut();
+        throw new Error('This warrior account has been suspended by the Game Masters.');
+      }
+
       // Update last active app
       await supabase
         .from('profiles')
@@ -127,9 +170,17 @@ export const authService = {
     return data;
   },
 
-  // Update profile
+  // Update profile with unique callsign check if username changed
   async updateProfile(userId, updates) {
     if (!supabase || !userId) return null;
+
+    if (updates.username) {
+      const availability = await this.checkUsernameAvailable(updates.username, userId);
+      if (!availability.available) {
+        throw new Error(availability.error);
+      }
+    }
+
     const { data, error } = await supabase
       .from('profiles')
       .update({
@@ -226,7 +277,114 @@ export const authService = {
     return Boolean(profile && profile.is_admin);
   },
 
-  // Real-time auth state listener
+  // =========================================================================
+  // ADMIN WARRIOR DIRECTORY & MODERATION
+  // =========================================================================
+  async fetchAllUsers(searchQuery = '') {
+    if (!supabase) return [];
+    let query = supabase
+      .from('profiles')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim();
+      query = query.or(`username.ilike.%${q}%,email.ilike.%${q}%`);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.warn('Error fetching users for admin:', error);
+      return [];
+    }
+    return data || [];
+  },
+
+  async toggleUserBan(userId, isBanned) {
+    if (!supabase || !userId) throw new Error('Invalid user ID');
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({
+        is_banned: isBanned,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async adjustUserCrystals(userId, newCrystals) {
+    if (!supabase || !userId) throw new Error('Invalid user ID');
+    const safeCount = Math.max(0, parseInt(newCrystals, 10) || 0);
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({
+        crystals_collected: safeCount,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  // =========================================================================
+  // MATCH HISTORY ("WHO WON") TRACKING
+  // =========================================================================
+  async logMatchResult({
+    roomCode = '',
+    winnerId = null,
+    winnerName = 'Warrior',
+    playerIds = [],
+    playerNames = [],
+    gameMode = 'kontrola',
+    crystalsAwarded = 1,
+    durationSeconds = 0
+  }) {
+    if (!supabase) return null;
+    const { data, error } = await supabase
+      .from('matches')
+      .insert({
+        room_code: roomCode,
+        winner_id: winnerId,
+        winner_name: winnerName,
+        player_ids: playerIds,
+        player_names: playerNames,
+        game_mode: gameMode,
+        crystals_awarded: crystalsAwarded,
+        duration_seconds: durationSeconds
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.warn('Failed to log match result to database:', error);
+      return null;
+    }
+    return data;
+  },
+
+  async fetchMatchHistory(limit = 50) {
+    if (!supabase) return [];
+    const { data, error } = await supabase
+      .from('matches')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.warn('Failed to fetch match history:', error);
+      return [];
+    }
+    return data || [];
+  },
+
+  // Real-time auth state listener with automatic ban-check
   onAuthStateChange(callback) {
     if (!supabase) {
       return { data: { subscription: { unsubscribe: () => {} } } };
@@ -235,6 +393,10 @@ export const authService = {
       let profile = null;
       if (session?.user) {
         profile = await this.getProfile(session.user.id);
+        if (profile?.is_banned) {
+          await this.signOut();
+          profile = null;
+        }
       }
       callback(event, session, profile);
     });

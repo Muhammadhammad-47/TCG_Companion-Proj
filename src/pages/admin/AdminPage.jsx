@@ -1,128 +1,187 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  ArrowLeft, Shield, BookOpen, HelpCircle, Plus, Search, Filter,
+  Edit2, Trash2, CheckCircle2, XCircle, AlertTriangle, Eye, RefreshCw,
+  Copy, Check, ExternalLink, Save, X, ToggleLeft, ToggleRight,
+  TrendingUp, Award, Layers, Users, Swords, UserX, UserCheck, Flame,
+  Crown, Lock, Ban, Sparkles, Gem, Clock
+} from 'lucide-react';
 import { authService } from '../../services/authService';
 import { knowledgeService } from '../../services/knowledgeService';
-import {
-  Shield, BookOpen, MessageSquare, Search, Plus, Edit2, Trash2,
-  CheckCircle, XCircle, ArrowLeft, RefreshCw, ThumbsDown, ThumbsUp, Sparkles,
-  Lock, AlertTriangle, Key, ExternalLink
-} from 'lucide-react';
 
 export default function AdminPage() {
   const navigate = useNavigate();
 
-  // Auth & Admin verification state
+  // Authentication & Role State
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
 
-  // Admin login credentials (empty by default, authenticated securely against Supabase DB)
+  // Login Gate State (for unauthenticated admins)
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  // Admin Portal Tabs: only 'knowledge' | 'questions' (Sister apps API moved to /docs)
-  const [activeTab, setActiveTab] = useState('knowledge');
+  // Active Tab: 'users' | 'matches' | 'rules' | 'questions'
+  const [activeTab, setActiveTab] = useState('users');
 
-  // --- TAB 1: KNOWLEDGE BASE STATE ---
+  // =========================================================================
+  // TAB 1: USERS & MODERATION STATE
+  // =========================================================================
+  const [usersList, setUsersList] = useState([]);
+  const [userSearch, setUserSearch] = useState('');
+  const [userFilter, setUserFilter] = useState('ALL'); // 'ALL' | 'ACTIVE' | 'BANNED'
+  const [isUsersLoading, setIsUsersLoading] = useState(false);
+  const [modNotice, setModNotice] = useState('');
+
+  // Crystal Adjust Modal
+  const [crystalModalUser, setCrystalModalUser] = useState(null);
+  const [newCrystalCount, setNewCrystalCount] = useState(0);
+
+  // Ban Confirm Modal
+  const [banModalUser, setBanModalUser] = useState(null);
+
+  // =========================================================================
+  // TAB 2: MATCH HISTORY STATE ("WHO WON")
+  // =========================================================================
+  const [matchHistory, setMatchHistory] = useState([]);
+  const [isMatchesLoading, setIsMatchesLoading] = useState(false);
+
+  // =========================================================================
+  // TAB 3: RULES KNOWLEDGE STATE
+  // =========================================================================
   const [rules, setRules] = useState([]);
   const [rulesLoading, setRulesLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [editingRule, setEditingRule] = useState(null);
-  const [isCreatingNew, setIsCreatingNew] = useState(false);
-
-  // Rule edit modal form fields
-  const [ruleForm, setRuleForm] = useState({
+  const [isCreatingRule, setIsCreatingRule] = useState(false);
+  const [ruleFormData, setRuleFormData] = useState({
     topic: '',
-    category: 'Gameplay',
+    category: 'Combat',
     keywords: '',
-    shortAnswer: '',
+    short_answer: '',
     details: '',
-    orderIndex: 0,
-    isActive: true
+    order_index: 0,
+    is_active: true
   });
 
-  // --- TAB 2: USER QUESTIONS STATE ---
+  // =========================================================================
+  // TAB 4: USER QUESTIONS STATE
+  // =========================================================================
   const [questions, setQuestions] = useState([]);
   const [questionsLoading, setQuestionsLoading] = useState(false);
-  const [questionFilter, setQuestionFilter] = useState('all'); // 'all', 'unhelpful', 'corrections', 'pending'
+  const [questionFilter, setQuestionFilter] = useState('all');
+  const [promotedSuccess, setPromotedSuccess] = useState('');
 
-  // 1. Initial Session Check
+  // Load Admin Session on Mount
   useEffect(() => {
     let isMounted = true;
-    const checkSession = async () => {
+    async function verifyAdmin() {
       try {
         const user = await authService.getCurrentUser();
-        if (user && isMounted) {
+        if (!isMounted) return;
+        if (user) {
           setCurrentUser(user);
           const profile = await authService.getProfile(user.id);
-          setUserProfile(profile);
+          if (profile && isMounted) {
+            setUserProfile(profile);
+            setIsAdmin(Boolean(profile.is_admin));
+          }
         }
-      } catch (e) {
-        console.warn('Admin checkSession failed:', e);
+      } catch (err) {
+        console.warn('Admin check error:', err);
       } finally {
         if (isMounted) setAuthLoading(false);
       }
-    };
-    checkSession();
+    }
+    verifyAdmin();
     return () => { isMounted = false; };
   }, []);
 
-  // 2. Load Data when authenticated as admin strictly from DB profile
-  const isAdmin = Boolean(userProfile?.is_admin);
-
+  // Fetch Tab Data when Admin is Verified
   useEffect(() => {
     if (isAdmin) {
+      loadUsers();
+      loadMatches();
       loadRules();
       loadQuestions();
     }
   }, [isAdmin]);
+
+  // Data Loading Helpers
+  const loadUsers = async () => {
+    setIsUsersLoading(true);
+    try {
+      const data = await authService.fetchAllUsers(userSearch);
+      setUsersList(data);
+    } catch (e) {
+      console.warn('Failed loading users:', e);
+    } finally {
+      setIsUsersLoading(false);
+    }
+  };
+
+  const loadMatches = async () => {
+    setIsMatchesLoading(true);
+    try {
+      const data = await authService.fetchMatchHistory(50);
+      setMatchHistory(data);
+    } catch (e) {
+      console.warn('Failed loading match history:', e);
+    } finally {
+      setIsMatchesLoading(false);
+    }
+  };
 
   const loadRules = async () => {
     setRulesLoading(true);
     try {
       const data = await knowledgeService.fetchAllRulesForAdmin();
       setRules(data);
-    } catch (err) {
-      console.error('Failed to load rules for admin:', err);
+    } catch (e) {
+      console.warn('Failed loading rules:', e);
     } finally {
       setRulesLoading(false);
     }
   };
 
-  const loadQuestions = async (filter = questionFilter) => {
+  const loadQuestions = async () => {
     setQuestionsLoading(true);
     try {
-      const data = await knowledgeService.fetchUserQuestions({ filter });
+      const data = await knowledgeService.fetchUserQuestions({ filter: questionFilter });
       setQuestions(data);
-    } catch (err) {
-      console.error('Failed to load questions:', err);
+    } catch (e) {
+      console.warn('Failed loading questions:', e);
     } finally {
       setQuestionsLoading(false);
     }
   };
 
-  // Handle Admin Login strictly against database
+  // Admin Login Handler
   const handleAdminLogin = async (e) => {
-    if (e) e.preventDefault();
+    e.preventDefault();
     setLoginError('');
     setIsLoggingIn(true);
     try {
-      const authData = await authService.signIn(adminEmail, adminPassword, 'admin_portal');
-      if (!authData?.user) {
-        throw new Error('Authentication failed. Please verify credentials.');
+      const res = await authService.signIn(adminEmail, adminPassword, 'admin_portal');
+      const user = res?.user;
+      if (user) {
+        setCurrentUser(user);
+        const profile = await authService.getProfile(user.id);
+        setUserProfile(profile);
+        if (profile?.is_admin) {
+          setIsAdmin(true);
+        } else {
+          setLoginError('Access Denied. This account does not possess administrator privileges.');
+          await authService.signOut();
+        }
       }
-      const profile = await authService.getProfile(authData.user.id);
-      if (!profile || !profile.is_admin) {
-        await authService.signOut();
-        throw new Error('Access Denied: You do not possess Administrator privileges in the database.');
-      }
-      setCurrentUser(authData.user);
-      setUserProfile(profile);
     } catch (err) {
-      setLoginError(err.message || 'Login failed');
+      setLoginError(err.message || 'Login failed. Please verify administrator credentials.');
     } finally {
       setIsLoggingIn(false);
     }
@@ -130,115 +189,110 @@ export default function AdminPage() {
 
   const handleAdminLogout = async () => {
     await authService.signOut();
+    setIsAdmin(false);
     setCurrentUser(null);
     setUserProfile(null);
   };
 
-  // Rule CRUD handlers
-  const handleOpenCreateRule = () => {
-    setIsCreatingNew(true);
-    setRuleForm({
-      topic: '',
-      category: 'Gameplay',
-      keywords: '',
-      shortAnswer: '',
-      details: '',
-      orderIndex: rules.length + 1,
-      isActive: true
-    });
-    setEditingRule({});
-  };
-
-  const handleOpenEditRule = (rule) => {
-    setIsCreatingNew(false);
-    setRuleForm({
-      topic: rule.topic || '',
-      category: rule.category || 'Gameplay',
-      keywords: Array.isArray(rule.keywords) ? rule.keywords.join(', ') : (rule.keywords || ''),
-      shortAnswer: rule.short_answer || '',
-      details: rule.details || '',
-      orderIndex: rule.order_index ?? 0,
-      isActive: rule.is_active ?? true
-    });
-    setEditingRule(rule);
-  };
-
-  const handleSaveRule = async (e) => {
-    e.preventDefault();
-    const keywordsArray = ruleForm.keywords
-      .split(',')
-      .map((k) => k.trim().toLowerCase())
-      .filter(Boolean);
-
+  // User Moderation Actions
+  const handleToggleBan = async (user) => {
     try {
-      if (isCreatingNew) {
-        await knowledgeService.createRule({
-          topic: ruleForm.topic,
-          category: ruleForm.category,
-          keywords: keywordsArray,
-          short_answer: ruleForm.shortAnswer,
-          details: ruleForm.details,
-          order_index: parseInt(ruleForm.orderIndex, 10) || 0,
-          is_active: ruleForm.isActive
-        });
-      } else {
-        await knowledgeService.updateRule(editingRule.id, {
-          topic: ruleForm.topic,
-          category: ruleForm.category,
-          keywords: keywordsArray,
-          short_answer: ruleForm.shortAnswer,
-          details: ruleForm.details,
-          order_index: parseInt(ruleForm.orderIndex, 10) || 0,
-          is_active: ruleForm.isActive
-        });
-      }
-      setEditingRule(null);
-      await loadRules();
-    } catch (err) {
-      alert('Error saving rule: ' + err.message);
+      const updated = await authService.toggleUserBan(user.id, !user.is_banned);
+      setUsersList((prev) => prev.map((u) => (u.id === user.id ? updated : u)));
+      setModNotice(`Warrior "${user.username}" has been ${updated.is_banned ? 'SUSPENDED' : 'REINSTATED'}.`);
+      setBanModalUser(null);
+      setTimeout(() => setModNotice(''), 3500);
+    } catch (e) {
+      alert('Failed to update ban status: ' + e.message);
     }
   };
 
+  const handleSaveCrystals = async () => {
+    if (!crystalModalUser) return;
+    try {
+      const updated = await authService.adjustUserCrystals(crystalModalUser.id, newCrystalCount);
+      setUsersList((prev) => prev.map((u) => (u.id === crystalModalUser.id ? updated : u)));
+      setModNotice(`Stability Crystals for "${crystalModalUser.username}" set to ${newCrystalCount}.`);
+      setCrystalModalUser(null);
+      setTimeout(() => setModNotice(''), 3500);
+    } catch (e) {
+      alert('Failed to adjust crystals: ' + e.message);
+    }
+  };
+
+  // Rule Actions
   const handleToggleRuleActive = async (rule) => {
     try {
-      await knowledgeService.updateRule(rule.id, { is_active: !rule.is_active });
-      setRules((prev) =>
-        prev.map((r) => (r.id === rule.id ? { ...r, is_active: !r.is_active } : r))
-      );
-    } catch (err) {
-      alert('Failed to update status: ' + err.message);
+      const updated = await knowledgeService.updateRule(rule.id, { is_active: !rule.is_active });
+      setRules(rules.map((r) => (r.id === rule.id ? updated : r)));
+    } catch (e) {
+      alert('Failed to toggle rule: ' + e.message);
     }
   };
 
   const handleDeleteRule = async (ruleId) => {
-    if (!window.confirm('Are you sure you want to permanently delete this rule from the knowledge base?')) return;
+    if (!window.confirm('Are you sure you want to permanently delete this rule from the Knowledge Base?')) return;
     try {
       await knowledgeService.deleteRule(ruleId);
-      setRules((prev) => prev.filter((r) => r.id !== ruleId));
-    } catch (err) {
-      alert('Failed to delete rule: ' + err.message);
+      setRules(rules.filter((r) => r.id !== ruleId));
+    } catch (e) {
+      alert('Failed to delete rule: ' + e.message);
     }
   };
 
-  // Promote User Question to Knowledge Base
-  const handlePromoteToKnowledge = (q) => {
-    setIsCreatingNew(true);
-    setRuleForm({
-      topic: q.question_text || '',
-      category: 'Gameplay',
-      keywords: (q.question_text || '')
-        .toLowerCase()
-        .replace(/[^a-z0-9 ]/g, '')
-        .split(' ')
-        .filter((w) => w.length > 2)
-        .join(', '),
-      shortAnswer: q.user_suggested_answer || q.ai_answer || '',
-      details: q.user_suggested_answer || q.ai_answer || '',
-      orderIndex: rules.length + 1,
-      isActive: true
-    });
-    setEditingRule({});
-    setActiveTab('knowledge');
+  const handleSaveRule = async (e) => {
+    e.preventDefault();
+    const keywordsArr = typeof ruleFormData.keywords === 'string'
+      ? ruleFormData.keywords.split(',').map((k) => k.trim().toLowerCase()).filter(Boolean)
+      : ruleFormData.keywords;
+
+    const payload = {
+      topic: ruleFormData.topic,
+      category: ruleFormData.category,
+      keywords: keywordsArr,
+      short_answer: ruleFormData.short_answer,
+      details: ruleFormData.details,
+      order_index: parseInt(ruleFormData.order_index, 10) || 0,
+      is_active: ruleFormData.is_active
+    };
+
+    try {
+      if (editingRule) {
+        const updated = await knowledgeService.updateRule(editingRule.id, payload);
+        setRules(rules.map((r) => (r.id === editingRule.id ? updated : r)));
+      } else {
+        const created = await knowledgeService.createRule(payload);
+        setRules([created, ...rules]);
+      }
+      setIsCreatingRule(false);
+      setEditingRule(null);
+    } catch (e) {
+      alert('Error saving rule: ' + e.message);
+    }
+  };
+
+  // 1-Click Promote User Question to Knowledge Base
+  const handlePromoteQuestion = async (q) => {
+    const finalAnswer = q.user_suggested_answer || q.ai_answer || '';
+    const newRule = {
+      topic: q.question_text.length > 50 ? q.question_text.substring(0, 47) + '...' : q.question_text,
+      category: 'Combat',
+      keywords: q.question_text.toLowerCase().split(' ').filter((w) => w.length > 3),
+      short_answer: finalAnswer.length > 150 ? finalAnswer.substring(0, 147) + '...' : finalAnswer,
+      details: `Official Answer to player query: "${q.question_text}"\n\nAnswer: ${finalAnswer}`,
+      order_index: rules.length + 1,
+      is_active: true
+    };
+
+    try {
+      const created = await knowledgeService.promoteQuestionToKnowledge(q.id, newRule);
+      setRules([created, ...rules]);
+      setPromotedSuccess(`Successfully promoted question to Knowledge Base!`);
+      loadQuestions();
+      setTimeout(() => setPromotedSuccess(''), 4000);
+    } catch (e) {
+      alert('Failed to promote rule: ' + e.message);
+    }
   };
 
   // =========================================================================
@@ -248,26 +302,26 @@ export default function AdminPage() {
     return (
       <div
         style={{
-          minHeight: '100vh',
-          background: 'radial-gradient(circle at 50% 20%, #0d1a38 0%, #050a18 70%, #02040c 100%)',
+          width: '100vw',
+          height: '100vh',
+          background: 'radial-gradient(circle at 50% 20%, #111a36 0%, #080d1e 60%, #040710 100%)',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           color: 'var(--neon-cyan, #00f0ff)',
           fontFamily: 'var(--font-display, "Rajdhani", sans-serif)'
         }}
       >
-        <div style={{ width: '40px', height: '40px', border: '3px solid rgba(0, 240, 255, 0.2)', borderTopColor: 'var(--neon-cyan, #00f0ff)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-        <p style={{ marginTop: '16px', letterSpacing: '3px', fontSize: '1.2rem', fontWeight: 'bold' }}>
-          INITIALIZING ADMIN CONTROL DECK...
-        </p>
+        <div style={{ textAlign: 'center' }}>
+          <div className="brand-pill-badge" style={{ margin: '0 auto 12px auto', fontSize: '0.9rem', padding: '3px 12px' }}>注意!</div>
+          <div style={{ fontSize: '1.4rem', letterSpacing: '2px', fontWeight: 'bold' }}>ACCESSING COMMAND DECK...</div>
+        </div>
       </div>
     );
   }
 
   // =========================================================================
-  // VIEW 2: ADMIN LOGIN GATE (Matching App UI/UX)
+  // VIEW 2: ADMIN LOGIN GATE
   // =========================================================================
   if (!isAdmin) {
     return (
@@ -276,7 +330,7 @@ export default function AdminPage() {
           width: '100vw',
           height: '100vh',
           minHeight: '100vh',
-          background: 'radial-gradient(circle at 50% 20%, #0d1a38 0%, #050a18 70%, #02040c 100%)',
+          background: 'radial-gradient(circle at 50% 20%, #111a36 0%, #080d1e 60%, #040710 100%)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -287,7 +341,6 @@ export default function AdminPage() {
           overflow: 'hidden'
         }}
       >
-        {/* Ambient Neon Streaks matching the whole app */}
         <div className="menu-bg-elements" style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
           <div className="neon-streak-red" style={{ opacity: 0.4 }}></div>
           <div className="neon-streak-blue" style={{ opacity: 0.4 }}></div>
@@ -299,7 +352,7 @@ export default function AdminPage() {
           style={{
             width: '100%',
             maxWidth: '460px',
-            background: 'rgba(14, 22, 42, 0.9)',
+            background: 'rgba(14, 22, 42, 0.92)',
             border: '2px solid rgba(0, 240, 255, 0.4)',
             borderRadius: '24px',
             padding: '36px 32px',
@@ -331,7 +384,7 @@ export default function AdminPage() {
               ADMINISTRATION GATE
             </h1>
             <p style={{ color: 'var(--text-muted, #94a3b8)', fontSize: '0.95rem', margin: 0, fontFamily: 'var(--font-sub, "Outfit", sans-serif)' }}>
-              Attention TCG Knowledge Engine & Questions Command
+              Attention TCG Knowledge Engine & Player Command
             </p>
           </div>
 
@@ -423,31 +476,20 @@ export default function AdminPage() {
                 fontSize: '1.15rem',
                 cursor: isLoggingIn ? 'not-allowed' : 'pointer',
                 opacity: isLoggingIn ? 0.7 : 1,
-                letterSpacing: '1.5px',
-                fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
-                boxShadow: '0 0 20px rgba(0, 240, 255, 0.35)'
+                boxShadow: '0 0 25px rgba(0, 240, 255, 0.4)',
+                letterSpacing: '1.5px'
               }}
             >
-              {isLoggingIn ? 'VERIFYING CREDENTIALS...' : 'AUTHENTICATE AS ADMIN'}
+              {isLoggingIn ? 'AUTHENTICATING...' : 'AUTHENTICATE AS ADMIN'}
             </button>
           </form>
 
-          <div style={{ textAlign: 'center', marginTop: '24px' }}>
+          <div style={{ textAlign: 'center', marginTop: '20px' }}>
             <button
               onClick={() => navigate('/')}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'rgba(255,255,255,0.6)',
-                fontSize: '0.95rem',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                fontFamily: 'var(--font-display, "Rajdhani", sans-serif)'
-              }}
+              style={{ background: 'none', border: 'none', color: 'rgba(255, 255, 255, 0.5)', cursor: 'pointer', fontSize: '0.85rem' }}
             >
-              <ArrowLeft size={16} /> Return to Companion Hub
+              ← Return to Companion Hub
             </button>
           </div>
         </div>
@@ -456,8 +498,14 @@ export default function AdminPage() {
   }
 
   // =========================================================================
-  // VIEW 3: AUTHENTICATED ADMIN DASHBOARD (Matching App UI/UX)
+  // VIEW 3: AUTHENTICATED ADMIN CONTROL DECK
   // =========================================================================
+  const filteredUsers = usersList.filter((u) => {
+    if (userFilter === 'ACTIVE') return !u.is_banned;
+    if (userFilter === 'BANNED') return u.is_banned;
+    return true;
+  });
+
   const filteredRules = rules.filter((r) => {
     const topic = r.topic || '';
     const details = r.details || '';
@@ -475,7 +523,7 @@ export default function AdminPage() {
         width: '100vw',
         height: '100vh',
         minHeight: '100vh',
-        background: 'radial-gradient(circle at 50% 20%, #0d1a38 0%, #050a18 70%, #02040c 100%)',
+        background: 'radial-gradient(circle at 50% 20%, #111a36 0%, #080d1e 60%, #040710 100%)',
         color: 'var(--text-main, #f8fafc)',
         fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
         position: 'relative',
@@ -485,7 +533,14 @@ export default function AdminPage() {
         paddingBottom: '50px'
       }}
     >
-      {/* Ambient Neon Streaks matching the whole app */}
+      <style>{`
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(3, 7, 18, 0.95); }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 240, 255, 0.3); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0, 240, 255, 0.6); }
+      `}</style>
+
+      {/* Ambient Neon Streaks */}
       <div className="menu-bg-elements" style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
         <div className="neon-streak-red" style={{ opacity: 0.35 }}></div>
         <div className="neon-streak-blue" style={{ opacity: 0.35 }}></div>
@@ -493,7 +548,7 @@ export default function AdminPage() {
         <div className="subtle-watermark-card right-wm" style={{ opacity: 0.25 }}></div>
       </div>
 
-      {/* Top Navigation Bar */}
+      {/* Top Sticky Navigation Bar */}
       <header
         style={{
           display: 'flex',
@@ -531,15 +586,33 @@ export default function AdminPage() {
           <div className="brand-pill-badge" style={{ fontSize: '0.85rem', padding: '2px 10px' }}>注意!</div>
           <div>
             <div style={{ fontSize: '1.3rem', fontWeight: '900', letterSpacing: '1px' }}>
-              ATTENTION TCG <span style={{ color: 'var(--neon-cyan, #00f0ff)' }}>CONTROL DECK</span>
+              ATTENTION TCG <span style={{ color: 'var(--neon-cyan, #00f0ff)' }}>COMMAND DECK</span>
             </div>
             <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)', letterSpacing: '2px', textTransform: 'uppercase' }}>
-              Central Knowledge Base & Player Continuous Learning
+              Central Administration & Player Universe Command
             </div>
           </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <button
+            onClick={() => navigate('/docs')}
+            style={{
+              background: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              color: '#e2e8f0',
+              padding: '7px 12px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '0.85rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <ExternalLink size={14} /> Sister App APIs
+          </button>
+
           <div style={{ textAlign: 'right', fontSize: '0.88rem' }}>
             <div style={{ fontWeight: 'bold', color: 'var(--neon-gold, #ffe600)' }}>
               👑 {userProfile?.username || 'Administrator'}
@@ -569,93 +642,82 @@ export default function AdminPage() {
       </header>
 
       {/* Main Container */}
-      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 20px', position: 'relative', zIndex: 1 }}>
-
-        {/* 2 Primary Tabs: Knowledge Base & User Questions */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '16px', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button
-              onClick={() => setActiveTab('knowledge')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '12px 22px',
-                borderRadius: '12px',
-                border: activeTab === 'knowledge' ? '2px solid var(--neon-cyan, #00f0ff)' : '1px solid rgba(255,255,255,0.12)',
-                background: activeTab === 'knowledge' ? 'rgba(0, 240, 255, 0.18)' : 'rgba(0,0,0,0.3)',
-                color: activeTab === 'knowledge' ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.65)',
-                fontWeight: 'bold',
-                fontSize: '1.05rem',
-                cursor: 'pointer',
-                fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
-                boxShadow: activeTab === 'knowledge' ? '0 0 15px rgba(0, 240, 255, 0.25)' : 'none'
-              }}
-            >
-              <BookOpen size={18} />
-              <span>KNOWLEDGE BASE ({rules.length})</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('questions')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '12px 22px',
-                borderRadius: '12px',
-                border: activeTab === 'questions' ? '2px solid var(--neon-gold, #ffe600)' : '1px solid rgba(255,255,255,0.12)',
-                background: activeTab === 'questions' ? 'rgba(255, 230, 0, 0.15)' : 'rgba(0,0,0,0.3)',
-                color: activeTab === 'questions' ? 'var(--neon-gold, #ffe600)' : 'rgba(255,255,255,0.65)',
-                fontWeight: 'bold',
-                fontSize: '1.05rem',
-                cursor: 'pointer',
-                fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
-                boxShadow: activeTab === 'questions' ? '0 0 15px rgba(255, 230, 0, 0.25)' : 'none'
-              }}
-            >
-              <MessageSquare size={18} />
-              <span>USER QUESTIONS INBOX ({questions.length})</span>
-            </button>
-          </div>
-
-          {/* Quick link to /docs page */}
-          <button
-            onClick={() => navigate('/docs')}
+      <div style={{ maxWidth: '1440px', width: '100%', margin: '0 auto', padding: '24px 28px', boxSizing: 'border-box' }}>
+        
+        {/* Floating Notification */}
+        {(modNotice || promotedSuccess) && (
+          <div
             style={{
+              background: 'rgba(57, 255, 20, 0.15)',
+              border: '1.5px solid #39ff14',
+              color: '#39ff14',
+              padding: '12px 20px',
+              borderRadius: '12px',
+              marginBottom: '20px',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              padding: '8px 16px',
-              borderRadius: '10px',
-              border: '1px solid rgba(57, 255, 20, 0.35)',
-              background: 'rgba(57, 255, 20, 0.08)',
-              color: '#39ff14',
-              fontSize: '0.88rem',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              fontFamily: 'var(--font-display, "Rajdhani", sans-serif)'
+              gap: '10px',
+              fontWeight: 'bold'
             }}
-            title="Sister Apps & API Documentation (/docs)"
           >
-            <ExternalLink size={14} /> SISTER APPS API DOCS (/docs)
-          </button>
+            <CheckCircle2 size={20} />
+            <span>{modNotice || promotedSuccess}</span>
+          </div>
+        )}
+
+        {/* 4-Tab Navigation */}
+        <div style={{ display: 'flex', gap: '10px', borderBottom: '1px solid rgba(255, 255, 255, 0.12)', paddingBottom: '14px', marginBottom: '24px', flexWrap: 'wrap' }}>
+          {[
+            { id: 'users', label: `👥 WARRIORS DIRECTORY (${usersList.length})`, icon: Users },
+            { id: 'matches', label: `🏆 MATCH HISTORY (${matchHistory.length})`, icon: Swords },
+            { id: 'rules', label: `📚 KNOWLEDGE BASE (${rules.length})`, icon: BookOpen },
+            { id: 'questions', label: `❓ QUESTIONS INBOX (${questions.length})`, icon: HelpCircle }
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isSel = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                style={{
+                  background: isSel ? 'rgba(0, 240, 255, 0.15)' : 'rgba(14, 22, 42, 0.7)',
+                  border: isSel ? '1.5px solid var(--neon-cyan, #00f0ff)' : '1px solid rgba(255, 255, 255, 0.12)',
+                  color: isSel ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255, 255, 255, 0.7)',
+                  padding: '10px 18px',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  fontWeight: '900',
+                  letterSpacing: '1px',
+                  fontSize: '0.95rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  boxShadow: isSel ? '0 0 20px rgba(0, 240, 255, 0.25)' : 'none'
+                }}
+              >
+                <Icon size={18} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* =========================================================================
-            TAB 1: KNOWLEDGE BASE MANAGER
+            TAB 1: WARRIOR DIRECTORY & MODERATION
         ========================================================================= */}
-        {activeTab === 'knowledge' && (
+        {activeTab === 'users' && (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '14px' }}>
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flex: 1, minWidth: '320px' }}>
+            {/* Top Bar: Search & Filter */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '14px', marginBottom: '20px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: '300px' }}>
                 <div style={{ position: 'relative', flex: 1 }}>
                   <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.4)' }} />
                   <input
                     type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search rules, keywords, or answers..."
+                    placeholder="Search warrior callsign or email..."
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && loadUsers()}
                     style={{
                       width: '100%',
                       boxSizing: 'border-box',
@@ -664,398 +726,549 @@ export default function AdminPage() {
                       border: '1.5px solid rgba(0, 240, 255, 0.3)',
                       borderRadius: '10px',
                       color: '#fff',
-                      outline: 'none',
-                      fontFamily: 'var(--font-sub, "Outfit", sans-serif)'
+                      fontSize: '0.95rem',
+                      fontFamily: 'var(--font-sub, "Outfit", sans-serif)',
+                      outline: 'none'
                     }}
                   />
                 </div>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
+                <button
+                  onClick={loadUsers}
                   style={{
-                    padding: '10px 14px',
-                    background: 'rgba(5, 10, 24, 0.8)',
-                    border: '1.5px solid rgba(255, 255, 255, 0.2)',
+                    background: 'rgba(0, 240, 255, 0.1)',
+                    border: '1px solid var(--neon-cyan, #00f0ff)',
+                    color: 'var(--neon-cyan, #00f0ff)',
+                    padding: '10px 16px',
                     borderRadius: '10px',
-                    color: '#fff',
-                    outline: 'none',
-                    fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
-                    fontWeight: 'bold'
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
                   }}
                 >
-                  <option value="ALL">All Categories</option>
-                  <option value="Gameplay">Gameplay</option>
-                  <option value="Combat">Combat</option>
-                  <option value="Setup">Setup</option>
-                  <option value="Characters">Characters</option>
-                  <option value="Cards">Cards</option>
-                  <option value="Lore">Lore</option>
-                </select>
+                  <RefreshCw size={14} className={isUsersLoading ? 'spin' : ''} /> Search
+                </button>
               </div>
 
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button
-                  onClick={loadRules}
-                  style={{
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    color: '#fff',
-                    padding: '10px 14px',
-                    borderRadius: '10px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  <RefreshCw size={16} className={rulesLoading ? 'animate-spin' : ''} />
-                  <span>Refresh</span>
-                </button>
-                <button
-                  onClick={handleOpenCreateRule}
-                  style={{
-                    background: 'linear-gradient(90deg, #00f0ff 0%, #0088ff 100%)',
-                    border: 'none',
-                    color: '#050a18',
-                    padding: '10px 20px',
-                    borderRadius: '10px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    fontWeight: '900',
-                    fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
-                    letterSpacing: '1px',
-                    boxShadow: '0 0 15px rgba(0, 240, 255, 0.3)'
-                  }}
-                >
-                  <Plus size={18} />
-                  <span>ADD NEW RULE</span>
-                </button>
+              {/* Status Filter */}
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {['ALL', 'ACTIVE', 'BANNED'].map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setUserFilter(f)}
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: '8px',
+                      border: userFilter === f ? '1.5px solid var(--neon-cyan, #00f0ff)' : '1px solid rgba(255,255,255,0.1)',
+                      background: userFilter === f ? 'rgba(0, 240, 255, 0.15)' : 'rgba(0,0,0,0.3)',
+                      color: userFilter === f ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.7)',
+                      cursor: 'pointer',
+                      fontWeight: 'bold',
+                      fontSize: '0.85rem'
+                    }}
+                  >
+                    {f}
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Rules Cards List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {filteredRules.length === 0 ? (
-                <div
-                  style={{
-                    padding: '40px',
-                    textAlign: 'center',
-                    background: 'rgba(14, 22, 42, 0.7)',
-                    borderRadius: '16px',
-                    border: '1px dashed rgba(255,255,255,0.2)',
-                    color: 'rgba(255,255,255,0.5)'
-                  }}
-                >
-                  No rules found matching your filters. Click "ADD NEW RULE" to add the first database rule!
-                </div>
-              ) : (
-                filteredRules.map((rule) => (
-                  <div
-                    key={rule.id}
-                    style={{
-                      background: 'rgba(14, 22, 42, 0.85)',
-                      border: `1.5px solid ${rule.is_active ? 'rgba(0, 240, 255, 0.25)' : 'rgba(255, 51, 102, 0.25)'}`,
-                      borderRadius: '16px',
-                      padding: '18px 24px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'flex-start',
-                      gap: '20px',
-                      boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-                      opacity: rule.is_active ? 1 : 0.65
-                    }}
-                  >
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px', flexWrap: 'wrap' }}>
-                        <span
-                          style={{
-                            background: 'rgba(0, 240, 255, 0.15)',
-                            color: 'var(--neon-cyan, #00f0ff)',
-                            padding: '3px 10px',
-                            borderRadius: '6px',
-                            fontSize: '0.78rem',
-                            fontWeight: 'bold',
-                            letterSpacing: '1px'
-                          }}
-                        >
-                          {rule.category || 'Gameplay'}
-                        </span>
-                        <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)' }}>
-                          Index: #{rule.order_index ?? 0}
-                        </span>
-                        <span
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            fontSize: '0.78rem',
-                            fontWeight: 'bold',
-                            color: rule.is_active ? '#39ff14' : '#ff3366'
-                          }}
-                        >
-                          {rule.is_active ? <CheckCircle size={14} /> : <XCircle size={14} />}
-                          {rule.is_active ? 'LIVE IN CHATBOT' : 'DISABLED'}
-                        </span>
-                      </div>
+            {/* Warriors Table */}
+            <div style={{ background: 'rgba(14, 22, 42, 0.88)', border: '1.5px solid rgba(0, 240, 255, 0.25)', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 0 35px rgba(0,0,0,0.4)' }}>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontFamily: 'var(--font-sub, "Outfit", sans-serif)', fontSize: '0.92rem' }}>
+                  <thead>
+                    <tr style={{ background: 'rgba(8, 16, 36, 0.95)', borderBottom: '1.5px solid rgba(0, 240, 255, 0.3)', color: 'var(--neon-cyan, #00f0ff)' }}>
+                      <th style={{ padding: '14px 18px' }}>WARRIOR CALLSIGN</th>
+                      <th style={{ padding: '14px 18px' }}>EMAIL</th>
+                      <th style={{ padding: '14px 18px' }}>WIN RATE</th>
+                      <th style={{ padding: '14px 18px' }}>CRYSTALS 💎</th>
+                      <th style={{ padding: '14px 18px' }}>APP SOURCE</th>
+                      <th style={{ padding: '14px 18px' }}>STATUS</th>
+                      <th style={{ padding: '14px 18px', textAlign: 'right' }}>ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredUsers.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} style={{ padding: '40px', textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>
+                          No warriors found matching your search filter.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredUsers.map((u) => {
+                        const winRate = u.matches_played > 0 ? Math.round((u.matches_won / u.matches_played) * 100) : 0;
+                        return (
+                          <tr key={u.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: u.is_banned ? 'rgba(255, 51, 102, 0.05)' : 'transparent' }}>
+                            <td style={{ padding: '14px 18px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(0, 240, 255, 0.1)', border: '1px solid var(--neon-cyan, #00f0ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                                  {u.avatar_id === 'chynaman' ? '⚔️' : '🥋'}
+                                </div>
+                                <div>
+                                  <div style={{ fontWeight: 'bold', color: '#fff', fontSize: '1rem', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                                    {u.username}
+                                  </div>
+                                  {u.is_admin && (
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--neon-gold, #ffe600)', background: 'rgba(255, 230, 0, 0.15)', padding: '1px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
+                                      ADMIN
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td style={{ padding: '14px 18px', color: '#cbd5e1' }}>{u.email}</td>
+                            <td style={{ padding: '14px 18px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontWeight: 'bold', color: winRate >= 50 ? '#39ff14' : '#ff88aa' }}>{winRate}%</span>
+                                <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>({u.matches_won}/{u.matches_played})</span>
+                              </div>
+                            </td>
+                            <td style={{ padding: '14px 18px' }}>
+                              <span style={{ fontWeight: 'bold', color: 'var(--neon-cyan, #00f0ff)', fontSize: '1.05rem' }}>
+                                {u.crystals_collected || 0}
+                              </span>
+                            </td>
+                            <td style={{ padding: '14px 18px', color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem' }}>
+                              {u.last_active_app || u.registered_app || 'web'}
+                            </td>
+                            <td style={{ padding: '14px 18px' }}>
+                              {u.is_banned ? (
+                                <span style={{ background: 'rgba(255, 51, 102, 0.18)', color: 'var(--neon-crimson, #ff3366)', border: '1px solid var(--neon-crimson, #ff3366)', padding: '3px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                                  SUSPENDED
+                                </span>
+                              ) : (
+                                <span style={{ background: 'rgba(57, 255, 20, 0.15)', color: '#39ff14', border: '1px solid #39ff14', padding: '3px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                                  ACTIVE
+                                </span>
+                              )}
+                            </td>
+                            <td style={{ padding: '14px 18px', textAlign: 'right' }}>
+                              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                                <button
+                                  onClick={() => { setCrystalModalUser(u); setNewCrystalCount(u.crystals_collected || 0); }}
+                                  style={{
+                                    background: 'rgba(255, 230, 0, 0.1)',
+                                    border: '1px solid rgba(255, 230, 0, 0.3)',
+                                    color: 'var(--neon-gold, #ffe600)',
+                                    padding: '5px 10px',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 'bold',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                  }}
+                                >
+                                  <Gem size={13} /> Crystals
+                                </button>
 
-                      <h3 style={{ margin: '0 0 8px 0', fontSize: '1.25rem', color: '#fff', letterSpacing: '0.5px' }}>
-                        {rule.topic}
-                      </h3>
-
-                      <p style={{ margin: '0 0 10px 0', color: 'rgba(255,255,255,0.75)', fontSize: '0.92rem', fontFamily: 'var(--font-sub, "Outfit", sans-serif)', lineHeight: '1.5' }}>
-                        {rule.short_answer}
-                      </p>
-
-                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                        {(Array.isArray(rule.keywords) ? rule.keywords : []).map((kw, i) => (
-                          <span
-                            key={i}
-                            style={{
-                              background: 'rgba(255, 255, 255, 0.05)',
-                              border: '1px solid rgba(255, 255, 255, 0.1)',
-                              color: 'rgba(255,255,255,0.6)',
-                              padding: '2px 8px',
-                              borderRadius: '4px',
-                              fontSize: '0.75rem',
-                              fontFamily: 'monospace'
-                            }}
-                          >
-                            #{kw}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <button
-                        onClick={() => handleToggleRuleActive(rule)}
-                        title={rule.is_active ? 'Disable from live chatbot' : 'Enable in live chatbot'}
-                        style={{
-                          background: rule.is_active ? 'rgba(57, 255, 20, 0.12)' : 'rgba(255, 51, 102, 0.12)',
-                          border: `1px solid ${rule.is_active ? '#39ff14' : '#ff3366'}`,
-                          color: rule.is_active ? '#39ff14' : '#ff3366',
-                          padding: '8px 12px',
-                          borderRadius: '8px',
-                          cursor: 'pointer',
-                          fontWeight: 'bold',
-                          fontSize: '0.8rem',
-                          fontFamily: 'var(--font-display, "Rajdhani", sans-serif)'
-                        }}
-                      >
-                        {rule.is_active ? 'ACTIVE' : 'INACTIVE'}
-                      </button>
-                      <button
-                        onClick={() => handleOpenEditRule(rule)}
-                        style={{
-                          background: 'rgba(0, 240, 255, 0.1)',
-                          border: '1px solid var(--neon-cyan, #00f0ff)',
-                          color: 'var(--neon-cyan, #00f0ff)',
-                          padding: '8px 12px',
-                          borderRadius: '8px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          fontSize: '0.82rem',
-                          fontFamily: 'var(--font-display, "Rajdhani", sans-serif)'
-                        }}
-                      >
-                        <Edit2 size={14} /> Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteRule(rule.id)}
-                        style={{
-                          background: 'rgba(255, 51, 102, 0.1)',
-                          border: '1px solid var(--neon-crimson, #ff3366)',
-                          color: '#ff88aa',
-                          padding: '8px 12px',
-                          borderRadius: '8px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          fontSize: '0.82rem',
-                          fontFamily: 'var(--font-display, "Rajdhani", sans-serif)'
-                        }}
-                      >
-                        <Trash2 size={14} /> Delete
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
+                                <button
+                                  onClick={() => setBanModalUser(u)}
+                                  disabled={u.id === currentUser?.id}
+                                  style={{
+                                    background: u.is_banned ? 'rgba(57, 255, 20, 0.15)' : 'rgba(255, 51, 102, 0.15)',
+                                    border: u.is_banned ? '1px solid #39ff14' : '1px solid var(--neon-crimson, #ff3366)',
+                                    color: u.is_banned ? '#39ff14' : '#ff88aa',
+                                    padding: '5px 10px',
+                                    borderRadius: '6px',
+                                    cursor: u.id === currentUser?.id ? 'not-allowed' : 'pointer',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 'bold',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                  }}
+                                >
+                                  {u.is_banned ? <UserCheck size={13} /> : <Ban size={13} />}
+                                  <span>{u.is_banned ? 'Unban' : 'Ban'}</span>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
 
         {/* =========================================================================
-            TAB 2: USER QUESTIONS INBOX
+            TAB 2: MATCH HISTORY ("WHO WON")
         ========================================================================= */}
-        {activeTab === 'questions' && (
+        {activeTab === 'matches' && (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '14px' }}>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {[
-                  { id: 'all', label: 'All Questions' },
-                  { id: 'unhelpful', label: 'Flagged Inaccurate (👎)' },
-                  { id: 'corrections', label: 'User Corrections Submitted' },
-                  { id: 'pending', label: 'Pending Review' }
-                ].map((f) => (
-                  <button
-                    key={f.id}
-                    onClick={() => {
-                      setQuestionFilter(f.id);
-                      loadQuestions(f.id);
-                    }}
-                    style={{
-                      padding: '8px 16px',
-                      borderRadius: '10px',
-                      border: questionFilter === f.id ? '1.5px solid var(--neon-gold, #ffe600)' : '1px solid rgba(255,255,255,0.12)',
-                      background: questionFilter === f.id ? 'rgba(255, 230, 0, 0.18)' : 'rgba(0,0,0,0.3)',
-                      color: questionFilter === f.id ? 'var(--neon-gold, #ffe600)' : 'rgba(255,255,255,0.7)',
-                      cursor: 'pointer',
-                      fontSize: '0.9rem',
-                      fontWeight: 'bold',
-                      fontFamily: 'var(--font-display, "Rajdhani", sans-serif)'
-                    }}
-                  >
-                    {f.label}
-                  </button>
-                ))}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div>
+                <h2 style={{ fontSize: '1.4rem', color: '#fff', margin: 0 }}>Live Match Outcome History</h2>
+                <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Real-time victories recorded across Kontrola and tabletop simulators</span>
               </div>
-
               <button
-                onClick={() => loadQuestions()}
+                onClick={loadMatches}
                 style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  color: '#fff',
+                  background: 'rgba(0, 240, 255, 0.1)',
+                  border: '1px solid var(--neon-cyan, #00f0ff)',
+                  color: 'var(--neon-cyan, #00f0ff)',
                   padding: '8px 14px',
-                  borderRadius: '10px',
+                  borderRadius: '8px',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
-                  fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
                   fontWeight: 'bold'
                 }}
               >
-                <RefreshCw size={16} className={questionsLoading ? 'animate-spin' : ''} />
-                <span>Refresh Inbox</span>
+                <RefreshCw size={14} className={isMatchesLoading ? 'spin' : ''} /> Refresh History
               </button>
             </div>
 
-            {/* Questions Stream */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {questions.length === 0 ? (
-                <div
+            <div style={{ background: 'rgba(14, 22, 42, 0.88)', border: '1.5px solid rgba(0, 240, 255, 0.25)', borderRadius: '16px', overflow: 'hidden' }}>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontFamily: 'var(--font-sub, "Outfit", sans-serif)', fontSize: '0.92rem' }}>
+                  <thead>
+                    <tr style={{ background: 'rgba(8, 16, 36, 0.95)', borderBottom: '1.5px solid rgba(0, 240, 255, 0.3)', color: 'var(--neon-cyan, #00f0ff)' }}>
+                      <th style={{ padding: '14px 18px' }}>DATE & TIME</th>
+                      <th style={{ padding: '14px 18px' }}>ROOM CODE</th>
+                      <th style={{ padding: '14px 18px' }}>GAME MODE</th>
+                      <th style={{ padding: '14px 18px' }}>👑 WINNER</th>
+                      <th style={{ padding: '14px 18px' }}>PARTICIPANTS</th>
+                      <th style={{ padding: '14px 18px' }}>CRYSTALS WON</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {matchHistory.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>
+                          No recorded matches in history yet. Games played in Kontrola Arena will appear here automatically!
+                        </td>
+                      </tr>
+                    ) : (
+                      matchHistory.map((m) => (
+                        <tr key={m.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                          <td style={{ padding: '14px 18px', color: '#94a3b8', fontSize: '0.85rem' }}>
+                            {new Date(m.created_at).toLocaleString()}
+                          </td>
+                          <td style={{ padding: '14px 18px', fontFamily: 'monospace', fontWeight: 'bold', color: 'var(--neon-cyan, #00f0ff)' }}>
+                            {m.room_code || 'ARENA'}
+                          </td>
+                          <td style={{ padding: '14px 18px' }}>
+                            <span style={{ background: 'rgba(0, 240, 255, 0.1)', color: 'var(--neon-cyan, #00f0ff)', padding: '3px 8px', borderRadius: '6px', fontSize: '0.78rem', textTransform: 'uppercase' }}>
+                              {m.game_mode || 'kontrola'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '14px 18px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <Crown size={16} color="var(--neon-gold, #ffe600)" />
+                              <strong style={{ color: 'var(--neon-gold, #ffe600)', fontSize: '1rem', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                                {m.winner_name}
+                              </strong>
+                            </div>
+                          </td>
+                          <td style={{ padding: '14px 18px', color: '#cbd5e1' }}>
+                            {Array.isArray(m.player_names) && m.player_names.length > 0
+                              ? m.player_names.join(', ')
+                              : '2 Combatants'}
+                          </td>
+                          <td style={{ padding: '14px 18px', fontWeight: 'bold', color: '#39ff14' }}>
+                            +{m.crystals_awarded || 1} 💎
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* =========================================================================
+            TAB 3: KNOWLEDGE BASE MANAGER
+        ========================================================================= */}
+        {activeTab === 'rules' && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '14px', marginBottom: '20px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: '300px' }}>
+                <div style={{ position: 'relative', flex: 1 }}>
+                  <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.4)' }} />
+                  <input
+                    type="text"
+                    placeholder="Search rules, keywords, attack power..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      padding: '10px 14px 10px 38px',
+                      background: 'rgba(5, 10, 24, 0.8)',
+                      border: '1.5px solid rgba(0, 240, 255, 0.3)',
+                      borderRadius: '10px',
+                      color: '#fff',
+                      fontSize: '0.95rem',
+                      fontFamily: 'var(--font-sub, "Outfit", sans-serif)',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
                   style={{
-                    padding: '40px',
-                    textAlign: 'center',
-                    background: 'rgba(14, 22, 42, 0.7)',
-                    borderRadius: '16px',
-                    border: '1px dashed rgba(255,255,255,0.2)',
-                    color: 'rgba(255,255,255,0.5)'
+                    background: 'rgba(5, 10, 24, 0.8)',
+                    border: '1.5px solid rgba(0, 240, 255, 0.3)',
+                    color: '#fff',
+                    padding: '10px 14px',
+                    borderRadius: '10px',
+                    fontSize: '0.9rem',
+                    fontFamily: 'var(--font-sub, "Outfit", sans-serif)',
+                    outline: 'none'
                   }}
                 >
-                  No user questions logged matching this filter. Ask questions in the TCG Chatbot to see real-time player interactions appear here!
+                  <option value="ALL">All Categories</option>
+                  <option value="Combat">Combat</option>
+                  <option value="Setup">Setup</option>
+                  <option value="Energy">Energy</option>
+                  <option value="Characters">Characters</option>
+                  <option value="Lore">Lore</option>
+                  <option value="General">General</option>
+                </select>
+              </div>
+
+              <button
+                onClick={() => {
+                  setEditingRule(null);
+                  setRuleFormData({
+                    topic: '',
+                    category: 'Combat',
+                    keywords: '',
+                    short_answer: '',
+                    details: '',
+                    order_index: rules.length + 1,
+                    is_active: true
+                  });
+                  setIsCreatingRule(true);
+                }}
+                style={{
+                  background: 'linear-gradient(90deg, #00f0ff 0%, #0088ff 100%)',
+                  border: 'none',
+                  color: '#050a18',
+                  padding: '10px 20px',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  fontWeight: '900',
+                  letterSpacing: '1px',
+                  fontSize: '0.95rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: '0 0 20px rgba(0, 240, 255, 0.35)'
+                }}
+              >
+                <Plus size={18} /> NEW RULE
+              </button>
+            </div>
+
+            {/* Rules Cards Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '16px' }}>
+              {filteredRules.map((rule) => (
+                <div
+                  key={rule.id}
+                  style={{
+                    background: 'rgba(14, 22, 42, 0.88)',
+                    border: rule.is_active ? '1.5px solid rgba(0, 240, 255, 0.25)' : '1.5px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '16px',
+                    padding: '20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+                    opacity: rule.is_active ? 1 : 0.65
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '0.75rem', background: 'rgba(0, 240, 255, 0.12)', color: 'var(--neon-cyan, #00f0ff)', border: '1px solid rgba(0, 240, 255, 0.3)', padding: '2px 8px', borderRadius: '6px', fontWeight: 'bold' }}>
+                        {rule.category || 'Combat'} · #{rule.order_index}
+                      </span>
+                      <button
+                        onClick={() => handleToggleRuleActive(rule)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: rule.is_active ? '#39ff14' : 'rgba(255,255,255,0.4)', padding: 0 }}
+                        title={rule.is_active ? 'Active (Live)' : 'Inactive (Draft)'}
+                      >
+                        {rule.is_active ? <ToggleRight size={26} /> : <ToggleLeft size={26} />}
+                      </button>
+                    </div>
+
+                    <h3 style={{ fontSize: '1.2rem', color: '#fff', margin: '0 0 8px 0', letterSpacing: '0.5px' }}>
+                      {rule.topic}
+                    </h3>
+
+                    <p style={{ fontSize: '0.9rem', color: '#cbd5e1', margin: '0 0 12px 0', lineHeight: '1.5', fontFamily: 'var(--font-sub, "Outfit", sans-serif)' }}>
+                      {rule.short_answer}
+                    </p>
+                  </div>
+
+                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '12px', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                    <button
+                      onClick={() => {
+                        setEditingRule(rule);
+                        setRuleFormData({
+                          topic: rule.topic,
+                          category: rule.category,
+                          keywords: Array.isArray(rule.keywords) ? rule.keywords.join(', ') : rule.keywords,
+                          short_answer: rule.short_answer,
+                          details: rule.details,
+                          order_index: rule.order_index,
+                          is_active: rule.is_active
+                        });
+                        setIsCreatingRule(true);
+                      }}
+                      style={{
+                        background: 'rgba(0, 240, 255, 0.1)',
+                        border: '1px solid rgba(0, 240, 255, 0.3)',
+                        color: 'var(--neon-cyan, #00f0ff)',
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                        fontWeight: 'bold',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      <Edit2 size={14} /> Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteRule(rule.id)}
+                      style={{
+                        background: 'rgba(255, 51, 102, 0.12)',
+                        border: '1px solid rgba(255, 51, 102, 0.3)',
+                        color: '#ff88aa',
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                        fontWeight: 'bold',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      <Trash2 size={14} /> Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* =========================================================================
+            TAB 4: QUESTIONS INBOX
+        ========================================================================= */}
+        {activeTab === 'questions' && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <h2 style={{ fontSize: '1.4rem', color: '#fff', margin: 0 }}>Player Questions & Continuous Learning</h2>
+                <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Review queries asked by players and promote user corrections to official rules with 1 click</span>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {['all', 'unhelpful', 'suggested_only'].map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => { setQuestionFilter(f); loadQuestions(); }}
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: '8px',
+                      border: questionFilter === f ? '1.5px solid var(--neon-cyan, #00f0ff)' : '1px solid rgba(255,255,255,0.1)',
+                      background: questionFilter === f ? 'rgba(0, 240, 255, 0.15)' : 'rgba(0,0,0,0.3)',
+                      color: questionFilter === f ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.7)',
+                      cursor: 'pointer',
+                      fontWeight: 'bold',
+                      fontSize: '0.85rem',
+                      textTransform: 'capitalize'
+                    }}
+                  >
+                    {f.replace('_', ' ')}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {questions.length === 0 ? (
+                <div style={{ background: 'rgba(14, 22, 42, 0.7)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', padding: '40px', textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>
+                  No player questions logged under this filter yet.
                 </div>
               ) : (
                 questions.map((q) => (
                   <div
                     key={q.id}
                     style={{
-                      background: 'rgba(14, 22, 42, 0.85)',
-                      border: `1.5px solid ${q.user_rating === 'unhelpful' ? 'rgba(255, 51, 102, 0.4)' : 'rgba(255, 255, 255, 0.12)'}`,
+                      background: 'rgba(14, 22, 42, 0.88)',
+                      border: q.user_rating === 'unhelpful' ? '1.5px solid rgba(255, 51, 102, 0.4)' : '1px solid rgba(255, 255, 255, 0.12)',
                       borderRadius: '16px',
                       padding: '20px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '12px'
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontWeight: 'bold', color: 'var(--neon-cyan, #00f0ff)', fontSize: '0.95rem' }}>
-                          👤 {q.user_name || 'Warrior'}
-                        </span>
-                        <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)', fontFamily: 'var(--font-sub, "Outfit", sans-serif)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                      <div>
+                        <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', marginRight: '10px' }}>
                           {new Date(q.created_at).toLocaleString()}
                         </span>
-                        <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '4px', color: 'rgba(255,255,255,0.6)' }}>
-                          App: {q.app_source || 'companion_hub'}
+                        <span style={{ fontSize: '0.78rem', background: 'rgba(0, 240, 255, 0.1)', color: 'var(--neon-cyan, #00f0ff)', padding: '2px 8px', borderRadius: '4px' }}>
+                          Warrior: {q.user_name || 'Anonymous'}
                         </span>
                       </div>
-
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        {q.user_rating === 'helpful' && (
-                          <span style={{ background: 'rgba(57, 255, 20, 0.15)', color: '#39ff14', padding: '3px 10px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <ThumbsUp size={12} /> Helpful
-                          </span>
-                        )}
-                        {q.user_rating === 'unhelpful' && (
-                          <span style={{ background: 'rgba(255, 51, 102, 0.15)', color: 'var(--neon-crimson, #ff3366)', padding: '3px 10px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <ThumbsDown size={12} /> Flagged Inaccurate
-                          </span>
-                        )}
-                        <span style={{ fontSize: '0.8rem', color: 'var(--neon-gold, #ffe600)', background: 'rgba(255, 230, 0, 0.1)', padding: '3px 10px', borderRadius: '6px', fontWeight: 'bold' }}>
-                          Status: {q.admin_status || 'pending'}
-                        </span>
+                        {q.user_rating === 'helpful' && <span style={{ color: '#39ff14', fontSize: '0.85rem' }}>👍 Helpful</span>}
+                        {q.user_rating === 'unhelpful' && <span style={{ color: '#ff88aa', fontSize: '0.85rem' }}>👎 Flagged Inaccurate</span>}
                       </div>
                     </div>
 
-                    <div>
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '1px' }}>Player Asked:</div>
-                      <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff', marginTop: '2px' }}>
-                        "{q.question_text}"
-                      </div>
+                    <div style={{ fontSize: '1.15rem', color: '#fff', fontWeight: 'bold', marginBottom: '8px' }}>
+                      ❓ "{q.question_text}"
                     </div>
 
-                    <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '12px 14px' }}>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--neon-cyan, #00f0ff)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
-                        Oracle AI Response:
-                      </div>
-                      <div style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.85)', fontFamily: 'var(--font-sub, "Outfit", sans-serif)' }}>
-                        {q.ai_answer}
-                      </div>
+                    <div style={{ background: 'rgba(0,0,0,0.4)', borderRadius: '10px', padding: '12px 16px', marginBottom: '12px', borderLeft: '3px solid var(--neon-cyan, #00f0ff)', fontSize: '0.92rem', color: '#cbd5e1', fontFamily: 'var(--font-sub, "Outfit", sans-serif)' }}>
+                      <strong>AI Answer:</strong> {q.ai_answer}
                     </div>
 
                     {q.user_suggested_answer && (
-                      <div style={{ background: 'rgba(255, 230, 0, 0.08)', border: '1.5px solid rgba(255, 230, 0, 0.3)', borderRadius: '10px', padding: '12px 14px' }}>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--neon-gold, #ffe600)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
-                          💡 Warrior's Suggested Correction:
-                        </div>
-                        <div style={{ fontSize: '0.92rem', color: '#fff', fontStyle: 'italic', fontFamily: 'var(--font-sub, "Outfit", sans-serif)' }}>
-                          "{q.user_suggested_answer}"
-                        </div>
+                      <div style={{ background: 'rgba(255, 230, 0, 0.08)', borderRadius: '10px', padding: '12px 16px', marginBottom: '12px', borderLeft: '3px solid var(--neon-gold, #ffe600)', fontSize: '0.92rem', color: '#fff', fontFamily: 'var(--font-sub, "Outfit", sans-serif)' }}>
+                        <strong>Player-Suggested Correction:</strong> "{q.user_suggested_answer}"
                       </div>
                     )}
 
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                       <button
-                        onClick={() => handlePromoteToKnowledge(q)}
+                        onClick={() => handlePromoteQuestion(q)}
                         style={{
-                          background: 'linear-gradient(90deg, #ffe600 0%, #ff9900 100%)',
+                          background: 'linear-gradient(90deg, #39ff14 0%, #00cc44 100%)',
                           border: 'none',
                           color: '#050a18',
                           padding: '8px 16px',
                           borderRadius: '8px',
-                          fontWeight: '900',
                           cursor: 'pointer',
+                          fontWeight: '900',
+                          fontSize: '0.88rem',
                           display: 'flex',
                           alignItems: 'center',
                           gap: '6px',
-                          fontSize: '0.88rem',
-                          fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
-                          boxShadow: '0 0 12px rgba(255, 230, 0, 0.25)'
+                          boxShadow: '0 0 15px rgba(57, 255, 20, 0.3)'
                         }}
                       >
-                        <Sparkles size={16} />
-                        <span>PROMOTE TO KNOWLEDGE BASE</span>
+                        <Sparkles size={14} /> PROMOTE TO OFFICIAL KNOWLEDGE BASE
                       </button>
                     </div>
                   </div>
@@ -1068,243 +1281,203 @@ export default function AdminPage() {
       </div>
 
       {/* =========================================================================
-          ADD / EDIT RULE MODAL (Cyber Theme matching App)
+          MODAL 1: ADJUST CRYSTALS
       ========================================================================= */}
-      {editingRule && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.85)',
-            backdropFilter: 'blur(8px)',
-            zIndex: 99999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px'
-          }}
-          onClick={() => setEditingRule(null)}
-        >
-          <div
-            style={{
-              width: '100%',
-              maxWidth: '680px',
-              background: 'rgba(14, 22, 42, 0.96)',
-              border: '2px solid var(--neon-cyan, #00f0ff)',
-              borderRadius: '20px',
-              padding: '30px',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              boxShadow: '0 0 40px rgba(0, 240, 255, 0.25)'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
+      {crystalModalUser && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+          <div style={{ width: '100%', maxWidth: '400px', background: 'rgba(14, 22, 42, 0.98)', border: '2px solid var(--neon-gold, #ffe600)', borderRadius: '20px', padding: '28px', boxShadow: '0 0 40px rgba(255, 230, 0, 0.25)' }}>
+            <h3 style={{ fontSize: '1.4rem', color: '#fff', margin: '0 0 8px 0' }}>Adjust Stability Crystals</h3>
+            <p style={{ color: '#cbd5e1', fontSize: '0.9rem', margin: '0 0 18px 0', fontFamily: 'var(--font-sub, "Outfit", sans-serif)' }}>
+              Set new Stability Crystals balance for <strong>{crystalModalUser.username}</strong>:
+            </p>
+            <input
+              type="number"
+              min="0"
+              value={newCrystalCount}
+              onChange={(e) => setNewCrystalCount(e.target.value)}
+              style={{
+                width: '100%',
+                boxSizing: 'border-box',
+                padding: '12px',
+                background: 'rgba(0,0,0,0.6)',
+                border: '1.5px solid var(--neon-gold, #ffe600)',
+                borderRadius: '10px',
+                color: '#fff',
+                fontSize: '1.3rem',
+                fontWeight: 'bold',
+                textAlign: 'center',
+                marginBottom: '20px'
+              }}
+            />
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setCrystalModalUser(null)}
+                style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: '#fff', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveCrystals}
+                style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', background: 'linear-gradient(90deg, #ffe600 0%, #ffaa00 100%)', color: '#050a18', fontWeight: 'bold', cursor: 'pointer' }}
+              >
+                Save Crystals
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL 2: BAN / SUSPEND CONFIRMATION
+      ========================================================================= */}
+      {banModalUser && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+          <div style={{ width: '100%', maxWidth: '420px', background: 'rgba(24, 10, 18, 0.98)', border: '2px solid var(--neon-crimson, #ff3366)', borderRadius: '20px', padding: '28px', boxShadow: '0 0 40px rgba(255, 51, 102, 0.3)' }}>
+            <h3 style={{ fontSize: '1.4rem', color: '#fff', margin: '0 0 8px 0' }}>
+              {banModalUser.is_banned ? 'Reinstate Warrior?' : 'Suspend Warrior Account?'}
+            </h3>
+            <p style={{ color: '#cbd5e1', fontSize: '0.92rem', lineHeight: '1.6', margin: '0 0 20px 0', fontFamily: 'var(--font-sub, "Outfit", sans-serif)' }}>
+              {banModalUser.is_banned
+                ? `Warrior "${banModalUser.username}" will immediately regain full access to the Attention TCG Companion Hub, Chatbot, and Kontrola Arena.`
+                : `Warrior "${banModalUser.username}" will immediately be signed out and locked out from all modules until reinstated.`}
+            </p>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setBanModalUser(null)}
+                style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: '#fff', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleToggleBan(banModalUser)}
+                style={{
+                  padding: '8px 20px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: banModalUser.is_banned ? 'linear-gradient(90deg, #39ff14, #00cc44)' : 'linear-gradient(90deg, #ff2a55, #cc0033)',
+                  color: '#fff',
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
+                {banModalUser.is_banned ? 'Confirm Reinstatement' : 'Confirm Suspension'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL 3: CREATE / EDIT RULE
+      ========================================================================= */}
+      {isCreatingRule && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+          <div style={{ width: '100%', maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto', background: 'rgba(14, 22, 42, 0.98)', border: '2px solid var(--neon-cyan, #00f0ff)', borderRadius: '24px', padding: '28px', boxShadow: '0 0 50px rgba(0, 240, 255, 0.3)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ margin: 0, fontSize: '1.6rem', color: 'var(--neon-cyan, #00f0ff)', fontWeight: '900', letterSpacing: '1px' }}>
-                {isCreatingNew ? 'ADD NEW RULES KNOWLEDGE' : 'EDIT RULES KNOWLEDGE'}
-              </h3>
-              <div className="brand-pill-badge" style={{ fontSize: '0.8rem', padding: '2px 10px' }}>注意!</div>
+              <h2 style={{ fontSize: '1.6rem', color: '#fff', margin: 0 }}>
+                {editingRule ? 'Edit Official Rule' : 'Create New Game Rule'}
+              </h2>
+              <button onClick={() => setIsCreatingRule(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
             </div>
 
-            <form onSubmit={handleSaveRule} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <form onSubmit={handleSaveRule} style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontFamily: 'var(--font-sub, "Outfit", sans-serif)' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.88rem', color: 'rgba(255,255,255,0.8)', marginBottom: '6px', fontWeight: 'bold' }}>TOPIC TITLE</label>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--neon-cyan, #00f0ff)', marginBottom: '4px', fontWeight: 'bold' }}>TOPIC / RULE TITLE</label>
                 <input
                   type="text"
-                  value={ruleForm.topic}
-                  onChange={(e) => setRuleForm({ ...ruleForm, topic: e.target.value })}
-                  placeholder="e.g. 2-Stage Clash Roll & DP Rule"
                   required
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    padding: '12px 14px',
-                    background: 'rgba(5, 10, 24, 0.8)',
-                    border: '1.5px solid rgba(0, 240, 255, 0.3)',
-                    borderRadius: '10px',
-                    color: '#fff',
-                    fontFamily: 'var(--font-sub, "Outfit", sans-serif)',
-                    outline: 'none'
-                  }}
+                  value={ruleFormData.topic}
+                  onChange={(e) => setRuleFormData({ ...ruleFormData, topic: e.target.value })}
+                  placeholder="e.g. 2-Stage Clash Roll & DP Armor"
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff' }}
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.88rem', color: 'rgba(255,255,255,0.8)', marginBottom: '6px', fontWeight: 'bold' }}>CATEGORY</label>
+                  <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--neon-cyan, #00f0ff)', marginBottom: '4px', fontWeight: 'bold' }}>CATEGORY</label>
                   <select
-                    value={ruleForm.category}
-                    onChange={(e) => setRuleForm({ ...ruleForm, category: e.target.value })}
-                    style={{
-                      width: '100%',
-                      boxSizing: 'border-box',
-                      padding: '12px 14px',
-                      background: 'rgba(5, 10, 24, 0.8)',
-                      border: '1.5px solid rgba(0, 240, 255, 0.3)',
-                      borderRadius: '10px',
-                      color: '#fff',
-                      fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
-                      fontWeight: 'bold',
-                      outline: 'none'
-                    }}
+                    value={ruleFormData.category}
+                    onChange={(e) => setRuleFormData({ ...ruleFormData, category: e.target.value })}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff' }}
                   >
-                    <option value="Gameplay">Gameplay</option>
                     <option value="Combat">Combat</option>
                     <option value="Setup">Setup</option>
+                    <option value="Energy">Energy</option>
                     <option value="Characters">Characters</option>
-                    <option value="Cards">Cards</option>
                     <option value="Lore">Lore</option>
+                    <option value="General">General</option>
                   </select>
                 </div>
+
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.88rem', color: 'rgba(255,255,255,0.8)', marginBottom: '6px', fontWeight: 'bold' }}>ORDER INDEX</label>
+                  <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--neon-cyan, #00f0ff)', marginBottom: '4px', fontWeight: 'bold' }}>ORDER INDEX</label>
                   <input
                     type="number"
-                    value={ruleForm.orderIndex}
-                    onChange={(e) => setRuleForm({ ...ruleForm, orderIndex: e.target.value })}
-                    style={{
-                      width: '100%',
-                      boxSizing: 'border-box',
-                      padding: '12px 14px',
-                      background: 'rgba(5, 10, 24, 0.8)',
-                      border: '1.5px solid rgba(0, 240, 255, 0.3)',
-                      borderRadius: '10px',
-                      color: '#fff',
-                      fontFamily: 'var(--font-sub, "Outfit", sans-serif)',
-                      outline: 'none'
-                    }}
+                    value={ruleFormData.order_index}
+                    onChange={(e) => setRuleFormData({ ...ruleFormData, order_index: e.target.value })}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff' }}
                   />
                 </div>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.88rem', color: 'rgba(255,255,255,0.8)', marginBottom: '6px', fontWeight: 'bold' }}>
-                  SEARCH KEYWORDS (COMMA SEPARATED)
-                </label>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--neon-cyan, #00f0ff)', marginBottom: '4px', fontWeight: 'bold' }}>KEYWORDS (Comma-Separated)</label>
                 <input
                   type="text"
-                  value={ruleForm.keywords}
-                  onChange={(e) => setRuleForm({ ...ruleForm, keywords: e.target.value })}
-                  placeholder="dice, clash, roll, defense point, 6, dp"
-                  required
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    padding: '12px 14px',
-                    background: 'rgba(5, 10, 24, 0.8)',
-                    border: '1.5px solid rgba(0, 240, 255, 0.3)',
-                    borderRadius: '10px',
-                    color: '#fff',
-                    fontFamily: 'var(--font-sub, "Outfit", sans-serif)',
-                    outline: 'none'
-                  }}
+                  value={ruleFormData.keywords}
+                  onChange={(e) => setRuleFormData({ ...ruleFormData, keywords: e.target.value })}
+                  placeholder="dice, clash, roll, defense, dp"
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff' }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.88rem', color: 'rgba(255,255,255,0.8)', marginBottom: '6px', fontWeight: 'bold' }}>
-                  SHORT ANSWER (SPOKEN BY AI AVATAR TTS)
-                </label>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--neon-cyan, #00f0ff)', marginBottom: '4px', fontWeight: 'bold' }}>SHORT SUMMARY (Chatbot Speech Response)</label>
                 <textarea
                   rows={3}
-                  value={ruleForm.shortAnswer}
-                  onChange={(e) => setRuleForm({ ...ruleForm, shortAnswer: e.target.value })}
-                  placeholder="Keep concise: 1-3 sentences spoken aloud by avatar."
                   required
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    padding: '12px 14px',
-                    background: 'rgba(5, 10, 24, 0.8)',
-                    border: '1.5px solid rgba(0, 240, 255, 0.3)',
-                    borderRadius: '10px',
-                    color: '#fff',
-                    fontFamily: 'var(--font-sub, "Outfit", sans-serif)',
-                    resize: 'vertical',
-                    outline: 'none'
-                  }}
+                  value={ruleFormData.short_answer}
+                  onChange={(e) => setRuleFormData({ ...ruleFormData, short_answer: e.target.value })}
+                  placeholder="Concise 1-2 sentence breakdown that avatars speak aloud..."
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff' }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.88rem', color: 'rgba(255,255,255,0.8)', marginBottom: '6px', fontWeight: 'bold' }}>
-                  FULL DETAILS (DETAILED TEXT IN CHAT CARD)
-                </label>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--neon-cyan, #00f0ff)', marginBottom: '4px', fontWeight: 'bold' }}>FULL DETAILS & STEP-BY-STEP BREAKDOWN</label>
                 <textarea
                   rows={6}
-                  value={ruleForm.details}
-                  onChange={(e) => setRuleForm({ ...ruleForm, details: e.target.value })}
-                  placeholder="Full bulleted rule breakdown for reading."
                   required
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    padding: '12px 14px',
-                    background: 'rgba(5, 10, 24, 0.8)',
-                    border: '1.5px solid rgba(0, 240, 255, 0.3)',
-                    borderRadius: '10px',
-                    color: '#fff',
-                    fontFamily: 'var(--font-sub, "Outfit", sans-serif)',
-                    resize: 'vertical',
-                    outline: 'none'
-                  }}
+                  value={ruleFormData.details}
+                  onChange={(e) => setRuleFormData({ ...ruleFormData, details: e.target.value })}
+                  placeholder="Complete rulebook mechanics, dice phases, energy costs, and edge cases..."
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff' }}
                 />
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <input
-                  type="checkbox"
-                  id="isActiveCheck"
-                  checked={ruleForm.isActive}
-                  onChange={(e) => setRuleForm({ ...ruleForm, isActive: e.target.checked })}
-                  style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                />
-                <label htmlFor="isActiveCheck" style={{ fontSize: '0.95rem', color: '#fff', cursor: 'pointer', fontWeight: 'bold' }}>
-                  Active & Live for Players in Chatbot
-                </label>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
                 <button
                   type="button"
-                  onClick={() => setEditingRule(null)}
-                  style={{
-                    padding: '12px 20px',
-                    background: 'rgba(255,255,255,0.1)',
-                    border: 'none',
-                    color: '#fff',
-                    borderRadius: '10px',
-                    cursor: 'pointer',
-                    fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
-                    fontWeight: 'bold',
-                    fontSize: '0.95rem'
-                  }}
+                  onClick={() => setIsCreatingRule(false)}
+                  style={{ padding: '10px 18px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: '#fff', cursor: 'pointer' }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  style={{
-                    padding: '12px 26px',
-                    background: 'linear-gradient(90deg, #00f0ff 0%, #0088ff 100%)',
-                    border: 'none',
-                    color: '#050a18',
-                    borderRadius: '10px',
-                    fontWeight: '900',
-                    cursor: 'pointer',
-                    fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
-                    letterSpacing: '1px',
-                    fontSize: '1rem',
-                    boxShadow: '0 0 15px rgba(0, 240, 255, 0.3)'
-                  }}
+                  style={{ padding: '10px 24px', borderRadius: '8px', border: 'none', background: 'linear-gradient(90deg, #00f0ff 0%, #0088ff 100%)', color: '#050a18', fontWeight: 'bold', cursor: 'pointer' }}
                 >
-                  Save & Publish
+                  Save Rule
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
     </div>
   );
 }

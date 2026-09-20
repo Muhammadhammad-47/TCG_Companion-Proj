@@ -14,6 +14,7 @@ import {
   advertiseRoom, closeRoom, subscribeToGlobalLobby, broadcastLeave, requestSync,
   broadcastUIEvent, rejectJoin
 } from './MultiplayerClient';
+import { authService } from '../../services/authService';
 import { getCardGraphicUrl, getCharacterAttackGraphicUrl, getWildCardGraphicUrl } from './kontrolaAssets';
 import KontrolaDiceRoller from './KontrolaDiceRoller';
 import KontrolaChatModal from './KontrolaChatModal';
@@ -40,12 +41,41 @@ export default function KontrolaArena() {
   const [matchId, setMatchId] = useState('');
   const [gameState, setGameState] = useState(null);
   const [playerId] = useState(generateUniquePlayerId);
-  const [playerName, setPlayerName] = useState('');
+  const [currentUser, setCurrentUser] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
+  const [playerName, setPlayerName] = useState(() => {
+    try {
+      const cached = localStorage.getItem('tcg_warrior_username');
+      if (cached) return cached;
+    } catch (e) {}
+    return 'Warrior';
+  });
   const [isHost, setIsHost] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [isSpectator, setIsSpectator] = useState(false);
   const [error, setError] = useState(null);
   const [inAppNotice, setInAppNotice] = useState(null);
+  const hasLoggedMatchRef = useRef(false);
+
+  // Auto-sync warrior callsign from logged-in account
+  useEffect(() => {
+    authService.getCurrentUser().then((user) => {
+      if (user) {
+        setCurrentUser(user);
+        authService.getProfile(user.id).then((prof) => {
+          if (prof) {
+            setUserProfile(prof);
+            if (prof.username) {
+              setPlayerName(prof.username);
+              try {
+                localStorage.setItem('tcg_warrior_username', prof.username);
+              } catch (e) {}
+            }
+          }
+        });
+      }
+    });
+  }, []);
 
   // In-app floating alert/toast helper
   const showNotice = (msg, type = 'warning') => {
@@ -80,6 +110,29 @@ export default function KontrolaArena() {
   const [isShaking, setIsShaking] = useState(false);
   const [turnFlash, setTurnFlash] = useState(false);
   const [winner, setWinner] = useState(null);
+
+  // Record match victory and award crystals
+  useEffect(() => {
+    if (winner && !hasLoggedMatchRef.current && isHost) {
+      hasLoggedMatchRef.current = true;
+      const allPlayerIds = gameState?.players || [];
+      const allPlayerNames = allPlayerIds.map(
+        (pid) => gameState?.playerNames?.[pid] || gameState?.characterStates?.[pid]?.name || 'Warrior'
+      );
+      authService.logMatchResult({
+        roomCode: matchIdRef.current || 'KONTROLA_ARENA',
+        winnerId: currentUser?.id || null,
+        winnerName: winner.name || playerName || 'Warrior',
+        playerIds: allPlayerIds,
+        playerNames: allPlayerNames,
+        gameMode: 'kontrola',
+        crystalsAwarded: 1
+      });
+      if (currentUser?.id) {
+        authService.savePlayerMatchResult(currentUser.id, { won: true, crystalsDelta: 1, appSource: 'kontrola' });
+      }
+    }
+  }, [winner, isHost, gameState, currentUser, playerName]);
 
   // Action resolution queue on Host to prevent race conditions
   const actionQueueRef = useRef([]);
@@ -1046,7 +1099,7 @@ export default function KontrolaArena() {
 
             {!gameState ? (
               <div style={{ maxWidth: '900px', margin: '0 auto', zIndex: 10, display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                {/* 1. Player Name Input */}
+                {/* 1. Verified Warrior Callsign Badge */}
                 <div
                   style={{
                     background: 'rgba(14, 22, 42, 0.88)',
@@ -1071,31 +1124,45 @@ export default function KontrolaArena() {
                         letterSpacing: '1px'
                       }}
                     >
-                      YOUR WARRIOR CALLSIGN
+                      WARRIOR CALLSIGN
                     </label>
-                    <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)' }}>
-                      Visible to all opponents across matches
+                    <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
+                      Authenticated identity linked to your Attention TCG profile
                     </span>
                   </div>
-                  <input
-                    type="text"
-                    placeholder="Enter your name (Required)"
-                    value={playerName}
-                    onChange={(e) => setPlayerName(e.target.value)}
-                    maxLength={16}
-                    style={{
-                      width: '260px',
-                      background: 'rgba(0, 0, 0, 0.65)',
-                      border: playerName.trim() ? '1.5px solid var(--neon-cyan)' : '1.5px solid rgba(255, 42, 85, 0.6)',
-                      borderRadius: '10px',
-                      padding: '10px 14px',
-                      color: '#fff',
-                      fontSize: '1.1rem',
-                      textAlign: 'center',
-                      fontWeight: 'bold',
-                      boxSizing: 'border-box'
-                    }}
-                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div
+                      style={{
+                        background: 'rgba(0, 0, 0, 0.65)',
+                        border: '1.5px solid var(--neon-cyan)',
+                        borderRadius: '10px',
+                        padding: '10px 18px',
+                        color: '#fff',
+                        fontSize: '1.15rem',
+                        fontWeight: 'bold',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <Crown size={18} color="var(--neon-gold)" />
+                      <span>{playerName || 'Warrior'}</span>
+                    </div>
+                    <span
+                      style={{
+                        background: 'rgba(57, 255, 20, 0.15)',
+                        border: '1px solid #39ff14',
+                        color: '#39ff14',
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        fontSize: '0.78rem',
+                        fontWeight: 'bold',
+                        letterSpacing: '1px'
+                      }}
+                    >
+                      VERIFIED
+                    </span>
+                  </div>
                 </div>
 
                 {/* 2. Character Selection Carousel */}

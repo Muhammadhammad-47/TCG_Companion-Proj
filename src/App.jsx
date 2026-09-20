@@ -884,7 +884,15 @@ export function Chat({ onBack, isOverlay = false }) {
         <div className="nav-left" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <button className="burger-button" onClick={toggleSidebar} style={{ background: 'none', border: 'none', color: 'var(--neon-cyan)', fontSize: '1.5rem', cursor: 'pointer' }}>☰</button>
           <div className="nav-logo" style={{ color: 'var(--text-light)', fontFamily: 'Orbitron, sans-serif' }}>
-            <h2 style={{ margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}><span className="brand-pill-badge" style={{ fontSize: '0.6rem', padding: '2px 6px' }}>注意!</span> TCG Chatbot</h2>
+            <h2 style={{ margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span className="brand-pill-badge" style={{ fontSize: '0.6rem', padding: '2px 6px' }}>注意!</span>
+              <span>TCG Chatbot</span>
+              {userProfile?.username && (
+                <span style={{ fontSize: '0.78rem', color: 'var(--neon-gold)', fontWeight: 'bold', background: 'rgba(255, 230, 0, 0.12)', border: '1px solid rgba(255, 230, 0, 0.35)', padding: '2px 8px', borderRadius: '6px', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                  ⚔️ {userProfile.username}
+                </span>
+              )}
+            </h2>
           </div>
         </div>
         <div className="nav-right" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -1463,6 +1471,25 @@ function App() {
           <div style={{ textAlign: 'center' }}>
             <div className="brand-pill-badge" style={{ margin: '0 auto 12px auto', fontSize: '0.9rem', padding: '3px 12px' }}>注意!</div>
             <div style={{ fontSize: '1.3rem', letterSpacing: '2px', fontWeight: 'bold' }}>VERIFYING WARRIOR ACCESS...</div>
+          </div>
+        </div>
+      );
+    }
+    if (userProfile?.is_banned) {
+      return (
+        <div style={{ minHeight: '100vh', width: '100vw', background: 'radial-gradient(circle at 50% 20%, #20050d 0%, #0d0205 70%, #000 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ff88aa', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', padding: '20px', boxSizing: 'border-box' }}>
+          <div style={{ maxWidth: '440px', width: '100%', textAlign: 'center', background: 'rgba(30, 8, 14, 0.92)', border: '2px solid var(--neon-crimson, #ff3366)', borderRadius: '20px', padding: '36px 28px', boxShadow: '0 0 40px rgba(255, 42, 85, 0.3)' }}>
+            <div className="brand-pill-badge" style={{ margin: '0 auto 12px auto', fontSize: '0.9rem', padding: '3px 12px', background: 'var(--neon-crimson, #ff3366)', color: '#fff', border: 'none' }}>SUSPENDED</div>
+            <div style={{ fontSize: '1.8rem', letterSpacing: '2px', fontWeight: '900', color: '#fff', marginBottom: '8px' }}>ACCOUNT SUSPENDED</div>
+            <p style={{ color: '#cbd5e1', fontSize: '0.95rem', lineHeight: '1.6', fontFamily: 'var(--font-sub, "Outfit", sans-serif)', marginBottom: '24px' }}>
+              Your warrior account (<strong>{userProfile?.username || currentUser?.email}</strong>) has been suspended by the Game Masters due to rule violations or moderation action.
+            </p>
+            <button
+              onClick={() => authService.signOut().then(() => { setCurrentUser(null); setUserProfile(null); })}
+              style={{ padding: '10px 24px', borderRadius: '10px', border: '1px solid #ff3366', background: 'rgba(255,51,102,0.2)', color: '#fff', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', fontSize: '1rem' }}
+            >
+              Sign Out
+            </button>
           </div>
         </div>
       );
