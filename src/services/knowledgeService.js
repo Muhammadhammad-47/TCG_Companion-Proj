@@ -180,7 +180,7 @@ export const knowledgeService = {
   },
 
   // Log user question in background (fire-and-forget, zero blocking)
-  async logUserQuestion({ userId = null, userName = 'Guest Warrior', questionText, aiAnswer, matchedTopic = null, appSource = 'companion_hub' }) {
+  async logUserQuestion({ userId = null, userName = 'Guest Player', questionText, aiAnswer, matchedTopic = null, appSource = 'companion_hub' }) {
     if (!supabase || !questionText) return null;
     try {
       const { data, error } = await supabase

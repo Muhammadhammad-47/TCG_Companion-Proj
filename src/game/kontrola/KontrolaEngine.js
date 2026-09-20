@@ -1,4 +1,4 @@
-// TCG Companion — Kontrola Rule Engine
+﻿// TCG Companion — Kontrola Rule Engine
 // Validated against Kontrolla_Data/Docs (Rules & Regulations, AI Breakdowns, Action Cards CSV)
 
 export const KONTROLA_CHARACTERS = {
@@ -390,7 +390,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     newAttackerState.poisonCount = Math.max(0, beforeCount - removeCount);
     log += ` Antidote cleansed ${Math.min(beforeCount, removeCount)} Poison card(s).`;
     if (beforeCount >= 5 && newAttackerState.poisonCount < 5) {
-      log += ` Cured from Zombie Mode! Returning to normal warrior form.`;
+      log += ` Cured from Zombie Mode! Returning to normal player state.`;
       newAttackerState.hp = newAttackerState.preZombieHp || 100;
     }
     if (cardName.includes('CLEANSE')) {
@@ -469,3 +469,4 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
 
   return { newAttackerState, newDefenderState, log };
 };
+

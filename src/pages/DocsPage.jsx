@@ -142,7 +142,7 @@ export default function DocsPage() {
     },
     {
       id: 'auth',
-      title: 'Warrior Identity & Auth',
+      title: 'Player Identity & Auth',
       subtitle: 'Registration, tokens, password recovery',
       icon: UserCheck,
       badge: '4 Endpoints'
@@ -182,11 +182,11 @@ export default function DocsPage() {
     { page: 'overview', label: 'Architecture & Synchronized Universe', route: 'Architecture', method: 'DOC' },
     { page: 'overview', label: 'Host Config & Base URL', route: supabaseUrl, method: 'CONFIG' },
     { page: 'overview', label: 'HTTP Headers & RLS Security', route: 'Authorization: Bearer', method: 'RLS' },
-    { page: 'auth', label: 'Register Warrior Account', route: '/auth/v1/signup', method: 'POST' },
-    { page: 'auth', label: 'Warrior Password Login', route: '/auth/v1/token?grant_type=password', method: 'POST' },
+    { page: 'auth', label: 'Register Player Account', route: '/auth/v1/signup', method: 'POST' },
+    { page: 'auth', label: 'Player Password Login', route: '/auth/v1/token?grant_type=password', method: 'POST' },
     { page: 'auth', label: 'Refresh Session Token', route: '/auth/v1/token?grant_type=refresh_token', method: 'POST' },
     { page: 'auth', label: 'Password Recovery Link', route: '/auth/v1/recover', method: 'POST' },
-    { page: 'player', label: 'Get Warrior Profile & Stats', route: '/rest/v1/profiles?id=eq.{uuid}', method: 'GET' },
+    { page: 'player', label: 'Get Player Profile & Stats', route: '/rest/v1/profiles?id=eq.{uuid}', method: 'GET' },
     { page: 'player', label: 'Save Match Victory & Award Crystals', route: '/rest/v1/profiles?id=eq.{uuid}', method: 'PATCH' },
     { page: 'player', label: 'Global Hall of Fame Leaderboard', route: '/rest/v1/profiles?order=crystals_collected.desc', method: 'GET' },
     { page: 'rules', label: 'Query Active Game Rules', route: '/rest/v1/rules_knowledge?is_active=eq.true', method: 'GET' },
@@ -216,8 +216,8 @@ export const tcgClient = createClient(
   '${anonKey}'
 );
 
-// 1. REGISTER NEW WARRIOR
-export async function registerWarrior(email, password, username, appSource = 'tcg_web') {
+// 1. REGISTER NEW PLAYER
+export async function registerPlayer(email, password, username, appSource = 'tcg_web') {
   const { data, error } = await tcgClient.auth.signUp({
     email,
     password,
@@ -233,8 +233,8 @@ export async function registerWarrior(email, password, username, appSource = 'tc
   return data.user;
 }
 
-// 2. WARRIOR LOGIN (Returns JWT token & Session)
-export async function loginWarrior(email, password) {
+// 2. PLAYER LOGIN (Returns JWT token & Session)
+export async function loginPlayer(email, password) {
   const { data, error } = await tcgClient.auth.signInWithPassword({
     email,
     password
@@ -243,8 +243,8 @@ export async function loginWarrior(email, password) {
   return { user: data.user, token: data.session?.access_token };
 }
 
-// 3. FETCH WARRIOR PROFILE & STABILITY CRYSTALS
-export async function getWarriorProfile(userId) {
+// 3. FETCH PLAYER PROFILE & STABILITY CRYSTALS
+export async function getPlayerProfile(userId) {
   const { data, error } = await tcgClient
     .from('profiles')
     .select('*')
@@ -256,7 +256,7 @@ export async function getWarriorProfile(userId) {
 
 // 4. SAVE MATCH RESULT & INCREMENT CRYSTALS
 export async function recordMatchVictory(userId, wonMatch, crystalsWon = 1, appSource = 'tcg_web') {
-  const current = await getWarriorProfile(userId);
+  const current = await getPlayerProfile(userId);
   const { data, error } = await tcgClient
     .from('profiles')
     .update({
@@ -299,7 +299,7 @@ public class AttentionTcgClient : MonoBehaviour
     private const string AuthUrl = "${supabaseUrl}/auth/v1";
     private const string AnonKey = "${anonKey}";
 
-    // 1. AUTHENTICATE WARRIOR
+    // 1. AUTHENTICATE PLAYER
     public IEnumerator Authenticate(string email, string password, Action<string> onSuccess, Action<string> onError)
     {
         string endpoint = AuthUrl + "/token?grant_type=password";
@@ -358,7 +358,7 @@ public final class AttentionTcgEcosystem {
         )
     }
 
-    // 1. WARRIOR LOGIN
+    // 1. PLAYER LOGIN
     public func login(email: String, pass: String) async throws -> Session {
         return try await client.auth.signIn(email: email, password: pass)
     }
@@ -399,7 +399,7 @@ class TcgEcosystemService {
 
   static SupabaseClient get client => Supabase.instance.client;
 
-  // 1. WARRIOR LOGIN
+  // 1. PLAYER LOGIN
   static Future<AuthResponse> login(String email, String password) async {
     return await client.auth.signInWithPassword(
       email: email.trim(),
@@ -442,22 +442,22 @@ class TcgEcosystemService {
 # ATTENTION TCG: COMPLETE cURL / RAW REST HTTP SPECIFICATION
 # =========================================================================
 
-# 1. WARRIOR SIGN UP
+# 1. PLAYER SIGN UP
 curl -X POST '${supabaseUrl}/auth/v1/signup' \\
   -H 'apikey: ${anonKey}' \\
   -H 'Content-Type: application/json' \\
   -d '{
-    "email": "warrior@example.com",
+    "email": "player@example.com",
     "password": "Password123!",
     "data": { "username": "CyberDragon", "registered_app": "tcg_tournament" }
   }'
 
-# 2. WARRIOR LOGIN (Fetch User JWT Bearer Token)
+# 2. PLAYER LOGIN (Fetch User JWT Bearer Token)
 curl -X POST '${supabaseUrl}/auth/v1/token?grant_type=password' \\
   -H 'apikey: ${anonKey}' \\
   -H 'Content-Type: application/json' \\
   -d '{
-    "email": "warrior@example.com",
+    "email": "player@example.com",
     "password": "Password123!"
   }'
 
@@ -793,7 +793,7 @@ curl -X POST '${supabaseUrl}/rest/v1/user_questions' \\
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px', marginBottom: '24px' }}>
                     <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.25)', borderRadius: '12px', padding: '16px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--neon-cyan, #00f0ff)', fontWeight: 'bold', fontSize: '0.95rem', marginBottom: '6px' }}>
-                        <Zap size={16} /> Single Warrior Identity
+                        <Zap size={16} /> Single Player Identity
                       </div>
                       <div style={{ color: '#94a3b8', fontSize: '0.82rem', lineHeight: '1.5' }}>
                         Sign up once; your callsign, match statistics, and crystal balance automatically sync across every client.
@@ -865,20 +865,20 @@ curl -X POST '${supabaseUrl}/rest/v1/user_questions' \\
               )}
 
               {/* =========================================================================
-                  PAGE 2: WARRIOR IDENTITY & AUTH
+                  PAGE 2: PLAYER IDENTITY & AUTH
               ========================================================================= */}
               {activePage === 'auth' && (
                 <div>
                   <div style={{ marginBottom: '20px' }}>
                     <h1 style={{ fontSize: '1.8rem', fontWeight: '900', color: '#fff', margin: '0 0 4px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px' }}>
-                      WARRIOR IDENTITY & AUTHENTICATION API
+                      PLAYER IDENTITY & AUTHENTICATION API
                     </h1>
                     <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', margin: 0 }}>
-                      Endpoints for registering warrior accounts, authenticating duels, managing sessions, and recovering credentials.
+                      Endpoints for registering player accounts, authenticating sessions, managing tokens, and recovering credentials.
                     </p>
                   </div>
 
-                  {/* 1. Register Warrior */}
+                  {/* 1. Register Player */}
                   <div className="endpoint-card" style={{ background: 'rgba(14, 22, 42, 0.8)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -887,16 +887,16 @@ curl -X POST '${supabaseUrl}/rest/v1/user_questions' \\
                       </div>
                       <span style={{ fontSize: '0.72rem', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', padding: '2px 8px', borderRadius: '4px' }}>Public (Anon Key)</span>
                     </div>
-                    <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff', marginBottom: '6px' }}>Register New Warrior Account</div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff', marginBottom: '6px' }}>Register New Player Account</div>
                     <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0 0 12px 0', lineHeight: '1.5' }}>
-                      Creates the warrior identity and triggers Postgres row generation in <code>profiles</code> with verified callsign, 0 crystals, and default stats.
+                      Creates the player identity and triggers Postgres row generation in <code>profiles</code> with verified callsign, 0 crystals, and default stats.
                     </p>
 
                     <ParamTable
                       rows={[
-                        ['email', 'string', 'Required', 'Valid email address for warrior identity.'],
+                        ['email', 'string', 'Required', 'Valid email address for player account.'],
                         ['password', 'string', 'Required', 'Account password (minimum 6 characters).'],
-                        ['data.username', 'string', 'Required', 'Unique warrior callsign (case-insensitive enforced in database).'],
+                        ['data.username', 'string', 'Required', 'Unique player username (case-insensitive enforced in database).'],
                         ['data.registered_app', 'string', 'Optional', 'Name of the TCG client (e.g. "tcg_unity_arena").']
                       ]}
                     />
@@ -909,7 +909,7 @@ apikey: ${anonKey}
 Content-Type: application/json
 
 {
-  "email": "warrior@example.com",
+  "email": "player@example.com",
   "password": "Password123!",
   "data": {
     "username": "ShadowNinja",
@@ -919,7 +919,7 @@ Content-Type: application/json
                     />
                   </div>
 
-                  {/* 2. Warrior Login */}
+                  {/* 2. Player Login */}
                   <div className="endpoint-card" style={{ background: 'rgba(14, 22, 42, 0.8)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -928,15 +928,15 @@ Content-Type: application/json
                       </div>
                       <span style={{ fontSize: '0.72rem', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', padding: '2px 8px', borderRadius: '4px' }}>Public (Anon Key)</span>
                     </div>
-                    <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff', marginBottom: '6px' }}>Warrior Login (Fetch Session JWT)</div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff', marginBottom: '6px' }}>Player Login (Fetch Session JWT)</div>
                     <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0 0 12px 0', lineHeight: '1.5' }}>
-                      Authenticates credentials and returns the warrior's JWT <code>access_token</code> required for saving match outcomes.
+                      Authenticates credentials and returns the player's JWT <code>access_token</code> required for saving match outcomes.
                     </p>
 
                     <ParamTable
                       rows={[
-                        ['email', 'string', 'Required', 'Registered warrior email.'],
-                        ['password', 'string', 'Required', 'Warrior account password.']
+                        ['email', 'string', 'Required', 'Registered player email.'],
+                        ['password', 'string', 'Required', 'Player account password.']
                       ]}
                     />
 
@@ -950,7 +950,7 @@ Content-Type: application/json
   "refresh_token": "u4Q...",
   "user": {
     "id": "782fc912-3490-48e2-...",
-    "email": "warrior@example.com",
+    "email": "player@example.com",
     "user_metadata": { "username": "ShadowNinja" }
   }
 }`}
@@ -977,7 +977,7 @@ Content-Type: application/json
                       </div>
                       <div style={{ fontWeight: 'bold', color: '#fff', fontSize: '0.95rem', marginBottom: '4px' }}>Password Recovery Email</div>
                       <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: '0 0 10px 0' }}>
-                        Pass <code>email</code> to send a secure password reset link to the warrior.
+                        Pass <code>email</code> to send a secure password reset link to the player.
                       </p>
                     </div>
                   </div>
@@ -1007,9 +1007,9 @@ Content-Type: application/json
                       </div>
                       <span style={{ fontSize: '0.72rem', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', padding: '2px 8px', borderRadius: '4px' }}>Anon or User Bearer</span>
                     </div>
-                    <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff', marginBottom: '6px' }}>Fetch Warrior Profile & Stability Crystals</div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff', marginBottom: '6px' }}>Fetch Player Profile & Stability Crystals</div>
                     <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0 0 12px 0' }}>
-                      Returns the current warrior record containing callsign, crystals balance, total duels, and account status.
+                      Returns the current player record containing callsign, crystals balance, total duels, and account status.
                     </p>
 
                     <CodeBlock
@@ -1060,7 +1060,7 @@ Content-Type: application/json
                       copyId="profile_patch_curl"
                       code={`PATCH ${supabaseUrl}/rest/v1/profiles?id=eq.YOUR_USER_UUID
 apikey: ${anonKey}
-Authorization: Bearer YOUR_WARRIOR_JWT_TOKEN
+Authorization: Bearer YOUR_PLAYER_JWT_TOKEN
 Content-Type: application/json
 
 {
@@ -1083,7 +1083,7 @@ Content-Type: application/json
                     </div>
                     <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff', marginBottom: '6px' }}>Global Hall of Fame Leaderboard</div>
                     <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: 0 }}>
-                      Queries the top 10 warriors across the Attention TCG ecosystem ranked by Stability Crystals collected.
+                      Queries the top 10 players across the Attention TCG ecosystem ranked by Stability Crystals collected.
                     </p>
                   </div>
                 </div>
@@ -1180,7 +1180,7 @@ Content-Type: application/json
 
                     <ParamTable
                       rows={[
-                        ['question_text', 'string', 'Required', 'The raw question asked by the combatant.'],
+                        ['question_text', 'string', 'Required', 'The raw question asked by the player.'],
                         ['ai_answer', 'string', 'Optional', 'The answer provided by the in-game chatbot.'],
                         ['app_source', 'string', 'Optional', 'Client identifier (e.g. "tcg_tournament_client").']
                       ]}
@@ -1218,7 +1218,7 @@ Content-Type: application/json
                     <ParamTable
                       rows={[
                         ['is_helpful', 'boolean', 'Optional', 'True for thumbs-up, false for thumbs-down.'],
-                        ['user_suggested_answer', 'string', 'Optional', 'Warrior-submitted clarification or rulebook correction.']
+                        ['user_suggested_answer', 'string', 'Optional', 'Player-submitted clarification or rulebook correction.']
                       ]}
                     />
                   </div>
@@ -1319,3 +1319,5 @@ Content-Type: application/json
     </>
   );
 }
+
+

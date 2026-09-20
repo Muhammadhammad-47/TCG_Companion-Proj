@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, Send, X } from 'lucide-react';
 import { CHARACTERS, getAssetUrl } from '../data/characters';
 import { soundFX } from '../utils/audio';
@@ -11,7 +11,7 @@ const QUICK_SHOUTOUTS = [
   { icon: '👑', text: 'Stability Crystal is mine!' },
   { icon: '🎲', text: 'Let the dice decide!' },
   { icon: '🔥', text: 'Special technique ready!' },
-  { icon: '🤝', text: 'Good game, warrior!' }
+  { icon: '🤝', text: 'Good game, player!' }
 ];
 
 export default function KontrolaChatModal({
@@ -358,5 +358,6 @@ export default function KontrolaChatModal({
     </div>
   );
 }
+
 
 

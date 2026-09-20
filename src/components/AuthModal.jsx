@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { authService } from '../services/authService';
 import { X, User, Mail, Lock, Sparkles, AlertCircle, CheckCircle, ArrowLeft, KeyRound } from 'lucide-react';
 
@@ -23,7 +23,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
     try {
       if (authMode === 'signup') {
         if (!username.trim()) {
-          throw new Error('Please choose a warrior username.');
+          throw new Error('Please choose a username.');
         }
         if (password.length < 6) {
           throw new Error('Password must be at least 6 characters.');
@@ -38,7 +38,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
 
       } else if (authMode === 'signin') {
         const res = await authService.signIn(email, password);
-        setSuccessMsg('Welcome back, warrior!');
+        setSuccessMsg('Welcome back!');
         setTimeout(() => {
           if (onAuthSuccess) onAuthSuccess(res.user);
           if (onClose) onClose();
@@ -46,7 +46,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
 
       } else if (authMode === 'forgot') {
         if (!email.trim()) {
-          throw new Error('Please provide your registered warrior email.');
+          throw new Error('Please provide your registered email.');
         }
         await authService.resetPassword(email);
         setSuccessMsg('Password recovery email sent! Check your inbox to reset your password.');
@@ -135,12 +135,12 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
             <span style={{ fontSize: '0.9rem', letterSpacing: '3px', fontWeight: 'bold' }}>ATTENTION TCG AUTH GATE</span>
           </div>
           <h2 style={{ fontSize: '2.1rem', margin: '4px 0 6px 0', color: '#fff', fontWeight: '900', letterSpacing: '1.5px' }}>
-            {authMode === 'signup' && 'WARRIOR REGISTRATION'}
-            {authMode === 'signin' && 'WARRIOR LOGIN'}
+            {authMode === 'signup' && 'PLAYER REGISTRATION'}
+            {authMode === 'signin' && 'PLAYER LOGIN'}
             {authMode === 'forgot' && 'ACCOUNT RECOVERY'}
           </h2>
           <p style={{ color: 'var(--text-muted, #94a3b8)', fontSize: '0.95rem', margin: 0, fontFamily: 'var(--font-sub, "Outfit", sans-serif)' }}>
-            {authMode === 'signup' && 'Create your cloud warrior profile to preserve battle crystals & ranking.'}
+            {authMode === 'signup' && 'Create your player profile to preserve battle crystals & ranking.'}
             {authMode === 'signin' && 'Authenticate to enter the battle arena, chatbot & simulator.'}
             {authMode === 'forgot' && 'Enter your registered email to receive a password reset link.'}
           </p>
@@ -270,7 +270,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
           {authMode === 'signup' && (
             <div>
               <label style={{ display: 'block', color: 'rgba(255, 255, 255, 0.85)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 'bold', letterSpacing: '1px' }}>
-                WARRIOR USERNAME
+                USERNAME
               </label>
               <div style={{ position: 'relative' }}>
                 <User size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--neon-cyan, #00f0ff)' }} />
@@ -308,7 +308,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="warrior@attentiontcg.com"
+                placeholder="player@attentiontcg.com"
                 autoComplete="email"
                 required
                 style={{
@@ -397,7 +397,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
               fontFamily: 'var(--font-display, "Rajdhani", sans-serif)'
             }}
           >
-            {loading ? 'PROCESSING...' : authMode === 'signup' ? 'REGISTER WARRIOR' : authMode === 'signin' ? 'ENTER ATTENTION TCG' : 'SEND RESET LINK'}
+            {loading ? 'PROCESSING...' : authMode === 'signup' ? 'CREATE ACCOUNT' : authMode === 'signin' ? 'ENTER ATTENTION TCG' : 'SEND RESET LINK'}
           </button>
         </form>
 
@@ -409,3 +409,4 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
     </div>
   );
 }
+

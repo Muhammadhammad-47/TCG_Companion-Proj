@@ -1,4 +1,4 @@
-import { supabase } from '../../services/supabaseClient';
+﻿import { supabase } from '../../services/supabaseClient';
 export { supabase };
 
 // Track active channels by matchId
@@ -29,7 +29,7 @@ export const createMatch = async (matchId, hostId, characterId = 'chynaman') => 
     deck: [],
     hands: {},
     characterStates: {},
-    logs: [`Match ${matchId} created by Host. Waiting for warriors to join...`]
+    logs: [`Match ${matchId} created by Host. Waiting for players to join...`]
   };
 
   if (!channels[matchId]) {
@@ -219,3 +219,4 @@ export const subscribeToGlobalLobby = (callback) => {
     }
   };
 };
+

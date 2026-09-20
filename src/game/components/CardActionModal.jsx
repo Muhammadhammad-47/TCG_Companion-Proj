@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { ACTION_CARDS } from '../data/cards';
 import { CHARACTERS, ZOMBIE_PROFILE, getAssetUrl } from '../data/characters';
 import { soundFX } from '../utils/audio';
@@ -450,7 +450,7 @@ export default function CardActionModal({
                 {(currentAction?.category === 'Attack' || isZombie) && (
                   <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px' }}>
                     <div style={{ fontSize: '0.82rem', color: 'var(--neon-pink)', fontWeight: 'bold', marginBottom: '8px' }}>
-                      2. PAIR WARRIOR TECHNIQUE
+                      2. PAIR PLAYER TECHNIQUE
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto' }}>
                       {availableMoves.map(move => {
@@ -600,3 +600,4 @@ export default function CardActionModal({
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Wifi, Swords, Shield, Skull, Zap, ScrollText, MessageSquare,
@@ -48,7 +48,7 @@ export default function KontrolaArena() {
       const cached = localStorage.getItem('tcg_warrior_username');
       if (cached) return cached;
     } catch (e) {}
-    return 'Warrior';
+    return 'Player';
   });
   const [isHost, setIsHost] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
@@ -57,7 +57,7 @@ export default function KontrolaArena() {
   const [inAppNotice, setInAppNotice] = useState(null);
   const hasLoggedMatchRef = useRef(false);
 
-  // Auto-sync warrior callsign from logged-in account
+  // Auto-sync player username from logged-in account
   useEffect(() => {
     authService.getCurrentUser().then((user) => {
       if (user) {
@@ -117,12 +117,12 @@ export default function KontrolaArena() {
       hasLoggedMatchRef.current = true;
       const allPlayerIds = gameState?.players || [];
       const allPlayerNames = allPlayerIds.map(
-        (pid) => gameState?.playerNames?.[pid] || gameState?.characterStates?.[pid]?.name || 'Warrior'
+        (pid) => gameState?.playerNames?.[pid] || gameState?.characterStates?.[pid]?.name || 'Player'
       );
       authService.logMatchResult({
         roomCode: matchIdRef.current || 'KONTROLA_ARENA',
         winnerId: currentUser?.id || null,
-        winnerName: winner.name || playerName || 'Warrior',
+        winnerName: winner.name || playerName || 'Player',
         playerIds: allPlayerIds,
         playerNames: allPlayerNames,
         gameMode: 'kontrola',
@@ -167,7 +167,7 @@ export default function KontrolaArena() {
   const activeTurnPlayerName =
     gameState?.playerNames?.[gameState?.turn] ||
     gameState?.characterStates?.[gameState?.turn]?.name ||
-    'Warrior';
+    'Player';
   const activeTurnChar = gameState?.characterStates?.[gameState?.turn];
 
   // Sound effects on interaction
@@ -351,7 +351,7 @@ export default function KontrolaArena() {
               };
               const updatedNames = {
                 ...(currentGS.playerNames || {}),
-                [joinedId]: joinedName || 'Warrior'
+                [joinedId]: joinedName || 'Player'
               };
 
               const updatedLobbyState = {
@@ -359,7 +359,7 @@ export default function KontrolaArena() {
                 players: updatedPlayers,
                 characterSelections: updatedChars,
                 playerNames: updatedNames,
-                logs: [`${joinedName || 'Warrior'} entered the lobby!`, ...(currentGS.logs || [])]
+                logs: [`${joinedName || 'Player'} entered the lobby!`, ...(currentGS.logs || [])]
               };
 
               setGameState(updatedLobbyState);
@@ -385,7 +385,7 @@ export default function KontrolaArena() {
           if (targetPlayerId === playerIdRef.current) {
             setError(
               reason === 'ROOM_FULL'
-                ? 'This room has reached the maximum capacity of 7 warriors.'
+                ? 'This room has reached the maximum capacity of 7 players.'
                 : 'This match has already commenced and is locked.'
             );
             setGameState(null);
@@ -446,7 +446,7 @@ export default function KontrolaArena() {
           requestJoin(matchId, {
             playerId: playerIdRef.current,
             characterId: selectedCharacterRef.current,
-            playerName: playerNameRef.current.trim() || 'Warrior'
+            playerName: playerNameRef.current.trim() || 'Player'
           });
           setIsJoining(false);
           // Request sync from host in case match is in progress
@@ -467,7 +467,7 @@ export default function KontrolaArena() {
     setGameState((currentGS) => {
       if (!currentGS) return currentGS;
 
-      const leaverName = currentGS.playerNames?.[leftPlayerId] || 'A warrior';
+      const leaverName = currentGS.playerNames?.[leftPlayerId] || 'A player';
       const isLeaverHost = currentGS.host === leftPlayerId;
       const remainingPlayers = (currentGS.players || []).filter((p) => p !== leftPlayerId);
 
@@ -483,7 +483,7 @@ export default function KontrolaArena() {
       let defaultWinner = null;
       if (currentGS.status === 'active' && remainingPlayers.length === 1) {
         defaultWinner = currentGS.characterStates?.[remainingPlayers[0]] || {
-          name: currentGS.playerNames?.[remainingPlayers[0]] || 'Last Standing Warrior'
+          name: currentGS.playerNames?.[remainingPlayers[0]] || 'Last Standing Player'
         };
       }
 
@@ -503,7 +503,7 @@ export default function KontrolaArena() {
         turn: nextTurn,
         logs: [
           `⚠️ ${leaverName} has left the match.${
-            isLeaverHost ? ` New host is ${currentGS.playerNames?.[remainingPlayers[0]] || 'Warrior'}.` : ''
+            isLeaverHost ? ` New host is ${currentGS.playerNames?.[remainingPlayers[0]] || 'Player'}.` : ''
           }`,
           ...(currentGS.logs || [])
         ],
@@ -694,7 +694,7 @@ export default function KontrolaArena() {
   // ==========================================
   const handleCreateMatch = async () => {
     playClick();
-    const finalName = (playerName || userProfile?.username || currentUser?.user_metadata?.username || 'Warrior').trim();
+    const finalName = (playerName || userProfile?.username || currentUser?.user_metadata?.username || 'Player').trim();
     if (playerName !== finalName) setPlayerName(finalName);
 
     try {
@@ -725,7 +725,7 @@ export default function KontrolaArena() {
 
   const handleJoinByCode = async (codeToJoin = matchId) => {
     playClick();
-    const finalName = (playerName || userProfile?.username || currentUser?.user_metadata?.username || 'Warrior').trim();
+    const finalName = (playerName || userProfile?.username || currentUser?.user_metadata?.username || 'Player').trim();
     if (playerName !== finalName) setPlayerName(finalName);
 
     if (!codeToJoin) {
@@ -770,14 +770,14 @@ export default function KontrolaArena() {
       const d1 = Math.floor(Math.random() * 6) + 1;
       const d2 = Math.floor(Math.random() * 6) + 1;
       const total = d1 + d2;
-      const pName = gameState.playerNames?.[pId] || 'Warrior';
+      const pName = gameState.playerNames?.[pId] || 'Player';
       rollBreakdowns.push(`${pName}: [${d1}+${d2}=${total}]`);
       if (total > highestRoll) {
         highestRoll = total;
         startingPlayerId = pId;
       }
     });
-    const starterName = gameState.playerNames?.[startingPlayerId] || 'Warrior';
+    const starterName = gameState.playerNames?.[startingPlayerId] || 'Player';
 
     const initialCharacterStates = {};
     gameState.players.forEach((pId) => {
@@ -810,7 +810,7 @@ export default function KontrolaArena() {
       characterStates: initialCharacterStates,
       logs: [
         `🎲 Starting Roll-off: ${rollBreakdowns.join(' · ')} ➔ ${starterName} won the roll and strikes first!`,
-        `Match ${matchId} commenced! First warrior to collect 3 Stability Crystals wins.`
+        `Match ${matchId} commenced! First player to collect 3 Stability Crystals wins.`
       ]
     };
 
@@ -896,7 +896,7 @@ export default function KontrolaArena() {
       return;
     }
     if (!isMyTurn) {
-      showNotice("It's not your turn! Please wait for the current warrior.", 'warning');
+      showNotice("It's not your turn! Please wait for the current player.", 'warning');
       return;
     }
     if (!selectedActionCard) {
@@ -915,7 +915,7 @@ export default function KontrolaArena() {
     }
 
     if (isAttack && !isAoE && !selectedTargetId) {
-      showNotice('Please select a target opponent warrior first!', 'warning');
+      showNotice('Please select a target opponent player first!', 'warning');
       return; // Must select target
     }
     if (isAttack && !isAoE && !isLightning && !selectedCharacterAttack) {
@@ -996,14 +996,14 @@ export default function KontrolaArena() {
       id: content.id || 'msg_' + Date.now(),
       text: content.text || '',
       senderId: content.senderId || playerId,
-      senderName: content.senderName || myCharacter?.name || playerName || 'Warrior',
+      senderName: content.senderName || myCharacter?.name || playerName || 'Player',
       characterId: content.characterId || selectedCharacter,
       time: content.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     } : {
       id: 'msg_' + Date.now(),
       text: String(content || ''),
       senderId: playerId,
-      senderName: myCharacter?.name || playerName || 'Warrior',
+      senderName: myCharacter?.name || playerName || 'Player',
       characterId: selectedCharacter,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
@@ -1015,7 +1015,7 @@ export default function KontrolaArena() {
     const msg = {
       text: tauntText,
       senderId: playerId,
-      senderName: myCharacter?.name || playerName || 'Warrior'
+      senderName: myCharacter?.name || playerName || 'Player'
     };
     setActiveTauntBubble(msg);
     setTimeout(() => setActiveTauntBubble(null), 3500);
@@ -1097,7 +1097,7 @@ export default function KontrolaArena() {
 
             {!gameState ? (
               <div style={{ maxWidth: '900px', margin: '0 auto', zIndex: 10, display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                {/* 1. Verified Warrior Callsign Badge */}
+                {/* 1. Verified Player Username Badge */}
                 <div
                   style={{
                     background: 'rgba(14, 22, 42, 0.88)',
@@ -1122,7 +1122,7 @@ export default function KontrolaArena() {
                         letterSpacing: '1px'
                       }}
                     >
-                      WARRIOR CALLSIGN
+                      PLAYER USERNAME
                     </label>
                     <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
                       Authenticated identity linked to your Attention TCG profile
@@ -1144,7 +1144,7 @@ export default function KontrolaArena() {
                       }}
                     >
                       <Crown size={18} color="var(--neon-gold)" />
-                      <span>{playerName || 'Warrior'}</span>
+                      <span>{playerName || 'Player'}</span>
                     </div>
                     <span
                       style={{
@@ -1182,7 +1182,7 @@ export default function KontrolaArena() {
                         letterSpacing: '1px'
                       }}
                     >
-                      SELECT YOUR WARRIOR
+                      SELECT YOUR CHARACTER
                     </span>
                     <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>7 Playable Characters</span>
                   </div>
@@ -1196,7 +1196,7 @@ export default function KontrolaArena() {
                           key={char.id}
                           onClick={() => {
                             if (isTaken) {
-                              showNotice(`${char.name} has already been chosen by another warrior! Choose a different character.`, 'warning');
+                              showNotice(`${char.name} has already been chosen by another player! Choose a different character.`, 'warning');
                               return;
                             }
                             playClick();
@@ -1445,7 +1445,7 @@ export default function KontrolaArena() {
                               </div>
                               <div>
                                 <div style={{ fontWeight: 'bold', color: '#fff', fontSize: '1rem' }}>
-                                  Host: {room.hostName || 'Warrior'}
+                                  Host: {room.hostName || 'Player'}
                                 </div>
                                 <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.6)' }}>
                                   Lobby status: Waiting for players
@@ -1647,7 +1647,7 @@ export default function KontrolaArena() {
                       marginBottom: '12px'
                     }}
                   >
-                    <strong style={{ color: '#fff', fontSize: '1rem' }}>WARRIORS IN LOBBY</strong>
+                    <strong style={{ color: '#fff', fontSize: '1rem' }}>PLAYERS IN LOBBY</strong>
                     <span style={{ color: 'var(--neon-cyan)', fontWeight: 'bold' }}>
                       {gameState.players?.length}/7 PLAYERS
                     </span>
@@ -2063,7 +2063,7 @@ export default function KontrolaArena() {
             <aside className="arena-col-left">
               <div className="arena-panel scoreboard-panel">
                 <div className="panel-title-bar">
-                  <span className="panel-kicker">WARRIORS SCOREBOARD</span>
+                  <span className="panel-kicker">PLAYERS SCOREBOARD</span>
                   <span style={{ fontSize: '0.75rem', color: 'var(--neon-cyan)' }}>
                     {gameState.players?.length} Players
                   </span>
@@ -2538,7 +2538,7 @@ export default function KontrolaArena() {
           {/* Taunt Modal */}
           {showTaunt && (
             <KontrolaTauntModal
-              activePlayerName={myCharacter?.name || playerName || 'Warrior'}
+              activePlayerName={myCharacter?.name || playerName || 'Player'}
               onClose={() => setShowTaunt(false)}
               onTaunt={handleSendTaunt}
             />
@@ -2602,4 +2602,6 @@ export default function KontrolaArena() {
     </div>
   );
 }
+
+
 

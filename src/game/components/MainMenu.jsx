@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import {
   Swords, HelpCircle, UserPlus, Cast, Send, Crown, Sparkles, ChevronRight,
   RotateCw, Bot, Volume2, VolumeX, Maximize2, Minimize2,
@@ -103,7 +103,7 @@ export default function MainMenu({
           <div className="menu-center-col" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             <div className="active-player-wrapper" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
               <span className="active-player-kicker" style={{ fontSize: '0.72rem', letterSpacing: '2px', color: 'var(--neon-cyan)', fontWeight: 'bold' }}>
-                WARRIOR SPOTLIGHT
+                PLAYER SPOTLIGHT
               </span>
 
               {/* Full-Art Combat Card matching the Match Screen */}
@@ -271,7 +271,7 @@ export default function MainMenu({
                     onClick={handleNextTurn}
                     style={{ marginTop: '2px', padding: '7px', fontSize: '0.8rem', borderRadius: '6px', background: 'linear-gradient(90deg, #ff0055, #ff5500)', border: 'none', color: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
                   >
-                    <span>NEXT WARRIOR (SWITCH)</span>
+                    <span>NEXT PLAYER (SWITCH)</span>
                   </button>
                 </div>
               </div>
@@ -300,7 +300,7 @@ export default function MainMenu({
           {/* Right Column: Score Summary Panel */}
           <div className="menu-right-col">
             <div className="score-summary-panel">
-              <h3 className="score-summary-title">WARRIORS ROSTER</h3>
+              <h3 className="score-summary-title">PLAYERS ROSTER</h3>
 
               <div className="score-summary-list">
                 {charList.map((char, idx) => {
@@ -398,3 +398,4 @@ export default function MainMenu({
     </div>
   );
 }
+

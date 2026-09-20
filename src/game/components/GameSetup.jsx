@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   Swords, Plus, Minus, ArrowLeft, RotateCw, RotateCcw,
   Crown, X, ChevronDown, ChevronUp, Users, Info, GripVertical, Edit2,
@@ -14,15 +14,15 @@ export default function GameSetup({ onStartGame, onBack }) {
   
   const [players, setPlayers] = useState(() => {
     let cachedNames = {};
-    let warriorCallsign = '';
+    let playerCallsign = '';
     try {
       cachedNames = JSON.parse(localStorage.getItem('tcg_player_names_cache')) || {};
-      warriorCallsign = localStorage.getItem('tcg_warrior_username') || '';
+      playerCallsign = localStorage.getItem('tcg_warrior_username') || '';
     } catch (e) {}
 
     return charKeys.map((key, idx) => {
       const c = CHARACTERS[key] || CHARACTERS.chynaman;
-      const defaultName = idx === 0 && warriorCallsign ? warriorCallsign : c.name;
+      const defaultName = idx === 0 && playerCallsign ? playerCallsign : c.name;
       return {
         id: `p-${idx + 1}`,
         name: cachedNames[key] || defaultName,
@@ -631,3 +631,4 @@ export default function GameSetup({ onStartGame, onBack }) {
     </div>
   );
 }
+

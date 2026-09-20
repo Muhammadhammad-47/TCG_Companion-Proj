@@ -261,7 +261,7 @@ export default function AdminPage() {
       setUsersList((prev) =>
         prev.map((u) => (u.id === targetUser.id ? { ...u, is_banned: nextBanStatus } : u))
       );
-      setModNotice(`Warrior "${targetUser.username}" ${nextBanStatus ? 'suspended' : 'reinstated'} successfully.`);
+      setModNotice(`User "${targetUser.username}" ${nextBanStatus ? 'suspended' : 'reinstated'} successfully.`);
       setTimeout(() => setModNotice(''), 4000);
     } catch (err) {
       alert('Failed to update ban status: ' + err.message);
@@ -616,7 +616,7 @@ export default function AdminPage() {
 
   // Sidebar Navigation Items
   const navItems = [
-    { id: 'users', label: 'Warriors Directory', icon: Users, badge: usersList.length },
+    { id: 'users', label: 'Users Directory', icon: Users, badge: usersList.length },
     { id: 'matches', label: 'Match History', icon: Swords, badge: matchHistory.length },
     { id: 'rules', label: 'Knowledge Base', icon: BookOpen, badge: `${documents.length || 1} Doc` },
     { id: 'questions', label: 'Questions Inbox', icon: HelpCircle, badge: questions.length },
@@ -1056,18 +1056,18 @@ export default function AdminPage() {
               )}
 
               {/* =========================================================================
-                  PAGE 1: WARRIORS DIRECTORY
+                  PAGE 1: USERS DIRECTORY
               ========================================================================= */}
               {activeTab === 'users' && (
                 <div>
                   {/* Top Minimal KPI Stat Bar */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '16px' }}>
                     <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
-                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>TOTAL WARRIORS</div>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>TOTAL USERS</div>
                       <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>{usersList.length}</div>
                     </div>
                     <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(57, 255, 20, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
-                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>ACTIVE COMBATANTS</div>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>ACTIVE USERS</div>
                       <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#39ff14', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>{usersList.filter(u => !u.is_banned).length}</div>
                     </div>
                     <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(255, 51, 102, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
@@ -1086,10 +1086,10 @@ export default function AdminPage() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                     <div>
                       <h2 style={{ fontSize: '1.35rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px' }}>
-                        WARRIORS DIRECTORY
+                        USERS & PLAYERS DIRECTORY
                       </h2>
                       <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>
-                        Manage player accounts, grant stability crystals, or suspend rule violators
+                        Manage player accounts, adjust stability crystals, or suspend rule violators
                       </span>
                     </div>
 
@@ -1098,7 +1098,7 @@ export default function AdminPage() {
                         <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.4)' }} />
                         <input
                           type="text"
-                          placeholder="Search callsign or email..."
+                          placeholder="Search username or email..."
                           value={userSearch}
                           onChange={(e) => setUserSearch(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && loadUsers()}
@@ -1155,7 +1155,7 @@ export default function AdminPage() {
                   {/* Clean Minimal Rows Container */}
                   <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', overflow: 'hidden' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 1fr 1.2fr 1fr 1.4fr', padding: '10px 16px', background: 'rgba(6, 12, 28, 0.95)', borderBottom: '1px solid rgba(0, 240, 255, 0.2)', fontSize: '0.74rem', color: 'var(--neon-cyan, #00f0ff)', fontWeight: 'bold', letterSpacing: '1px', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
-                      <span>WARRIOR</span>
+                      <span>USER / PLAYER</span>
                       <span>EMAIL</span>
                       <span>CRYSTALS</span>
                       <span>WIN RATE</span>
@@ -1166,7 +1166,7 @@ export default function AdminPage() {
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       {filteredUsers.length === 0 ? (
                         <div style={{ padding: '36px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '0.88rem' }}>
-                          No warriors found matching your search filter.
+                          No users found matching your search filter.
                         </div>
                       ) : (
                         filteredUsers.map((u) => {
@@ -1336,7 +1336,7 @@ export default function AdminPage() {
                       <span>ROOM</span>
                       <span>MODE</span>
                       <span>👑 WINNER</span>
-                      <span>COMBATANTS</span>
+                      <span>PLAYERS</span>
                       <span style={{ textAlign: 'right' }}>AWARDED</span>
                     </div>
 
@@ -1377,7 +1377,7 @@ export default function AdminPage() {
                               </strong>
                             </div>
                             <span style={{ color: '#cbd5e1', fontSize: '0.78rem' }}>
-                              {Array.isArray(m.player_names) && m.player_names.length > 0 ? m.player_names.join(' vs ') : '2 Combatants'}
+                              {Array.isArray(m.player_names) && m.player_names.length > 0 ? m.player_names.join(' vs ') : '2 Players'}
                             </span>
                             <span style={{ textAlign: 'right', fontWeight: 'bold', color: '#39ff14' }}>
                               +{m.crystals_awarded || 1} 💎
@@ -2008,7 +2008,7 @@ export default function AdminPage() {
                         PLAYER QUESTIONS & CONTINUOUS LEARNING
                       </h2>
                       <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>
-                        Review feedback asked by combatants and promote corrections to official rules
+                        Review feedback submitted by players and promote corrections to official rules
                       </span>
                     </div>
 
@@ -2053,7 +2053,7 @@ export default function AdminPage() {
                         >
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                             <span style={{ fontSize: '0.72rem', background: 'rgba(0, 240, 255, 0.1)', color: 'var(--neon-cyan, #00f0ff)', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
-                              WARRIOR: {q.user_name || 'Anonymous'}
+                              USER: {q.user_name || 'Anonymous'}
                             </span>
                             <span style={{ fontSize: '0.72rem', color: q.user_rating === 'helpful' ? '#39ff14' : '#ff88aa' }}>
                               {q.user_rating === 'helpful' ? '👍 Helpful' : q.user_rating === 'unhelpful' ? '👎 Inaccurate' : 'Unrated'}
@@ -2189,7 +2189,7 @@ export default function AdminPage() {
                         <span style={{ fontSize: '0.68rem', background: 'rgba(57, 255, 20, 0.15)', color: '#39ff14', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>CONNECTED</span>
                       </div>
                       <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: '0 0 8px 0', lineHeight: '1.45' }}>
-                        Real-time multiplayer duel client. Authenticates warriors via JWT and logs match outcomes directly to <code>matches</code> table.
+                        Real-time multiplayer duel client. Authenticates users via JWT and logs match outcomes directly to <code>matches</code> table.
                       </p>
                       <code style={{ fontSize: '0.72rem', color: 'var(--neon-cyan, #00f0ff)' }}>POST /rest/v1/matches</code>
                     </div>
@@ -2202,7 +2202,7 @@ export default function AdminPage() {
                         <span style={{ fontSize: '0.68rem', background: 'rgba(57, 255, 20, 0.15)', color: '#39ff14', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>CONNECTED</span>
                       </div>
                       <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: '0 0 8px 0', lineHeight: '1.45' }}>
-                        Unity C# client querying active rules and updating stability crystals for victorious warriors.
+                        Unity C# client querying active rules and updating stability crystals for victorious players.
                       </p>
                       <code style={{ fontSize: '0.72rem', color: 'var(--neon-cyan, #00f0ff)' }}>GET /rest/v1/rules_knowledge</code>
                     </div>
@@ -2215,7 +2215,7 @@ export default function AdminPage() {
                         <span style={{ fontSize: '0.68rem', background: 'rgba(57, 255, 20, 0.15)', color: '#39ff14', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>CONNECTED</span>
                       </div>
                       <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: '0 0 8px 0', lineHeight: '1.45' }}>
-                        Companion app for physical tournaments. Syncs warrior callsigns, crystal inventories, and deck stats.
+                        Companion app for physical tournaments. Syncs usernames, crystal inventories, and deck stats.
                       </p>
                       <code style={{ fontSize: '0.72rem', color: 'var(--neon-cyan, #00f0ff)' }}>GET /rest/v1/profiles</code>
                     </div>
@@ -2293,12 +2293,12 @@ export default function AdminPage() {
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
               <div style={{ width: '100%', maxWidth: '400px', background: 'rgba(24, 10, 18, 0.95)', border: '1.5px solid var(--neon-crimson, #ff3366)', borderRadius: '16px', padding: '24px', boxShadow: '0 0 35px rgba(255, 51, 102, 0.3)' }}>
                 <h3 style={{ fontSize: '1.3rem', color: '#fff', margin: '0 0 6px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
-                  {banModalUser.is_banned ? 'Reinstate Warrior?' : 'Suspend Warrior?'}
+                  {banModalUser.is_banned ? 'Reinstate User?' : 'Suspend User?'}
                 </h3>
                 <p style={{ color: '#cbd5e1', fontSize: '0.86rem', lineHeight: '1.5', margin: '0 0 16px 0' }}>
                   {banModalUser.is_banned
-                    ? `Warrior "${banModalUser.username}" will immediately regain access to the companion and arena.`
-                    : `Warrior "${banModalUser.username}" will immediately be signed out and locked out until reinstated.`}
+                    ? `User "${banModalUser.username}" will immediately regain access to the companion and arena.`
+                    : `User "${banModalUser.username}" will immediately be signed out and locked out until reinstated.`}
                 </p>
                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                   <button

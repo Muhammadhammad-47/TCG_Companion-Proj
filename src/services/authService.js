@@ -1,7 +1,7 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 
 export const authService = {
-  // Validate warrior username format and check unique availability
+  // Validate username format and check unique availability
   async checkUsernameAvailable(username, excludeUserId = null) {
     if (!isSupabaseConfigured || !supabase) {
       return { available: true };
@@ -9,16 +9,16 @@ export const authService = {
 
     const cleanUsername = (username || '').trim();
     if (!cleanUsername) {
-      return { available: false, error: 'Callsign cannot be blank.' };
+      return { available: false, error: 'Username cannot be blank.' };
     }
 
     if (cleanUsername.length < 3 || cleanUsername.length > 20) {
-      return { available: false, error: 'Callsign must be between 3 and 20 characters.' };
+      return { available: false, error: 'Username must be between 3 and 20 characters.' };
     }
 
     const validCharsRegex = /^[a-zA-Z0-9_-]+$/;
     if (!validCharsRegex.test(cleanUsername)) {
-      return { available: false, error: 'Callsign can only contain letters, numbers, hyphens, and underscores.' };
+      return { available: false, error: 'Username can only contain letters, numbers, hyphens, and underscores.' };
     }
 
     let query = supabase
@@ -39,7 +39,7 @@ export const authService = {
     if (data) {
       return {
         available: false,
-        error: `The warrior callsign "${cleanUsername}" is already taken. Please choose a unique name.`
+        error: `The username "${cleanUsername}" is already taken. Please choose a unique name.`
       };
     }
 
@@ -77,7 +77,7 @@ export const authService = {
 
     const user = data?.user;
     if (user) {
-      // 3. Upsert initial warrior profile
+      // 3. Upsert initial user profile
       const { error: profileError } = await supabase
         .from('profiles')
         .upsert({
@@ -122,7 +122,7 @@ export const authService = {
       const profile = await this.getProfile(data.user.id);
       if (profile?.is_banned) {
         await this.signOut();
-        throw new Error('This warrior account has been suspended by the Game Masters.');
+        throw new Error('This account has been suspended by an administrator.');
       }
 
       // Update last active app
@@ -254,7 +254,7 @@ export const authService = {
     return data;
   },
 
-  // Query top warriors leaderboard
+  // Query top players leaderboard
   async getLeaderboard(limit = 10) {
     if (!supabase) return [];
     const { data, error } = await supabase
@@ -278,7 +278,7 @@ export const authService = {
   },
 
   // =========================================================================
-  // ADMIN WARRIOR DIRECTORY & MODERATION
+  // ADMIN USER DIRECTORY & MODERATION
   // =========================================================================
   async fetchAllUsers(searchQuery = '') {
     if (!supabase) return [];
@@ -339,7 +339,7 @@ export const authService = {
   async logMatchResult({
     roomCode = '',
     winnerId = null,
-    winnerName = 'Warrior',
+    winnerName = 'Player',
     playerIds = [],
     playerNames = [],
     gameMode = 'kontrola',

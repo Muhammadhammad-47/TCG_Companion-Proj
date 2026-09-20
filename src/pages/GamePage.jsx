@@ -94,14 +94,14 @@ export default function GamePage() {
 
   // Quick 1v1 Duel Mode (Chynaman vs Zabina "Bee" Sole)
   const handleStartQuickDuel = () => {
-    let warriorName = 'Player 1';
+    let playerName = 'Player 1';
     try {
-      warriorName = localStorage.getItem('tcg_warrior_username') || 'Player 1';
+      playerName = localStorage.getItem('tcg_username') || localStorage.getItem('tcg_warrior_username') || 'Player 1';
     } catch (e) {}
 
     const duelPlayers = [
       {
-        name: warriorName,
+        name: playerName,
         characterId: 'chynaman',
         startingHP: 100,
         startingET: 5,

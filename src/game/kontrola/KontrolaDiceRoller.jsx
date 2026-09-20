@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { soundFX } from '../utils/audio';
 import { Dices, Shield, Swords, Check, Zap, X, Sparkles, AlertCircle, Clock, Eye, RotateCcw } from 'lucide-react';
 import { getCardGraphicUrl, getCharacterAttackGraphicUrl } from './kontrolaAssets';
@@ -753,7 +753,7 @@ export default function KontrolaDiceRoller({
                 }}
               >
                 {isTie
-                  ? `Both warriors rolled ${atkSum}! Stalemate reached. Re-roll the dice to determine who prevails!`
+                  ? `Both players rolled ${atkSum}! Stalemate reached. Re-roll the dice to determine who prevails!`
                   : atkWon
                   ? `Attacker roll (${atkSum}) beat Defender roll (${defSum}). Combat damage will be resolved!`
                   : `Defender roll (${defSum}) resisted Attacker roll (${atkSum}). Attack deflected!`

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { Send, X, Bot, Swords, ArrowLeft, ThumbsUp, ThumbsDown, User, Shield, LogOut, Check } from 'lucide-react';
 import axios from 'axios';
@@ -345,7 +345,7 @@ export function Chat({ onBack, isOverlay = false }) {
 
     // 1. Greetings
     if (/^(hi|hello|hey|greetings|howdy|yo|good morning|good afternoon|good evening)\b/i.test(qClean)) {
-      return "Hello warrior! I am your Attention TCG Companion AI. I'm ready for battle and here to help you navigate rules, character abilities, combat clashes, and Zombie Mode. What would you like to know?";
+      return "Hello! I am your Attention TCG Companion AI. I'm here to help you navigate rules, character abilities, combat clashes, and Zombie Mode. What would you like to know?";
     }
 
     // 2. How are you / status
@@ -570,7 +570,7 @@ export function Chat({ onBack, isOverlay = false }) {
       // Background question logging to Supabase (fire-and-forget)
       knowledgeService.logUserQuestion({
         userId: currentUser?.id || null,
-        userName: userProfile?.username || 'Guest Warrior',
+        userName: userProfile?.username || 'Guest Player',
         questionText: query,
         aiAnswer: finalAns,
         matchedTopic: 'Attention TCG Rules',
@@ -1283,7 +1283,7 @@ export function Hub() {
                     <span style={{ fontWeight: 'bold', color: 'var(--neon-cyan)', fontSize: '0.85rem' }}>{userProfile?.crystals_collected || 0}</span>
                   </div>
                   <div style={{ borderLeft: '1px solid rgba(255,255,255,0.2)', paddingLeft: '8px', fontSize: '0.88rem', fontWeight: 'bold', color: '#fff' }}>
-                    {userProfile?.username || 'Warrior'}
+                    {userProfile?.username || 'Player'}
                   </div>
                   {userProfile?.is_admin && (
                     <button
@@ -1334,7 +1334,7 @@ export function Hub() {
                     }}
                   >
                     <User size={16} />
-                    <span>WARRIOR LOGIN</span>
+                    <span>PLAYER LOGIN</span>
                   </button>
                   <button
                     onClick={() => navigate('/admin')}
@@ -1470,14 +1470,14 @@ function App() {
     return () => subscription?.unsubscribe();
   }, []);
 
-  // Full App Guard: requires authenticated warrior to access companion features
+  // Full App Guard: requires authenticated player to access companion features
   const ProtectedRoute = ({ children }) => {
     if (authLoading) {
       return (
         <div style={{ minHeight: '100vh', background: 'radial-gradient(circle at 50% 20%, #0d1a38 0%, #050a18 70%, #02040c 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--neon-cyan)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
           <div style={{ textAlign: 'center' }}>
             <div className="brand-pill-badge" style={{ margin: '0 auto 12px auto', fontSize: '0.9rem', padding: '3px 12px' }}>注意!</div>
-            <div style={{ fontSize: '1.3rem', letterSpacing: '2px', fontWeight: 'bold' }}>VERIFYING WARRIOR ACCESS...</div>
+            <div style={{ fontSize: '1.3rem', letterSpacing: '2px', fontWeight: 'bold' }}>VERIFYING ACCESS...</div>
           </div>
         </div>
       );
@@ -1489,7 +1489,7 @@ function App() {
             <div className="brand-pill-badge" style={{ margin: '0 auto 12px auto', fontSize: '0.9rem', padding: '3px 12px', background: 'var(--neon-crimson, #ff3366)', color: '#fff', border: 'none' }}>SUSPENDED</div>
             <div style={{ fontSize: '1.8rem', letterSpacing: '2px', fontWeight: '900', color: '#fff', marginBottom: '8px' }}>ACCOUNT SUSPENDED</div>
             <p style={{ color: '#cbd5e1', fontSize: '0.95rem', lineHeight: '1.6', fontFamily: 'var(--font-sub, "Outfit", sans-serif)', marginBottom: '24px' }}>
-              Your warrior account (<strong>{userProfile?.username || currentUser?.email}</strong>) has been suspended by the Game Masters due to rule violations or moderation action.
+              Your account (<strong>{userProfile?.username || currentUser?.email}</strong>) has been suspended by the Game Masters due to rule violations or moderation action.
             </p>
             <button
               onClick={() => authService.signOut().then(() => { setCurrentUser(null); setUserProfile(null); })}
@@ -1534,3 +1534,4 @@ function App() {
 }
 
 export default App;
+

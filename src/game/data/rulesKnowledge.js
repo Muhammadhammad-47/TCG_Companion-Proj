@@ -1,4 +1,4 @@
-// Attention TCG - Official Knowledge Base
+﻿// Attention TCG - Official Knowledge Base
 // All rules sourced strictly from the official GDD document (document.txt)
 
 export const RULES_KNOWLEDGE = [
@@ -11,7 +11,7 @@ export const RULES_KNOWLEDGE = [
   {
     topic: 'Game Lore & Objective',
     keywords: ['lore', 'story', 'goal', 'objective', 'caca', 'cacathar', 'stability crystal', 'crystal', 'win', 'victory', 'universe', 'kill', 'steal', 'three crystals', '3 crystals'],
-    shortAnswer: 'Defeat opponents to claim their Stability Crystals. The first warrior to hold 3 Stability Crystals saves their world from Caca (Cacathar, The Devourer of Souls) and wins!',
+    shortAnswer: 'Defeat opponents to claim their Stability Crystals. The first player to hold 3 Stability Crystals saves their world from Caca (Cacathar, The Devourer of Souls) and wins!',
     details: 'The Story:\nIn the Anime Series Attention, the evil grand being Caca (Cacathar, The Devourer of Souls) has sucked out and absorbed all the worlds in the universe, causing all worlds to be unstable. Each character\'s mission is to obtain 3 Stability Crystals to bring life and stability back into their world.\n\nVictory Rules:\n- Each player begins with 1 Stability Crystal placed in front of them.\n- In a 2-player duel, each player starts with 2 Stability Crystals.\n- Defeating an opponent (reducing them to 0 HP) allows you to collect their Stability Crystal.\n- The first player to obtain 3 Stability Crystals wins and saves their world.\n- The winner may also choose to opt out while other players continue battling for the remaining crystals.'
   },
   {

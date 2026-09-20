@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { CHARACTERS, ZOMBIE_PROFILE, getAssetUrl } from '../data/characters';
 import { ACTION_CARDS, GAME_LIMITS } from '../data/cards';
 import { resolveDiceCombat, advanceTurn, checkZombieStatus, drawRandomCards } from '../utils/gameEngine';
@@ -723,7 +723,7 @@ export default function BattleArena({
           <aside className="arena-col-left">
             <div className="arena-panel scoreboard-panel">
               <div className="panel-title-bar">
-                <span className="panel-kicker">WARRIORS SCOREBOARD</span>
+                <span className="panel-kicker">PLAYERS SCOREBOARD</span>
               </div>
 
               <div className="arena-players-list">
@@ -853,7 +853,7 @@ export default function BattleArena({
                   <circle cx="160" cy="160" r="55" fill="none" stroke="rgba(0, 240, 255, 0.12)" strokeWidth="1" />
                 </svg>
 
-                {/* Seated Warriors around the Perfect Circle */}
+                {/* Seated Players around the Perfect Circle */}
                 {players.map((p, i) => {
                   const isActive = i === activeIdx;
                   let x = 0;
@@ -1022,7 +1022,7 @@ export default function BattleArena({
                 >
                   <img
                     src={getAssetUrl((CHARACTERS[activePlayer?.characterId] || CHARACTERS.chynaman).image || 'characters/chynaman.png')}
-                    alt={activeChar?.name || 'Warrior'}
+                    alt={activeChar?.name || 'Player'}
                     style={{
                       width: '100%',
                       height: '100%',
@@ -1314,7 +1314,7 @@ export default function BattleArena({
               <div className="turn-action-content" style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.8)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <div>• <strong>2-Dice Defense</strong>: Defender rolls $\ge 6$ on 2 Gold dice to trigger DP armor.</div>
                 <div>• <strong>Zombie Mode</strong>: 5+ Poison cards transforms you into an Undead with 40 HP & auto-regen.</div>
-                <div>• <strong>Victory</strong>: First warrior to capture 3 Stability Crystals wins the universe!</div>
+                <div>• <strong>Victory</strong>: First player to capture 3 Stability Crystals wins the universe!</div>
               </div>
             </div>
           </aside>
@@ -1648,3 +1648,4 @@ export default function BattleArena({
     </div>
   );
 }
+
