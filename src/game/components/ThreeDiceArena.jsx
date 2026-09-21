@@ -269,12 +269,23 @@ export default function ThreeDiceArena({
     };
   }, [isMultiplier]);
 
+  const targetValuesRef = useRef({ attacker: attackerValues, defender: defenderValues });
+
+  // Always keep target values in sync when NOT rolling
+  useEffect(() => {
+    if (!isRolling) {
+      targetValuesRef.current = { attacker: attackerValues, defender: defenderValues };
+    }
+  }, [attackerValues, defenderValues, isRolling]);
+
   // Physical Throw Physics Animation Trigger
   useEffect(() => {
+    const targets = targetValuesRef.current;
+
     if (!isRolling) {
       // Settle on target values
       diceMeshesRef.current.forEach(d => {
-        const targetVal = d.type === 'red' ? (attackerValues[d.idx] || 1) : (defenderValues[d.idx] || 1);
+        const targetVal = d.type === 'red' ? (targets.attacker[d.idx] || 1) : (targets.defender[d.idx] || 1);
         d.targetVal = targetVal;
         const rot = FACE_EULER_ROTATIONS[targetVal] || FACE_EULER_ROTATIONS[1];
         d.mesh.rotation.set(rot.x, rot.y, rot.z);
@@ -288,7 +299,7 @@ export default function ThreeDiceArena({
 
     // Generate physical launch configurations for each die
     const tossConfigs = diceMeshesRef.current.map((d, i) => {
-      const targetVal = d.type === 'red' ? (attackerValues[d.idx] || 1) : (defenderValues[d.idx] || 1);
+      const targetVal = d.type === 'red' ? (targets.attacker[d.idx] || 1) : (targets.defender[d.idx] || 1);
       d.targetVal = targetVal;
       const finalRot = FACE_EULER_ROTATIONS[targetVal] || FACE_EULER_ROTATIONS[1];
 
@@ -328,38 +339,31 @@ export default function ThreeDiceArena({
       // Realistic multi-bounce vertical height curve
       let height = 0;
       if (t < 0.45) {
-        // Initial fall from throw arc
         const p = t / 0.45;
-        height = Math.sin(p * Math.PI * 0.5 + Math.PI * 0.5); // Starts high, accelerates down to table
+        height = Math.sin(p * Math.PI * 0.5 + Math.PI * 0.5); // Starts high, accelerates down
       } else if (t < 0.75) {
-        // First big bounce
         const p = (t - 0.45) / 0.3;
         height = Math.sin(p * Math.PI) * 0.38;
       } else if (t < 0.92) {
-        // Second smaller bounce
         const p = (t - 0.75) / 0.17;
         height = Math.sin(p * Math.PI) * 0.14;
       } else {
-        // Micro settle roll
         const p = (t - 0.92) / 0.08;
         height = Math.sin(p * Math.PI) * 0.03;
       }
 
-      // Smooth rotational deceleration with exponential friction decay
       const rotProgress = 1 - Math.pow(1 - t, 3.2);
 
       diceMeshesRef.current.forEach((d, idx) => {
         const config = tossConfigs[idx];
         if (!config) return;
 
-        // Position update
         const curX = THREE.MathUtils.lerp(config.startPos.x, config.endPos.x, easeX);
         const curZ = THREE.MathUtils.lerp(config.startPos.z, config.endPos.z, easeZ);
         const curY = config.endPos.y + (t < 0.45 ? (config.startPos.y - config.endPos.y) * height : height * 3.2);
 
         d.mesh.position.set(curX, curY, curZ);
 
-        // Rotation update
         const curRotX = THREE.MathUtils.lerp(config.startRot.x, config.endRot.x, rotProgress);
         const curRotY = THREE.MathUtils.lerp(config.startRot.y, config.endRot.y, rotProgress);
         const curRotZ = THREE.MathUtils.lerp(config.startRot.z, config.endRot.z, rotProgress);
@@ -370,7 +374,6 @@ export default function ThreeDiceArena({
       if (t < 1) {
         requestAnimationFrame(updatePhysics);
       } else {
-        // Final rest alignment
         diceMeshesRef.current.forEach((d, idx) => {
           const config = tossConfigs[idx];
           if (config) {
@@ -383,7 +386,8 @@ export default function ThreeDiceArena({
     };
 
     requestAnimationFrame(updatePhysics);
-  }, [isRolling, attackerValues, defenderValues]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRolling]);
 
   return (
     <div

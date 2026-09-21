@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Wifi, Swords, Shield, Skull, Zap, ScrollText, MessageSquare,
@@ -110,6 +110,7 @@ export default function KontrolaArena() {
   const [isShaking, setIsShaking] = useState(false);
   const [turnFlash, setTurnFlash] = useState(false);
   const [winner, setWinner] = useState(null);
+  const [isProcessingAction, setIsProcessingAction] = useState(false);
 
   // Record match victory and award crystals
   useEffect(() => {
@@ -631,8 +632,12 @@ export default function KontrolaArena() {
         matchWinner = updatedStates[livingPlayers[0]] || matchWinner;
         nextTurnPlayerId = livingPlayers[0] || actorId;
       } else {
-        const currentIdx = livingPlayers.indexOf(actorId);
-        nextTurnPlayerId = livingPlayers[(currentIdx + 1) % livingPlayers.length] || livingPlayers[0];
+        if (resolved.extraTurnGranted) {
+          nextTurnPlayerId = actorId;
+        } else {
+          const currentIdx = livingPlayers.indexOf(actorId);
+          nextTurnPlayerId = livingPlayers[(currentIdx + 1) % livingPlayers.length] || livingPlayers[0];
+        }
 
         // Check if next player is Asleep (Sleepy X1 / X2 / Shock)
         let checkedSleepCount = 0;
@@ -663,9 +668,50 @@ export default function KontrolaArena() {
           }
         }
 
+        // Check Burn damage tick on the player starting their turn (-10 HP per turn per burn stack)
+        if (incomingChar && typeof incomingChar.burnCount === 'number' && incomingChar.burnCount > 0 && !incomingChar.isDefeated) {
+          const burnDmg = incomingChar.burnCount * 10;
+          incomingChar.hp = Math.max(0, incomingChar.hp - burnDmg);
+          turnLogs.unshift(`🔥 ${incomingChar.name} suffered ${burnDmg} Burn damage (${incomingChar.burnCount} stack${incomingChar.burnCount > 1 ? 's' : ''})! HP: ${incomingChar.hp}`);
+          if (incomingChar.hp <= 0) {
+            incomingChar.isDefeated = true;
+            turnLogs.unshift(`💀 ${incomingChar.name} was incinerated by Burn damage and eliminated!`);
+            const remainingLiving = currentState.players.filter((pId) => !updatedStates[pId]?.isDefeated);
+            if (remainingLiving.length === 1) {
+              matchWinner = updatedStates[remainingLiving[0]];
+            }
+            const dIdx = livingPlayers.indexOf(nextTurnPlayerId);
+            nextTurnPlayerId = livingPlayers[(dIdx + 1) % livingPlayers.length];
+          }
+        }
+
         // Refresh Energy Token claim flag for the active player's new turn
         if (updatedStates[nextTurnPlayerId]) {
           updatedStates[nextTurnPlayerId].claimedTurnET = false;
+        }
+      }
+
+      let updatedHands = {
+        ...(currentState.hands || {}),
+        [actorId]: newHand
+      };
+
+      // X-CHANGE Resolution logic
+      if (resolved.triggerXChange && targetId && targetId !== 'ALL') {
+        const targetHand = [...(currentState.hands?.[targetId] || [])];
+        if (newHand.length > 0 && targetHand.length > 0) {
+          const myIdx = Math.floor(Math.random() * newHand.length);
+          const tgIdx = Math.floor(Math.random() * targetHand.length);
+          const myCard = newHand.splice(myIdx, 1)[0];
+          const tgCard = targetHand.splice(tgIdx, 1)[0];
+          newHand.push(tgCard);
+          targetHand.push(myCard);
+          
+          updatedHands[actorId] = newHand;
+          updatedHands[targetId] = targetHand;
+          turnLogs.unshift(`🔀 The X-CHANGE was successful! A random Action Card was swapped in secret.`);
+        } else {
+          turnLogs.unshift(`⚠️ The X-CHANGE fizzled! One of the players has 0 Action Cards.`);
         }
       }
 
@@ -674,10 +720,7 @@ export default function KontrolaArena() {
         turn: nextTurnPlayerId,
         turnNumber: (currentState.turnNumber || 1) + 1,
         deck: newDeck,
-        hands: {
-          ...(currentState.hands || {}),
-          [actorId]: newHand
-        },
+        hands: updatedHands,
         characterStates: updatedStates,
         logs: [...turnLogs, ...(currentState.logs || [])],
         winner: matchWinner
@@ -793,6 +836,7 @@ export default function KontrolaArena() {
         energyTokens: 5,
         crystals: startingCrystals,
         poisonCount: 0,
+        burnCount: 0,
         sleepTurns: 0,
         isDefeated: false,
         claimedTurnET: false
@@ -876,7 +920,11 @@ export default function KontrolaArena() {
   // Host force skip for stalled / AFK player
   const handleForceSkipCurrentPlayer = () => {
     playClick();
+    if (isProcessingAction) return;
     if (!isHost || isMyTurn || !gameState?.turn) return;
+    
+    setIsProcessingAction(true);
+    setTimeout(() => setIsProcessingAction(false), 2000);
     const stalledPlayerId = gameState.turn;
     const payload = {
       actorId: stalledPlayerId,
@@ -891,6 +939,7 @@ export default function KontrolaArena() {
   // ==========================================
   const playTurn = () => {
     playClick();
+    if (isProcessingAction) return;
     if (isSpectator) {
       showNotice('Spectator mode: you are observing this match.', 'info');
       return;
@@ -960,6 +1009,9 @@ export default function KontrolaArena() {
         takeTurn(matchId, { type: 'PLAYER_ACTION', payload });
       }
     }
+
+    setIsProcessingAction(true);
+    setTimeout(() => setIsProcessingAction(false), 2000);
 
     setSelectedActionCard(null);
     setSelectedCharacterAttack(null);
@@ -2147,6 +2199,7 @@ export default function KontrolaArena() {
                             <span>⚡ {pChar.energyTokens || 0} ET</span>
                             <span>💎 {pChar.crystals || 0}/3</span>
                             {pChar.poisonCount > 0 && <span style={{ color: 'var(--neon-green)' }}>☠️ {pChar.poisonCount}</span>}
+                            {typeof pChar.burnCount === 'number' && pChar.burnCount > 0 && <span style={{ color: '#ff4d00' }}>🔥 {pChar.burnCount}</span>}
                           </div>
                         </div>
 
@@ -2182,6 +2235,13 @@ export default function KontrolaArena() {
                       <Skull size={15} color="var(--neon-green)" />
                       <span className="effect-name">Poison</span>
                       <span className="effect-count">{myCharacter.poisonCount}</span>
+                    </div>
+                  )}
+                  {typeof myCharacter?.burnCount === 'number' && myCharacter.burnCount > 0 && (
+                    <div className="effect-chip effect-poison" style={{ borderColor: 'rgba(255, 77, 0, 0.4)', background: 'rgba(255, 77, 0, 0.08)' }}>
+                      <span style={{ fontSize: '15px' }}>🔥</span>
+                      <span className="effect-name" style={{ color: '#ff4d00' }}>Burn</span>
+                      <span className="effect-count" style={{ color: '#ff4d00' }}>{myCharacter.burnCount}</span>
                     </div>
                   )}
                   <div className="effect-chip effect-shield">

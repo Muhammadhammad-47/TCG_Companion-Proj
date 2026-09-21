@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { soundFX } from '../utils/audio';
 import { Dices, Shield, Swords, Check, Zap, X, Sparkles, AlertCircle, Clock, Eye, RotateCcw } from 'lucide-react';
 import { getCardGraphicUrl, getCharacterAttackGraphicUrl } from './kontrolaAssets';
@@ -196,7 +196,7 @@ export default function KontrolaDiceRoller({
     precalculatedRolls?.defenderRoll?.rolls || [2, 3]
   );
 
-  const isRolling = localRolling || isExternallyRolling;
+  const isRolling = localRolling || (isExternallyRolling && phase === 'clash');
 
   // 60-Second safety auto-close countdown
   useEffect(() => {
@@ -787,7 +787,7 @@ export default function KontrolaDiceRoller({
               {/* Action Buttons */}
               <div>
                 {isTie ? (
-                  (isAttacker || !isSpectator) && (
+                  isAttacker && (
                     <button
                       onClick={handleReRoll}
                       style={{

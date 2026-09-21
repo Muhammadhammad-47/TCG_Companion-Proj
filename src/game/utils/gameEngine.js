@@ -23,6 +23,7 @@ export function createInitialGameState(playerConfigs) {
     energyTokens: cfg.startingET || GAME_LIMITS.STARTING_ET,
     crystals: cfg.startingCrystals || (playerConfigs.length === 2 ? 2 : 1),
     poisonCards: 0,
+    burnCount: 0,
     isZombie: false,
     isDefeated: false,
     retreatedThisTurn: false,
@@ -148,6 +149,7 @@ export function resolveDiceCombat({
       zombiePoisonCured: false,
       appliesPoison: false,
       appliesStun: false,
+      burnStacks: 0,
       revealCards: false,
       isMiss: true
     };
@@ -166,6 +168,7 @@ export function resolveDiceCombat({
       zombiePoisonCured: false,
       appliesPoison: false,
       appliesStun: false,
+      burnStacks: 0,
       revealCards: false,
       isMiss: false // It's not a miss, it just has no effect
     };
@@ -232,6 +235,12 @@ export function resolveDiceCombat({
     }
   }
 
+  const isDrain = actionCard?.name === 'DRAIN';
+  const isVampire = actionCard?.name === 'VAMPIRE LIFE STEAL';
+  if (isDrain || isVampire) {
+    netHPDamage = 0; // Handled directly in BattleArena stat resolution
+  }
+
   // 6. Zombie Fire / Lightning Weakness: Removes 1 Poison card on hit
   let zombiePoisonCured = false;
   if (defender.isZombie && (moveElement === 'Fire' || moveElement === 'Lightning')) {
@@ -240,8 +249,17 @@ export function resolveDiceCombat({
 
   // 7. Check special effects
   const appliesPoison = characterMove?.appliesPoison || actionCard?.id === 'poison_card' || attacker.isZombie;
-  const appliesStun = characterMove?.appliesStun || characterMove?.stun || false;
+  const appliesStun = characterMove?.appliesStun || characterMove?.stun || actionCard?.name?.includes('FREEZE') || false;
+  
+  let burnStacks = 0;
+  if (actionCard?.name === 'FIRE FLAME X2') {
+    burnStacks = 2;
+  } else if (actionCard?.name === 'FIRE FLAME X1' || actionCard?.name?.includes('FIRE FLAME')) {
+    burnStacks = 1;
+  }
+
   const revealCards = characterMove?.revealCards || false;
+  const extraTurnGranted = actionCard?.name === 'TIME MACHINE';
 
   return {
     isTie: false,
@@ -261,7 +279,11 @@ export function resolveDiceCombat({
     newShield: currentShield,
     appliesPoison,
     appliesStun,
+    burnStacks,
     revealCards,
+    extraTurnGranted,
+    isDrain,
+    isVampire,
     zombiePoisonCured,
     moveElement,
     isAttackSuccessful: totalOffensiveAP > 0
@@ -317,6 +339,13 @@ export function advanceTurn(state) {
         const poisonDmg = updated.poisonCards * 10;
         updated.hp = Math.max(0, updated.hp - poisonDmg);
         updated.stats.damageTaken += poisonDmg;
+      }
+
+      // Burn damage at start of turn (-10 HP per burn stack)
+      if (!updated.isZombie && updated.burnCount > 0) {
+        const burnDmg = updated.burnCount * 10;
+        updated.hp = Math.max(0, updated.hp - burnDmg);
+        updated.stats.damageTaken += burnDmg;
       }
     }
 

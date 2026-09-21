@@ -1,4 +1,4 @@
-﻿// TCG Companion — Kontrola Rule Engine
+// TCG Companion — Kontrola Rule Engine
 // Validated against Kontrolla_Data/Docs (Rules & Regulations, AI Breakdowns, Action Cards CSV)
 
 export const KONTROLA_CHARACTERS = {
@@ -289,6 +289,16 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   }
   // 3. ATTACK CARDS (With Character Combat Moves or Standalone Elemental Spells)
   else if (actionCard.type === 'ATTACK') {
+    if (cardName === 'BOOMERANG FULL') {
+      newAttackerState.hasBoomerang = true;
+      log += ` Boomerang Trap set! Next successful attack against you will be reflected 100%.`;
+      return { newAttackerState, newDefenderState, log };
+    } else if (cardName === 'MISDIRECT') {
+      newAttackerState.hasMisdirect = true;
+      log += ` Misdirect Trap set! Next incoming attack will be completely negated.`;
+      return { newAttackerState, newDefenderState, log };
+    }
+
     let baseAP = 15;
     let attackElement = 'Physical';
 
@@ -319,6 +329,56 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       log += ` Clash Tied (${attackerRoll.total} vs ${defenderRoll.total})! Attack neutralized.`;
     } else if (atkWin) {
       let finalDamage = baseAP;
+
+      if (cardName === 'DRAIN') {
+        if (newDefenderState) {
+          const stolen = newDefenderState.energyTokens || 0;
+          newDefenderState.energyTokens = 0;
+          newAttackerState.energyTokens = (newAttackerState.energyTokens || 0) + stolen;
+          log += ` DRAIN successful! Stole ${stolen} Energy Tokens from ${newDefenderState.name}.`;
+        }
+        finalDamage = 0; // Handled directly above
+      } else if (cardName === 'VAMPIRE LIFE STEAL') {
+        if (newDefenderState) {
+          const stolenHp = Math.min(10, newDefenderState.hp);
+          const stolenEt = Math.min(1, newDefenderState.energyTokens || 0);
+          newDefenderState.hp = Math.max(0, newDefenderState.hp - stolenHp);
+          newDefenderState.energyTokens = Math.max(0, (newDefenderState.energyTokens || 0) - stolenEt);
+          newAttackerState.hp = Math.min(newAttackerState.maxHp || 100, newAttackerState.hp + stolenHp);
+          newAttackerState.energyTokens = (newAttackerState.energyTokens || 0) + stolenEt;
+          log += ` VAMPIRE LIFE STEAL hit! Stole ${stolenHp} HP and ${stolenEt} ET.`;
+        }
+        finalDamage = 0; // Handled directly above
+      }
+
+      // TRAP CONSUMPTION
+      if (newDefenderState && finalDamage > 0) {
+        if (newDefenderState.hasMisdirect) {
+          log += ` 🔀 MISDIRECT TRAP TRIGGERED! The attack was completely negated!`;
+          finalDamage = 0;
+          newDefenderState.hasMisdirect = false;
+        } else if (newDefenderState.hasDodge) {
+          log += ` 💨 DODGE TRIGGERED! ${newDefenderState.name} evaded all damage!`;
+          finalDamage = 0;
+          newDefenderState.hasDodge = false;
+        } else if (newDefenderState.hasBoomerang) {
+          log += ` 🪃 BOOMERANG TRAP TRIGGERED! ${newAttackerState.name}'s attack reflected back 100%!`;
+          newAttackerState.hp = Math.max(0, newAttackerState.hp - finalDamage);
+          finalDamage = 0;
+          newDefenderState.hasBoomerang = false;
+        } else if (newDefenderState.hasCounter) {
+          const reflectDmg = Math.floor(finalDamage * 0.25);
+          log += ` ⚔️ COUNTER TRIGGERED! 0% damage taken, reflected ${reflectDmg} AP back!`;
+          newAttackerState.hp = Math.max(0, newAttackerState.hp - reflectDmg);
+          finalDamage = 0;
+          newDefenderState.hasCounter = false;
+        } else if (newDefenderState.hasDefendBasic) {
+          const absorb = Math.floor(finalDamage * 0.25);
+          log += ` 🛡️ DEFENSIVE GUARD TRIGGERED! Damage reduced by 25% (${absorb} AP).`;
+          finalDamage = Math.max(0, finalDamage - absorb);
+          newDefenderState.hasDefendBasic = false;
+        }
+      }
 
       // Weakness Bonus (+10 or +15 AP)
       if (newDefenderState && attackElement && newDefenderState.weakness) {
@@ -366,6 +426,13 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         if (isAttackerZombie && !isDefenderZombie) {
           newDefenderState.poisonCount = (newDefenderState.poisonCount || 0) + 1;
           log += ` Venom Strike infected ${newDefenderState.name} with 1 Poison card!`;
+        }
+
+        // Apply Burn Status if Fire Flame X1 or X2
+        if (cardName === 'FIRE FLAME X1' || cardName === 'FIRE FLAME X2') {
+          const burnStacks = cardName === 'FIRE FLAME X2' ? 2 : 1;
+          newDefenderState.burnCount = (newDefenderState.burnCount || 0) + burnStacks;
+          log += ` 🔥 Applied ${burnStacks} Burn stack(s) to ${newDefenderState.name}!`;
         }
       }
     } else {
@@ -437,11 +504,28 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   }
   // 8. DEFENSE CARDS
   else if (actionCard.type === 'DEFENSE') {
-    newAttackerState.shield = (newAttackerState.shield || 0) + 15;
-    log += ` Fortified defense (+15 temporary barrier).`;
+    if (cardName.includes('D20')) {
+      newAttackerState.shield = (newAttackerState.shield || 0) + 20;
+      log += ` Fortified defense (+20 temporary barrier).`;
+    } else if (cardName.includes('FULL GUARD') || cardName.includes('SHIELD ADVANCE') || cardName.includes('SHIELD FIRE') || cardName.includes('SHIELD SACRED')) {
+      newAttackerState.shield = (newAttackerState.shield || 0) + 50;
+      log += ` Ultimate Defense Barrier Activated (+50 temporary barrier).`;
+    } else if (cardName.includes('DODGE')) {
+      newAttackerState.hasDodge = true;
+      log += ` Preparing to Evade! Next incoming attack will be completely dodged.`;
+    } else if (cardName.includes('COUNTER')) {
+      newAttackerState.hasCounter = true;
+      log += ` Counter Stance! Next incoming attack will be negated and reflected by 25%.`;
+    } else if (cardName.includes('BASIC')) {
+      newAttackerState.hasDefendBasic = true;
+      log += ` Defensive Guard. Next incoming damage reduced by 25%.`;
+    } else {
+      newAttackerState.shield = (newAttackerState.shield || 0) + 15;
+      log += ` Fortified defense (+15 temporary barrier).`;
+    }
   }
-  // 9. SLEEPY CARDS
-  else if (cardName.includes('SLEEPY')) {
+  // 9. SLEEPY & FREEZE CARDS
+  else if (cardName.includes('SLEEPY') || cardName.includes('FREEZE')) {
     const sleepRounds = cardName.includes('X2') ? 2 : 1;
     if (newDefenderState) {
       newDefenderState.sleepTurns = (newDefenderState.sleepTurns || 0) + sleepRounds;
@@ -453,6 +537,25 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     if (newDefenderState) {
       log += ` 👁️ Vision activated! Revealing ${newDefenderState.name}'s Action Cards for 15 seconds.`;
     }
+  }
+  // 11. TIME MACHINE
+  else if (cardName === 'TIME MACHINE') {
+    log += ` ⏳ TIME MACHINE activated! ${newAttackerState.name} gains an extra turn.`;
+  }
+  // 12. X-CHANGE
+  else if (cardName.includes('X-CHANGE')) {
+    log += ` 🔀 X-CHANGE activated! Swapping 1 Action Card with ${newDefenderState?.name || 'opponent'}.`;
+  }
+  // 13. SOUL ALLIANCE & ABANDON
+  else if (cardName === 'SOUL ALLIANCE') {
+    if (newDefenderState) {
+      newAttackerState.allianceId = newDefenderState.id;
+      newDefenderState.allianceId = newAttackerState.id;
+      log += ` 🤝 Soul Alliance formed between ${newAttackerState.name} and ${newDefenderState.name}.`;
+    }
+  } else if (cardName === 'ABANDON') {
+    newAttackerState.allianceId = null;
+    log += ` 💔 ${newAttackerState.name} abandoned all alliances!`;
   }
 
   // Zombie State Transition Check
@@ -467,6 +570,12 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     log += ` ⚠️ ${newAttackerState.name} reached 5 Poison cards and TRANSFORMED INTO A ZOMBIE (40 HP)!`;
   }
 
-  return { newAttackerState, newDefenderState, log };
+  return { 
+    newAttackerState, 
+    newDefenderState, 
+    log, 
+    extraTurnGranted: cardName === 'TIME MACHINE',
+    triggerXChange: cardName.includes('X-CHANGE')
+  };
 };
 

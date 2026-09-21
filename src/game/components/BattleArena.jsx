@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CHARACTERS, ZOMBIE_PROFILE, getAssetUrl } from '../data/characters';
 import { ACTION_CARDS, GAME_LIMITS } from '../data/cards';
 import { resolveDiceCombat, advanceTurn, checkZombieStatus, drawRandomCards } from '../utils/gameEngine';
@@ -182,6 +182,17 @@ export default function BattleArena({
     const isTargetZombie = defender.isZombie;
 
     let targetPoisonChange = 0;
+    let targetBurnChange = result.burnStacks || 0;
+    let stolenET = 0;
+    let stolenHP = 0;
+
+    if (result.isDrain) {
+      stolenET = defender.energyTokens || 0;
+    } else if (result.isVampire) {
+      stolenET = Math.min(1, defender.energyTokens || 0);
+      stolenHP = Math.min(10, defender.hp);
+    }
+
     if (result.zombiePoisonCured && isTargetZombie) {
       targetPoisonChange = -1; // Fire/Lightning burns off 1 poison card from zombie
     } else if (result.appliesPoison) {
@@ -209,8 +220,9 @@ export default function BattleArena({
 
         return {
           ...p,
-          energyTokens: Math.max(0, p.energyTokens - totalET),
-          turnActionCompleted: true,
+          energyTokens: Math.max(0, p.energyTokens - totalET) + stolenET,
+          hp: Math.min(p.maxHp || 100, p.hp + stolenHP),
+          turnActionCompleted: result.extraTurnGranted ? false : true,
           actionCardsHand: newHand,
           stats: {
             ...p.stats,
@@ -223,11 +235,14 @@ export default function BattleArena({
       if (p.id === defender.id) {
         const nextRawHP = Math.max(0, p.hp - damage);
         let nextPoison = Math.max(0, (p.poisonCards || 0) + targetPoisonChange);
+        let nextBurn = Math.max(0, (p.burnCount || 0) + targetBurnChange);
         let nextPlayerObj = {
           ...p,
-          hp: nextRawHP,
+          hp: Math.max(0, nextRawHP - stolenHP),
+          energyTokens: Math.max(0, (p.energyTokens || 0) - stolenET),
           shield: result.newShield,
           poisonCards: nextPoison,
+          burnCount: nextBurn,
           isStunned: result.appliesStun ? true : p.isStunned,
           stats: {
             ...p.stats,
@@ -979,6 +994,9 @@ export default function BattleArena({
                         <span style={{ color: '#00f0ff', fontWeight: 'bold' }}>💎{p.crystals}</span>
                         {p.poisonCards > 0 && (
                           <span style={{ color: '#39ff14', fontWeight: 'bold' }}>☠️{p.poisonCards}</span>
+                        )}
+                        {p.burnCount > 0 && (
+                          <span style={{ color: '#ff4d00', fontWeight: 'bold' }}>🔥{p.burnCount}</span>
                         )}
                       </div>
                     </div>
