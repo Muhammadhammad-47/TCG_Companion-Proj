@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { Send, X, Bot, Swords, ArrowLeft, ThumbsUp, ThumbsDown, User, Shield, LogOut, Check } from 'lucide-react';
 import axios from 'axios';
@@ -181,6 +181,7 @@ export function Chat({ onBack, isOverlay = false }) {
   const [userFeedback, setUserFeedback] = useState(null);
   const [showCorrectionModal, setShowCorrectionModal] = useState(false);
   const [suggestedAnswer, setSuggestedAnswer] = useState('');
+  const [isSubmittingCorrection, setIsSubmittingCorrection] = useState(false);
   const [feedbackSuccessMsg, setFeedbackSuccessMsg] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
@@ -211,13 +212,22 @@ export function Chat({ onBack, isOverlay = false }) {
 
   const handleSubmitCorrection = async (e) => {
     e.preventDefault();
-    if (!suggestedAnswer.trim() || !lastQuestionId) return;
+    if (!suggestedAnswer.trim()) return;
+    setIsSubmittingCorrection(true);
     setUserFeedback('unhelpful');
-    await knowledgeService.submitFeedback(lastQuestionId, 'unhelpful', suggestedAnswer.trim());
+    await knowledgeService.submitRuleCorrection({
+      questionId: lastQuestionId,
+      questionText: query || 'Official Rule Correction',
+      aiAnswer: answer,
+      suggestedAnswer: suggestedAnswer.trim(),
+      userId: currentUser?.id,
+      userName: userProfile?.display_name || currentUser?.email || 'Guest Player'
+    });
+    setIsSubmittingCorrection(false);
     setShowCorrectionModal(false);
     setSuggestedAnswer('');
     setFeedbackSuccessMsg('Correction submitted to Game Masters for review!');
-    setTimeout(() => setFeedbackSuccessMsg(''), 3000);
+    setTimeout(() => setFeedbackSuccessMsg(''), 4000);
   };
 
   const handleSelectAvatar = (newAvatarId) => {
@@ -1152,9 +1162,21 @@ export function Chat({ onBack, isOverlay = false }) {
                     </button>
                     <button
                       type="submit"
-                      style={{ padding: '8px 18px', background: 'var(--neon-gold)', border: 'none', color: '#000', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
+                      disabled={isSubmittingCorrection || !suggestedAnswer.trim()}
+                      style={{
+                        padding: '8px 18px',
+                        background: isSubmittingCorrection || !suggestedAnswer.trim() ? 'rgba(255, 215, 0, 0.4)' : 'var(--neon-gold)',
+                        border: 'none',
+                        color: '#050a14',
+                        borderRadius: '6px',
+                        fontWeight: 'bold',
+                        cursor: isSubmittingCorrection || !suggestedAnswer.trim() ? 'not-allowed' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
                     >
-                      Submit to Game Masters
+                      {isSubmittingCorrection ? 'Submitting...' : 'Submit to Game Masters'}
                     </button>
                   </div>
                 </form>

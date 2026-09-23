@@ -3875,3 +3875,208 @@
 }
 
 
+
+/* Responsive fix for KontrolaArena Action Bottom Controls */
+@media (max-width: 900px) {
+  .arena-bottom-controls {
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+    padding-bottom: 20px;
+    position: relative;
+    z-index: 100;
+  }
+  .bottom-right-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .btn-end-turn-cta {
+    width: 100%;
+    justify-content: center;
+  }
+  .arena-col-right {
+    margin-bottom: 80px;
+  }
+}
+
+/* ==========================================================================
+   PHASE 5: MOBILE RESPONSIVENESS — Comprehensive Arena Layout
+   ========================================================================== */
+
+/* --- Tablet (<=900px landscape) --- */
+@media (max-width: 900px) {
+  /* Arena 3-col -> 2-col: hide center orbit, compress sides */
+  .arena-stage-grid {
+    grid-template-columns: minmax(220px, 260px) 1fr !important;
+    gap: 10px;
+  }
+  .arena-col-center {
+    display: none !important;
+  }
+  .arena-bottom-controls {
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+    padding-bottom: 20px;
+    position: relative;
+    z-index: 100;
+  }
+  .bottom-right-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .btn-end-turn-cta {
+    width: 100%;
+    justify-content: center;
+  }
+  .arena-col-right {
+    margin-bottom: 20px;
+  }
+  .arena-top-hud {
+    margin-right: 0;
+    max-width: 100%;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px 10px;
+  }
+}
+
+/* --- Phone (<=600px portrait) --- */
+@media (max-width: 600px) {
+  .arena-stage-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px;
+    overflow-y: auto;
+  }
+  .arena-col-left {
+    order: 2;
+  }
+  .arena-col-right {
+    order: 1;
+    margin-bottom: 0;
+  }
+  .arena-col-center {
+    display: none !important;
+  }
+  .arena-orbit-ring {
+    width: 200px !important;
+    height: 200px !important;
+  }
+  .arena-top-hud {
+    margin-right: 0;
+    max-width: 100%;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 5px 8px;
+    font-size: 0.78rem;
+  }
+  button, .btn-arena-chat, .btn-end-turn-cta, .btn-hud-undo {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .arena-bottom-controls {
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+    margin-top: 6px;
+  }
+  .bottom-left-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .btn-arena-chat {
+    flex: 1;
+    justify-content: center;
+    font-size: 0.82rem;
+    padding: 10px 8px;
+  }
+  .arena-score-avatar {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+  }
+  .arena-lp-number {
+    font-size: 1.3rem !important;
+  }
+}
+
+/* ==========================================================================
+   PHASE 5: POLISH ANIMATIONS — damage numbers, card burst, defense glow
+   ========================================================================== */
+
+@keyframes my-turn-pulse {
+  0%   { box-shadow: 0 0 8px rgba(57, 255, 20, 0.3); }
+  50%  { box-shadow: 0 0 24px rgba(57, 255, 20, 0.7), 0 0 50px rgba(57, 255, 20, 0.2); }
+  100% { box-shadow: 0 0 8px rgba(57, 255, 20, 0.3); }
+}
+.my-turn-banner {
+  animation: my-turn-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes damage-number-pop {
+  0%   { opacity: 0; transform: translateY(0) scale(0.4); }
+  18%  { opacity: 1; transform: translateY(-18px) scale(1.5); }
+  60%  { opacity: 1; transform: translateY(-40px) scale(1.1); }
+  100% { opacity: 0; transform: translateY(-70px) scale(0.9); }
+}
+.damage-number-pop {
+  animation: damage-number-pop 1.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  pointer-events: none;
+  position: absolute;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 2rem;
+  font-weight: 900;
+  color: #ff2a55;
+  text-shadow: 0 0 12px rgba(255, 42, 85, 0.8);
+  z-index: 5000;
+  white-space: nowrap;
+}
+.damage-number-pop.heal {
+  color: #39ff14;
+  text-shadow: 0 0 12px rgba(57, 255, 20, 0.8);
+}
+
+@keyframes card-play-burst {
+  0%   { opacity: 0; transform: scale(0.6); }
+  40%  { opacity: 0.9; transform: scale(1.1); }
+  100% { opacity: 0; transform: scale(1.6); }
+}
+.card-play-burst {
+  animation: card-play-burst 0.55s ease-out forwards;
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  background: radial-gradient(circle, rgba(0, 240, 255, 0.5) 0%, transparent 70%);
+  z-index: 200;
+}
+
+@keyframes defense-activate {
+  0%   { box-shadow: inset 0 0 0 0 rgba(0, 240, 255, 0); border-color: rgba(0,240,255,0.2); }
+  40%  { box-shadow: inset 0 0 30px 8px rgba(0, 240, 255, 0.5); border-color: rgba(0,240,255,1); }
+  100% { box-shadow: inset 0 0 0 0 rgba(0, 240, 255, 0); border-color: rgba(0,240,255,0.2); }
+}
+.defense-activate-flash {
+  animation: defense-activate 0.8s ease-out forwards;
+}
+
+@keyframes crystal-sparkle {
+  0%   { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 0 rgba(255,215,0,0)); }
+  50%  { transform: scale(1.5) rotate(15deg); filter: drop-shadow(0 0 15px rgba(255,215,0,0.9)); }
+  100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 0 rgba(255,215,0,0)); }
+}
+.crystal-sparkle {
+  animation: crystal-sparkle 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes boomerang-shimmer {
+  0%   { transform: rotate(0deg) scale(1); filter: hue-rotate(0deg) brightness(1); }
+  25%  { transform: rotate(-20deg) scale(1.15); filter: hue-rotate(60deg) brightness(1.4); }
+  75%  { transform: rotate(20deg) scale(0.9); filter: hue-rotate(-60deg) brightness(1.2); }
+  100% { transform: rotate(0deg) scale(1); filter: hue-rotate(0deg) brightness(1); }
+}
+.boomerang-reflect {
+  animation: boomerang-shimmer 0.6s ease-in-out;
+}
+

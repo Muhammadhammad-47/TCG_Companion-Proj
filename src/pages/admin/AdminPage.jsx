@@ -55,6 +55,7 @@ export default function AdminPage() {
   const [docSectionFilter, setDocSectionFilter] = useState('ALL');
 
   // Document CRUD Modals
+  const [isSavingDoc, setIsSavingDoc] = useState(false);
   const [isEditDocModalOpen, setIsEditDocModalOpen] = useState(false);
   const [editDocData, setEditDocData] = useState({ title: '', category: '', content: '' });
 
@@ -99,9 +100,6 @@ export default function AdminPage() {
 
   // Quick Copy
   const [copiedKey, setCopiedKey] = useState('');
-
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://wyraulajgkonsukrtcvq.supabase.co';
-  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
 
   // Orientation Lock
   useEffect(() => {
@@ -425,6 +423,7 @@ export default function AdminPage() {
         return;
       }
     }
+    setIsSavingDoc(true);
     try {
       const updated = await knowledgeService.saveDocument(activeDoc.id, editDocData);
       setDocuments((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
@@ -433,6 +432,8 @@ export default function AdminPage() {
       setTimeout(() => setModNotice(''), 4000);
     } catch (err) {
       alert('Failed to save document: ' + err.message);
+    } finally {
+      setIsSavingDoc(false);
     }
   };
 
@@ -443,6 +444,7 @@ export default function AdminPage() {
       alert('Please fill in both the Question/Heading and Content/Answer fields.');
       return;
     }
+    setIsSavingDoc(true);
     try {
       const updated = await knowledgeService.appendSectionToDocument(activeDoc.id, appendData);
       setDocuments((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
@@ -452,6 +454,8 @@ export default function AdminPage() {
       setTimeout(() => setModNotice(''), 4000);
     } catch (err) {
       alert('Failed to append to document: ' + err.message);
+    } finally {
+      setIsSavingDoc(false);
     }
   };
 
@@ -461,6 +465,7 @@ export default function AdminPage() {
       alert('Please provide a valid document filename.');
       return;
     }
+    setIsSavingDoc(true);
     try {
       const created = await knowledgeService.createDocument(newDocData);
       setDocuments((prev) => [...prev, created]);
@@ -471,6 +476,8 @@ export default function AdminPage() {
       setTimeout(() => setModNotice(''), 4000);
     } catch (err) {
       alert('Failed to create document: ' + err.message);
+    } finally {
+      setIsSavingDoc(false);
     }
   };
 
@@ -482,6 +489,7 @@ export default function AdminPage() {
       return;
     }
     if (!window.confirm(`Permanently delete document "${doc.filename}"?`)) return;
+    setIsSavingDoc(true);
     try {
       await knowledgeService.deleteDocument(docId);
       setDocuments((prev) => prev.filter((d) => d.id !== docId));
@@ -490,11 +498,14 @@ export default function AdminPage() {
       setTimeout(() => setModNotice(''), 4000);
     } catch (err) {
       alert('Failed to delete document: ' + err.message);
+    } finally {
+      setIsSavingDoc(false);
     }
   };
 
   const handleResetMasterDoc = async () => {
     if (!window.confirm('Reset AI_Breakdowns.txt to the original master copy from public/Knowledge Base/AI_Breakdowns.txt? This will discard any manual changes.')) return;
+    setIsSavingDoc(true);
     try {
       const masterDoc = await knowledgeService.resetMasterDocument();
       setDocuments((prev) => prev.map((d) => (d.id === masterDoc.id ? masterDoc : d)));
@@ -502,6 +513,8 @@ export default function AdminPage() {
       setTimeout(() => setModNotice(''), 4000);
     } catch (err) {
       alert('Failed to reset master document: ' + err.message);
+    } finally {
+      setIsSavingDoc(false);
     }
   };
 
@@ -668,8 +681,7 @@ export default function AdminPage() {
             }}
           >
             <div className="menu-bg-elements" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
-              <div className="neon-streak-red" style={{ opacity: 0.4 }}></div>
-              <div className="neon-streak-blue" style={{ opacity: 0.4 }}></div>
+              {/* Neon streaks removed for cleaner UI */}
               <div className="subtle-watermark-card left-wm" style={{ opacity: 0.3 }}></div>
               <div className="subtle-watermark-card right-wm" style={{ opacity: 0.3 }}></div>
             </div>
@@ -834,8 +846,7 @@ export default function AdminPage() {
         >
           {/* Ambient Background Streaks matching Score Calculator */}
           <div className="menu-bg-elements" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
-            <div className="neon-streak-red" style={{ opacity: 0.35 }}></div>
-            <div className="neon-streak-blue" style={{ opacity: 0.35 }}></div>
+            {/* Neon streaks removed for cleaner UI */}
             <div className="subtle-watermark-card left-wm" style={{ opacity: 0.25 }}></div>
             <div className="subtle-watermark-card right-wm" style={{ opacity: 0.25 }}></div>
           </div>
@@ -1139,9 +1150,9 @@ export default function AdminPage() {
                       <button
                         onClick={loadUsers}
                         style={{
-                          background: 'rgba(0, 240, 255, 0.08)',
-                          border: '1px solid var(--neon-cyan, #00f0ff)',
-                          color: 'var(--neon-cyan, #00f0ff)',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          border: '1px solid rgba(255, 255, 255, 0.2)',
+                          color: '#fff',
                           padding: '5px 10px',
                           borderRadius: '6px',
                           cursor: 'pointer'
@@ -1153,8 +1164,8 @@ export default function AdminPage() {
                   </div>
 
                   {/* Clean Minimal Rows Container */}
-                  <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', overflow: 'hidden' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 1fr 1.2fr 1fr 1.4fr', padding: '10px 16px', background: 'rgba(6, 12, 28, 0.95)', borderBottom: '1px solid rgba(0, 240, 255, 0.2)', fontSize: '0.74rem', color: 'var(--neon-cyan, #00f0ff)', fontWeight: 'bold', letterSpacing: '1px', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                  <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', overflow: 'hidden' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 1fr 1.2fr 1fr 1.4fr', padding: '10px 16px', background: 'rgba(6, 12, 28, 0.95)', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', fontSize: '0.74rem', color: 'rgba(255,255,255,0.7)', fontWeight: 'bold', letterSpacing: '1px' }}>
                       <span>USER / PLAYER</span>
                       <span>EMAIL</span>
                       <span>CRYSTALS</span>
@@ -1212,9 +1223,9 @@ export default function AdminPage() {
                               <div>
                                 <span
                                   style={{
-                                    background: u.is_banned ? 'rgba(255, 51, 102, 0.18)' : 'rgba(57, 255, 20, 0.15)',
+                                    background: u.is_banned ? 'rgba(255, 51, 102, 0.1)' : 'rgba(57, 255, 20, 0.1)',
                                     color: u.is_banned ? '#ff88aa' : '#39ff14',
-                                    border: u.is_banned ? '1px solid var(--neon-crimson, #ff3366)' : '1px solid #39ff14',
+                                    border: u.is_banned ? '1px solid rgba(255, 51, 102, 0.3)' : '1px solid rgba(57, 255, 20, 0.3)',
                                     padding: '2px 7px',
                                     borderRadius: '4px',
                                     fontSize: '0.7rem',
@@ -1275,25 +1286,25 @@ export default function AdminPage() {
               {activeTab === 'matches' && (
                 <div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '16px' }}>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>TOTAL DUELS</div>
-                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>{matchHistory.length}</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: '600', color: '#fff' }}>{matchHistory.length}</div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(255, 230, 0, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>CRYSTALS AWARDED</div>
-                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: 'var(--neon-gold, #ffe600)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                      <div style={{ fontSize: '1.4rem', fontWeight: '600', color: '#fff' }}>
                         💎 {matchHistory.reduce((acc, m) => acc + (m.crystals_awarded || 1), 0)}
                       </div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(57, 255, 20, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>ACTIVE ARENA ROOMS</div>
-                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#39ff14', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                      <div style={{ fontSize: '1.4rem', fontWeight: '600', color: '#fff' }}>
                         {new Set(matchHistory.map(m => m.room_code || 'ARENA')).size}
                       </div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>LATEST CHAMPION</div>
-                      <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         👑 {matchHistory[0]?.winner_name || 'No duels yet'}
                       </div>
                     </div>
@@ -1312,15 +1323,14 @@ export default function AdminPage() {
                     <button
                       onClick={loadMatches}
                       style={{
-                        background: 'rgba(0, 240, 255, 0.08)',
-                        border: '1px solid var(--neon-cyan, #00f0ff)',
-                        color: 'var(--neon-cyan, #00f0ff)',
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        color: '#fff',
                         padding: '5px 12px',
                         borderRadius: '6px',
                         cursor: 'pointer',
                         fontSize: '0.78rem',
                         fontWeight: 'bold',
-                        fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '6px'
@@ -1330,8 +1340,8 @@ export default function AdminPage() {
                     </button>
                   </div>
 
-                  <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', overflow: 'hidden' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 2fr 2fr 1fr', padding: '10px 16px', background: 'rgba(6, 12, 28, 0.95)', borderBottom: '1px solid rgba(0, 240, 255, 0.2)', fontSize: '0.74rem', color: 'var(--neon-cyan, #00f0ff)', fontWeight: 'bold', letterSpacing: '1px', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                  <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', overflow: 'hidden' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 2fr 2fr 1fr', padding: '10px 16px', background: 'rgba(6, 12, 28, 0.95)', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', fontSize: '0.74rem', color: 'rgba(255,255,255,0.7)', fontWeight: 'bold', letterSpacing: '1px' }}>
                       <span>DATE & TIME</span>
                       <span>ROOM</span>
                       <span>MODE</span>
@@ -1373,11 +1383,11 @@ export default function AdminPage() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                               <Crown size={14} color="var(--neon-gold, #ffe600)" />
                               <strong style={{ color: 'var(--neon-gold, #ffe600)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', fontSize: '0.92rem' }}>
-                                {m.winner_name}
+                                {m.winner_name || 'Unknown / Draw'}
                               </strong>
                             </div>
                             <span style={{ color: '#cbd5e1', fontSize: '0.78rem' }}>
-                              {Array.isArray(m.player_names) && m.player_names.length > 0 ? m.player_names.join(' vs ') : '2 Players'}
+                              {Array.isArray(m.player_names) && m.player_names.length > 0 ? m.player_names.filter(Boolean).join(' vs ') : '2 Players'}
                             </span>
                             <span style={{ textAlign: 'right', fontWeight: 'bold', color: '#39ff14' }}>
                               +{m.crystals_awarded || 1} 💎
@@ -1395,137 +1405,45 @@ export default function AdminPage() {
               ========================================================================= */}
               {activeTab === 'rules' && (
                 <div>
-                  {/* Top KPI Cards: Document Status & Groq Health */}
+                  {/* Top KPI Cards: Document Status */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', marginBottom: '14px' }}>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
                         <div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>ACTIVE DOCUMENT</div>
-                        <div style={{ fontSize: '1.15rem', fontWeight: '900', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '160px' }}>
+                        <div style={{ fontSize: '1.15rem', fontWeight: '600', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '160px' }}>
                           {activeDoc?.filename || 'AI_Breakdowns.txt'}
                         </div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--neon-cyan, #00f0ff)' }}>
+                        <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.6)' }}>
                           {activeDoc?.isMaster ? 'Master Rulebook' : activeDoc?.category || 'Custom Document'}
                         </div>
                       </div>
-                      <FileText size={20} color="var(--neon-cyan, #00f0ff)" />
+                      <FileText size={20} color="rgba(255,255,255,0.4)" />
                     </div>
 
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(57, 255, 20, 0.2)', borderRadius: '10px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
                         <div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>TOTAL DOCUMENTS</div>
-                        <div style={{ fontSize: '1.3rem', fontWeight: '900', color: '#39ff14', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                        <div style={{ fontSize: '1.15rem', fontWeight: '600', color: '#fff' }}>
                           {documents.length || 1} Registered
                         </div>
-                        <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>
+                        <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.6)' }}>
                           1 Master · {Math.max(0, documents.length - 1)} Expansions
                         </div>
                       </div>
-                      <Layers size={20} color="#39ff14" />
+                      <Layers size={20} color="rgba(255,255,255,0.4)" />
                     </div>
 
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(255, 230, 0, 0.2)', borderRadius: '10px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
                         <div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>DOCUMENT VOLUME</div>
-                        <div style={{ fontSize: '1.3rem', fontWeight: '900', color: 'var(--neon-gold, #ffe600)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
-                          {(activeDoc?.content?.length || 0).toLocaleString()} <span style={{ fontSize: '0.8rem', fontWeight: 'normal' }}>chars</span>
+                        <div style={{ fontSize: '1.15rem', fontWeight: '600', color: '#fff' }}>
+                          {(activeDoc?.content?.length || 0).toLocaleString()} <span style={{ fontSize: '0.8rem', fontWeight: 'normal', color: 'rgba(255,255,255,0.5)' }}>chars</span>
                         </div>
-                        <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>
-                          ~{activeDocMetrics.estimatedTokens.toLocaleString()} Tokens · {parsedDocData.lineCount.toLocaleString()} Lines
-                        </div>
-                      </div>
-                      <BookOpen size={20} color="var(--neon-gold, #ffe600)" />
-                    </div>
-
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: `1px solid ${activeDocMetrics.status === 'EXCEEDED' ? '#ff2a55' : activeDocMetrics.status === 'WARNING' ? '#ffe600' : 'rgba(0, 240, 255, 0.2)'}`, borderRadius: '10px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>GROQ CONTEXT RUBRIC</div>
-                        <div style={{ fontSize: '1.3rem', fontWeight: '900', color: activeDocMetrics.status === 'EXCEEDED' ? '#ff2a55' : activeDocMetrics.status === 'WARNING' ? '#ffe600' : '#39ff14', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
-                          {activeDocMetrics.utilizationPercent}% Used
-                        </div>
-                        <div style={{ fontSize: '0.7rem', color: activeDocMetrics.status === 'EXCEEDED' ? '#ff2a55' : activeDocMetrics.status === 'WARNING' ? '#ffe600' : '#39ff14', fontWeight: 'bold' }}>
-                          {activeDocMetrics.status === 'EXCEEDED' ? 'LIMIT EXCEEDED' : activeDocMetrics.status === 'WARNING' ? 'APPROACHING LIMIT' : 'RUBRIC COMPLIANT (SAFE)'}
+                        <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.6)' }}>
+                          {parsedDocData.lineCount.toLocaleString()} Lines
                         </div>
                       </div>
-                      <Cpu size={20} color={activeDocMetrics.status === 'EXCEEDED' ? '#ff2a55' : activeDocMetrics.status === 'WARNING' ? '#ffe600' : 'var(--neon-cyan, #00f0ff)'} />
-                    </div>
-                  </div>
-
-                  {/* GROQ RUBRIC CONTEXT HUD GAUGE */}
-                  <div
-                    style={{
-                      background: 'linear-gradient(135deg, rgba(14, 22, 42, 0.95) 0%, rgba(6, 12, 28, 0.98) 100%)',
-                      border: `1px solid ${activeDocMetrics.status === 'EXCEEDED' ? '#ff2a55' : activeDocMetrics.status === 'WARNING' ? '#ffe600' : 'rgba(0, 240, 255, 0.3)'}`,
-                      borderRadius: '12px',
-                      padding: '14px 16px',
-                      marginBottom: '14px',
-                      boxShadow: '0 4px 20px rgba(0,0,0,0.45)'
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Zap size={16} color="var(--neon-gold, #ffe600)" />
-                        <span style={{ fontSize: '0.86rem', fontWeight: 'bold', color: '#fff', letterSpacing: '0.5px' }}>
-                          GROQ API CONTEXT RUBRIC MONITOR
-                        </span>
-                        <span style={{ fontSize: '0.7rem', background: 'rgba(0, 240, 255, 0.12)', color: 'var(--neon-cyan, #00f0ff)', border: '1px solid rgba(0, 240, 255, 0.3)', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
-                          Model: {GROQ_LIMITS.MODEL}
-                        </span>
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>
-                          <strong style={{ color: activeDocMetrics.status === 'EXCEEDED' ? '#ff2a55' : activeDocMetrics.status === 'WARNING' ? '#ffe600' : '#39ff14' }}>
-                            {(activeDoc?.content?.length || 0).toLocaleString()}
-                          </strong> / {GROQ_LIMITS.MAX_CONTEXT_CHARS.toLocaleString()} characters
-                        </span>
-                        <span style={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.3)' }}>·</span>
-                        <span style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>
-                          ~{activeDocMetrics.estimatedTokens.toLocaleString()} / {GROQ_LIMITS.MAX_CONTEXT_TOKENS.toLocaleString()} tokens
-                        </span>
-                        <span
-                          style={{
-                            fontSize: '0.72rem',
-                            padding: '2px 8px',
-                            borderRadius: '10px',
-                            fontWeight: 'bold',
-                            background: activeDocMetrics.status === 'EXCEEDED' ? 'rgba(255, 42, 85, 0.2)' : activeDocMetrics.status === 'WARNING' ? 'rgba(255, 230, 0, 0.2)' : 'rgba(57, 255, 20, 0.15)',
-                            color: activeDocMetrics.status === 'EXCEEDED' ? '#ff2a55' : activeDocMetrics.status === 'WARNING' ? '#ffe600' : '#39ff14',
-                            border: `1px solid ${activeDocMetrics.status === 'EXCEEDED' ? '#ff2a55' : activeDocMetrics.status === 'WARNING' ? '#ffe600' : '#39ff14'}`
-                          }}
-                        >
-                          {activeDocMetrics.status === 'EXCEEDED' ? 'LIMIT EXCEEDED' : activeDocMetrics.status === 'WARNING' ? 'APPROACHING LIMIT' : 'SAFE FOR INFERENCE'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Progress Bar with safe zone markers */}
-                    <div style={{ position: 'relative', width: '100%', height: '8px', background: 'rgba(5, 10, 24, 0.8)', borderRadius: '4px', overflow: 'hidden', marginBottom: '6px' }}>
-                      <div
-                        style={{
-                          width: `${Math.min(100, activeDocMetrics.utilizationPercent)}%`,
-                          height: '100%',
-                          background: activeDocMetrics.status === 'EXCEEDED' ? 'linear-gradient(90deg, #ff2a55, #ff0033)' : activeDocMetrics.status === 'WARNING' ? 'linear-gradient(90deg, #ffe600, #ff8800)' : 'linear-gradient(90deg, #00f0ff, #39ff14)',
-                          borderRadius: '4px',
-                          transition: 'width 0.3s ease',
-                          boxShadow: activeDocMetrics.status === 'EXCEEDED' ? '0 0 10px #ff2a55' : '0 0 10px #00f0ff'
-                        }}
-                      />
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)' }}>
-                      <span>0 Chars (Empty)</span>
-                      <span>32K Chars (Safe Single-Turn Prompt Budget)</span>
-                      <span>104K Chars (80% Warning Threshold)</span>
-                      <span style={{ color: activeDocMetrics.status === 'EXCEEDED' ? '#ff2a55' : 'rgba(255,255,255,0.6)' }}>131,072 Chars (Groq Context Hard Ceiling)</span>
-                    </div>
-
-                    <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px', fontSize: '0.74rem' }}>
-                      <span style={{ color: '#94a3b8' }}>
-                        💡 <strong>Groq Rubric Rule:</strong> The AI Rulekeeper searches matching sections in this document to answer player queries. Recommended max section chunk: <strong>≤ 4,000 chars (~1,000 tokens)</strong> for instant response generation.
-                      </span>
-                      <span style={{ color: 'var(--neon-cyan, #00f0ff)', fontWeight: 'bold' }}>
-                        {parsedDocData.qaPairs.filter((p) => p.isSafeChunk).length} / {parsedDocData.qaPairs.length} Q&A blocks compliant
-                      </span>
+                      <BookOpen size={20} color="rgba(255,255,255,0.4)" />
                     </div>
                   </div>
 
@@ -1799,46 +1717,34 @@ export default function AdminPage() {
                             <div
                               key={idx}
                               style={{
-                                background: 'rgba(14, 22, 42, 0.8)',
-                                border: '1px solid rgba(0, 240, 255, 0.2)',
-                                borderRadius: '10px',
+                                background: 'rgba(14, 22, 42, 0.4)',
+                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                borderRadius: '8px',
                                 padding: '14px',
                                 display: 'flex',
                                 flexDirection: 'column',
                                 justifyContent: 'space-between',
-                                transition: 'transform 0.15s ease, border-color 0.15s ease'
+                                transition: 'background 0.15s ease'
                               }}
                             >
                               <div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                  <span style={{ fontSize: '0.72rem', background: 'rgba(0, 240, 255, 0.12)', color: 'var(--neon-cyan, #00f0ff)', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold', fontFamily: 'monospace' }}>
+                                  <span style={{ fontSize: '0.72rem', background: 'rgba(255, 255, 255, 0.1)', color: 'rgba(255,255,255,0.7)', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
                                     #{idx + 1}
                                   </span>
 
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)' }}>
-                                      {item.charLen} chars · ~{item.tokenEst} tokens
-                                    </span>
-                                    <span
-                                      style={{
-                                        fontSize: '0.68rem',
-                                        padding: '1px 6px',
-                                        borderRadius: '4px',
-                                        fontWeight: 'bold',
-                                        background: item.isSafeChunk ? 'rgba(57, 255, 20, 0.15)' : 'rgba(255, 230, 0, 0.15)',
-                                        color: item.isSafeChunk ? '#39ff14' : 'var(--neon-gold, #ffe600)'
-                                      }}
-                                    >
-                                      {item.isSafeChunk ? '✓ Safe Groq Chunk' : '⚠️ Large Chunk'}
+                                    <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>
+                                      {item.charLen} chars
                                     </span>
                                   </div>
                                 </div>
 
-                                <h3 style={{ fontSize: '0.96rem', color: '#fff', margin: '0 0 8px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', fontWeight: 'bold', lineHeight: '1.4' }}>
+                                <h3 style={{ fontSize: '0.96rem', color: '#fff', margin: '0 0 8px 0', fontWeight: 'bold', lineHeight: '1.4' }}>
                                   {item.question}
                                 </h3>
 
-                                <div style={{ fontSize: '0.82rem', color: '#cbd5e1', lineHeight: '1.5', whiteSpace: 'pre-wrap', maxHeight: '160px', overflowY: 'auto', paddingRight: '4px' }}>
+                                <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.7)', lineHeight: '1.5', whiteSpace: 'pre-wrap', maxHeight: '160px', overflowY: 'auto', paddingRight: '4px' }}>
                                   {item.answer}
                                 </div>
                               </div>
@@ -1852,7 +1758,7 @@ export default function AdminPage() {
                                   style={{
                                     background: 'none',
                                     border: 'none',
-                                    color: copiedKey === `qa-${idx}` ? '#39ff14' : 'var(--neon-cyan, #00f0ff)',
+                                    color: copiedKey === `qa-${idx}` ? '#39ff14' : 'rgba(255,255,255,0.6)',
                                     cursor: 'pointer',
                                     fontSize: '0.72rem',
                                     display: 'flex',
@@ -1978,25 +1884,25 @@ export default function AdminPage() {
               {activeTab === 'questions' && (
                 <div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '16px' }}>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>INBOUND QUERIES</div>
-                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>{questions.length}</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: '600', color: '#fff' }}>{questions.length}</div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(57, 255, 20, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>HELPFUL RATING %</div>
-                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#39ff14', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                      <div style={{ fontSize: '1.4rem', fontWeight: '600', color: '#fff' }}>
                         {questions.length > 0 ? Math.round((questions.filter(q => q.user_rating === 'helpful').length / questions.length) * 100) : 100}%
                       </div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(255, 230, 0, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>PLAYER CORRECTIONS</div>
-                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: 'var(--neon-gold, #ffe600)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                      <div style={{ fontSize: '1.4rem', fontWeight: '600', color: '#fff' }}>
                         {questions.filter(q => q.user_suggested_answer).length}
                       </div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(255, 51, 102, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>UNHELPFUL / FLAGGED</div>
-                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#ff88aa', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                      <div style={{ fontSize: '1.4rem', fontWeight: '600', color: '#fff' }}>
                         {questions.filter(q => q.user_rating === 'unhelpful').length}
                       </div>
                     </div>
@@ -2045,17 +1951,17 @@ export default function AdminPage() {
                         <div
                           key={q.id}
                           style={{
-                            background: 'rgba(14, 22, 42, 0.75)',
-                            border: q.user_rating === 'unhelpful' ? '1px solid var(--neon-crimson, #ff3366)' : '1px solid rgba(0, 240, 255, 0.2)',
-                            borderRadius: '10px',
+                            background: 'rgba(14, 22, 42, 0.4)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            borderRadius: '8px',
                             padding: '14px'
                           }}
                         >
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                            <span style={{ fontSize: '0.72rem', background: 'rgba(0, 240, 255, 0.1)', color: 'var(--neon-cyan, #00f0ff)', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
+                            <span style={{ fontSize: '0.72rem', background: 'rgba(255, 255, 255, 0.1)', color: 'rgba(255,255,255,0.7)', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
                               USER: {q.user_name || 'Anonymous'}
                             </span>
-                            <span style={{ fontSize: '0.72rem', color: q.user_rating === 'helpful' ? '#39ff14' : '#ff88aa' }}>
+                            <span style={{ fontSize: '0.72rem', color: q.user_rating === 'helpful' ? '#39ff14' : q.user_rating === 'unhelpful' ? '#ff88aa' : 'rgba(255,255,255,0.5)' }}>
                               {q.user_rating === 'helpful' ? '👍 Helpful' : q.user_rating === 'unhelpful' ? '👎 Inaccurate' : 'Unrated'}
                             </span>
                           </div>
@@ -2064,7 +1970,7 @@ export default function AdminPage() {
                             ❓ "{q.question_text}"
                           </div>
 
-                          <div style={{ background: 'rgba(5, 10, 24, 0.7)', borderRadius: '6px', padding: '8px 12px', marginBottom: '8px', borderLeft: '3px solid var(--neon-cyan, #00f0ff)', fontSize: '0.82rem', color: '#cbd5e1' }}>
+                          <div style={{ background: 'rgba(255, 255, 255, 0.05)', borderRadius: '6px', padding: '8px 12px', marginBottom: '8px', borderLeft: '3px solid rgba(255,255,255,0.3)', fontSize: '0.82rem', color: '#cbd5e1' }}>
                             <strong>AI Answer:</strong> {q.ai_answer}
                           </div>
 
@@ -2078,20 +1984,20 @@ export default function AdminPage() {
                             <button
                               onClick={() => handlePromoteQuestion(q)}
                               style={{
-                                background: 'linear-gradient(90deg, #39ff14 0%, #00cc44 100%)',
-                                border: 'none',
-                                color: '#050a18',
+                                background: 'rgba(57, 255, 20, 0.15)',
+                                border: '1px solid rgba(57, 255, 20, 0.3)',
+                                color: '#39ff14',
                                 padding: '5px 12px',
                                 borderRadius: '6px',
                                 cursor: 'pointer',
-                                fontWeight: '900',
+                                fontWeight: '600',
                                 fontSize: '0.78rem',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '5px'
                               }}
                             >
-                              <Sparkles size={13} /> PROMOTE TO KNOWLEDGE BASE
+                              <Sparkles size={13} /> Promote to Knowledge Base
                             </button>
                           </div>
                         </div>
@@ -2107,21 +2013,21 @@ export default function AdminPage() {
               {activeTab === 'tcg_apis' && (
                 <div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '16px' }}>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(57, 255, 20, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>GATEWAY STATUS</div>
-                      <div style={{ fontSize: '1.3rem', fontWeight: '900', color: '#39ff14', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>ONLINE (200 OK)</div>
+                      <div style={{ fontSize: '1.3rem', fontWeight: '600', color: '#fff' }}>ONLINE (200 OK)</div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>REST DB LATENCY</div>
-                      <div style={{ fontSize: '1.3rem', fontWeight: '900', color: 'var(--neon-cyan, #00f0ff)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>~28ms</div>
+                      <div style={{ fontSize: '1.3rem', fontWeight: '600', color: '#fff' }}>~28ms</div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(255, 230, 0, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>POSTGRES RLS</div>
-                      <div style={{ fontSize: '1.3rem', fontWeight: '900', color: 'var(--neon-gold, #ffe600)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>ACTIVE & LOCKED</div>
+                      <div style={{ fontSize: '1.3rem', fontWeight: '600', color: '#fff' }}>ACTIVE & LOCKED</div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>CONNECTED TCG APPS</div>
-                      <div style={{ fontSize: '1.3rem', fontWeight: '900', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>4 CLIENT TYPES</div>
+                      <div style={{ fontSize: '1.3rem', fontWeight: '600', color: '#fff' }}>4 CLIENT TYPES</div>
                     </div>
                   </div>
 
@@ -2138,15 +2044,14 @@ export default function AdminPage() {
                     <button
                       onClick={() => navigate('/docs')}
                       style={{
-                        background: 'linear-gradient(90deg, #00f0ff 0%, #0088ff 100%)',
-                        border: 'none',
-                        color: '#050a18',
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        color: '#fff',
                         padding: '6px 14px',
                         borderRadius: '6px',
                         cursor: 'pointer',
                         fontSize: '0.82rem',
                         fontWeight: 'bold',
-                        fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '6px'
@@ -2158,21 +2063,21 @@ export default function AdminPage() {
 
                   {/* Config Keys Cards */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '10px', marginBottom: '16px' }}>
-                    <div style={{ background: 'rgba(14, 22, 42, 0.8)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)', marginBottom: '4px' }}>PRODUCTION REST URL</div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <code style={{ color: '#fff', fontSize: '0.84rem' }}>{supabaseUrl}</code>
-                        <button onClick={() => handleCopy(supabaseUrl, 'admin_url')} style={{ background: 'none', border: 'none', color: copiedKey === 'admin_url' ? '#39ff14' : 'var(--neon-cyan, #00f0ff)', cursor: 'pointer' }}>
+                        <button onClick={() => handleCopy(supabaseUrl, 'admin_url')} style={{ background: 'none', border: 'none', color: copiedKey === 'admin_url' ? '#39ff14' : 'rgba(255,255,255,0.6)', cursor: 'pointer' }}>
                           {copiedKey === 'admin_url' ? <Check size={14} /> : <Copy size={14} />}
                         </button>
                       </div>
                     </div>
 
-                    <div style={{ background: 'rgba(14, 22, 42, 0.8)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)', marginBottom: '4px' }}>ANON PUBLIC KEY</div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <code style={{ color: 'var(--neon-gold, #ffe600)', fontSize: '0.82rem' }}>{anonKey.substring(0, 36)}...</code>
-                        <button onClick={() => handleCopy(anonKey, 'admin_key')} style={{ background: 'none', border: 'none', color: copiedKey === 'admin_key' ? '#39ff14' : 'var(--neon-gold, #ffe600)', cursor: 'pointer' }}>
+                        <code style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.82rem', filter: 'blur(2px)', transition: 'filter 0.2s ease' }} onMouseOver={(e) => e.currentTarget.style.filter = 'none'} onMouseOut={(e) => e.currentTarget.style.filter = 'blur(2px)'}>{anonKey.substring(0, 36)}...</code>
+                        <button onClick={() => handleCopy(anonKey, 'admin_key')} style={{ background: 'none', border: 'none', color: copiedKey === 'admin_key' ? '#39ff14' : 'rgba(255,255,255,0.6)', cursor: 'pointer' }}>
                           {copiedKey === 'admin_key' ? <Check size={14} /> : <Copy size={14} />}
                         </button>
                       </div>
@@ -2181,9 +2086,9 @@ export default function AdminPage() {
 
                   {/* Connected TCG Applications Cards */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '12px' }}>
-                    <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '14px' }}>
+                    <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '14px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                        <span style={{ fontSize: '0.92rem', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                        <span style={{ fontSize: '0.92rem', fontWeight: 'bold', color: '#fff' }}>
                           ⚔️ Kontrola Arena (Web)
                         </span>
                         <span style={{ fontSize: '0.68rem', background: 'rgba(57, 255, 20, 0.15)', color: '#39ff14', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>CONNECTED</span>
@@ -2191,12 +2096,12 @@ export default function AdminPage() {
                       <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: '0 0 8px 0', lineHeight: '1.45' }}>
                         Real-time multiplayer duel client. Authenticates users via JWT and logs match outcomes directly to <code>matches</code> table.
                       </p>
-                      <code style={{ fontSize: '0.72rem', color: 'var(--neon-cyan, #00f0ff)' }}>POST /rest/v1/matches</code>
+                      <code style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)' }}>POST /rest/v1/matches</code>
                     </div>
 
-                    <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '14px' }}>
+                    <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '14px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                        <span style={{ fontSize: '0.92rem', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                        <span style={{ fontSize: '0.92rem', fontWeight: 'bold', color: '#fff' }}>
                           🎲 Tabletop Simulator / Unity
                         </span>
                         <span style={{ fontSize: '0.68rem', background: 'rgba(57, 255, 20, 0.15)', color: '#39ff14', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>CONNECTED</span>
@@ -2204,12 +2109,12 @@ export default function AdminPage() {
                       <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: '0 0 8px 0', lineHeight: '1.45' }}>
                         Unity C# client querying active rules and updating stability crystals for victorious players.
                       </p>
-                      <code style={{ fontSize: '0.72rem', color: 'var(--neon-cyan, #00f0ff)' }}>GET /rest/v1/rules_knowledge</code>
+                      <code style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)' }}>GET /rest/v1/rules_knowledge</code>
                     </div>
 
-                    <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '14px' }}>
+                    <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '14px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                        <span style={{ fontSize: '0.92rem', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                        <span style={{ fontSize: '0.92rem', fontWeight: 'bold', color: '#fff' }}>
                           📱 Mobile Tournament (Flutter)
                         </span>
                         <span style={{ fontSize: '0.68rem', background: 'rgba(57, 255, 20, 0.15)', color: '#39ff14', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>CONNECTED</span>
@@ -2217,12 +2122,12 @@ export default function AdminPage() {
                       <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: '0 0 8px 0', lineHeight: '1.45' }}>
                         Companion app for physical tournaments. Syncs usernames, crystal inventories, and deck stats.
                       </p>
-                      <code style={{ fontSize: '0.72rem', color: 'var(--neon-cyan, #00f0ff)' }}>GET /rest/v1/profiles</code>
+                      <code style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)' }}>GET /rest/v1/profiles</code>
                     </div>
 
-                    <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '14px' }}>
+                    <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '14px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                        <span style={{ fontSize: '0.92rem', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                        <span style={{ fontSize: '0.92rem', fontWeight: 'bold', color: '#fff' }}>
                           🤖 AI Rulekeeper Assistant
                         </span>
                         <span style={{ fontSize: '0.68rem', background: 'rgba(57, 255, 20, 0.15)', color: '#39ff14', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>CONNECTED</span>
@@ -2230,7 +2135,7 @@ export default function AdminPage() {
                       <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: '0 0 8px 0', lineHeight: '1.45' }}>
                         Grounded AI rules referee. Logs queries to Questions Inbox and incorporates promoted GM clarifications.
                       </p>
-                      <code style={{ fontSize: '0.72rem', color: 'var(--neon-cyan, #00f0ff)' }}>POST /rest/v1/user_questions</code>
+                      <code style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)' }}>POST /rest/v1/user_questions</code>
                     </div>
                   </div>
                 </div>
@@ -2428,9 +2333,10 @@ export default function AdminPage() {
                       </button>
                       <button
                         type="submit"
-                        style={{ padding: '7px 18px', borderRadius: '6px', border: 'none', background: 'linear-gradient(90deg, #00f0ff 0%, #0088ff 100%)', color: '#050a18', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.84rem' }}
+                        disabled={isSavingDoc}
+                        style={{ padding: '7px 18px', borderRadius: '6px', border: 'none', background: 'linear-gradient(90deg, #00f0ff 0%, #0088ff 100%)', color: '#050a18', fontWeight: 'bold', cursor: isSavingDoc ? 'not-allowed' : 'pointer', fontSize: '0.84rem', opacity: isSavingDoc ? 0.7 : 1 }}
                       >
-                        Save Changes
+                        {isSavingDoc ? 'Saving...' : 'Save Changes'}
                       </button>
                     </div>
                   </div>
@@ -2555,9 +2461,10 @@ export default function AdminPage() {
                     </button>
                     <button
                       type="submit"
-                      style={{ padding: '7px 18px', borderRadius: '6px', border: 'none', background: 'linear-gradient(90deg, #39ff14, #00cc44)', color: '#050a18', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.84rem' }}
+                      disabled={isSavingDoc}
+                      style={{ padding: '7px 18px', borderRadius: '6px', border: 'none', background: 'linear-gradient(90deg, #39ff14, #00cc44)', color: '#050a18', fontWeight: 'bold', cursor: isSavingDoc ? 'not-allowed' : 'pointer', fontSize: '0.84rem', opacity: isSavingDoc ? 0.7 : 1 }}
                     >
-                      Append to {activeDoc.filename}
+                      {isSavingDoc ? 'Saving...' : `Append to ${activeDoc.filename}`}
                     </button>
                   </div>
                 </form>
@@ -2643,9 +2550,10 @@ export default function AdminPage() {
                     </button>
                     <button
                       type="submit"
-                      style={{ padding: '7px 18px', borderRadius: '6px', border: 'none', background: 'linear-gradient(90deg, #00f0ff 0%, #0088ff 100%)', color: '#050a18', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.84rem' }}
+                      disabled={isSavingDoc}
+                      style={{ padding: '7px 18px', borderRadius: '6px', border: 'none', background: 'linear-gradient(90deg, #00f0ff 0%, #0088ff 100%)', color: '#050a18', fontWeight: 'bold', cursor: isSavingDoc ? 'not-allowed' : 'pointer', fontSize: '0.84rem', opacity: isSavingDoc ? 0.7 : 1 }}
                     >
-                      Create Document
+                      {isSavingDoc ? 'Creating...' : 'Create Document'}
                     </button>
                   </div>
                 </form>

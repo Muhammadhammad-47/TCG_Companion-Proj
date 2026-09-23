@@ -146,7 +146,7 @@ export const ACTION_CARDS_BASIC = [
   { name: 'HEAL H40', type: 'HEAL', count: 6, costET: 0, desc: 'Restores +40 HP.' },
   { name: 'ANTIDOTE X2', type: 'HEAL', count: 6, costET: 0, desc: 'Removes 2 Poison cards.' },
   { name: 'ATTACK X2', type: 'ATTACK', count: 6, costET: 2, desc: 'Double character attack unleash.' },
-  { name: 'BOOMERANG FULL', type: 'ATTACK', count: 6, costET: 1, desc: 'On successful defense, reflects all damage back to attacker.' },
+  { name: 'BOOMERANG FULL', type: 'DEFENSE', count: 6, costET: 0, desc: 'Defender reactive card: On successful defense or 6+ roll, reflects 100% attack damage back to attacker.' },
   { name: 'HEAL H20', type: 'HEAL', count: 6, costET: 0, desc: 'Restores +20 HP.' },
   { name: 'LIGHTNING X2', type: 'ATTACK', count: 6, costET: 2, desc: 'Heavy lightning dealing -20 HP and -2 turns.' },
   { name: 'MISDIRECT', type: 'ATTACK', count: 6, costET: 1, desc: 'Redirect an opponent attack.' },
@@ -240,6 +240,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   let damage = 0;
   let heal = 0;
   let shieldGain = 0;
+  let aoeDamage = 0;
 
   let newAttackerState = { ...attackerState };
   let newDefenderState = defenderState ? { ...defenderState } : null;
@@ -249,6 +250,35 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   const defenderRoll = precalculatedRolls?.defenderRoll || rollDice(2);
   const kRoll = precalculatedRolls?.kRoll || rollDice(1);
   const dRoll = precalculatedRolls?.dRoll || rollDice(1);
+
+  // Process Defender's Played Card (if any) during Preparation Window
+  const defCard = precalculatedRolls?.defenseCard;
+  if (defCard && newDefenderState) {
+    const dName = defCard.name.toUpperCase();
+    log += ` [Defender played ${defCard.name}]`;
+    if (dName.includes('SHIELD')) {
+      const gain = dName.includes('100HP') || dName.includes('ADVANCE') ? 100
+                 : dName.includes('50HP')  || dName.includes('FIRE')    ? 50
+                 : 20;
+      newDefenderState.shield = (newDefenderState.shield || 0) + gain;
+      // SHIELD FIRE grants fire immunity for this hit
+      if (dName.includes('FIRE')) newDefenderState.immuneFire = true;
+    } else if (dName.includes('BOOMERANG')) {
+      newDefenderState.hasBoomerang = true;
+    } else if (dName.includes('DODGE')) {
+      newDefenderState.hasDodge = true;
+    } else if (dName.includes('COUNTER')) {
+      // covers DEFENCE - COUNTER and DODGE - COUNTER
+      newDefenderState.hasCounter = true;
+    } else if (dName.includes('FULL GUARD')) {
+      newDefenderState.shield = (newDefenderState.shield || 0) + 50;
+    } else if (dName.includes('DEFENCE') || dName.includes('+DEFENCE')) {
+      // e.g. +DEFENCE D20, DEFENCE - BASIC, etc.
+      const bonus = dName.includes('D20') ? 20 : 15;
+      newDefenderState.hasDefendBasic = true;
+      newDefenderState.shield = (newDefenderState.shield || 0) + bonus;
+    }
+  }
 
   const cardName = actionCard.name.toUpperCase();
   const isAttackerZombie = newAttackerState.poisonCount >= 5;
@@ -284,6 +314,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         log += ` SAIGO NO BLITZ hit ${newDefenderState.name} for 200 AP devastation! (${attackerState.name} sacrificed ${selfSacrifice} HP)`;
       } else {
         log += ` SAIGO NO BLITZ unleashed 200 AP blast!`;
+        aoeDamage = 200;
       }
     }
   }
@@ -306,13 +337,21 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       baseAP = cardName.includes('X2') ? 20 : 10;
       attackElement = 'Lightning';
       log += ` [${actionCard.name}: Elemental Lightning strike dealing ${baseAP} AP]`;
+    } else if (cardName.includes('FIRE FLAME')) {
+      baseAP = cardName.includes('X2') ? 20 : 10;
+      attackElement = 'Fire';
+      log += ` [${actionCard.name}: Elemental Fire strike dealing ${baseAP} AP]`;
     } else if (isAttackerZombie) {
       baseAP = 20; // Zombie Venom Strike
       attackElement = 'Poison';
     } else if (attackSelectionName && attackerChar?.attacks?.[attackSelectionName]) {
       const atk = attackerChar.attacks[attackSelectionName];
       attackElement = atk.element || 'Physical';
-      if (atk.dice > 0) {
+      if (atk.dice > 0 && (cardName === 'ATTACK X1' || cardName === 'ATTACK X2')) {
+        const actionCardAP = cardName.includes('X2') ? 20 : 10;
+        baseAP = dRoll.total * actionCardAP;
+        log += ` [${attackSelectionName} with ${cardName}: ${dRoll.total} × ${actionCardAP} AP = ${baseAP} AP]`;
+      } else if (atk.dice > 0) {
         baseAP = dRoll.total * atk.ap;
         log += ` [${attackSelectionName}: ${dRoll.total} × ${atk.ap} AP = ${baseAP} AP]`;
       } else {
@@ -353,7 +392,12 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
 
       // TRAP CONSUMPTION
       if (newDefenderState && finalDamage > 0) {
-        if (newDefenderState.hasMisdirect) {
+        // SHIELD FIRE immunity: if defender played SHIELD FIRE, fire attacks deal 0 damage & no burn
+        if (newDefenderState.immuneFire && cardName.includes('FIRE FLAME')) {
+          log += ` 🔥🚫 SHIELD FIRE IMMUNITY! ${newDefenderState.name} is immune to Fire damage this hit!`;
+          finalDamage = 0;
+          newDefenderState.immuneFire = false;
+        } else if (newDefenderState.hasMisdirect) {
           log += ` 🔀 MISDIRECT TRAP TRIGGERED! The attack was completely negated!`;
           finalDamage = 0;
           newDefenderState.hasMisdirect = false;
@@ -362,7 +406,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           finalDamage = 0;
           newDefenderState.hasDodge = false;
         } else if (newDefenderState.hasBoomerang) {
-          log += ` 🪃 BOOMERANG TRAP TRIGGERED! ${newAttackerState.name}'s attack reflected back 100%!`;
+          log += ` 🪃 BOOMERANG TRIGGERED! ${newAttackerState.name}'s attack reflected 100% back!`;
           newAttackerState.hp = Math.max(0, newAttackerState.hp - finalDamage);
           finalDamage = 0;
           newDefenderState.hasBoomerang = false;
@@ -378,6 +422,12 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           finalDamage = Math.max(0, finalDamage - absorb);
           newDefenderState.hasDefendBasic = false;
         }
+
+        // Apply Burn Status if Fire Flame (only if damage got through)
+        if (cardName.includes('FIRE FLAME') && finalDamage > 0) {
+          newDefenderState.burnCount = (newDefenderState.burnCount || 0) + 1;
+          log += ` Defender was BURNED! (+1 stack)`;
+        }
       }
 
       // Weakness Bonus (+10 or +15 AP)
@@ -390,10 +440,11 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         }
       }
 
-      // Innate Defense: Defender rolled total of 6 or higher -> -10 HP less
+      // Innate Defense: Defender rolled total of 6 or higher -> innate DP applies
       if (defenderRoll.total >= 6) {
-        finalDamage = Math.max(0, finalDamage - 10);
-        log += ` Defender rolled ${defenderRoll.total} (6+)! Innate DP reduced damage by 10!`;
+        const innateDP = newDefenderState?.innateDP ?? newDefenderState?.defaultDP ?? 10;
+        finalDamage = Math.max(0, finalDamage - innateDP);
+        log += ` Defender rolled ${defenderRoll.total} (6+)! Innate DP reduced damage by ${innateDP}!`;
       }
 
       // Shield Absorption
@@ -516,6 +567,9 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     } else if (cardName.includes('COUNTER')) {
       newAttackerState.hasCounter = true;
       log += ` Counter Stance! Next incoming attack will be negated and reflected by 25%.`;
+    } else if (cardName.includes('BOOMERANG')) {
+      newAttackerState.hasBoomerang = true;
+      log += ` Boomerang Guard activated! Next incoming attack will be reflected 100% back to attacker.`;
     } else if (cardName.includes('BASIC')) {
       newAttackerState.hasDefendBasic = true;
       log += ` Defensive Guard. Next incoming damage reduced by 25%.`;
@@ -534,7 +588,9 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   }
   // 10. VISION CARDS
   else if (cardName.includes('VISION')) {
-    if (newDefenderState) {
+    if (cardName === 'VISION FULL') {
+      log += ` 👁️ VISION FULL activated! All players reveal their Action Cards for 30 seconds.`;
+    } else if (newDefenderState) {
       log += ` 👁️ Vision activated! Revealing ${newDefenderState.name}'s Action Cards for 15 seconds.`;
     }
   }
@@ -543,8 +599,8 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     log += ` ⏳ TIME MACHINE activated! ${newAttackerState.name} gains an extra turn.`;
   }
   // 12. X-CHANGE
-  else if (cardName.includes('X-CHANGE')) {
-    log += ` 🔀 X-CHANGE activated! Swapping 1 Action Card with ${newDefenderState?.name || 'opponent'}.`;
+  else if (cardName === 'X-CHANGE X1' || cardName.includes('X-CHANGE')) {
+    log += ` 🔄 X-CHANGE activated! Traded 1 Action Card with ${newDefenderState?.name || 'opponent'}.`;
   }
   // 13. SOUL ALLIANCE & ABANDON
   else if (cardName === 'SOUL ALLIANCE') {
@@ -575,7 +631,9 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     newDefenderState, 
     log, 
     extraTurnGranted: cardName === 'TIME MACHINE',
-    triggerXChange: cardName.includes('X-CHANGE')
+    triggerAttackX2SecondHit: cardName === 'ATTACK X2',
+    triggerXChange: false, // Handled in Arena UI now
+    aoeDamage
   };
 };
 

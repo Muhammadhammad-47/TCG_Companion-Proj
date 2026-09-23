@@ -175,6 +175,7 @@ export default function KontrolaDiceRoller({
   onClose,
   precalculatedRolls,
   isAttacker = true,
+  isDefender = false,
   isSpectator = false,
   isExternallyRolling = false,
   onTriggerRoll = null,
@@ -185,18 +186,32 @@ export default function KontrolaDiceRoller({
   const atkChar = attacker || { name: attackerPlayerName || 'Attacker', hp: 100 };
 
   const [phase, setPhase] = useState('clash'); // 'clash' | 'clash_summary'
-  const [localRolling, setLocalRolling] = useState(false);
   const [secondsRemaining, setSecondsRemaining] = useState(60);
+
+  // Independent roll completion states per client specification
+  const [hasAttackerRolled, setHasAttackerRolled] = useState(
+    Boolean(precalculatedRolls?.attackerRoll?.rolls)
+  );
+  const [hasDefenderRolled, setHasDefenderRolled] = useState(
+    Boolean(precalculatedRolls?.defenderRoll?.rolls)
+  );
+  const [isAttackerRolling, setIsAttackerRolling] = useState(false);
+  const [isDefenderRolling, setIsDefenderRolling] = useState(false);
 
   // Active dice values
   const [clashAtkDice, setClashAtkDice] = useState(
-    precalculatedRolls?.attackerRoll?.rolls || [3, 4]
+    precalculatedRolls?.attackerRoll?.rolls || [1, 1]
   );
   const [clashDefDice, setClashDefDice] = useState(
-    precalculatedRolls?.defenderRoll?.rolls || [2, 3]
+    precalculatedRolls?.defenderRoll?.rolls || [1, 1]
   );
 
-  const isRolling = localRolling || (isExternallyRolling && phase === 'clash');
+  // Interactive 2nd-stage multiplier die for character "PER" attacks
+  const [hasRolledMultiplier, setHasRolledMultiplier] = useState(false);
+  const [isRollingMultiplier, setIsRollingMultiplier] = useState(false);
+  const [multiplierDie, setMultiplierDie] = useState(precalculatedRolls?.dRoll?.total || 1);
+
+  const isRolling = isAttackerRolling || isDefenderRolling || (isExternallyRolling && phase === 'clash');
 
   // 60-Second safety auto-close countdown
   useEffect(() => {
@@ -215,77 +230,131 @@ export default function KontrolaDiceRoller({
     return () => clearInterval(timer);
   }, [onClose, onForceClose]);
 
-  // Sync rolls when precalculatedRolls updates
+  // Sync rolls when precalculatedRolls updates from peer
   useEffect(() => {
+    if (!precalculatedRolls || Object.keys(precalculatedRolls).length === 0) {
+      setHasAttackerRolled(false);
+      setHasDefenderRolled(false);
+      setPhase('clash');
+      return;
+    }
     if (precalculatedRolls) {
-      if (precalculatedRolls.attackerRoll?.rolls) {
-        setClashAtkDice(precalculatedRolls.attackerRoll.rolls);
+      if (precalculatedRolls.attackerRoll?.rolls && !hasAttackerRolled && !isAttackerRolling) {
+        if (!isAttacker) {
+          setIsAttackerRolling(true);
+          if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
+          setTimeout(() => {
+            setClashAtkDice(precalculatedRolls.attackerRoll.rolls);
+            setIsAttackerRolling(false);
+            setHasAttackerRolled(true);
+          }, 900);
+        } else {
+          setClashAtkDice(precalculatedRolls.attackerRoll.rolls);
+          setHasAttackerRolled(true);
+        }
       }
-      if (precalculatedRolls.defenderRoll?.rolls) {
-        setClashDefDice(precalculatedRolls.defenderRoll.rolls);
+      if (precalculatedRolls.defenderRoll?.rolls && !hasDefenderRolled && !isDefenderRolling) {
+        if (!isDefender) {
+          setIsDefenderRolling(true);
+          if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
+          setTimeout(() => {
+            setClashDefDice(precalculatedRolls.defenderRoll.rolls);
+            setIsDefenderRolling(false);
+            setHasDefenderRolled(true);
+          }, 900);
+        } else {
+          setClashDefDice(precalculatedRolls.defenderRoll.rolls);
+          setHasDefenderRolled(true);
+        }
+      }
+      if (precalculatedRolls.dRoll?.total && !hasRolledMultiplier && !isRollingMultiplier) {
+        setMultiplierDie(precalculatedRolls.dRoll.total);
+        setHasRolledMultiplier(true);
       }
     }
-  }, [precalculatedRolls]);
+  }, [precalculatedRolls, hasAttackerRolled, isAttackerRolling, isAttacker, hasDefenderRolled, isDefenderRolling, isDefender, hasRolledMultiplier, isRollingMultiplier]);
 
-  // Handle external roll trigger (when peer rolls)
+  // Transition to summary once both players have completed their roll
   useEffect(() => {
-    if (isExternallyRolling) {
-      if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
+    if (hasAttackerRolled && hasDefenderRolled && phase === 'clash') {
       const timer = setTimeout(() => {
         setPhase('clash_summary');
-      }, 1000);
+      }, 700);
       return () => clearTimeout(timer);
     }
-  }, [isExternallyRolling]);
+  }, [hasAttackerRolled, hasDefenderRolled, phase]);
 
-  const handleRollClash = () => {
-    if (isRolling) return;
-    let atkRolls = precalculatedRolls?.attackerRoll?.rolls;
-    let defRolls = precalculatedRolls?.defenderRoll?.rolls;
-    if (!atkRolls) {
-      atkRolls = [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
-    }
-    if (!defRolls) {
-      defRolls = [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
-    }
+  // Attacker rolls their 2 authentic dice
+  const handleRollAttacker = () => {
+    if (isAttackerRolling || hasAttackerRolled) return;
+    const atkRolls = [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
     setClashAtkDice(atkRolls);
-    setClashDefDice(defRolls);
-    setLocalRolling(true);
+    setIsAttackerRolling(true);
     if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
 
-    if (onTriggerRoll) {
-      onTriggerRoll({
-        attackerRoll: { rolls: atkRolls, total: atkRolls[0] + atkRolls[1] },
-        defenderRoll: { rolls: defRolls, total: defRolls[0] + defRolls[1] }
-      });
-    }
-
     setTimeout(() => {
-      setLocalRolling(false);
-      setPhase('clash_summary');
-    }, 1000);
+      setIsAttackerRolling(false);
+      setHasAttackerRolled(true);
+
+      if (onTriggerRoll) {
+        onTriggerRoll({
+          attackerRoll: { rolls: atkRolls, total: atkRolls[0] + atkRolls[1] }
+        });
+      }
+
+      // Auto-trigger defender roll if defender is Bot/AI or single-player mode
+      if (!isSpectator && !combatData?.targetId) {
+        setTimeout(() => {
+          handleRollDefender();
+        }, 900);
+      }
+    }, 900);
   };
 
-  const handleReRoll = () => {
-    if (isRolling) return;
-    const atkRolls = [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
+  // Defender rolls their 2 authentic dice
+  const handleRollDefender = () => {
+    if (isDefenderRolling || hasDefenderRolled) return;
     const defRolls = [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
-    setClashAtkDice(atkRolls);
     setClashDefDice(defRolls);
-    setLocalRolling(true);
+    setIsDefenderRolling(true);
     if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
 
-    if (onTriggerRoll) {
-      onTriggerRoll({
-        attackerRoll: { rolls: atkRolls, total: atkRolls[0] + atkRolls[1] },
-        defenderRoll: { rolls: defRolls, total: defRolls[0] + defRolls[1] }
-      });
-    }
-
     setTimeout(() => {
-      setLocalRolling(false);
-      setPhase('clash_summary');
-    }, 1000);
+      setIsDefenderRolling(false);
+      setHasDefenderRolled(true);
+
+      if (onTriggerRoll) {
+        onTriggerRoll({
+          defenderRoll: { rolls: defRolls, total: defRolls[0] + defRolls[1] }
+        });
+      }
+    }, 900);
+  };
+
+  // Re-roll clash on stalemate / tie
+  const handleReRoll = () => {
+    if (isAttackerRolling || isDefenderRolling) return;
+    if (onTriggerRoll) {
+      onTriggerRoll(null, true); // Signal reroll reset
+    }
+  };
+
+  // Interactive 2nd-stage multiplier die roll for "PER" character moves
+  const handleRollMultiplierDie = () => {
+    if (isRollingMultiplier || hasRolledMultiplier) return;
+    setIsRollingMultiplier(true);
+    if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
+    const roll = Math.floor(Math.random() * 6) + 1;
+    setTimeout(() => {
+      setMultiplierDie(roll);
+      setIsRollingMultiplier(false);
+      setHasRolledMultiplier(true);
+      if (onTriggerRoll) {
+        onTriggerRoll({
+          dRoll: { rolls: [roll], total: roll }
+        });
+      }
+    }, 850);
   };
 
   const atkSum = clashAtkDice[0] + clashAtkDice[1];
@@ -295,7 +364,6 @@ export default function KontrolaDiceRoller({
   const defWon = !isTie && defSum > atkSum;
   const selectedAttackInfo = atkChar?.attacks?.[attackSelectionName];
   const hasMultiplierDie = selectedAttackInfo && selectedAttackInfo.dice > 0;
-  const multiplierDie = precalculatedRolls?.dRoll?.total || 1;
 
   const cardImg = attackSelectionName
     ? getCharacterAttackGraphicUrl(attackSelectionName)
@@ -551,8 +619,8 @@ export default function KontrolaDiceRoller({
                   marginBottom: '16px'
                 }}
               >
-                <CanvasPipDie value={clashAtkDice[0]} theme="red" isRolling={isRolling} size={76} />
-                <CanvasPipDie value={clashAtkDice[1]} theme="red" isRolling={isRolling} size={76} />
+                <CanvasPipDie value={clashAtkDice[0]} theme="red" isRolling={isAttackerRolling} size={76} />
+                <CanvasPipDie value={clashAtkDice[1]} theme="red" isRolling={isAttackerRolling} size={76} />
               </div>
 
               <div
@@ -564,7 +632,7 @@ export default function KontrolaDiceRoller({
                   letterSpacing: '1px'
                 }}
               >
-                TOTAL: {isRolling ? '...' : atkSum}
+                TOTAL: {!hasAttackerRolled ? (isAttackerRolling ? '...' : '--') : atkSum}
               </div>
             </div>
 
@@ -634,8 +702,8 @@ export default function KontrolaDiceRoller({
                   marginBottom: '16px'
                 }}
               >
-                <CanvasPipDie value={clashDefDice[0]} theme="gold" isRolling={isRolling} size={76} />
-                <CanvasPipDie value={clashDefDice[1]} theme="gold" isRolling={isRolling} size={76} />
+                <CanvasPipDie value={clashDefDice[0]} theme="gold" isRolling={isDefenderRolling} size={76} />
+                <CanvasPipDie value={clashDefDice[1]} theme="gold" isRolling={isDefenderRolling} size={76} />
               </div>
 
               <div
@@ -647,7 +715,7 @@ export default function KontrolaDiceRoller({
                   letterSpacing: '1px'
                 }}
               >
-                TOTAL: {isRolling ? '...' : defSum}
+                TOTAL: {!hasDefenderRolled ? (isDefenderRolling ? '...' : '--') : defSum}
               </div>
             </div>
           </div>
@@ -655,56 +723,102 @@ export default function KontrolaDiceRoller({
           {/* Action Resolution Status / Roll Trigger */}
           {phase === 'clash' && (
             <div style={{ textAlign: 'center', marginTop: '8px' }}>
-              {isAttacker ? (
-                <button
-                  onClick={handleRollClash}
-                  disabled={isRolling}
-                  style={{
-                    background: 'linear-gradient(90deg, #00f0ff 0%, #0077ff 100%)',
-                    border: 'none',
-                    color: '#000',
-                    padding: '16px 48px',
-                    borderRadius: '12px',
-                    fontSize: '1.25rem',
-                    fontWeight: '900',
-                    cursor: isRolling ? 'wait' : 'pointer',
-                    boxShadow: '0 0 30px rgba(0, 240, 255, 0.6)',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '14px',
-                    fontFamily: 'Rajdhani, sans-serif',
-                    letterSpacing: '1px',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  <Dices size={26} />
-                  <span>{isRolling ? 'ROLLING AUTHENTIC DICE...' : 'ROLL CLASH DICE'}</span>
-                </button>
-              ) : (
-                /* Defender & Spectator View */
-                <div
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    padding: '14px 28px',
-                    borderRadius: '12px',
-                    background: 'rgba(0, 240, 255, 0.08)',
-                    border: '1.5px solid rgba(0, 240, 255, 0.3)',
-                    color: 'var(--neon-cyan)',
-                    fontSize: '1.1rem',
-                    fontFamily: 'Rajdhani, sans-serif',
-                    letterSpacing: '1px',
-                    animation: 'pulseGlow 2s infinite ease-in-out'
-                  }}
-                >
-                  {isSpectator ? <Eye size={22} /> : <Swords size={22} />}
-                  <span>
-                    {isRolling
-                      ? `🎲 ${atkChar.name} IS ROLLING THE DICE...`
-                      : `⏳ WAITING FOR ${atkChar.name.toUpperCase()} TO ROLL CLASH DICE...`}
-                  </span>
-                </div>
+              {/* Step 1: Attacker has not rolled */}
+              {!hasAttackerRolled && (
+                isAttacker ? (
+                  <button
+                    onClick={handleRollAttacker}
+                    disabled={isAttackerRolling}
+                    style={{
+                      background: 'linear-gradient(90deg, #ff2a55 0%, #ff6b8b 100%)',
+                      border: 'none',
+                      color: '#fff',
+                      padding: '16px 44px',
+                      borderRadius: '12px',
+                      fontSize: '1.25rem',
+                      fontWeight: '900',
+                      cursor: isAttackerRolling ? 'wait' : 'pointer',
+                      boxShadow: '0 0 30px rgba(255, 42, 85, 0.6)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '14px',
+                      fontFamily: 'Rajdhani, sans-serif',
+                      letterSpacing: '1px',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <Dices size={26} />
+                    <span>{isAttackerRolling ? 'ROLLING ATTACK DICE...' : '🎲 ROLL ATTACK DICE'}</span>
+                  </button>
+                ) : (
+                  <div
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '14px 28px',
+                      borderRadius: '12px',
+                      background: 'rgba(255, 42, 85, 0.08)',
+                      border: '1.5px solid rgba(255, 42, 85, 0.3)',
+                      color: '#ff8899',
+                      fontSize: '1.1rem',
+                      fontFamily: 'Rajdhani, sans-serif',
+                      letterSpacing: '1px'
+                    }}
+                  >
+                    <Swords size={22} />
+                    <span>⏳ WAITING FOR {atkChar.name.toUpperCase()} TO ROLL ATTACK DICE...</span>
+                  </div>
+                )
+              )}
+
+              {/* Step 2: Attacker has rolled, Defender rolls */}
+              {hasAttackerRolled && !hasDefenderRolled && (
+                isDefender ? (
+                  <button
+                    onClick={handleRollDefender}
+                    disabled={isDefenderRolling}
+                    style={{
+                      background: 'linear-gradient(90deg, #ffd700 0%, #ff9900 100%)',
+                      border: 'none',
+                      color: '#000',
+                      padding: '16px 44px',
+                      borderRadius: '12px',
+                      fontSize: '1.25rem',
+                      fontWeight: '900',
+                      cursor: isDefenderRolling ? 'wait' : 'pointer',
+                      boxShadow: '0 0 30px rgba(255, 215, 0, 0.6)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '14px',
+                      fontFamily: 'Rajdhani, sans-serif',
+                      letterSpacing: '1px',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <Shield size={26} />
+                    <span>{isDefenderRolling ? 'ROLLING DEFENSE DICE...' : '🛡️ ROLL DEFENSE DICE'}</span>
+                  </button>
+                ) : (
+                  <div
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '14px 28px',
+                      borderRadius: '12px',
+                      background: 'rgba(255, 215, 0, 0.08)',
+                      border: '1.5px solid rgba(255, 215, 0, 0.3)',
+                      color: 'var(--neon-gold)',
+                      fontSize: '1.1rem',
+                      fontFamily: 'Rajdhani, sans-serif',
+                      letterSpacing: '1px'
+                    }}
+                  >
+                    <Shield size={22} />
+                    <span>✅ Attacker rolled {atkSum}! Waiting for {defChar.name} to roll defense...</span>
+                  </div>
+                )
               )}
             </div>
           )}
@@ -746,7 +860,7 @@ export default function KontrolaDiceRoller({
               </h3>
               <p
                 style={{
-                  margin: '0 0 18px 0',
+                  margin: '0 0 14px 0',
                   fontSize: '1rem',
                   color: '#fff',
                   opacity: 0.95
@@ -760,34 +874,80 @@ export default function KontrolaDiceRoller({
                 }
               </p>
 
-              {/* Show Multiplier Die Section if Attacker Won and move has dice multiplier */}
+              {/* Rule of 6+ Basic Defense Rule Banner */}
+              {defSum >= 6 && (
+                <div
+                  style={{
+                    margin: '0 auto 16px auto',
+                    padding: '8px 18px',
+                    borderRadius: '10px',
+                    background: 'rgba(255, 215, 0, 0.15)',
+                    border: '1px solid var(--neon-gold)',
+                    color: 'var(--neon-gold)',
+                    fontWeight: 'bold',
+                    fontSize: '0.92rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <Shield size={16} />
+                  <span>🛡️ RULE OF 6+ ACTIVATED! Defender rolled {defSum} (≥6): Innate Base Defense activated!</span>
+                </div>
+              )}
+
+              {/* Show Multiplier Die Section if Attacker Won and move has "PER" dice multiplier */}
               {atkWon && hasMultiplierDie && (
-                <div style={{
-                  margin: '10px auto 20px auto',
-                  padding: '12px 20px',
-                  background: 'rgba(0,0,0,0.5)',
-                  borderRadius: '12px',
-                  border: '1px solid rgba(0, 240, 255, 0.4)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '16px'
-                }}>
-                  <div style={{ textAlign: 'left' }}>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--neon-cyan)', fontWeight: 'bold' }}>
-                      {attackSelectionName}
-                    </div>
-                    <div style={{ fontSize: '0.95rem', color: '#fff' }}>
-                      Multiplier Roll: <strong>{multiplierDie}</strong> × {selectedAttackInfo.ap} AP = <strong style={{ color: '#39ff14' }}>{multiplierDie * selectedAttackInfo.ap} AP Damage</strong>
+                <div
+                  style={{
+                    margin: '10px auto 20px auto',
+                    padding: '14px 22px',
+                    background: 'rgba(0,0,0,0.6)',
+                    borderRadius: '14px',
+                    border: '1.5px solid rgba(0, 240, 255, 0.5)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '12px'
+                  }}
+                >
+                  <div style={{ fontSize: '0.95rem', color: 'var(--neon-cyan)', fontWeight: 'bold' }}>
+                    🎲 2ND STAGE: ROLL 1 DIE FOR "{attackSelectionName}" (PER ATTACK)
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <CanvasPipDie value={multiplierDie} theme="red" isRolling={isRollingMultiplier} size={54} />
+                    <div style={{ textAlign: 'left' }}>
+                      <div style={{ fontSize: '1rem', color: '#fff' }}>
+                        Roll: <strong>{multiplierDie}</strong> × {selectedAttackInfo.ap} AP = <strong style={{ color: '#39ff14' }}>{multiplierDie * selectedAttackInfo.ap} Total AP</strong>
+                      </div>
                     </div>
                   </div>
-                  <PipDie face={multiplierDie} isRed={true} size={44} />
+                  {isAttacker && !hasRolledMultiplier && (
+                    <button
+                      onClick={handleRollMultiplierDie}
+                      disabled={isRollingMultiplier}
+                      style={{
+                        background: 'linear-gradient(90deg, #00f0ff, #0088ff)',
+                        border: 'none',
+                        color: '#000',
+                        fontWeight: 'bold',
+                        padding: '8px 22px',
+                        borderRadius: '8px',
+                        cursor: isRollingMultiplier ? 'wait' : 'pointer',
+                        fontFamily: 'Rajdhani, sans-serif',
+                        fontSize: '0.95rem'
+                      }}
+                    >
+                      {isRollingMultiplier ? 'Rolling 1 Die...' : '🎲 ROLL 1 MULTIPLIER DIE'}
+                    </button>
+                  )}
                 </div>
               )}
 
               {/* Action Buttons */}
               <div>
                 {isTie ? (
-                  isAttacker && (
+                  isAttacker ? (
                     <button
                       onClick={handleReRoll}
                       style={{
@@ -811,6 +971,21 @@ export default function KontrolaDiceRoller({
                       <RotateCcw size={22} />
                       <span>🎲 RE-ROLL CLASH</span>
                     </button>
+                  ) : (
+                    <div
+                      style={{
+                        color: '#ffd700',
+                        fontStyle: 'italic',
+                        fontSize: '1rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <RotateCcw size={18} />
+                      <span>⏳ Stalemate! Waiting for Attacker to re-roll...</span>
+                    </div>
                   )
                 ) : (
                   <button

@@ -21,9 +21,14 @@ import KontrolaChatModal from './KontrolaChatModal';
 import KontrolaTauntModal from './KontrolaTauntModal';
 import '../../pages/GamePage.css';
 
-// Collision-proof unique player ID
+// Collision-proof unique player ID (persisted for rejoining)
 const generateUniquePlayerId = () => {
-  return 'warr_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 7);
+  let pid = sessionStorage.getItem('kontrola_player_id');
+  if (!pid) {
+    pid = 'warr_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 7);
+    sessionStorage.setItem('kontrola_player_id', pid);
+  }
+  return pid;
 };
 
 // Safe 6-character room code without ambiguous characters
@@ -111,29 +116,47 @@ export default function KontrolaArena() {
   const [turnFlash, setTurnFlash] = useState(false);
   const [winner, setWinner] = useState(null);
   const [isProcessingAction, setIsProcessingAction] = useState(false);
+  const [damagePopups, setDamagePopups] = useState([]); // [{id, value, isHeal, x, y}]
+
+  // Helper: spawn a floating damage/heal number at a random position
+  const spawnDamagePopup = (value, isHeal = false) => {
+    const id = Date.now() + Math.random();
+    const x = 30 + Math.random() * 40; // % from left
+    const y = 30 + Math.random() * 30; // % from top
+    setDamagePopups((prev) => [...prev, { id, value, isHeal, x, y }]);
+    setTimeout(() => {
+      setDamagePopups((prev) => prev.filter((p) => p.id !== id));
+    }, 1700);
+  };
 
   // Record match victory and award crystals
   useEffect(() => {
-    if (winner && !hasLoggedMatchRef.current && isHost) {
+    if (winner && !hasLoggedMatchRef.current) {
       hasLoggedMatchRef.current = true;
       const allPlayerIds = gameState?.players || [];
       const allPlayerNames = allPlayerIds.map(
         (pid) => gameState?.playerNames?.[pid] || gameState?.characterStates?.[pid]?.name || 'Player'
       );
-      authService.logMatchResult({
-        roomCode: matchIdRef.current || 'KONTROLA_ARENA',
-        winnerId: currentUser?.id || null,
-        winnerName: winner.name || playerName || 'Player',
-        playerIds: allPlayerIds,
-        playerNames: allPlayerNames,
-        gameMode: 'kontrola',
-        crystalsAwarded: 1
-      });
-      if (currentUser?.id) {
+      
+      // Host logs the global match record for history
+      if (isHost) {
+        authService.logMatchResult({
+          roomCode: matchIdRef.current || 'KONTROLA_ARENA',
+          winnerId: null, // Host can't know opponent's Supabase UUID, so leave null
+          winnerName: winner.name || gameState?.playerNames?.[winner.playerId] || playerName || 'Player',
+          playerIds: allPlayerIds,
+          playerNames: allPlayerNames,
+          gameMode: 'kontrola',
+          crystalsAwarded: 1
+        });
+      }
+      
+      // Winner logs their own victory to their Supabase profile
+      if (currentUser?.id && winner.playerId === playerId) {
         authService.savePlayerMatchResult(currentUser.id, { won: true, crystalsDelta: 1, appSource: 'kontrola' });
       }
     }
-  }, [winner, isHost, gameState, currentUser, playerName]);
+  }, [winner, isHost, gameState, currentUser, playerName, playerId]);
 
   // Action resolution queue on Host to prevent race conditions
   const actionQueueRef = useRef([]);
@@ -158,10 +181,21 @@ export default function KontrolaArena() {
   const [turnSecondsLeft, setTurnSecondsLeft] = useState(60);
   const [revealedVision, setRevealedVision] = useState(null);
 
+
+  const [defenseSeconds, setDefenseSeconds] = useState(15);
+
   // Hoisted Derived Match & Turn State (safe for all effects, handlers, and renders)
   const isMyTurn = Boolean(gameState?.turn === playerId && !isSpectator);
+  const isPendingSecondAttack = Boolean(gameState?.pendingAttackX2For === playerId);
   const myCharacter = gameState?.characterStates?.[playerId] || KONTROLA_CHARACTERS[selectedCharacter];
   const myHand = gameState?.hands?.[playerId] || [];
+
+  // Auto-select dummy card for 2nd hit of ATTACK X2
+  useEffect(() => {
+    if (isPendingSecondAttack && selectedActionCard?.id !== 'attack_x2_2nd') {
+      setSelectedActionCard({ id: 'attack_x2_2nd', name: 'ATTACK X2 (2ND HIT)', type: 'ATTACK' });
+    }
+  }, [isPendingSecondAttack, selectedActionCard]);
   const opponents = gameState?.players ? gameState.players.filter((p) => p !== playerId) : [];
   const turnNum = gameState?.turnNumber || 1;
   const roundNum = gameState?.roundNumber || 1;
@@ -223,6 +257,67 @@ export default function KontrolaArena() {
     }, timeRemaining);
     return () => clearTimeout(timer);
   }, [revealedVision]);
+
+  // ==========================================
+
+
+  useEffect(() => {
+    let timer;
+    if (gameState?.activeDefenseState) {
+      setDefenseSeconds(15);
+      timer = setInterval(() => {
+        setDefenseSeconds((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            if (gameState.activeDefenseState.targetId === playerIdRef.current) {
+              handleDefenseSelect(null);
+            }
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [gameState?.activeDefenseState]);
+
+  const handleDefenseSelect = (card) => {
+    if (isProcessingAction) return;
+    setIsProcessingAction(true);
+    playClick();
+    const payload = { actionType: 'DEFENSE_SELECTED', defenseCard: card };
+    if (isHostRef.current) enqueueHostAction(payload);
+    else takeTurn(matchIdRef.current, { type: 'PLAYER_ACTION', payload });
+    setTimeout(() => setIsProcessingAction(false), 2500);
+  };
+
+
+
+  // ==========================================
+  // ROLL-OFF AND DIRECTION SELECT HANDLERS
+  // ==========================================
+  const handleRollOff = () => {
+    if (isProcessingAction) return;
+    setIsProcessingAction(true);
+    playClick();
+    const d1 = rollDice(1)[0];
+    const d2 = rollDice(1)[0];
+    const total = d1 + d2;
+    const payload = { actionType: 'ROLL_OFF', actorId: playerId, total };
+    if (isHostRef.current) enqueueHostAction(payload);
+    else takeTurn(matchIdRef.current, { type: 'PLAYER_ACTION', payload });
+    setTimeout(() => setIsProcessingAction(false), 2500);
+  };
+
+  const handleDirectionSelect = (direction) => {
+    if (isProcessingAction) return;
+    setIsProcessingAction(true);
+    playClick();
+    const payload = { actionType: 'DIRECTION_SELECT', direction };
+    if (isHostRef.current) enqueueHostAction(payload);
+    else takeTurn(matchIdRef.current, { type: 'PLAYER_ACTION', payload });
+    setTimeout(() => setIsProcessingAction(false), 2500);
+  };
 
   // ==========================================
   // GLOBAL LOBBY SUBSCRIPTION (Ephemeral)
@@ -321,6 +416,12 @@ export default function KontrolaArena() {
             const currentPlayers = currentGS.players || [];
             const isFull = currentPlayers.length >= 7;
 
+            // Existing player reconnecting
+            if (currentPlayers.includes(joinedId)) {
+              broadcastState(matchId, currentGS);
+              return;
+            }
+
             // Late joiner or overflow -> admit as Spectator
             if (isMatchActive || isFull) {
               const currentSpectators = currentGS.spectators || [];
@@ -372,6 +473,7 @@ export default function KontrolaArena() {
         else if (event.type === 'SYNC_STATE') {
           const newState = event.payload;
           setGameState(newState);
+          setIsProcessingAction(false); // Free the action lock on state sync
           if (newState?.winner) {
             setWinner(newState.winner);
           }
@@ -413,8 +515,10 @@ export default function KontrolaArena() {
         }
         // 7. Synchronized Dice Screen Roll
         else if (event.type === 'DICE_SCREEN_ROLLED') {
-          if (event.payload?.precalculatedRolls) {
-            setActiveCombat((prev) => prev ? { ...prev, precalculatedRolls: event.payload.precalculatedRolls } : prev);
+          if (event.payload?.isReroll) {
+            setActiveCombat((prev) => prev ? { ...prev, precalculatedRolls: {} } : prev);
+          } else if (event.payload?.precalculatedRolls) {
+            setActiveCombat((prev) => prev ? { ...prev, precalculatedRolls: { ...(prev.precalculatedRolls || {}), ...event.payload.precalculatedRolls } } : prev);
           }
           setIsDiceRollingSync(true);
         }
@@ -438,7 +542,8 @@ export default function KontrolaArena() {
           setChatMessages((prev) => [...prev, event.payload]);
         } else if (event.type === 'PLAYER_TAUNT') {
           setActiveTauntBubble(event.payload);
-          setTimeout(() => setActiveTauntBubble(null), 3500);
+          setChatMessages((prev) => [...prev, { ...event.payload, text: `🗯️ [TAUNT]: "${event.payload.text}"` }]);
+          setTimeout(() => setActiveTauntBubble(null), 4500);
         }
       },
       () => {
@@ -486,6 +591,7 @@ export default function KontrolaArena() {
         defaultWinner = currentGS.characterStates?.[remainingPlayers[0]] || {
           name: currentGS.playerNames?.[remainingPlayers[0]] || 'Last Standing Player'
         };
+        defaultWinner.playerId = remainingPlayers[0];
       }
 
       // Check if it was the leaver's active turn, advance turn if so
@@ -544,6 +650,132 @@ export default function KontrolaArena() {
   const executeActionResolution = (payload, precalculatedRolls = null) => {
     setGameState((currentState) => {
       if (!currentState || !currentState.characterStates) return currentState;
+
+      if (payload.actionType === 'ROLL_OFF') {
+        const updatedRollOffs = { ...(currentState.rollOffs || {}), [payload.actorId]: payload.total };
+        let nextState = { ...currentState, rollOffs: updatedRollOffs };
+        
+        if (Object.keys(updatedRollOffs).length === currentState.players.length) {
+          let maxTotal = -1;
+          let winnerId = null;
+          for (const pId of currentState.players) {
+            if (updatedRollOffs[pId] > maxTotal) {
+              maxTotal = updatedRollOffs[pId];
+              winnerId = pId;
+            }
+          }
+          nextState.status = 'direction_select';
+          nextState.turn = winnerId;
+          nextState.logs = [`🎲 Roll-off complete! ${currentState.playerNames?.[winnerId] || 'Player'} won with a ${maxTotal} and will choose rotation direction.`, ...(currentState.logs || [])];
+        } else {
+          nextState.logs = [`🎲 ${currentState.playerNames?.[payload.actorId] || 'Player'} rolled a ${payload.total}.`, ...(currentState.logs || [])];
+        }
+        return nextState;
+      }
+
+      if (payload.actionType === 'DIRECTION_SELECT') {
+        return {
+          ...currentState,
+          status: 'character_select',
+          turnDirection: payload.direction,
+          logs: [`🔄 Rotation set to ${payload.direction.toUpperCase()}. Character Selection phase has begun!`, ...(currentState.logs || [])]
+        };
+      }
+
+      if (payload.actionType === 'CHARACTER_SELECT') {
+        const { actorId, characterId } = payload;
+        
+        const newSelections = { ...(currentState.characterSelections || {}), [actorId]: characterId };
+        const turnLogs = [`✨ ${currentState.playerNames?.[actorId] || 'Player'} selected ${KONTROLA_CHARACTERS[characterId]?.name || 'a character'}!`, ...(currentState.logs || [])];
+
+        let nextState = { ...currentState, characterSelections: newSelections, logs: turnLogs };
+
+        // Has everyone picked?
+        if (Object.keys(newSelections).length === currentState.players.length) {
+            // Everyone picked! Initialize game state.
+            const deck = generateDeck(currentState.isPremium);
+            const { updatedDeck, hands } = dealInitialHands(deck, currentState.players);
+            const startingCrystals = currentState.players.length === 2 ? 2 : 1;
+
+            const initialCharacterStates = {};
+            currentState.players.forEach((pId) => {
+              const charKey = newSelections[pId] || 'chynaman';
+              const customName = currentState.playerNames?.[pId];
+              const template = KONTROLA_CHARACTERS[charKey] || KONTROLA_CHARACTERS.chynaman;
+              initialCharacterStates[pId] = {
+                ...template,
+                name: customName || template.name,
+                playerId: pId,
+                hp: template.maxHp,
+                shield: 0,
+                energyTokens: 5,
+                crystals: startingCrystals,
+                poisonCount: 0,
+                burnCount: 0,
+                sleepTurns: 0,
+                isDefeated: false,
+                claimedTurnET: false
+              };
+            });
+
+            nextState.status = 'active';
+            nextState.deck = updatedDeck;
+            nextState.hands = hands;
+            nextState.characterStates = initialCharacterStates;
+            
+            // Turn goes back to the winner (the first person who picked)
+            let winnerId = null;
+            let maxTotal = -1;
+            for (const pId of currentState.players) {
+              if ((currentState.rollOffs?.[pId] || 0) > maxTotal) {
+                maxTotal = currentState.rollOffs[pId];
+                winnerId = pId;
+              }
+            }
+            nextState.turn = winnerId;
+            nextState.logs.unshift(`🎮 All characters selected! The match begins!`);
+        } else {
+            // Advance turn to next player for character selection
+            const currentIdx = currentState.players.indexOf(actorId);
+            const step = currentState.turnDirection === 'counter' ? -1 : 1;
+            let nextIdx = (currentIdx + step) % currentState.players.length;
+            if (nextIdx < 0) nextIdx += currentState.players.length;
+            nextState.turn = currentState.players[nextIdx] || currentState.players[0];
+        }
+
+        return nextState;
+      }
+
+      if (payload.actionType === 'ATTACK_DECLARED') {
+        return {
+          ...currentState,
+          activeDefenseState: { ...payload, expiresAt: Date.now() + 15000 },
+          logs: [`⚠️ ${payload.attackerPlayerName} is attacking ${payload.defenderPlayerName}! Waiting for defender to prepare...`, ...(currentState.logs || [])]
+        };
+      }
+
+      if (payload.actionType === 'DEFENSE_SELECTED') {
+        const activeDefense = currentState.activeDefenseState;
+        if (!activeDefense) return currentState;
+
+        const precalculatedRolls = {};
+        const activeCombat = {
+          ...activeDefense,
+          precalculatedRolls,
+          defenseCard: payload.defenseCard
+        };
+
+        // Notify all clients to open dice screen (delay slightly to ensure state is clear)
+        setTimeout(() => {
+          broadcastUIEvent(matchIdRef.current, 'dice_screen_open', activeCombat);
+        }, 100);
+
+        return {
+          ...currentState,
+          activeDefenseState: null
+        };
+      }
+
       const { actorId, actionCard, attackSelectionName, targetId } = payload;
       const attackerChar = currentState.characterStates[actorId];
       const defenderChar = targetId && targetId !== 'ALL' ? currentState.characterStates[targetId] : null;
@@ -575,29 +807,108 @@ export default function KontrolaArena() {
         newDefenderState = resolved.newDefenderState;
         log = resolved.log;
 
-        // Vision Card Check (reveal opponent's hand to attacker)
-        if (actionCard.name.includes('VISION') && targetId && targetId !== 'ALL') {
+        // Vision / X-CHANGE Card Check (reveal opponent's hand to attacker)
+        if (actionCard.name.includes('VISION') || actionCard.name.includes('X-CHANGE')) {
           if (actorId === playerIdRef.current) {
-            setRevealedVision({
-              targetId,
-              targetName: defenderChar?.name || 'Opponent',
-              expiresAt: Date.now() + 15000,
-              cards: currentState.hands?.[targetId] || []
-            });
+            if (actionCard.name === 'VISION FULL') {
+              const allCards = [];
+              Object.keys(currentState.hands || {}).forEach(pid => {
+                if (pid !== actorId) {
+                  allCards.push(...(currentState.hands[pid] || []));
+                }
+              });
+              setRevealedVision({
+                targetId: 'ALL',
+                targetName: 'All Opponents',
+                expiresAt: Date.now() + 30000,
+                cards: allCards
+              });
+            } else if (targetId && targetId !== 'ALL') {
+              setRevealedVision({
+                targetId,
+                isXChange: actionCard.name.includes('X-CHANGE'),
+                targetName: defenderChar?.name || 'Opponent',
+                expiresAt: Date.now() + 15000,
+                cards: currentState.hands?.[targetId] || []
+              });
+            }
           }
         }
 
-        // Visual shake on damage
+        // Visual shake + contextual sound effects + damage number popup
         if (actionCard?.type === 'ATTACK') {
           setIsShaking(true);
           setTimeout(() => setIsShaking(false), 800);
+          soundFX.init();
+          // Infer HP damage dealt from defender HP delta
+          const prevDefHP = (currentState.characterStates?.[targetId]?.hp) ?? 0;
+          const newDefHP = newDefenderState?.hp ?? 0;
+          const dmgDealt = Math.max(0, prevDefHP - newDefHP);
+          if (dmgDealt > 0) spawnDamagePopup(`-${dmgDealt}`, false);
+          if (actionCard.name.includes('FIRE FLAME')) {
+            soundFX.playTimeout(); // fire crackle analogue
+          } else if (actionCard.name.includes('LIGHTNING')) {
+            soundFX.playPowerUp(); // lightning zap analogue
+          } else if (actionCard.name.includes('BOOMERANG')) {
+            // Boomerang — no hit, just a trap set
+          } else {
+            soundFX.playHit();
+          }
+        } else if (actionCard?.type === 'HEAL') {
+          soundFX.init();
+          soundFX.playHeal();
+          // Infer HP healed from attacker HP delta
+          const prevAtkHP = (currentState.characterStates?.[actorId]?.hp) ?? 0;
+          const newAtkHP = newAttackerState?.hp ?? 0;
+          const healDelta = Math.max(0, newAtkHP - prevAtkHP);
+          if (healDelta > 0) spawnDamagePopup(`+${healDelta}`, true);
+        } else if (actionCard?.type === 'DEFENSE') {
+          soundFX.init();
+          soundFX.playMenuSelect();
+        } else if (actionCard?.type === 'STATUS') {
+          soundFX.init();
+          soundFX.playZombie();
+        } else if (actionCard?.type === 'SPECIAL') {
+          soundFX.init();
+          soundFX.playPowerUp();
         }
 
         // Discard played card and replenish hand to exactly 10 cards
-        newHand = newHand.filter((c) => c.id !== actionCard.id);
-        if (newDeck.length > 0) {
+        let discarded = false;
+        if (actionCard?.id) {
+          const initLen = newHand.length;
+          newHand = newHand.filter((c) => c.id !== actionCard.id);
+          if (newHand.length < initLen) discarded = true;
+        }
+        if (!discarded && actionCard?.name) {
+          const matchIdx = newHand.findIndex((c) => c.name === actionCard.name);
+          if (matchIdx !== -1) {
+            newHand.splice(matchIdx, 1);
+            discarded = true;
+          }
+        }
+        if (discarded && newDeck.length > 0) {
           newHand.push(newDeck.shift());
         }
+        // Strict invariant: hand size must never exceed 10 cards at any time per client specification
+        while (newHand.length > 10) {
+          newHand.pop();
+        }
+      }
+
+      // Also discard the defender's card if they played one during the preparation window
+      let newDefenderHand = defenderChar ? [...(currentState.hands?.[targetId] || [])] : [];
+      let defenderDiscarded = false;
+      if (precalculatedRolls?.defenseCard?.id) {
+        const initLen = newDefenderHand.length;
+        newDefenderHand = newDefenderHand.filter((c) => c.id !== precalculatedRolls.defenseCard.id);
+        if (newDefenderHand.length < initLen) defenderDiscarded = true;
+      }
+      if (defenderDiscarded && newDeck.length > 0) {
+        newDefenderHand.push(newDeck.shift());
+      }
+      while (newDefenderHand.length > 10) {
+        newDefenderHand.pop();
       }
 
       // Check if target was defeated and reward Stability Crystal
@@ -608,7 +919,7 @@ export default function KontrolaArena() {
         newDefenderState.crystals = 0;
         log += ` 💀 ${newDefenderState.name} was defeated! ${newAttackerState.name} claimed their Stability Crystals (Total: ${newAttackerState.crystals}).`;
         if (newAttackerState.crystals >= 3) {
-          matchWinner = newAttackerState;
+          matchWinner = { ...newAttackerState, playerId: actorId };
         }
       }
 
@@ -618,6 +929,24 @@ export default function KontrolaArena() {
       };
       if (targetId && targetId !== 'ALL' && newDefenderState) {
         updatedStates[targetId] = newDefenderState;
+      } else if (targetId === 'ALL' && resolved.aoeDamage) {
+        currentState.players.forEach(pId => {
+          if (pId !== actorId && !currentState.characterStates[pId]?.isDefeated) {
+            const char = { ...currentState.characterStates[pId] };
+            char.hp = Math.max(0, char.hp - resolved.aoeDamage);
+            if (char.hp <= 0 && !char.isDefeated) {
+              char.isDefeated = true;
+              newAttackerState.crystals = (newAttackerState.crystals || 1) + (char.crystals || 1);
+              char.crystals = 0;
+              log += ` 💀 ${char.name} was defeated by AoE! ${newAttackerState.name} claimed their Crystals.`;
+              if (newAttackerState.crystals >= 3) {
+                matchWinner = { ...newAttackerState, playerId: actorId };
+              }
+            }
+            updatedStates[pId] = char;
+          }
+        });
+        updatedStates[actorId] = newAttackerState; // ensure attacker crystals update is saved
       }
 
       // Turn rotation (modulo next non-defeated player)
@@ -629,14 +958,20 @@ export default function KontrolaArena() {
       const turnLogs = [log];
 
       if (livingPlayers.length <= 1) {
-        matchWinner = updatedStates[livingPlayers[0]] || matchWinner;
+        matchWinner = updatedStates[livingPlayers[0]] ? { ...updatedStates[livingPlayers[0]], playerId: livingPlayers[0] } : matchWinner;
         nextTurnPlayerId = livingPlayers[0] || actorId;
       } else {
-        if (resolved.extraTurnGranted) {
+        let pendingAttackX2For = currentState.pendingAttackX2For || null;
+        if (resolved.extraTurnGranted || resolved.triggerAttackX2SecondHit) {
           nextTurnPlayerId = actorId;
+          if (resolved.triggerAttackX2SecondHit) pendingAttackX2For = actorId;
         } else {
+          pendingAttackX2For = null;
           const currentIdx = livingPlayers.indexOf(actorId);
-          nextTurnPlayerId = livingPlayers[(currentIdx + 1) % livingPlayers.length] || livingPlayers[0];
+          const step = currentState.turnDirection === 'counter' ? -1 : 1;
+          let nextIdx = (currentIdx + step) % livingPlayers.length;
+          if (nextIdx < 0) nextIdx += livingPlayers.length;
+          nextTurnPlayerId = livingPlayers[nextIdx] || livingPlayers[0];
         }
 
         // Check if next player is Asleep (Sleepy X1 / X2 / Shock)
@@ -645,8 +980,12 @@ export default function KontrolaArena() {
           const sleepingChar = updatedStates[nextTurnPlayerId];
           sleepingChar.sleepTurns = Math.max(0, sleepingChar.sleepTurns - 1);
           turnLogs.unshift(`💤 ${sleepingChar.name} is asleep and skips their turn! (${sleepingChar.sleepTurns} turn(s) remaining)`);
+          
           const sIdx = livingPlayers.indexOf(nextTurnPlayerId);
-          nextTurnPlayerId = livingPlayers[(sIdx + 1) % livingPlayers.length];
+          const step = currentState.turnDirection === 'counter' ? -1 : 1;
+          let nextSIdx = (sIdx + step) % livingPlayers.length;
+          if (nextSIdx < 0) nextSIdx += livingPlayers.length;
+          nextTurnPlayerId = livingPlayers[nextSIdx];
           checkedSleepCount++;
         }
 
@@ -661,7 +1000,7 @@ export default function KontrolaArena() {
             turnLogs.unshift(`💀 ${incomingChar.name} succumbed to Poison and was eliminated!`);
             const remainingLiving = currentState.players.filter((pId) => !updatedStates[pId]?.isDefeated);
             if (remainingLiving.length === 1) {
-              matchWinner = updatedStates[remainingLiving[0]];
+              matchWinner = updatedStates[remainingLiving[0]] ? { ...updatedStates[remainingLiving[0]], playerId: remainingLiving[0] } : null;
             }
             const dIdx = livingPlayers.indexOf(nextTurnPlayerId);
             nextTurnPlayerId = livingPlayers[(dIdx + 1) % livingPlayers.length];
@@ -678,7 +1017,7 @@ export default function KontrolaArena() {
             turnLogs.unshift(`💀 ${incomingChar.name} was incinerated by Burn damage and eliminated!`);
             const remainingLiving = currentState.players.filter((pId) => !updatedStates[pId]?.isDefeated);
             if (remainingLiving.length === 1) {
-              matchWinner = updatedStates[remainingLiving[0]];
+              matchWinner = updatedStates[remainingLiving[0]] ? { ...updatedStates[remainingLiving[0]], playerId: remainingLiving[0] } : null;
             }
             const dIdx = livingPlayers.indexOf(nextTurnPlayerId);
             nextTurnPlayerId = livingPlayers[(dIdx + 1) % livingPlayers.length];
@@ -695,29 +1034,48 @@ export default function KontrolaArena() {
         ...(currentState.hands || {}),
         [actorId]: newHand
       };
+      if (defenderChar && targetId !== 'ALL') {
+        updatedHands[targetId] = newDefenderHand;
+      }
 
       // X-CHANGE Resolution logic
-      if (resolved.triggerXChange && targetId && targetId !== 'ALL') {
-        const targetHand = [...(currentState.hands?.[targetId] || [])];
-        if (newHand.length > 0 && targetHand.length > 0) {
-          const myIdx = Math.floor(Math.random() * newHand.length);
-          const tgIdx = Math.floor(Math.random() * targetHand.length);
-          const myCard = newHand.splice(myIdx, 1)[0];
-          const tgCard = targetHand.splice(tgIdx, 1)[0];
-          newHand.push(tgCard);
-          targetHand.push(myCard);
-          
-          updatedHands[actorId] = newHand;
-          updatedHands[targetId] = targetHand;
-          turnLogs.unshift(`🔀 The X-CHANGE was successful! A random Action Card was swapped in secret.`);
+      if (resolved.triggerXChange) {
+        let discardId = actionPayload.discardCardId;
+        const currentHand = [...newHand];
+        let discardedCard;
+        
+        if (discardId) {
+           const idx = currentHand.findIndex(c => c.id === discardId);
+           if (idx !== -1) discardedCard = currentHand.splice(idx, 1)[0];
+        }
+        // Fallback to random discard if timeout or invalid
+        if (!discardedCard && currentHand.length > 0) {
+           const idx = Math.floor(Math.random() * currentHand.length);
+           discardedCard = currentHand.splice(idx, 1)[0];
+        }
+        
+        if (updatedDeck.length > 0 && discardedCard) {
+           const drawnCard = updatedDeck.shift();
+           currentHand.push(drawnCard);
+           updatedHands[actorId] = currentHand;
+           turnLogs.unshift(`🔀 ${newAttackerState.name} used X-CHANGE! Discarded 1 card and drew a new one.`);
         } else {
-          turnLogs.unshift(`⚠️ The X-CHANGE fizzled! One of the players has 0 Action Cards.`);
+           turnLogs.unshift(`⚠️ The X-CHANGE fizzled! Deck is empty or hand is empty.`);
         }
       }
+
+
+      // Absolute maximum hand size limit for all players (Global Enforcer)
+      Object.keys(updatedHands).forEach(pid => {
+        if (updatedHands[pid] && updatedHands[pid].length > 10) {
+          updatedHands[pid] = updatedHands[pid].slice(0, 10);
+        }
+      });
 
       const nextState = {
         ...currentState,
         turn: nextTurnPlayerId,
+        pendingAttackX2For,
         turnNumber: (currentState.turnNumber || 1) + 1,
         deck: newDeck,
         hands: updatedHands,
@@ -727,7 +1085,15 @@ export default function KontrolaArena() {
       };
 
       broadcastState(matchIdRef.current, nextState);
-      if (matchWinner) setWinner(matchWinner);
+      if (matchWinner) {
+        setWinner(matchWinner);
+        soundFX.init();
+        if (matchWinner.playerId === playerIdRef.current) {
+          soundFX.playVictory();
+        } else {
+          soundFX.playDefeat();
+        }
+      }
       return nextState;
     });
   };
@@ -791,7 +1157,6 @@ export default function KontrolaArena() {
     }
   };
 
-  // Host Starts Game (Locks the room)
   const handleStartGame = () => {
     playClick();
     if (!gameState || !isHost) return;
@@ -799,62 +1164,14 @@ export default function KontrolaArena() {
     // Remove room from global lobby broadcast
     closeRoom(matchId);
 
-    const deck = generateDeck(gameState.isPremium);
-    const { updatedDeck, hands } = dealInitialHands(deck, gameState.players);
-
-    // Initial starting crystals: 2 for 2-players, 1 for 3-7 players
-    const startingCrystals = gameState.players.length === 2 ? 2 : 1;
-
-    // Roll 2 dice for each player to determine starting player (Rulebook: highest 2-dice roll starts)
-    let highestRoll = -1;
-    let startingPlayerId = playerId;
-    const rollBreakdowns = [];
-    gameState.players.forEach((pId) => {
-      const d1 = Math.floor(Math.random() * 6) + 1;
-      const d2 = Math.floor(Math.random() * 6) + 1;
-      const total = d1 + d2;
-      const pName = gameState.playerNames?.[pId] || 'Player';
-      rollBreakdowns.push(`${pName}: [${d1}+${d2}=${total}]`);
-      if (total > highestRoll) {
-        highestRoll = total;
-        startingPlayerId = pId;
-      }
-    });
-    const starterName = gameState.playerNames?.[startingPlayerId] || 'Player';
-
-    const initialCharacterStates = {};
-    gameState.players.forEach((pId) => {
-      const charKey = gameState.characterSelections?.[pId] || 'chynaman';
-      const customName = gameState.playerNames?.[pId];
-      const template = KONTROLA_CHARACTERS[charKey] || KONTROLA_CHARACTERS.chynaman;
-      initialCharacterStates[pId] = {
-        ...template,
-        name: customName || template.name,
-        playerId: pId,
-        hp: template.maxHp,
-        shield: 0,
-        energyTokens: 5,
-        crystals: startingCrystals,
-        poisonCount: 0,
-        burnCount: 0,
-        sleepTurns: 0,
-        isDefeated: false,
-        claimedTurnET: false
-      };
-    });
-
     const activeState = {
       ...gameState,
-      status: 'active',
-      turn: startingPlayerId,
-      turnNumber: 1,
-      roundNumber: 1,
-      deck: updatedDeck,
-      hands: hands,
-      characterStates: initialCharacterStates,
+      status: 'roll_off',
+      turnDirection: 'clockwise',
+      rollOffs: {},
+      characterSelections: {}, // Reset selections
       logs: [
-        `🎲 Starting Roll-off: ${rollBreakdowns.join(' · ')} ➔ ${starterName} won the roll and strikes first!`,
-        `Match ${matchId} commenced! First player to collect 3 Stability Crystals wins.`
+        `🎲 MATCH STARTED! All players must roll 2 dice to determine who strikes first.`
       ]
     };
 
@@ -864,6 +1181,7 @@ export default function KontrolaArena() {
 
   // Claim +1 ET on turn
   const handleClaimTurnET = () => {
+    if (isProcessingAction) return;
     playClick();
     if (isSpectator) {
       showNotice('Spectators cannot claim Energy Tokens.', 'info');
@@ -894,14 +1212,19 @@ export default function KontrolaArena() {
       logs: [`${myCharacter.name} claimed +1 Energy Token.`, ...(gameState.logs || [])]
     };
 
+    setIsProcessingAction(true);
     setGameState(newState);
     broadcastState(matchId, newState);
+    // Locally clear lock quickly since this doesn't go through Host Queue
+    setTimeout(() => setIsProcessingAction(false), 500);
   };
 
   // Pass turn without playing a card or consuming ET
   const handlePassTurn = () => {
+    if (isProcessingAction) return;
     playClick();
     if (!isMyTurn || isSpectator) return;
+    setIsProcessingAction(true);
     const payload = {
       actorId: playerId,
       actionCard: { name: 'PASS TURN', type: 'PASS' },
@@ -912,6 +1235,7 @@ export default function KontrolaArena() {
     } else {
       takeTurn(matchId, { type: 'PLAYER_ACTION', payload });
     }
+    setTimeout(() => setIsProcessingAction(false), 2500);
     setSelectedActionCard(null);
     setSelectedCharacterAttack(null);
     setSelectedTargetId(null);
@@ -956,6 +1280,7 @@ export default function KontrolaArena() {
     const isAttack = selectedActionCard.type === 'ATTACK';
     const isAoE = selectedActionCard.name.includes('BLITZ');
     const isLightning = selectedActionCard.name.includes('LIGHTNING');
+    const isFireFlame = selectedActionCard.name.includes('FIRE FLAME');
 
     // Level check for Vitality Gain V20
     if (selectedActionCard.name.includes('VITALITY GAIN V20') && (myCharacter.level || 1) < 2) {
@@ -963,11 +1288,20 @@ export default function KontrolaArena() {
       return;
     }
 
+
+
     if (isAttack && !isAoE && !selectedTargetId) {
       showNotice('Please select a target opponent player first!', 'warning');
       return; // Must select target
     }
-    if (isAttack && !isAoE && !isLightning && !selectedCharacterAttack) {
+
+    const needsTarget = ['POISON', 'SLEEPY', 'FREEZE', 'X-CHANGE', 'KONTROL', 'SOUL ALLIANCE'].some(kw => selectedActionCard.name.includes(kw)) || (selectedActionCard.name.includes('VISION') && !selectedActionCard.name.includes('FULL'));
+    if (needsTarget && !selectedTargetId) {
+      showNotice('Please select a target player first!', 'warning');
+      return;
+    }
+
+    if (isAttack && !isAoE && !isLightning && !isFireFlame && !selectedCharacterAttack) {
       showNotice('Please select a character attack move to strike with!', 'warning');
       return;
     }
@@ -975,33 +1309,40 @@ export default function KontrolaArena() {
     const payload = {
       actorId: playerId,
       actionCard: selectedActionCard,
-      attackSelectionName: isLightning ? null : selectedCharacterAttack,
+      attackSelectionName: (isLightning || isFireFlame) ? null : selectedCharacterAttack,
       targetId: isAoE ? 'ALL' : selectedTargetId
     };
 
     if (isAttack) {
-      const targetChar = gameState.characterStates[selectedTargetId];
-      const precalculatedRolls = {
-        attackerRoll: rollDice(2),
-        defenderRoll: rollDice(2),
-        kRoll: rollDice(1),
-        dRoll: rollDice(1)
-      };
-
-      const clashData = {
-        ...payload,
-        attacker: myCharacter,
-        defender: targetChar,
-        attackerId: playerId,
-        attackerPlayerName: myCharacter.name,
-        defenderPlayerName: targetChar?.name || 'Defender',
-        precalculatedRolls
-      };
-
-      // Broadcast to all clients so the dice screen opens on EVERY player's screen simultaneously!
-      broadcastUIEvent(matchId, 'dice_screen_open', clashData);
-      setActiveCombat(clashData);
-      setIsDiceRollingSync(false);
+      if (isAoE) {
+        const targetChar = gameState.characterStates[selectedTargetId];
+        const precalculatedRolls = {};
+        const clashData = {
+          ...payload,
+          attacker: myCharacter,
+          defender: targetChar,
+          attackerId: playerId,
+          attackerPlayerName: myCharacter.name,
+          defenderPlayerName: 'ALL',
+          precalculatedRolls
+        };
+        broadcastUIEvent(matchId, 'dice_screen_open', clashData);
+        setActiveCombat(clashData);
+        setIsDiceRollingSync(false);
+      } else {
+        const targetChar = gameState.characterStates[selectedTargetId];
+        const clashData = {
+          ...payload,
+          actionType: 'ATTACK_DECLARED',
+          attacker: myCharacter,
+          defender: targetChar,
+          attackerId: playerId,
+          attackerPlayerName: myCharacter.name,
+          defenderPlayerName: targetChar?.name || 'Defender'
+        };
+        if (isHost) enqueueHostAction(clashData);
+        else takeTurn(matchId, { type: 'PLAYER_ACTION', payload: clashData });
+      }
     } else {
       if (isHost) {
         enqueueHostAction(payload);
@@ -1011,7 +1352,7 @@ export default function KontrolaArena() {
     }
 
     setIsProcessingAction(true);
-    setTimeout(() => setIsProcessingAction(false), 2000);
+    setTimeout(() => setIsProcessingAction(false), 2500); // Wait for SYNC_STATE
 
     setSelectedActionCard(null);
     setSelectedCharacterAttack(null);
@@ -1019,10 +1360,13 @@ export default function KontrolaArena() {
   };
 
   // Triggered when attacker rolls the authentic pip dice (or re-rolls on tie)
-  const handleTriggerDiceRoll = (newRolls = null) => {
+  const handleTriggerDiceRoll = (newRolls = null, isReroll = false) => {
     if (newRolls) {
-      setActiveCombat((prev) => prev ? { ...prev, precalculatedRolls: newRolls } : prev);
+      setActiveCombat((prev) => prev ? { ...prev, precalculatedRolls: { ...(prev.precalculatedRolls || {}), ...newRolls } } : prev);
       broadcastUIEvent(matchId, 'dice_screen_rolled', { timestamp: Date.now(), precalculatedRolls: newRolls });
+    } else if (isReroll) {
+      setActiveCombat((prev) => prev ? { ...prev, precalculatedRolls: {} } : prev);
+      broadcastUIEvent(matchId, 'dice_screen_rolled', { timestamp: Date.now(), isReroll: true });
     } else {
       broadcastUIEvent(matchId, 'dice_screen_rolled', { timestamp: Date.now() });
     }
@@ -1043,6 +1387,16 @@ export default function KontrolaArena() {
     }
   };
 
+  const handleCharacterSelect = (charId) => {
+    if (isProcessingAction) return;
+    setIsProcessingAction(true);
+    playClick();
+    const payload = { actionType: 'CHARACTER_SELECT', actorId: playerId, characterId: charId };
+    if (isHostRef.current) enqueueHostAction(payload);
+    else takeTurn(matchIdRef.current, { type: 'PLAYER_ACTION', payload });
+    setTimeout(() => setIsProcessingAction(false), 2500);
+  };
+
   const handleSendMessage = (content) => {
     const msg = typeof content === 'object' && content !== null ? {
       id: content.id || 'msg_' + Date.now(),
@@ -1060,18 +1414,21 @@ export default function KontrolaArena() {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
     setChatMessages((prev) => [...prev, msg]);
-    takeTurn(matchId, { type: 'CHAT_MESSAGE', payload: msg });
+    broadcastUIEvent(matchId, 'chat_message', msg);
   };
 
   const handleSendTaunt = (tauntText) => {
+    if (!tauntText || !tauntText.trim()) return;
     const msg = {
-      text: tauntText,
+      text: tauntText.trim(),
       senderId: playerId,
-      senderName: myCharacter?.name || playerName || 'Player'
+      senderName: myCharacter?.name || playerName || 'Player',
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
     setActiveTauntBubble(msg);
-    setTimeout(() => setActiveTauntBubble(null), 3500);
-    takeTurn(matchId, { type: 'PLAYER_TAUNT', payload: msg });
+    setChatMessages((prev) => [...prev, { ...msg, text: `🗯️ [TAUNT]: "${msg.text}"` }]);
+    setTimeout(() => setActiveTauntBubble(null), 4500);
+    broadcastUIEvent(matchId, 'player_taunt', msg);
   };
 
   // ==========================================
@@ -1215,120 +1572,7 @@ export default function KontrolaArena() {
                   </div>
                 </div>
 
-                {/* 2. Character Selection Carousel */}
-                <div
-                  style={{
-                    background: 'rgba(14, 22, 42, 0.88)',
-                    border: '1px solid rgba(0, 240, 255, 0.25)',
-                    borderRadius: '16px',
-                    padding: '18px 20px'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <span
-                      style={{
-                        fontFamily: 'Rajdhani, sans-serif',
-                        fontSize: '1.1rem',
-                        color: 'var(--neon-cyan)',
-                        fontWeight: 'bold',
-                        letterSpacing: '1px'
-                      }}
-                    >
-                      SELECT YOUR CHARACTER
-                    </span>
-                    <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>7 Playable Characters</span>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(105px, 1fr))', gap: '10px' }}>
-                    {Object.values(KONTROLA_CHARACTERS).map((char) => {
-                      const isSelected = selectedCharacter === char.id;
-                      const isTaken = gameState && Object.entries(gameState.characterSelections || {}).some(([pId, cId]) => pId !== playerId && cId === char.id);
-                      return (
-                        <div
-                          key={char.id}
-                          onClick={() => {
-                            if (isTaken) {
-                              showNotice(`${char.name} has already been chosen by another player! Choose a different character.`, 'warning');
-                              return;
-                            }
-                            playClick();
-                            setSelectedCharacter(char.id);
-                          }}
-                          style={{
-                            background: isTaken
-                              ? 'rgba(30, 10, 20, 0.55)'
-                              : isSelected
-                              ? 'rgba(0, 240, 255, 0.18)'
-                              : 'rgba(0, 0, 0, 0.45)',
-                            border: isTaken
-                              ? '1px dashed rgba(255, 42, 85, 0.5)'
-                              : isSelected
-                              ? `2px solid ${char.themeColor || 'var(--neon-cyan)'}`
-                              : '1px solid rgba(255, 255, 255, 0.1)',
-                            boxShadow: isSelected && !isTaken ? `0 0 16px ${char.themeColor || 'var(--neon-cyan)'}` : 'none',
-                            borderRadius: '12px',
-                            padding: '10px 8px',
-                            textAlign: 'center',
-                            cursor: isTaken ? 'not-allowed' : 'pointer',
-                            opacity: isTaken ? 0.45 : 1,
-                            position: 'relative',
-                            transition: 'all 0.2s ease'
-                          }}
-                        >
-                          {isTaken && (
-                            <div
-                              style={{
-                                position: 'absolute',
-                                top: '6px',
-                                right: '6px',
-                                background: '#ff2a55',
-                                color: '#fff',
-                                fontSize: '0.62rem',
-                                fontWeight: '900',
-                                padding: '2px 5px',
-                                borderRadius: '4px',
-                                letterSpacing: '0.5px'
-                              }}
-                            >
-                              TAKEN
-                            </div>
-                          )}
-                          <div
-                            style={{
-                              width: '52px',
-                              height: '52px',
-                              borderRadius: '50%',
-                              margin: '0 auto 6px auto',
-                              overflow: 'hidden',
-                              border: `2px solid ${char.themeColor}`
-                            }}
-                          >
-                            <img
-                              src={getAssetUrl(char.image)}
-                              alt={char.name}
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            />
-                          </div>
-                          <div
-                            style={{
-                              fontSize: '0.82rem',
-                              fontWeight: 'bold',
-                              color: isTaken ? 'rgba(255,255,255,0.4)' : '#fff',
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis'
-                            }}
-                          >
-                            {char.name}
-                          </div>
-                          <div style={{ fontSize: '0.68rem', color: isTaken ? '#ff6688' : char.themeColor, fontWeight: 'bold' }}>
-                            {isTaken ? 'UNAVAILABLE' : char.element}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+                {/* Removed Character Selection Carousel from Lobby */}
 
                 {/* 3. Three-Tab Lobby Navigation */}
                 <div style={{ display: 'flex', gap: '10px', borderBottom: '1px solid rgba(0, 240, 255, 0.2)', paddingBottom: '8px' }}>
@@ -1833,6 +2077,17 @@ export default function KontrolaArena() {
           className={`webgl-screen arena-screen ${isShaking ? 'shake-animation damage-flash-overlay' : ''} ${turnFlash ? 'turn-flash-pulse' : ''}`}
           style={{ width: '100%', height: '100%' }}
         >
+          {/* Floating Damage / Heal Number Popups */}
+          {damagePopups.map((popup) => (
+            <div
+              key={popup.id}
+              className={`damage-number-pop${popup.isHeal ? ' heal' : ''}`}
+              style={{ left: `${popup.x}%`, top: `${popup.y}%` }}
+            >
+              {popup.value}
+            </div>
+          ))}
+
           {/* Floating In-App Notice / Toast (No Browser Alerts) */}
           {inAppNotice && (
             <div
@@ -2109,6 +2364,37 @@ export default function KontrolaArena() {
             </div>
           </header>
 
+          {/* Floating Arena Taunt Toast Banner */}
+          {activeTauntBubble && (
+            <div
+              style={{
+                position: 'fixed',
+                top: '64px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 99999,
+                background: 'linear-gradient(135deg, rgba(30, 27, 75, 0.96), rgba(15, 23, 42, 0.96))',
+                border: '2px solid #818cf8',
+                borderRadius: '30px',
+                padding: '10px 24px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                boxShadow: '0 8px 30px rgba(99, 102, 241, 0.6)',
+                pointerEvents: 'none',
+                animation: 'bounce 0.5s ease-out'
+              }}
+            >
+              <span style={{ fontSize: '1.4rem' }}>🗯️</span>
+              <span style={{ color: '#c7d2fe', fontWeight: 'bold', fontSize: '0.95rem' }}>
+                {activeTauntBubble.senderName}:
+              </span>
+              <span style={{ color: '#fff', fontSize: '1rem', fontStyle: 'italic', fontWeight: '600' }}>
+                "{activeTauntBubble.text}"
+              </span>
+            </div>
+          )}
+
           {/* 3-COLUMN ARENA STAGE GRID */}
           <div className="arena-stage-grid">
             {/* Left Column: Scoreboard & Player Standings */}
@@ -2348,8 +2634,8 @@ export default function KontrolaArena() {
                     gap: '8px',
                     padding: '10px',
                     overflowY: 'auto',
-                    opacity: (!isMyTurn || isSpectator) ? 0.6 : 1,
-                    pointerEvents: (!isMyTurn || isSpectator) ? 'none' : 'auto'
+                    opacity: (!isMyTurn || isSpectator || isPendingSecondAttack) ? 0.6 : 1,
+                    pointerEvents: (!isMyTurn || isSpectator || isPendingSecondAttack) ? 'none' : 'auto'
                   }}
                 >
                   {myHand.map((card) => {
@@ -2395,15 +2681,19 @@ export default function KontrolaArena() {
                 </div>
               </div>
 
-              {/* Target & Move Selection Panel (when Attack card is selected) */}
-              {selectedActionCard?.type === 'ATTACK' && !isSpectator && (
+              {/* Target & Move Selection Panel */}
+              {selectedActionCard && !isSpectator && (
+                selectedActionCard.type === 'ATTACK' ||
+                ['POISON', 'SLEEPY', 'FREEZE', 'X-CHANGE', 'KONTROL', 'SOUL ALLIANCE'].some(kw => selectedActionCard.name.includes(kw)) ||
+                (selectedActionCard.name.includes('VISION') && !selectedActionCard.name.includes('FULL'))
+              ) && (
                 <div className="arena-panel" style={{ background: 'rgba(20, 10, 20, 0.95)', border: '1.5px solid var(--neon-crimson)', padding: '12px' }}>
                   <div className="panel-title-bar" style={{ marginBottom: '8px' }}>
                     <span className="panel-kicker" style={{ color: 'var(--neon-crimson)' }}>1. SELECT TARGET</span>
                   </div>
 
                   <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', flexWrap: 'wrap' }}>
-                    {opponents.map((oId) => {
+                    {(selectedActionCard?.name?.includes('POISON') ? [...opponents, playerId] : opponents).map((oId) => {
                       const oChar = gameState.characterStates?.[oId];
                       if (!oChar || oChar.isDefeated) return null;
                       const isSelectedTarget = selectedTargetId === oId;
@@ -2435,7 +2725,7 @@ export default function KontrolaArena() {
                     })}
                   </div>
 
-                  {!selectedActionCard?.name?.includes('LIGHTNING') && (
+                  {!selectedActionCard?.name?.includes('LIGHTNING') && !selectedActionCard?.name?.includes('FIRE FLAME') && (
                     <>
                       <div className="panel-title-bar" style={{ marginBottom: '8px' }}>
                         <span className="panel-kicker" style={{ color: 'var(--neon-crimson)' }}>2. SELECT CHARACTER MOVE</span>
@@ -2478,11 +2768,94 @@ export default function KontrolaArena() {
                   )}
                 </div>
               )}
+              {/* Bottom Right Actions (Moved from footer to prevent UI collision) */}
+              <div className="bottom-right-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '12px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                {isSpectator ? (
+                  <div
+                    style={{
+                      padding: '12px 24px',
+                      borderRadius: '8px',
+                      background: 'rgba(0, 240, 255, 0.1)',
+                      border: '1px solid var(--neon-cyan)',
+                      color: 'var(--neon-cyan)',
+                      fontWeight: 'bold',
+                      fontSize: '0.95rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <Eye size={18} />
+                    <span>SPECTATOR MODE (OBSERVING)</span>
+                  </div>
+                ) : (
+                  <>
+                    {isMyTurn && (
+                      <button
+                        className="btn-pass-turn"
+                        onClick={handlePassTurn}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.08)',
+                          border: '1.5px solid rgba(255, 255, 255, 0.3)',
+                          color: '#fff',
+                          padding: '12px 18px',
+                          borderRadius: '8px',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          letterSpacing: '0.5px',
+                          transition: 'all 0.2s ease'
+                        }}
+                        title="Pass turn without playing any cards or spending energy"
+                      >
+                        <SkipForward size={16} />
+                        <span>PASS / END TURN</span>
+                      </button>
+                    )}
+                    <button
+                      className={`btn-end-turn-cta ${isMyTurn && selectedActionCard ? 'flashing-end-turn-cta' : ''}`}
+                      disabled={
+                        !isMyTurn ||
+                        !selectedActionCard ||
+                        (selectedActionCard.type === 'ATTACK' &&
+                          !selectedActionCard.name.includes('BLITZ') &&
+                          !selectedActionCard.name.includes('LIGHTNING') &&
+                          !selectedActionCard.name.includes('FIRE FLAME') &&
+                          (!selectedCharacterAttack || !selectedTargetId)) ||
+                        (['POISON', 'SLEEPY', 'FREEZE', 'X-CHANGE', 'KONTROL', 'SOUL ALLIANCE'].some(kw => selectedActionCard.name.includes(kw)) && !selectedTargetId) ||
+                        (selectedActionCard.name.includes('VISION') && !selectedActionCard.name.includes('FULL') && !selectedTargetId) ||
+                        (selectedActionCard.name.includes('VITALITY GAIN V20') &&
+                          (myCharacter?.level || 1) < 2)
+                      }
+                      onClick={playTurn}
+                      style={{
+                        boxShadow: isMyTurn && selectedActionCard ? '0 0 20px #39ff14' : 'none',
+                        border: isMyTurn && selectedActionCard ? '2px solid #39ff14' : '2px solid rgba(255,255,255,0.1)',
+                        background: isMyTurn && selectedActionCard ? 'rgba(57, 255, 20, 0.15)' : 'rgba(0,0,0,0.5)',
+                        color: isMyTurn && selectedActionCard ? '#39ff14' : 'rgba(255,255,255,0.3)',
+                        padding: '12px 28px',
+                        borderRadius: '8px',
+                        fontWeight: 'bold',
+                        cursor: isMyTurn && selectedActionCard ? 'pointer' : 'not-allowed',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        letterSpacing: '0.5px'
+                      }}
+                    >
+                      <Dices size={18} />
+                      <span>{selectedActionCard?.type === 'ATTACK' ? 'ROLL COMBAT CLASH' : 'PLAY ACTION CARD'}</span>
+                    </button>
+                  </>
+                )}
+              </div>
             </aside>
           </div>
 
           {/* Bottom Controls Bar */}
-          <footer className="arena-bottom-controls">
+          <footer className="arena-bottom-controls" style={{ justifyContent: 'flex-start', marginTop: '12px' }}>
             <div className="bottom-left-buttons">
               <button className="btn-arena-chat" onClick={() => { playClick(); setShowChat(true); }}>
                 <MessageSquare size={16} />
@@ -2500,85 +2873,8 @@ export default function KontrolaArena() {
               )}
             </div>
 
-            <div className="bottom-right-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              {isSpectator ? (
-                <div
-                  style={{
-                    padding: '12px 24px',
-                    borderRadius: '8px',
-                    background: 'rgba(0, 240, 255, 0.1)',
-                    border: '1px solid var(--neon-cyan)',
-                    color: 'var(--neon-cyan)',
-                    fontWeight: 'bold',
-                    fontSize: '0.95rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}
-                >
-                  <Eye size={18} />
-                  <span>SPECTATOR MODE (OBSERVING)</span>
-                </div>
-              ) : (
-                <>
-                  {isMyTurn && (
-                    <button
-                      className="btn-pass-turn"
-                      onClick={handlePassTurn}
-                      style={{
-                        background: 'rgba(255, 255, 255, 0.08)',
-                        border: '1.5px solid rgba(255, 255, 255, 0.3)',
-                        color: '#fff',
-                        padding: '12px 18px',
-                        borderRadius: '8px',
-                        fontWeight: 'bold',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        letterSpacing: '0.5px',
-                        transition: 'all 0.2s ease'
-                      }}
-                      title="Pass turn without playing any cards or spending energy"
-                    >
-                      <SkipForward size={16} />
-                      <span>PASS / END TURN</span>
-                    </button>
-                  )}
-                  <button
-                    className={`btn-end-turn-cta ${isMyTurn && selectedActionCard ? 'flashing-end-turn-cta' : ''}`}
-                    disabled={
-                      !isMyTurn ||
-                      !selectedActionCard ||
-                      (selectedActionCard.type === 'ATTACK' &&
-                        !selectedActionCard.name.includes('BLITZ') &&
-                        !selectedActionCard.name.includes('LIGHTNING') &&
-                        (!selectedCharacterAttack || !selectedTargetId)) ||
-                      (selectedActionCard.name.includes('VITALITY GAIN V20') &&
-                        (myCharacter?.level || 1) < 2)
-                    }
-                    onClick={playTurn}
-                    style={{
-                      boxShadow: isMyTurn && selectedActionCard ? '0 0 20px #39ff14' : 'none',
-                      border: isMyTurn && selectedActionCard ? '2px solid #39ff14' : '2px solid rgba(255,255,255,0.1)',
-                      background: isMyTurn && selectedActionCard ? 'rgba(57, 255, 20, 0.15)' : 'rgba(0,0,0,0.5)',
-                      color: isMyTurn && selectedActionCard ? '#39ff14' : 'rgba(255,255,255,0.3)',
-                      padding: '12px 28px',
-                      borderRadius: '8px',
-                      fontWeight: 'bold',
-                      cursor: isMyTurn && selectedActionCard ? 'pointer' : 'not-allowed',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      letterSpacing: '0.5px'
-                    }}
-                  >
-                    <Dices size={18} />
-                    <span>{selectedActionCard?.type === 'ATTACK' ? 'ROLL COMBAT CLASH' : 'PLAY ACTION CARD'}</span>
-                  </button>
-                </>
-              )}
-            </div>
+              {/* Action buttons moved to arena-col-right above */}
+
           </footer>
 
           {/* Chat Modal */}
@@ -2604,6 +2900,310 @@ export default function KontrolaArena() {
             />
           )}
 
+          {/* ROLL-OFF MODAL */}
+          {gameState?.status === 'roll_off' && (
+            <div
+              style={{
+                position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                background: 'rgba(5, 10, 24, 0.95)', zIndex: 10000,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff'
+              }}
+            >
+              <h2 style={{ color: 'var(--neon-gold)', fontSize: '2.5rem', marginBottom: '20px', textShadow: '0 0 20px var(--neon-gold)' }}>🎲 ROLL-OFF 🎲</h2>
+              <p style={{ fontSize: '1.2rem', marginBottom: '40px', color: 'rgba(255,255,255,0.7)' }}>
+                All players must roll 2 dice to determine who strikes first!
+              </p>
+              
+              <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '40px' }}>
+                {gameState.players.map(pId => (
+                  <div key={pId} style={{ background: 'rgba(0,0,0,0.5)', padding: '15px 25px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.2)', minWidth: '150px', textAlign: 'center' }}>
+                    <div style={{ fontWeight: 'bold', marginBottom: '10px' }}>{gameState.playerNames?.[pId] || 'Player'}</div>
+                    <div style={{ fontSize: '1.8rem', color: gameState.rollOffs?.[pId] ? '#39ff14' : 'rgba(255,255,255,0.3)' }}>
+                      {gameState.rollOffs?.[pId] ? gameState.rollOffs[pId] : '?'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {!isSpectator && !gameState.rollOffs?.[playerId] && (
+                <button
+                  onClick={handleRollOff}
+                  style={{
+                    background: 'linear-gradient(180deg, #ff9900 0%, #b86e00 100%)',
+                    border: '2px solid #ff9900', borderRadius: '12px', padding: '16px 48px',
+                    color: '#fff', fontSize: '1.5rem', fontWeight: 'bold', cursor: 'pointer',
+                    boxShadow: '0 0 30px rgba(255, 153, 0, 0.5)'
+                  }}
+                >
+                  ROLL 2 DICE
+                </button>
+              )}
+              {gameState.rollOffs?.[playerId] && (
+                <div style={{ fontSize: '1.2rem', color: '#39ff14', fontWeight: 'bold' }}>Waiting for other players...</div>
+              )}
+            </div>
+          )}
+
+          {/* DEFENDER PREPARATION MODAL */}
+          {gameState?.activeDefenseState && (
+            <div
+              style={{
+                position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                background: 'rgba(10, 3, 3, 0.97)',
+                zIndex: 10000,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                color: '#fff',
+                fontFamily: 'Outfit, sans-serif'
+              }}
+            >
+              {/* Animated threat banner */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '12px',
+                marginBottom: '14px',
+                animation: 'pulse 1s ease-in-out infinite alternate'
+              }}>
+                <span style={{ fontSize: '2.2rem' }}>⚠️</span>
+                <h2 style={{
+                  color: 'var(--neon-crimson)', fontSize: '2rem', margin: 0,
+                  textShadow: '0 0 20px var(--neon-crimson), 0 0 40px rgba(255,30,30,0.4)',
+                  letterSpacing: '0.08em'
+                }}>INCOMING ATTACK</h2>
+                <span style={{ fontSize: '2.2rem' }}>⚠️</span>
+              </div>
+
+              {/* Incoming card pill */}
+              {gameState.activeDefenseState.actionCard && (
+                <div style={{
+                  background: 'rgba(255, 40, 40, 0.12)',
+                  border: '1.5px solid rgba(255, 80, 80, 0.5)',
+                  borderRadius: '10px',
+                  padding: '8px 22px',
+                  marginBottom: '22px',
+                  display: 'flex', alignItems: 'center', gap: '12px'
+                }}>
+                  <span style={{ fontSize: '1.4rem' }}>🃏</span>
+                  <div>
+                    <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#fff', letterSpacing: '0.04em' }}>
+                      {gameState.activeDefenseState.actionCard.name}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'rgba(255,160,160,0.8)', marginTop: '2px' }}>
+                      {gameState.activeDefenseState.actionCard.type} · Cost {gameState.activeDefenseState.actionCard.costET ?? 0} ET
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {gameState.activeDefenseState.targetId === playerId ? (
+                <>
+                  <p style={{ fontSize: '1.15rem', marginBottom: '6px', textAlign: 'center' }}>
+                    <strong style={{ color: 'var(--neon-gold)' }}>{gameState.activeDefenseState.attackerPlayerName}</strong>
+                    {' '}is attacking <strong style={{ color: 'var(--neon-crimson)' }}>YOU</strong>!
+                  </p>
+                  {gameState.activeDefenseState.attackSelectionName && (
+                    <p style={{ fontSize: '0.9rem', color: 'rgba(255,200,100,0.8)', marginBottom: '6px' }}>
+                      Using move: <em>{gameState.activeDefenseState.attackSelectionName}</em>
+                    </p>
+                  )}
+                  <p style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.55)', marginBottom: '22px' }}>
+                    Play a Defense Card from your hand, or take the hit.
+                  </p>
+
+                  {/* Countdown */}
+                  <div style={{
+                    fontSize: '2.6rem', fontWeight: 'bold', marginBottom: '26px',
+                    color: defenseSeconds <= 5 ? '#ff4444' : defenseSeconds <= 10 ? '#ffaa00' : '#ffffff',
+                    textShadow: defenseSeconds <= 5 ? '0 0 20px #ff4444' : 'none',
+                    transition: 'color 0.3s, text-shadow 0.3s',
+                    letterSpacing: '0.05em'
+                  }}>
+                    {defenseSeconds}s
+                  </div>
+
+                  {/* Defense cards in hand */}
+                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center', maxWidth: '820px', marginBottom: '32px' }}>
+                    {myHand.filter(c => ['SHIELD', 'BOOMERANG', 'DEFENCE', 'DODGE', '+DEFENCE'].some(kw => c.name.toUpperCase().includes(kw))).map((card) => (
+                      <button
+                        key={card.id}
+                        onClick={() => handleDefenseSelect(card)}
+                        style={{
+                          background: 'rgba(10, 25, 50, 0.85)',
+                          border: '2px solid #39ff14',
+                          borderRadius: '10px',
+                          padding: '12px 10px',
+                          width: '130px',
+                          cursor: 'pointer',
+                          color: '#fff',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '6px',
+                          boxShadow: '0 0 18px rgba(57, 255, 20, 0.25)',
+                          transition: 'transform 0.15s, box-shadow 0.15s'
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 0 28px rgba(57,255,20,0.5)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 0 18px rgba(57,255,20,0.25)'; }}
+                      >
+                        <div style={{ fontSize: '1.4rem' }}>
+                          {card.name.toUpperCase().includes('BOOMERANG') ? '🪃'
+                            : card.name.toUpperCase().includes('DODGE') ? '💨'
+                            : card.name.toUpperCase().includes('COUNTER') ? '⚔️'
+                            : '🛡️'}
+                        </div>
+                        <div style={{ fontWeight: 'bold', fontSize: '0.75rem', textAlign: 'center', lineHeight: '1.2' }}>{card.name}</div>
+                        <div style={{
+                          fontSize: '0.62rem', color: '#39ff14',
+                          background: 'rgba(57,255,20,0.12)', borderRadius: '4px',
+                          padding: '2px 6px'
+                        }}>{card.type}</div>
+                      </button>
+                    ))}
+                    {myHand.filter(c => ['SHIELD', 'BOOMERANG', 'DEFENCE', 'DODGE', '+DEFENCE'].some(kw => c.name.toUpperCase().includes(kw))).length === 0 && (
+                      <div style={{
+                        color: 'rgba(255,255,255,0.4)', fontStyle: 'italic', padding: '20px 40px',
+                        border: '1px dashed rgba(255,255,255,0.2)', borderRadius: '8px'
+                      }}>No defensive cards in hand.</div>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => handleDefenseSelect(null)}
+                    style={{
+                      background: 'transparent',
+                      border: '1px solid rgba(255,255,255,0.25)',
+                      borderRadius: '8px',
+                      padding: '12px 36px',
+                      color: 'rgba(255,255,255,0.5)',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                      transition: 'border-color 0.2s, color 0.2s'
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.5)'; e.currentTarget.style.color = '#fff'; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; }}
+                  >
+                    ⚡ SKIP — TAKE THE HIT
+                  </button>
+                </>
+              ) : (
+                <div style={{ textAlign: 'center' }}>
+                  <p style={{ fontSize: '1.2rem', marginBottom: '16px' }}>
+                    <strong style={{ color: 'var(--neon-gold)' }}>{gameState.activeDefenseState.attackerPlayerName}</strong>
+                    {' '}is attacking{' '}
+                    <strong style={{ color: '#00f0ff' }}>{gameState.activeDefenseState.defenderPlayerName}</strong>!
+                  </p>
+                  <p style={{ fontSize: '1.3rem', color: 'var(--neon-crimson)', fontWeight: 'bold' }}>
+                    ⏳ Waiting for {gameState.activeDefenseState.defenderPlayerName} to prepare defense...
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* DIRECTION SELECT MODAL */}
+          {gameState?.status === 'direction_select' && (
+            <div
+              style={{
+                position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                background: 'rgba(5, 10, 24, 0.95)', zIndex: 10000,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff'
+              }}
+            >
+              <h2 style={{ color: 'var(--neon-cyan)', fontSize: '2.5rem', marginBottom: '20px', textShadow: '0 0 20px var(--neon-cyan)' }}>🔄 ROTATION DIRECTION 🔄</h2>
+              
+              {gameState.turn === playerId ? (
+                <>
+                  <p style={{ fontSize: '1.2rem', marginBottom: '40px', color: '#fff' }}>
+                    You won the roll-off! Choose the turn rotation direction:
+                  </p>
+                  <div style={{ display: 'flex', gap: '30px' }}>
+                    <button
+                      onClick={() => handleDirectionSelect('clockwise')}
+                      style={{
+                        background: 'rgba(0,0,0,0.5)', border: '2px solid #39ff14', borderRadius: '12px',
+                        padding: '20px 40px', color: '#39ff14', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer',
+                        transition: 'all 0.2s', boxShadow: '0 0 20px rgba(57, 255, 20, 0.2)'
+                      }}
+                    >
+                      CLOCKWISE (Right) ↻
+                    </button>
+                    <button
+                      onClick={() => handleDirectionSelect('counter')}
+                      style={{
+                        background: 'rgba(0,0,0,0.5)', border: '2px solid #00f0ff', borderRadius: '12px',
+                        padding: '20px 40px', color: '#00f0ff', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer',
+                        transition: 'all 0.2s', boxShadow: '0 0 20px rgba(0, 240, 255, 0.2)'
+                      }}
+                    >
+                      COUNTER-CLOCKWISE (Left) ↺
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <p style={{ fontSize: '1.5rem', color: 'var(--neon-cyan)', fontWeight: 'bold' }}>
+                  Waiting for {gameState.playerNames?.[gameState.turn] || 'the winner'} to select direction...
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* CHARACTER SELECT MODAL */}
+          {gameState?.status === 'character_select' && (
+             <div
+              style={{
+                position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                background: 'rgba(5, 10, 24, 0.95)', zIndex: 10000,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff'
+              }}
+             >
+                <h2 style={{ color: 'var(--neon-cyan)', fontSize: '2.5rem', marginBottom: '20px', textShadow: '0 0 20px var(--neon-cyan)' }}>✨ CHARACTER SELECTION ✨</h2>
+                
+                {gameState.turn === playerId ? (
+                    <>
+                      <p style={{ fontSize: '1.2rem', marginBottom: '20px', color: '#fff' }}>
+                        It's your turn to choose a character!
+                      </p>
+                      
+                      {/* Character Selection Grid */}
+                      <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', justifyContent: 'center', maxWidth: '900px' }}>
+                        {Object.values(KONTROLA_CHARACTERS).map((char) => {
+                          const isTaken = gameState && Object.values(gameState.characterSelections || {}).includes(char.id);
+                          return (
+                            <div
+                              key={char.id}
+                              onClick={() => {
+                                if (isTaken) {
+                                  showNotice(`${char.name} has already been chosen!`, 'warning');
+                                  return;
+                                }
+                                handleCharacterSelect(char.id);
+                              }}
+                              style={{
+                                background: isTaken ? 'rgba(30, 10, 20, 0.55)' : 'rgba(0, 0, 0, 0.45)',
+                                border: isTaken ? '1px dashed rgba(255, 42, 85, 0.5)' : `2px solid ${char.themeColor || 'var(--neon-cyan)'}`,
+                                borderRadius: '12px',
+                                padding: '15px',
+                                textAlign: 'center',
+                                cursor: isTaken ? 'not-allowed' : 'pointer',
+                                opacity: isTaken ? 0.45 : 1,
+                                width: '130px',
+                                transition: 'transform 0.2s'
+                              }}
+                            >
+                              <img src={getAssetUrl(char.image)} alt={char.name} style={{ width: '80px', height: '80px', borderRadius: '50%', border: `2px solid ${char.themeColor}` }} />
+                              <div style={{ fontWeight: 'bold', marginTop: '10px' }}>{char.name}</div>
+                              <div style={{ fontSize: '0.8rem', color: char.themeColor }}>{char.element}</div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </>
+                ) : (
+                   <p style={{ fontSize: '1.5rem', color: 'var(--neon-cyan)', fontWeight: 'bold' }}>
+                     Waiting for {gameState.playerNames?.[gameState.turn] || 'the next player'} to choose a character...
+                   </p>
+                )}
+             </div>
+          )}
+
           {/* VISION X1 REVEAL MODAL */}
           {revealedVision && (
             <div
@@ -2626,7 +3226,7 @@ export default function KontrolaArena() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(0,240,255,0.25)', paddingBottom: '8px', marginBottom: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--neon-cyan)', fontWeight: 'bold' }}>
                   <Eye size={18} />
-                  <span>VISION X1 REVEAL ({revealedVision.targetName})</span>
+                  <span>{revealedVision.isXChange ? 'X-CHANGE X1 REVEAL' : 'VISION X1 REVEAL'} ({revealedVision.targetName})</span>
                 </div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--neon-gold)', fontWeight: 'bold' }}>
                   {Math.max(0, Math.ceil((revealedVision.expiresAt - Date.now()) / 1000))}s left
@@ -2649,7 +3249,8 @@ export default function KontrolaArena() {
               combatData={activeCombat}
               precalculatedRolls={activeCombat.precalculatedRolls}
               isAttacker={activeCombat.attackerId === playerId || (isHost && !activeCombat.attackerId)}
-              isSpectator={isSpectator || (activeCombat.attackerId !== playerId && activeCombat.targetId !== playerId)}
+              isDefender={activeCombat.targetId === playerId || (activeCombat.targetId === 'ALL' && activeCombat.attackerId !== playerId) || (!activeCombat.targetId && activeCombat.attackerId !== playerId)}
+              isSpectator={isSpectator || (activeCombat.attackerId !== playerId && activeCombat.targetId !== playerId && activeCombat.targetId !== 'ALL' && Boolean(activeCombat.targetId))}
               isExternallyRolling={isDiceRollingSync}
               onTriggerRoll={handleTriggerDiceRoll}
               onClose={() => handleCloseDiceScreen(false)}

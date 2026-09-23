@@ -232,6 +232,38 @@ export const knowledgeService = {
     }
   },
 
+  // Direct rule correction submission (works even if questionId is null or guest)
+  async submitRuleCorrection({ questionId = null, questionText = '', aiAnswer = '', suggestedAnswer, userId = null, userName = 'Guest Player' }) {
+    if (!suggestedAnswer || !suggestedAnswer.trim()) return false;
+    try {
+      if (questionId) {
+        const ok = await this.submitFeedback(questionId, 'unhelpful', suggestedAnswer.trim());
+        if (ok) return true;
+      }
+      if (!supabase) return false;
+      const { error } = await supabase
+        .from('user_questions')
+        .insert({
+          user_id: userId,
+          user_name: userName,
+          question_text: questionText ? questionText.trim() : 'Official Rule Correction Submission',
+          ai_answer: aiAnswer ? aiAnswer.trim() : '',
+          user_rating: 'unhelpful',
+          user_suggested_answer: suggestedAnswer.trim(),
+          admin_status: 'pending',
+          app_source: 'companion_hub',
+          created_at: new Date().toISOString()
+        });
+      if (error) {
+        console.warn('Could not insert rule correction directly:', error);
+      }
+      return !error;
+    } catch (e) {
+      console.warn('Direct rule correction submit failed:', e);
+      return false;
+    }
+  },
+
   // Admin: Fetch user questions with optional filtering
   async fetchUserQuestions({ filter = 'all', limit = 50 } = {}) {
     if (!supabase) return [];
@@ -294,6 +326,30 @@ export const knowledgeService = {
   },
 
   async fetchDocuments() {
+    // 1. Try Supabase
+    if (supabase) {
+      try {
+        const { data, error } = await supabase.from('knowledge_documents').select('*');
+        if (!error && data) {
+          return data.map(d => ({
+            id: d.id,
+            filename: d.filename,
+            title: d.title,
+            category: d.category,
+            content: d.content,
+            charCount: d.char_count,
+            estimatedTokens: d.estimated_tokens,
+            isMaster: d.is_master,
+            isActive: d.is_active,
+            updatedAt: d.updated_at
+          }));
+        }
+      } catch (e) {
+        console.warn('knowledgeService: Supabase knowledge_documents table error or missing. Falling back to localStorage.', e);
+      }
+    }
+
+    // 2. Fallback to localStorage
     try {
       const stored = localStorage.getItem('tcg_knowledge_documents_v2');
       if (stored) {
@@ -359,6 +415,28 @@ export const knowledgeService = {
       updatedAt: new Date().toISOString()
     };
 
+    if (supabase) {
+      try {
+        const { error } = await supabase.from('knowledge_documents').update({
+          filename: updatedDoc.filename,
+          title: updatedDoc.title,
+          category: updatedDoc.category,
+          content: updatedDoc.content,
+          char_count: updatedDoc.charCount,
+          estimated_tokens: updatedDoc.estimatedTokens,
+          is_master: updatedDoc.isMaster,
+          is_active: updatedDoc.isActive,
+          updated_at: updatedDoc.updatedAt
+        }).eq('id', docId);
+        
+        if (error && error.code !== '42P01') {
+          console.warn('knowledgeService: Supabase update error:', error);
+        }
+      } catch (e) {
+         console.warn('knowledgeService: Supabase update error', e);
+      }
+    }
+
     docs[docIndex] = updatedDoc;
     localStorage.setItem('tcg_knowledge_documents_v2', JSON.stringify(docs));
     return updatedDoc;
@@ -386,8 +464,11 @@ export const knowledgeService = {
     const cleanName = filename.trim().replace(/[^a-zA-Z0-9_\-\.]/g, '_');
     const safeFilename = cleanName.endsWith('.txt') ? cleanName : `${cleanName}.txt`;
     const charCount = content.length;
+    
+    // Attempt Supabase insert if supported, else generate local ID
+    let docId = `doc-${Date.now()}`;
     const newDoc = {
-      id: `doc-${Date.now()}`,
+      id: docId,
       filename: safeFilename,
       title: (title || safeFilename).trim(),
       category: (category || 'General').trim(),
@@ -398,6 +479,29 @@ export const knowledgeService = {
       isActive: true,
       updatedAt: new Date().toISOString()
     };
+
+    if (supabase) {
+       try {
+         const { data, error } = await supabase.from('knowledge_documents').insert({
+            filename: newDoc.filename,
+            title: newDoc.title,
+            category: newDoc.category,
+            content: newDoc.content,
+            char_count: newDoc.charCount,
+            estimated_tokens: newDoc.estimatedTokens,
+            is_master: newDoc.isMaster,
+            is_active: newDoc.isActive,
+            updated_at: newDoc.updatedAt
+         }).select('id').single();
+         if (!error && data) {
+           newDoc.id = data.id;
+         } else if (error && error.code !== '42P01') {
+           console.warn('knowledgeService: Supabase insert error:', error);
+         }
+       } catch (e) {
+          console.warn('knowledgeService: Supabase insert exception', e);
+       }
+    }
 
     const updatedList = [...docs, newDoc];
     localStorage.setItem('tcg_knowledge_documents_v2', JSON.stringify(updatedList));
@@ -411,6 +515,18 @@ export const knowledgeService = {
     if (target.isMaster || target.id === 'ai-breakdowns-master') {
       throw new Error('Master document AI_Breakdowns.txt cannot be deleted. You can reset it to original default instead.');
     }
+    
+    if (supabase) {
+       try {
+          const { error } = await supabase.from('knowledge_documents').delete().eq('id', docId);
+          if (error && error.code !== '42P01') {
+            console.warn('knowledgeService: Supabase delete error:', error);
+          }
+       } catch(e) {
+          console.warn('knowledgeService: Supabase delete exception', e);
+       }
+    }
+
     const filtered = docs.filter((d) => d.id !== docId);
     localStorage.setItem('tcg_knowledge_documents_v2', JSON.stringify(filtered));
     return true;
@@ -432,6 +548,28 @@ export const knowledgeService = {
       isActive: true,
       updatedAt: new Date().toISOString()
     };
+
+    if (supabase) {
+      try {
+        const { error } = await supabase.from('knowledge_documents').upsert({
+          id: masterDoc.id,
+          filename: masterDoc.filename,
+          title: masterDoc.title,
+          category: masterDoc.category,
+          content: masterDoc.content,
+          char_count: masterDoc.charCount,
+          estimated_tokens: masterDoc.estimatedTokens,
+          is_master: masterDoc.isMaster,
+          is_active: masterDoc.isActive,
+          updated_at: masterDoc.updatedAt
+        });
+        if (error && error.code !== '42P01') {
+          console.warn('knowledgeService: Supabase upsert error:', error);
+        }
+      } catch (e) {
+         console.warn('knowledgeService: Supabase upsert exception', e);
+      }
+    }
 
     if (masterIndex >= 0) {
       docs[masterIndex] = masterDoc;

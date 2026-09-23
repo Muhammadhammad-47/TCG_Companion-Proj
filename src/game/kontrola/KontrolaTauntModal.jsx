@@ -36,10 +36,11 @@ export default function KontrolaTauntModal({ activePlayerName, onClose, onTaunt 
   };
 
   const handleSend = (msg) => {
-    if (!msg.trim()) return;
+    if (!msg || !msg.trim()) return;
     soundFX.playMenuSelect();
-    saveRecent(msg);
-    onTaunt(msg);
+    saveRecent(msg.trim());
+    onTaunt(msg.trim());
+    onClose();
   };
 
   return (
