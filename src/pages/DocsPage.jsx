@@ -6,6 +6,8 @@ import {
   Zap, FileCode
 } from 'lucide-react';
 
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+
 export default function DocsPage() {
   const navigate = useNavigate();
   const [activePage, setActivePage] = useState('overview');

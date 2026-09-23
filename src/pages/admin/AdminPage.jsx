@@ -12,6 +12,8 @@ import {
 import { authService } from '../../services/authService';
 import { knowledgeService, calculateGroqMetrics, GROQ_LIMITS } from '../../services/knowledgeService';
 
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+
 export default function AdminPage() {
   const navigate = useNavigate();
 
