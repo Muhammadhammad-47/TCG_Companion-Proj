@@ -180,7 +180,6 @@ export default function KontrolaArena() {
 
   const [turnSecondsLeft, setTurnSecondsLeft] = useState(60);
   const [revealedVision, setRevealedVision] = useState(null);
-  const [isRollingOff, setIsRollingOff] = useState(false);
 
   const [defenseSeconds, setDefenseSeconds] = useState(15);
 
@@ -296,16 +295,21 @@ export default function KontrolaArena() {
   // ==========================================
   // ROLL-OFF AND DIRECTION SELECT HANDLERS
   // ==========================================
+  const [rollingOffPlayers, setRollingOffPlayers] = useState({});
+
   const handleRollOff = () => {
-    if (isProcessingAction || isRollingOff) return;
-    setIsRollingOff(true);
+    if (isProcessingAction || rollingOffPlayers[playerId]) return;
+    
+    // Broadcast animation to everyone!
+    broadcastUIEvent(matchIdRef.current, 'roll_off_animation', { actorId: playerId });
+    
+    // Local fallback for sound and processing lock
     playClick();
     if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
+    setIsProcessingAction(true);
     
     // Animate dice rolling for 1.2s before submitting result
     setTimeout(() => {
-      setIsRollingOff(false);
-      setIsProcessingAction(true);
       const d1 = rollDice(1)[0];
       const d2 = rollDice(1)[0];
       const total = d1 + d2;
@@ -531,6 +535,15 @@ export default function KontrolaArena() {
           setActiveTauntBubble(event.payload);
           setChatMessages((prev) => [...prev, { ...event.payload, text: `🗯️ [TAUNT]: "${event.payload.text}"` }]);
           setTimeout(() => setActiveTauntBubble(null), 4500);
+        }
+        else if (event.type === 'ROLL_OFF_ANIMATION') {
+          const { actorId } = event.payload || {};
+          if (actorId) {
+            setRollingOffPlayers(prev => ({ ...prev, [actorId]: true }));
+            setTimeout(() => {
+               setRollingOffPlayers(prev => ({ ...prev, [actorId]: false }));
+            }, 1200);
+          }
         }
         // 11. Action Effects (Syncs Vision, Shakes, Sounds, Damage Popups)
         else if (event.type === 'ACTION_EFFECT') {
@@ -2997,7 +3010,7 @@ export default function KontrolaArena() {
               <div style={{ display: 'flex', gap: '30px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '50px' }}>
                 {gameState.players.map(pId => {
                   const hasRolled = Boolean(gameState.rollOffs?.[pId]);
-                  const isMeRolling = pId === playerId && isRollingOff;
+                  const isRolling = rollingOffPlayers[pId];
                   return (
                     <div key={pId} style={{ 
                       background: hasRolled ? 'rgba(57, 255, 20, 0.08)' : 'rgba(0,0,0,0.6)', 
@@ -3019,7 +3032,7 @@ export default function KontrolaArena() {
                           <div style={{ fontSize: '3rem', color: '#39ff14', fontWeight: 'bold', textShadow: '0 0 15px rgba(57, 255, 20, 0.5)' }}>
                             {gameState.rollOffs[pId]}
                           </div>
-                        ) : isMeRolling ? (
+                        ) : isRolling ? (
                           <>
                             <CanvasPipDie value={Math.floor(Math.random() * 6) + 1} theme="red" isRolling={true} size={55} />
                             <CanvasPipDie value={Math.floor(Math.random() * 6) + 1} theme="red" isRolling={true} size={55} />
@@ -3030,8 +3043,8 @@ export default function KontrolaArena() {
                       </div>
                       
                       {hasRolled && <div style={{ marginTop: '10px', color: '#39ff14', fontSize: '0.9rem' }}>Roll Complete</div>}
-                      {isMeRolling && <div style={{ marginTop: '10px', color: '#ff2a55', fontSize: '0.9rem', animation: 'pulse 0.5s infinite alternate' }}>Rolling...</div>}
-                      {!hasRolled && !isMeRolling && <div style={{ marginTop: '10px', color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem' }}>Waiting...</div>}
+                      {isRolling && <div style={{ marginTop: '10px', color: '#ff2a55', fontSize: '0.9rem', animation: 'pulse 0.5s infinite alternate' }}>Rolling...</div>}
+                      {!hasRolled && !isRolling && <div style={{ marginTop: '10px', color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem' }}>Waiting...</div>}
                     </div>
                   );
                 })}
@@ -3040,19 +3053,19 @@ export default function KontrolaArena() {
               {!isSpectator && !gameState.rollOffs?.[playerId] && (
                 <button
                   onClick={handleRollOff}
-                  disabled={isRollingOff}
+                  disabled={rollingOffPlayers[playerId]}
                   style={{
                     background: 'linear-gradient(180deg, #ff2a55 0%, #a80022 100%)',
                     border: '2px solid #ff8899', borderRadius: '12px', padding: '18px 50px',
                     color: '#fff', fontSize: '1.5rem', fontWeight: '900', 
-                    cursor: isRollingOff ? 'wait' : 'pointer',
+                    cursor: rollingOffPlayers[playerId] ? 'wait' : 'pointer',
                     boxShadow: '0 0 30px rgba(255, 42, 85, 0.6)',
                     display: 'flex', alignItems: 'center', gap: '12px',
                     letterSpacing: '1px', textTransform: 'uppercase'
                   }}
                 >
                   <Dices size={28} />
-                  {isRollingOff ? 'ROLLING DICE...' : 'ROLL 2 DICE'}
+                  {rollingOffPlayers[playerId] ? 'ROLLING DICE...' : 'ROLL 2 DICE'}
                 </button>
               )}
               {gameState.rollOffs?.[playerId] && (
@@ -3226,54 +3239,64 @@ export default function KontrolaArena() {
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff'
               }}
              >
-                <h2 style={{ color: 'var(--neon-cyan)', fontSize: '2.5rem', marginBottom: '20px', textShadow: '0 0 20px var(--neon-cyan)' }}>✨ CHARACTER SELECTION ✨</h2>
+                 <h2 style={{ color: 'var(--neon-cyan)', fontSize: '2.5rem', marginBottom: '20px', textShadow: '0 0 20px var(--neon-cyan)' }}>✨ CHARACTER SELECTION ✨</h2>
                 
-                {gameState.turn === playerId ? (
-                    <>
-                      <p style={{ fontSize: '1.2rem', marginBottom: '20px', color: '#fff' }}>
-                        It's your turn to choose a character!
-                      </p>
-                      
-                      {/* Character Selection Grid */}
-                      <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', justifyContent: 'center', maxWidth: '900px' }}>
-                        {Object.values(KONTROLA_CHARACTERS).map((char) => {
-                          const isTaken = gameState && Object.values(gameState.characterSelections || {}).includes(char.id);
-                          return (
-                            <div
-                              key={char.id}
-                              onClick={() => {
-                                if (isTaken) {
-                                  showNotice(`${char.name} has already been chosen!`, 'warning');
-                                  return;
-                                }
-                                handleCharacterSelect(char.id);
-                              }}
-                              style={{
-                                background: isTaken ? 'rgba(30, 10, 20, 0.55)' : 'rgba(0, 0, 0, 0.45)',
-                                border: isTaken ? '1px dashed rgba(255, 42, 85, 0.5)' : `2px solid ${char.themeColor || 'var(--neon-cyan)'}`,
-                                borderRadius: '12px',
-                                padding: '15px',
-                                textAlign: 'center',
-                                cursor: isTaken ? 'not-allowed' : 'pointer',
-                                opacity: isTaken ? 0.45 : 1,
-                                width: '130px',
-                                transition: 'transform 0.2s'
-                              }}
-                            >
-                              <img src={getAssetUrl(char.image)} alt={char.name} style={{ width: '80px', height: '80px', borderRadius: '50%', border: `2px solid ${char.themeColor}` }} />
-                              <div style={{ fontWeight: 'bold', marginTop: '10px' }}>{char.name}</div>
-                              <div style={{ fontSize: '0.8rem', color: char.themeColor }}>{char.element}</div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </>
-                ) : (
-                   <p style={{ fontSize: '1.5rem', color: 'var(--neon-cyan)', fontWeight: 'bold' }}>
+                 {gameState.turn === playerId ? (
+                   <p style={{ fontSize: '1.2rem', marginBottom: '20px', color: '#fff' }}>
+                     It's your turn to choose a character!
+                   </p>
+                 ) : (
+                   <p style={{ fontSize: '1.5rem', color: 'var(--neon-cyan)', fontWeight: 'bold', marginBottom: '20px' }}>
                      Waiting for {gameState.playerNames?.[gameState.turn] || 'the next player'} to choose a character...
                    </p>
-                )}
-             </div>
+                 )}
+
+                 {/* Character Selection Grid (Visible to all players) */}
+                 <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', justifyContent: 'center', maxWidth: '900px' }}>
+                   {Object.values(KONTROLA_CHARACTERS).map((char) => {
+                     const isTaken = gameState && Object.values(gameState.characterSelections || {}).includes(char.id);
+                     let ownerName = null;
+                     if (isTaken) {
+                        const ownerId = Object.keys(gameState.characterSelections).find(id => gameState.characterSelections[id] === char.id);
+                        ownerName = gameState.playerNames?.[ownerId] || 'Taken';
+                     }
+                     return (
+                       <div
+                         key={char.id}
+                         onClick={() => {
+                           if (gameState.turn !== playerId) return;
+                           if (isTaken) {
+                             showNotice(`${char.name} has already been chosen!`, 'warning');
+                             return;
+                           }
+                           handleCharacterSelect(char.id);
+                         }}
+                         style={{
+                           background: isTaken ? 'rgba(30, 10, 20, 0.55)' : 'rgba(0, 0, 0, 0.45)',
+                           border: isTaken ? '1px dashed rgba(255, 42, 85, 0.5)' : `2px solid ${char.themeColor || 'var(--neon-cyan)'}`,
+                           borderRadius: '12px',
+                           padding: '15px',
+                           textAlign: 'center',
+                           cursor: gameState.turn === playerId && !isTaken ? 'pointer' : 'not-allowed',
+                           opacity: isTaken ? 0.45 : 1,
+                           width: '130px',
+                           transition: 'transform 0.2s',
+                           position: 'relative'
+                         }}
+                       >
+                         {isTaken && (
+                           <div style={{ position: 'absolute', top: -10, right: -10, background: '#ff2a55', color: '#fff', padding: '4px 8px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 'bold', zIndex: 10 }}>
+                             {ownerName}
+                           </div>
+                         )}
+                         <img src={getAssetUrl(char.image)} alt={char.name} style={{ width: '80px', height: '80px', borderRadius: '50%', border: `2px solid ${char.themeColor}` }} />
+                         <div style={{ fontWeight: 'bold', marginTop: '10px' }}>{char.name}</div>
+                         <div style={{ fontSize: '0.8rem', color: char.themeColor }}>{char.element}</div>
+                       </div>
+                     )
+                   })}
+                 </div>
+              </div>
           )}
 
           {/* VISION X1 REVEAL MODAL */}
