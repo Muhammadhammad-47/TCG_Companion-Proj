@@ -732,16 +732,19 @@ export default function KontrolaArena() {
         } else {
           nextState.logs = [`🎲 ${currentState.playerNames?.[payload.actorId] || 'Player'} rolled a ${payload.total}.`, ...(currentState.logs || [])];
         }
+        broadcastState(matchIdRef.current, nextState);
         return nextState;
       }
 
       if (payload.actionType === 'DIRECTION_SELECT') {
-        return {
+        const nextState = {
           ...currentState,
           status: 'character_select',
           turnDirection: payload.direction,
           logs: [`🔄 Rotation set to ${payload.direction.toUpperCase()}. Character Selection phase has begun!`, ...(currentState.logs || [])]
         };
+        broadcastState(matchIdRef.current, nextState);
+        return nextState;
       }
 
       if (payload.actionType === 'CHARACTER_SELECT') {
@@ -805,15 +808,18 @@ export default function KontrolaArena() {
             nextState.turn = currentState.players[nextIdx] || currentState.players[0];
         }
 
+        broadcastState(matchIdRef.current, nextState);
         return nextState;
       }
 
       if (payload.actionType === 'ATTACK_DECLARED') {
-        return {
+        const nextState = {
           ...currentState,
           activeDefenseState: { ...payload, expiresAt: Date.now() + 15000 },
           logs: [`⚠️ ${payload.attackerPlayerName} is attacking ${payload.defenderPlayerName}! Waiting for defender to prepare...`, ...(currentState.logs || [])]
         };
+        broadcastState(matchIdRef.current, nextState);
+        return nextState;
       }
 
       if (payload.actionType === 'DEFENSE_SELECTED') {
@@ -832,10 +838,12 @@ export default function KontrolaArena() {
           broadcastUIEvent(matchIdRef.current, 'dice_screen_open', activeCombat);
         }, 100);
 
-        return {
+        const nextState = {
           ...currentState,
           activeDefenseState: null
         };
+        broadcastState(matchIdRef.current, nextState);
+        return nextState;
       }
 
       const { actorId, actionCard, attackSelectionName, targetId } = payload;
