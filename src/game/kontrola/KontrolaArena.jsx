@@ -16,7 +16,7 @@ import {
 } from './MultiplayerClient';
 import { authService } from '../../services/authService';
 import { getCardGraphicUrl, getCharacterAttackGraphicUrl, getWildCardGraphicUrl } from './kontrolaAssets';
-import KontrolaDiceRoller from './KontrolaDiceRoller';
+import KontrolaDiceRoller, { CanvasPipDie } from './KontrolaDiceRoller';
 import KontrolaChatModal from './KontrolaChatModal';
 import KontrolaTauntModal from './KontrolaTauntModal';
 import '../../pages/GamePage.css';
@@ -178,10 +178,9 @@ export default function KontrolaArena() {
   const playerNameRef = useRef(playerName);
   playerNameRef.current = playerName;
 
-  // Turn timer (60s) & Vision card reveal modal
   const [turnSecondsLeft, setTurnSecondsLeft] = useState(60);
   const [revealedVision, setRevealedVision] = useState(null);
-
+  const [isRollingOff, setIsRollingOff] = useState(false);
 
   const [defenseSeconds, setDefenseSeconds] = useState(15);
 
@@ -298,16 +297,23 @@ export default function KontrolaArena() {
   // ROLL-OFF AND DIRECTION SELECT HANDLERS
   // ==========================================
   const handleRollOff = () => {
-    if (isProcessingAction) return;
-    setIsProcessingAction(true);
+    if (isProcessingAction || isRollingOff) return;
+    setIsRollingOff(true);
     playClick();
-    const d1 = rollDice(1)[0];
-    const d2 = rollDice(1)[0];
-    const total = d1 + d2;
-    const payload = { actionType: 'ROLL_OFF', actorId: playerId, total };
-    if (isHostRef.current) enqueueHostAction(payload);
-    else takeTurn(matchIdRef.current, { type: 'PLAYER_ACTION', payload });
-    setTimeout(() => setIsProcessingAction(false), 2500);
+    if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
+    
+    // Animate dice rolling for 1.2s before submitting result
+    setTimeout(() => {
+      setIsRollingOff(false);
+      setIsProcessingAction(true);
+      const d1 = rollDice(1)[0];
+      const d2 = rollDice(1)[0];
+      const total = d1 + d2;
+      const payload = { actionType: 'ROLL_OFF', actorId: playerId, total, dice: [d1, d2] };
+      if (isHostRef.current) enqueueHostAction(payload);
+      else takeTurn(matchIdRef.current, { type: 'PLAYER_ACTION', payload });
+      setTimeout(() => setIsProcessingAction(false), 2500);
+    }, 1200);
   };
 
   const handleDirectionSelect = (direction) => {
@@ -903,6 +909,7 @@ export default function KontrolaArena() {
       let log = `${attackerChar.name} passed their turn.`;
       let newDeck = [...(currentState.deck || [])];
       let newHand = [...(currentState.hands?.[actorId] || [])];
+      let resolved = {};
 
       if (!isPass) {
         // Deduct ET Cost
@@ -910,7 +917,7 @@ export default function KontrolaArena() {
         newAttackerState.energyTokens = Math.max(0, (newAttackerState.energyTokens || 5) - cost);
 
         // Resolve Turn via Engine
-        const resolved = resolveTurn(
+        resolved = resolveTurn(
           actionCard,
           KONTROLA_CHARACTERS[attackerChar.id] || attackerChar,
           newAttackerState,
@@ -2992,41 +2999,82 @@ export default function KontrolaArena() {
             <div
               style={{
                 position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                background: 'rgba(5, 10, 24, 0.95)', zIndex: 10000,
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff'
+                background: 'radial-gradient(ellipse at center, rgba(15, 20, 35, 0.98) 0%, rgba(5, 8, 15, 0.99) 100%)', 
+                zIndex: 10000,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff',
+                animation: 'fadeIn 0.3s ease'
               }}
             >
-              <h2 style={{ color: 'var(--neon-gold)', fontSize: '2.5rem', marginBottom: '20px', textShadow: '0 0 20px var(--neon-gold)' }}>🎲 ROLL-OFF 🎲</h2>
-              <p style={{ fontSize: '1.2rem', marginBottom: '40px', color: 'rgba(255,255,255,0.7)' }}>
+              <h2 style={{ color: 'var(--neon-gold)', fontSize: '2.8rem', marginBottom: '10px', textShadow: '0 0 20px var(--neon-gold)' }}>🎲 ROLL-OFF 🎲</h2>
+              <p style={{ fontSize: '1.2rem', marginBottom: '40px', color: '#00f0ff', background: 'rgba(0, 240, 255, 0.1)', padding: '10px 20px', borderRadius: '8px', border: '1px solid rgba(0, 240, 255, 0.3)' }}>
                 All players must roll 2 dice to determine who strikes first!
               </p>
               
-              <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '40px' }}>
-                {gameState.players.map(pId => (
-                  <div key={pId} style={{ background: 'rgba(0,0,0,0.5)', padding: '15px 25px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.2)', minWidth: '150px', textAlign: 'center' }}>
-                    <div style={{ fontWeight: 'bold', marginBottom: '10px' }}>{gameState.playerNames?.[pId] || 'Player'}</div>
-                    <div style={{ fontSize: '1.8rem', color: gameState.rollOffs?.[pId] ? '#39ff14' : 'rgba(255,255,255,0.3)' }}>
-                      {gameState.rollOffs?.[pId] ? gameState.rollOffs[pId] : '?'}
+              <div style={{ display: 'flex', gap: '30px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '50px' }}>
+                {gameState.players.map(pId => {
+                  const hasRolled = Boolean(gameState.rollOffs?.[pId]);
+                  const isMeRolling = pId === playerId && isRollingOff;
+                  return (
+                    <div key={pId} style={{ 
+                      background: hasRolled ? 'rgba(57, 255, 20, 0.08)' : 'rgba(0,0,0,0.6)', 
+                      padding: '25px 35px', 
+                      borderRadius: '16px', 
+                      border: hasRolled ? '2px solid #39ff14' : '1px solid rgba(255,255,255,0.2)', 
+                      minWidth: '180px', 
+                      textAlign: 'center',
+                      boxShadow: hasRolled ? '0 0 20px rgba(57, 255, 20, 0.2)' : 'none',
+                      transition: 'all 0.3s ease'
+                    }}>
+                      <div style={{ fontWeight: '900', fontSize: '1.2rem', marginBottom: '15px', color: pId === playerId ? 'var(--neon-cyan)' : '#fff' }}>
+                        {gameState.playerNames?.[pId] || 'Player'}
+                        {pId === playerId && ' (You)'}
+                      </div>
+                      
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', minHeight: '60px', alignItems: 'center' }}>
+                        {hasRolled ? (
+                          <div style={{ fontSize: '3rem', color: '#39ff14', fontWeight: 'bold', textShadow: '0 0 15px rgba(57, 255, 20, 0.5)' }}>
+                            {gameState.rollOffs[pId]}
+                          </div>
+                        ) : isMeRolling ? (
+                          <>
+                            <CanvasPipDie value={Math.floor(Math.random() * 6) + 1} theme="red" isRolling={true} size={55} />
+                            <CanvasPipDie value={Math.floor(Math.random() * 6) + 1} theme="red" isRolling={true} size={55} />
+                          </>
+                        ) : (
+                          <div style={{ fontSize: '2.5rem', color: 'rgba(255,255,255,0.2)' }}>?</div>
+                        )}
+                      </div>
+                      
+                      {hasRolled && <div style={{ marginTop: '10px', color: '#39ff14', fontSize: '0.9rem' }}>Roll Complete</div>}
+                      {isMeRolling && <div style={{ marginTop: '10px', color: '#ff2a55', fontSize: '0.9rem', animation: 'pulse 0.5s infinite alternate' }}>Rolling...</div>}
+                      {!hasRolled && !isMeRolling && <div style={{ marginTop: '10px', color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem' }}>Waiting...</div>}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {!isSpectator && !gameState.rollOffs?.[playerId] && (
                 <button
                   onClick={handleRollOff}
+                  disabled={isRollingOff}
                   style={{
-                    background: 'linear-gradient(180deg, #ff9900 0%, #b86e00 100%)',
-                    border: '2px solid #ff9900', borderRadius: '12px', padding: '16px 48px',
-                    color: '#fff', fontSize: '1.5rem', fontWeight: 'bold', cursor: 'pointer',
-                    boxShadow: '0 0 30px rgba(255, 153, 0, 0.5)'
+                    background: 'linear-gradient(180deg, #ff2a55 0%, #a80022 100%)',
+                    border: '2px solid #ff8899', borderRadius: '12px', padding: '18px 50px',
+                    color: '#fff', fontSize: '1.5rem', fontWeight: '900', 
+                    cursor: isRollingOff ? 'wait' : 'pointer',
+                    boxShadow: '0 0 30px rgba(255, 42, 85, 0.6)',
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    letterSpacing: '1px', textTransform: 'uppercase'
                   }}
                 >
-                  ROLL 2 DICE
+                  <Dices size={28} />
+                  {isRollingOff ? 'ROLLING DICE...' : 'ROLL 2 DICE'}
                 </button>
               )}
               {gameState.rollOffs?.[playerId] && (
-                <div style={{ fontSize: '1.2rem', color: '#39ff14', fontWeight: 'bold' }}>Waiting for other players...</div>
+                <div style={{ fontSize: '1.3rem', color: '#39ff14', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px', animation: 'pulse 1.5s infinite alternate' }}>
+                  <CheckCircle2 size={24} /> Waiting for opponent to roll...
+                </div>
               )}
             </div>
           )}

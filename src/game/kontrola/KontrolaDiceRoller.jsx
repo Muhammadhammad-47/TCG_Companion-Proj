@@ -110,7 +110,7 @@ function drawDiceFaceToCanvas(canvas, value, theme) {
 }
 
 // Authentic Canvas Pip Die Component matching Score Calculator
-function CanvasPipDie({ value = 1, theme = 'red', isRolling = false, size = 68 }) {
+export function CanvasPipDie({ value = 1, theme = 'red', isRolling = false, size = 68 }) {
   const canvasRef = useRef(null);
   const [displayVal, setDisplayVal] = useState(value);
 
