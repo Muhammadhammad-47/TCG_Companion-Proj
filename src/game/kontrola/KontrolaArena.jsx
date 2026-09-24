@@ -303,6 +303,12 @@ export default function KontrolaArena() {
     // Broadcast animation to everyone!
     broadcastUIEvent(matchIdRef.current, 'roll_off_animation', { actorId: playerId });
     
+    // Also trigger it locally since broadcasts don't echo back to sender
+    setRollingOffPlayers(prev => ({ ...prev, [playerId]: true }));
+    setTimeout(() => {
+       setRollingOffPlayers(prev => ({ ...prev, [playerId]: false }));
+    }, 1200);
+    
     // Local fallback for sound and processing lock
     playClick();
     if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
