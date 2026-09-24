@@ -545,6 +545,47 @@ export default function KontrolaArena() {
           setChatMessages((prev) => [...prev, { ...event.payload, text: `🗯️ [TAUNT]: "${event.payload.text}"` }]);
           setTimeout(() => setActiveTauntBubble(null), 4500);
         }
+        // 11. Action Effects (Syncs Vision, Shakes, Sounds, Damage Popups)
+        else if (event.type === 'ACTION_EFFECT') {
+          const { actionType, actionName, dmgDealt, healDelta, visionData } = event.payload || {};
+
+          // Handle Vision Reveal for the player who played it
+          if (visionData && visionData.actorId === playerIdRef.current) {
+            setRevealedVision(visionData);
+          }
+
+          // Visual shake + contextual sound effects + damage number popup
+          if (actionType === 'ATTACK') {
+            setIsShaking(true);
+            setTimeout(() => setIsShaking(false), 800);
+            soundFX.init();
+            
+            if (dmgDealt > 0) spawnDamagePopup(`-${dmgDealt}`, false);
+            
+            if (actionName && actionName.includes('FIRE FLAME')) {
+              soundFX.playTimeout();
+            } else if (actionName && actionName.includes('LIGHTNING')) {
+              soundFX.playPowerUp();
+            } else if (actionName && actionName.includes('BOOMERANG')) {
+              // Boomerang — no hit, just a trap set
+            } else {
+              soundFX.playHit();
+            }
+          } else if (actionType === 'HEAL') {
+            soundFX.init();
+            soundFX.playHeal();
+            if (healDelta > 0) spawnDamagePopup(`+${healDelta}`, true);
+          } else if (actionType === 'DEFENSE') {
+            soundFX.init();
+            soundFX.playMenuSelect();
+          } else if (actionType === 'STATUS') {
+            soundFX.init();
+            soundFX.playZombie();
+          } else if (actionType === 'SPECIAL') {
+            soundFX.init();
+            soundFX.playPowerUp();
+          }
+        }
       },
       () => {
         // Callback fired when channel is fully SUBSCRIBED
@@ -603,11 +644,31 @@ export default function KontrolaArena() {
         nextTurn = livingRemaining[0] || remainingPlayers[0];
       }
 
+      // Prevent roll-off phase stalling if last pending player leaves
+      let updatedStatus = currentGS.status;
+      let updatedRollOffs = { ...currentGS.rollOffs };
+      let updatedTurn = nextTurn;
+      if (currentGS.status === 'roll_off' && remainingPlayers.length > 0) {
+        delete updatedRollOffs[leftPlayerId]; // Remove leaver's roll if any
+        if (Object.keys(updatedRollOffs).length === remainingPlayers.length) {
+          updatedStatus = 'direction_select';
+          let maxTotal = -1;
+          for (const pId of remainingPlayers) {
+            if ((updatedRollOffs[pId] || 0) > maxTotal) {
+              maxTotal = updatedRollOffs[pId];
+              updatedTurn = pId;
+            }
+          }
+        }
+      }
+
       const updatedState = {
         ...currentGS,
+        status: updatedStatus,
+        rollOffs: updatedRollOffs,
         host: isLeaverHost ? remainingPlayers[0] : currentGS.host,
         players: remainingPlayers,
-        turn: nextTurn,
+        turn: updatedTurn,
         logs: [
           `⚠️ ${leaverName} has left the match.${
             isLeaverHost ? ` New host is ${currentGS.playerNames?.[remainingPlayers[0]] || 'Player'}.` : ''
@@ -808,9 +869,10 @@ export default function KontrolaArena() {
         newDefenderState = resolved.newDefenderState;
         log = resolved.log;
 
-        // Vision / X-CHANGE Card Check (reveal opponent's hand to attacker)
-        if (actionCard.name.includes('VISION') || actionCard.name.includes('X-CHANGE')) {
-          if (actorId === playerIdRef.current) {
+        // Broadcast UI effects to all clients (Shake, Sound, Damage Popups, Vision Modals)
+        setTimeout(() => {
+          let visionData = null;
+          if (actionCard.name.includes('VISION') || actionCard.name.includes('X-CHANGE')) {
             if (actionCard.name === 'VISION FULL') {
               const allCards = [];
               Object.keys(currentState.hands || {}).forEach(pid => {
@@ -818,61 +880,45 @@ export default function KontrolaArena() {
                   allCards.push(...(currentState.hands[pid] || []));
                 }
               });
-              setRevealedVision({
+              visionData = {
                 targetId: 'ALL',
                 targetName: 'All Opponents',
                 expiresAt: Date.now() + 30000,
-                cards: allCards
-              });
+                cards: allCards,
+                actorId
+              };
             } else if (targetId && targetId !== 'ALL') {
-              setRevealedVision({
+              visionData = {
                 targetId,
                 isXChange: actionCard.name.includes('X-CHANGE'),
                 targetName: defenderChar?.name || 'Opponent',
                 expiresAt: Date.now() + 15000,
-                cards: currentState.hands?.[targetId] || []
-              });
+                cards: currentState.hands?.[targetId] || [],
+                actorId
+              };
             }
           }
-        }
 
-        // Visual shake + contextual sound effects + damage number popup
-        if (actionCard?.type === 'ATTACK') {
-          setIsShaking(true);
-          setTimeout(() => setIsShaking(false), 800);
-          soundFX.init();
-          // Infer HP damage dealt from defender HP delta
-          const prevDefHP = (currentState.characterStates?.[targetId]?.hp) ?? 0;
-          const newDefHP = newDefenderState?.hp ?? 0;
-          const dmgDealt = Math.max(0, prevDefHP - newDefHP);
-          if (dmgDealt > 0) spawnDamagePopup(`-${dmgDealt}`, false);
-          if (actionCard.name.includes('FIRE FLAME')) {
-            soundFX.playTimeout(); // fire crackle analogue
-          } else if (actionCard.name.includes('LIGHTNING')) {
-            soundFX.playPowerUp(); // lightning zap analogue
-          } else if (actionCard.name.includes('BOOMERANG')) {
-            // Boomerang — no hit, just a trap set
-          } else {
-            soundFX.playHit();
+          let dmgDealt = 0;
+          let healDelta = 0;
+          if (actionCard?.type === 'ATTACK') {
+             const prevDefHP = (currentState.characterStates?.[targetId]?.hp) ?? 0;
+             const newDefHP = newDefenderState?.hp ?? 0;
+             dmgDealt = Math.max(0, prevDefHP - newDefHP);
+          } else if (actionCard?.type === 'HEAL') {
+             const prevAtkHP = (currentState.characterStates?.[actorId]?.hp) ?? 0;
+             const newAtkHP = newAttackerState?.hp ?? 0;
+             healDelta = Math.max(0, newAtkHP - prevAtkHP);
           }
-        } else if (actionCard?.type === 'HEAL') {
-          soundFX.init();
-          soundFX.playHeal();
-          // Infer HP healed from attacker HP delta
-          const prevAtkHP = (currentState.characterStates?.[actorId]?.hp) ?? 0;
-          const newAtkHP = newAttackerState?.hp ?? 0;
-          const healDelta = Math.max(0, newAtkHP - prevAtkHP);
-          if (healDelta > 0) spawnDamagePopup(`+${healDelta}`, true);
-        } else if (actionCard?.type === 'DEFENSE') {
-          soundFX.init();
-          soundFX.playMenuSelect();
-        } else if (actionCard?.type === 'STATUS') {
-          soundFX.init();
-          soundFX.playZombie();
-        } else if (actionCard?.type === 'SPECIAL') {
-          soundFX.init();
-          soundFX.playPowerUp();
-        }
+
+          broadcastUIEvent(matchIdRef.current, 'action_effect', {
+            actionType: actionCard?.type,
+            actionName: actionCard?.name,
+            dmgDealt,
+            healDelta,
+            visionData
+          });
+        }, 100);
 
         // Discard played card and replenish hand to exactly 10 cards
         let discarded = false;
