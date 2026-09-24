@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, Send, X } from 'lucide-react';
 import { CHARACTERS, getAssetUrl } from '../data/characters';
 import { soundFX } from '../utils/audio';
@@ -114,67 +114,6 @@ export default function KontrolaChatModal({
         >
           <X size={14} />
         </button>
-      </div>
-
-      {/* Speaker Selector Strip */}
-      <div
-        style={{
-          padding: '6px 10px',
-          background: 'rgba(0, 0, 0, 0.45)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px'
-        }}
-      >
-        <span style={{ fontSize: '0.62rem', color: 'var(--neon-gold)', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
-          AS:
-        </span>
-        <div
-          style={{
-            display: 'flex',
-            gap: '5px',
-            flex: 1,
-            overflowX: 'auto',
-            paddingBottom: '2px'
-          }}
-        >
-          {players.map((p) => {
-            const isSelected = p.id === selectedSpeakerId;
-            const char = CHARACTERS[p.characterId] || CHARACTERS.chynaman;
-            return (
-              <button
-                key={p.id}
-                onClick={() => {
-                  soundFX.playMenuHover();
-                  setSelectedSpeakerId(p.id);
-                }}
-                style={{
-                  background: isSelected ? 'rgba(0, 240, 255, 0.22)' : 'rgba(255, 255, 255, 0.06)',
-                  border: isSelected ? '1.5px solid #00f0ff' : '1px solid rgba(255, 255, 255, 0.15)',
-                  borderRadius: '14px',
-                  padding: '2px 7px',
-                  color: isSelected ? '#00f0ff' : '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  transition: 'all 0.15s ease',
-                  boxShadow: isSelected ? '0 0 6px rgba(0, 240, 255, 0.4)' : 'none',
-                  flexShrink: 0
-                }}
-              >
-                <div style={{ width: '16px', height: '16px', borderRadius: '50%', overflow: 'hidden', border: `1px solid ${char.themeColor || '#00f0ff'}` }}>
-                  <img src={getAssetUrl(char.image)} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                </div>
-                <span style={{ fontSize: '0.68rem', fontWeight: isSelected ? 'bold' : 'normal' }}>
-                  {p.name}
-                </span>
-              </button>
-            );
-          })}
-        </div>
       </div>
 
       {/* Live Chat Messages Feed */}

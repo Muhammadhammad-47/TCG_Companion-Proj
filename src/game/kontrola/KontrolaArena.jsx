@@ -195,7 +195,11 @@ export default function KontrolaArena() {
       setSelectedActionCard({ id: 'attack_x2_2nd', name: 'ATTACK X2 (2ND HIT)', type: 'ATTACK' });
     }
   }, [isPendingSecondAttack, selectedActionCard]);
-  const opponents = gameState?.players ? gameState.players.filter((p) => p !== playerId) : [];
+  const opponents = gameState?.players ? gameState.players.filter((p) => p !== playerId).sort((a, b) => {
+    const nameA = gameState.playerNames?.[a] || '';
+    const nameB = gameState.playerNames?.[b] || '';
+    return nameA.localeCompare(nameB);
+  }) : [];
   const turnNum = gameState?.turnNumber || 1;
   const roundNum = gameState?.roundNumber || 1;
   const activeTurnPlayerName =
@@ -784,18 +788,30 @@ export default function KontrolaArena() {
               winnerId = pId;
             }
           }
-          nextState.status = 'character_select';
-          nextState.turn = winnerId;
-          nextState.turnDirection = 'clockwise';
-          nextState.logs = [`🎲 Roll-off complete! ${currentState.playerNames?.[winnerId] || 'Player'} won with a ${maxTotal} and gets the first turn! Character Selection phase has begun.`, ...(currentState.logs || [])];
+          nextState.status = 'roll_off_complete';
+          nextState.rollOffWinner = winnerId;
+          nextState.logs = [`🎲 Roll-off complete! ${currentState.playerNames?.[winnerId] || 'Player'} won with a ${maxTotal} and gets the first turn! Transitioning in 3s...`, ...(currentState.logs || [])];
+          
+          if (isHostRef.current) {
+             setTimeout(() => {
+                enqueueHostAction({ actionType: 'START_CHARACTER_SELECT', winnerId });
+             }, 3000);
+          }
         } else {
           nextState.logs = [`🎲 ${currentState.playerNames?.[payload.actorId] || 'Player'} rolled a ${payload.total}.`, ...(currentState.logs || [])];
         }
         broadcastState(matchIdRef.current, nextState);
         return nextState;
       }
-
-
+      if (payload.actionType === 'START_CHARACTER_SELECT') {
+        let nextState = { ...currentState };
+        nextState.status = 'character_select';
+        nextState.turn = payload.winnerId;
+        nextState.turnDirection = 'clockwise';
+        nextState.logs = [`The Character Selection phase has begun!`, ...(currentState.logs || [])];
+        broadcastState(matchIdRef.current, nextState);
+        return nextState;
+      }
 
       if (payload.actionType === 'CHARACTER_SELECT') {
         const { actorId, characterId } = payload;
@@ -1530,7 +1546,7 @@ export default function KontrolaArena() {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
     setChatMessages((prev) => [...prev, msg]);
-    broadcastUIEvent(matchId, 'chat_message', msg);
+    broadcastUIEvent(matchIdRef.current, 'chat_message', msg);
   };
 
   const handleSendTaunt = (tauntText) => {
@@ -1544,7 +1560,7 @@ export default function KontrolaArena() {
     setActiveTauntBubble(msg);
     setChatMessages((prev) => [...prev, { ...msg, text: `🗯️ [TAUNT]: "${msg.text}"` }]);
     setTimeout(() => setActiveTauntBubble(null), 4500);
-    broadcastUIEvent(matchId, 'player_taunt', msg);
+    broadcastUIEvent(matchIdRef.current, 'player_taunt', msg);
   };
 
   // ==========================================
@@ -2485,27 +2501,27 @@ export default function KontrolaArena() {
             <div
               style={{
                 position: 'fixed',
-                top: '64px',
+                top: '90px',
                 left: '50%',
                 transform: 'translateX(-50%)',
                 zIndex: 99999,
-                background: 'linear-gradient(135deg, rgba(30, 27, 75, 0.96), rgba(15, 23, 42, 0.96))',
-                border: '2px solid #818cf8',
-                borderRadius: '30px',
-                padding: '10px 24px',
+                background: 'linear-gradient(135deg, rgba(30, 27, 75, 0.98), rgba(15, 23, 42, 0.98))',
+                border: '3px solid #00f0ff',
+                borderRadius: '40px',
+                padding: '16px 36px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px',
-                boxShadow: '0 8px 30px rgba(99, 102, 241, 0.6)',
+                gap: '16px',
+                boxShadow: '0 10px 40px rgba(0, 240, 255, 0.6)',
                 pointerEvents: 'none',
-                animation: 'bounce 0.5s ease-out'
+                animation: 'tauntPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'
               }}
             >
-              <span style={{ fontSize: '1.4rem' }}>🗯️</span>
-              <span style={{ color: '#c7d2fe', fontWeight: 'bold', fontSize: '0.95rem' }}>
+              <span style={{ fontSize: '2.2rem', animation: 'wiggle 2s ease-in-out infinite' }}>🗯️</span>
+              <span style={{ color: '#00f0ff', fontWeight: 'bold', fontSize: '1.4rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
                 {activeTauntBubble.senderName}:
               </span>
-              <span style={{ color: '#fff', fontSize: '1rem', fontStyle: 'italic', fontWeight: '600' }}>
+              <span style={{ color: '#fff', fontSize: '1.5rem', fontStyle: 'italic', fontWeight: '900', textShadow: '0 0 10px rgba(255,255,255,0.4)' }}>
                 "{activeTauntBubble.text}"
               </span>
             </div>
@@ -2996,11 +3012,12 @@ export default function KontrolaArena() {
           {/* Chat Modal */}
           {showChat && (
             <KontrolaChatModal
-              players={gameState.players.map((p) => ({
-                id: p,
-                name: gameState.playerNames?.[p] || gameState.characterStates?.[p]?.name
-              }))}
-              activePlayerIndex={gameState.players.indexOf(playerId)}
+              players={[{
+                id: playerId,
+                name: gameState.playerNames?.[playerId] || gameState.characterStates?.[playerId]?.name || playerName,
+                characterId: selectedCharacterRef.current
+              }]}
+              activePlayerIndex={0}
               chatMessages={chatMessages}
               onSendMessage={handleSendMessage}
               onClose={() => setShowChat(false)}
