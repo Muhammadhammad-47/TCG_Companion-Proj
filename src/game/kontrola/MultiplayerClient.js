@@ -1,4 +1,4 @@
-﻿import { supabase } from '../../services/supabaseClient';
+import { supabase } from '../../services/supabaseClient';
 export { supabase };
 
 // Track active channels by matchId
@@ -54,11 +54,13 @@ export const joinMatch = async (matchId, playerId, characterId = 'bee') => {
   };
 };
 
-export const subscribeToMatch = (matchId, callback, onSubscribe = null) => {
+export const subscribeToMatch = (matchId, callback, onSubscribe = null, playerId = null) => {
   if (!supabase) return { unsubscribe: () => {} };
 
   if (!channels[matchId]) {
-    channels[matchId] = supabase.channel(`match_${matchId}`);
+    channels[matchId] = supabase.channel(`match_${matchId}`, {
+      config: { presence: { key: playerId || 'spectator' } }
+    });
   }
 
   const channel = channels[matchId];
@@ -99,9 +101,24 @@ export const subscribeToMatch = (matchId, callback, onSubscribe = null) => {
     callback(payload);
   });
 
-  channel.subscribe((status) => {
+  channel.on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+    if (key && key !== 'spectator') {
+      callback({ type: 'PLAYER_DISCONNECTED', payload: { playerId: key } });
+    }
+  });
+
+  channel.on('presence', { event: 'join' }, ({ key, newPresences }) => {
+    if (key && key !== 'spectator') {
+      callback({ type: 'PLAYER_RECONNECTED', payload: { playerId: key } });
+    }
+  });
+
+  channel.subscribe(async (status) => {
     if (status === 'SUBSCRIBED') {
       console.log(`[Supabase] Connected to match room: match_${matchId}`);
+      if (playerId) {
+        await channel.track({ playerId, status: 'online' });
+      }
       if (onSubscribe) onSubscribe();
     }
   });

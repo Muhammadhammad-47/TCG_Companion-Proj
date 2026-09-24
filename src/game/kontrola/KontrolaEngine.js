@@ -406,9 +406,13 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           finalDamage = 0;
           newDefenderState.hasDodge = false;
         } else if (newDefenderState.hasBoomerang) {
-          log += ` 🪃 BOOMERANG TRIGGERED! ${newAttackerState.name}'s attack reflected 100% back!`;
-          newAttackerState.hp = Math.max(0, newAttackerState.hp - finalDamage);
-          finalDamage = 0;
+          if (defenderRoll.total >= 6) {
+            log += ` 🪃 BOOMERANG TRIGGERED! ${newDefenderState.name} rolled ${defenderRoll.total} (6+)! ${newAttackerState.name}'s attack reflected 100% back!`;
+            newAttackerState.hp = Math.max(0, newAttackerState.hp - finalDamage);
+            finalDamage = 0;
+          } else {
+            log += ` 🪃 BOOMERANG FAILED! ${newDefenderState.name} rolled ${defenderRoll.total} (needed 6+). Trap breaks, taking full damage.`;
+          }
           newDefenderState.hasBoomerang = false;
         } else if (newDefenderState.hasCounter) {
           const reflectDmg = Math.floor(finalDamage * 0.25);
@@ -522,7 +526,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     else if (cardName.includes('H30')) healAmount = 30;
     else if (cardName.includes('H40')) healAmount = 40;
     
-    const maxAllowed = newAttackerState.maxHp || 100;
+    const maxAllowed = newAttackerState.poisonCount >= 5 ? 40 : (newAttackerState.maxHp || 100);
     if (newAttackerState.hp >= maxAllowed) {
       log += ` HP already at maximum capacity (${maxAllowed} HP). Heal card used but cannot overheal.`;
     } else {
@@ -532,17 +536,21 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   }
   // 6b. VITALITY GAIN CARDS (Increases maxHp and allows HP to exceed 100)
   else if (cardName.includes('VITALITY')) {
-    let vitAmount = 10;
-    if (cardName.includes('V20')) {
-      if ((newAttackerState.level || 1) < 2) {
-        log += ` VITALITY GAIN V20 requires Character Level 2! (Current Level: ${newAttackerState.level || 1}).`;
-        return { newAttackerState, newDefenderState, log };
+    if (newAttackerState.poisonCount >= 5) {
+      log += ` Zombies cannot gain Vitality! The card has no effect on undead forms.`;
+    } else {
+      let vitAmount = 10;
+      if (cardName.includes('V20')) {
+        if ((newAttackerState.level || 1) < 2) {
+          log += ` VITALITY GAIN V20 requires Character Level 2! (Current Level: ${newAttackerState.level || 1}).`;
+          return { newAttackerState, newDefenderState, log };
+        }
+        vitAmount = 20;
       }
-      vitAmount = 20;
+      newAttackerState.maxHp = (newAttackerState.maxHp || 100) + vitAmount;
+      newAttackerState.hp += vitAmount;
+      log += ` Vitality expanded Max HP by +${vitAmount}! (Current HP: ${newAttackerState.hp}/${newAttackerState.maxHp})`;
     }
-    newAttackerState.maxHp = (newAttackerState.maxHp || 100) + vitAmount;
-    newAttackerState.hp += vitAmount;
-    log += ` Vitality expanded Max HP by +${vitAmount}! (Current HP: ${newAttackerState.hp}/${newAttackerState.maxHp})`;
   }
   // 7. SHIELD CARDS
   else if (cardName.includes('SHIELD')) {

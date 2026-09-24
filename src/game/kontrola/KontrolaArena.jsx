@@ -61,6 +61,7 @@ export default function KontrolaArena() {
   const [error, setError] = useState(null);
   const [inAppNotice, setInAppNotice] = useState(null);
   const hasLoggedMatchRef = useRef(false);
+  const disconnectTimeoutsRef = useRef({});
 
   // Auto-sync player username from logged-in account
   useEffect(() => {
@@ -381,19 +382,7 @@ export default function KontrolaArena() {
     return () => clearInterval(interval);
   }, [isHost, matchId, gameState?.status, gameState?.players?.length, playerName, playerId]);
 
-  // Handle window unload / leave cleanup (Strictly on browser unload, never on component re-render)
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (matchIdRef.current && playerIdRef.current) {
-        broadcastLeave(matchIdRef.current, playerIdRef.current);
-        if (isHostRef.current) closeRoom(matchIdRef.current);
-      }
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, []);
+  // Removed aggressive beforeunload listener. Disconnects are now handled via Supabase Presence.
 
   // ==========================================
   // REAL-TIME SUPABASE MATCH EVENT LISTENER
@@ -586,6 +575,39 @@ export default function KontrolaArena() {
             soundFX.playPowerUp();
           }
         }
+        // 12. Player Disconnected (Presence)
+        else if (event.type === 'PLAYER_DISCONNECTED') {
+          const { playerId: dId } = event.payload || {};
+          if (!dId || dId === playerIdRef.current) return;
+          
+          setGameState(prev => prev ? {
+            ...prev,
+            logs: [`⚠️ ${prev.playerNames?.[dId] || 'A player'} disconnected! Waiting 60s for reconnection...`, ...(prev.logs || [])]
+          } : prev);
+
+          // Start a 60s timeout to forfeit them
+          if (isHostRef.current) {
+            disconnectTimeoutsRef.current[dId] = setTimeout(() => {
+              handlePlayerLeave(dId);
+              delete disconnectTimeoutsRef.current[dId];
+            }, 60000);
+          }
+        }
+        // 13. Player Reconnected (Presence)
+        else if (event.type === 'PLAYER_RECONNECTED') {
+          const { playerId: rId } = event.payload || {};
+          if (!rId) return;
+
+          setGameState(prev => prev ? {
+            ...prev,
+            logs: [`✅ ${prev.playerNames?.[rId] || 'A player'} reconnected!`, ...(prev.logs || [])]
+          } : prev);
+
+          if (isHostRef.current && disconnectTimeoutsRef.current[rId]) {
+            clearTimeout(disconnectTimeoutsRef.current[rId]);
+            delete disconnectTimeoutsRef.current[rId];
+          }
+        }
       },
       () => {
         // Callback fired when channel is fully SUBSCRIBED
@@ -599,7 +621,8 @@ export default function KontrolaArena() {
           // Request sync from host in case match is in progress
           requestSync(matchId, playerIdRef.current);
         }
-      }
+      },
+      playerIdRef.current
     );
 
     return () => {
@@ -808,6 +831,28 @@ export default function KontrolaArena() {
             nextState.turn = currentState.players[nextIdx] || currentState.players[0];
         }
 
+        broadcastState(matchIdRef.current, nextState);
+        return nextState;
+      }
+
+      if (payload.actionType === 'CLAIM_ET') {
+        const char = currentState.characterStates[payload.actorId];
+        if (!char || char.claimedTurnET) return currentState;
+        
+        const updatedChar = {
+          ...char,
+          energyTokens: Math.min(10, (char.energyTokens || 0) + 1),
+          claimedTurnET: true
+        };
+        
+        const nextState = {
+          ...currentState,
+          characterStates: {
+            ...currentState.characterStates,
+            [payload.actorId]: updatedChar
+          },
+          logs: [`${char.name} claimed +1 Energy Token.`, ...(currentState.logs || [])]
+        };
         broadcastState(matchIdRef.current, nextState);
         return nextState;
       }
@@ -1252,25 +1297,12 @@ export default function KontrolaArena() {
     }
     if (!gameState) return;
 
-    const updatedChar = {
-      ...myCharacter,
-      energyTokens: Math.min(10, (myCharacter.energyTokens || 0) + 1),
-      claimedTurnET: true
-    };
-
-    const newState = {
-      ...gameState,
-      characterStates: {
-        ...gameState.characterStates,
-        [playerId]: updatedChar
-      },
-      logs: [`${myCharacter.name} claimed +1 Energy Token.`, ...(gameState.logs || [])]
-    };
-
     setIsProcessingAction(true);
-    setGameState(newState);
-    broadcastState(matchId, newState);
-    // Locally clear lock quickly since this doesn't go through Host Queue
+    const payload = { actionType: 'CLAIM_ET', actorId: playerId };
+    if (isHost) enqueueHostAction(payload);
+    else takeTurn(matchId, { type: 'PLAYER_ACTION', payload });
+    
+    // Locally clear lock quickly since this doesn't pop up a modal
     setTimeout(() => setIsProcessingAction(false), 500);
   };
 
@@ -3306,6 +3338,7 @@ export default function KontrolaArena() {
               isAttacker={activeCombat.attackerId === playerId || (isHost && !activeCombat.attackerId)}
               isDefender={activeCombat.targetId === playerId || (activeCombat.targetId === 'ALL' && activeCombat.attackerId !== playerId) || (!activeCombat.targetId && activeCombat.attackerId !== playerId)}
               isSpectator={isSpectator || (activeCombat.attackerId !== playerId && activeCombat.targetId !== playerId && activeCombat.targetId !== 'ALL' && Boolean(activeCombat.targetId))}
+              isHost={isHost}
               isExternallyRolling={isDiceRollingSync}
               onTriggerRoll={handleTriggerDiceRoll}
               onClose={() => handleCloseDiceScreen(false)}

@@ -177,6 +177,7 @@ export default function KontrolaDiceRoller({
   isAttacker = true,
   isDefender = false,
   isSpectator = false,
+  isHost = false,
   isExternallyRolling = false,
   onTriggerRoll = null,
   onForceClose = null
@@ -213,14 +214,57 @@ export default function KontrolaDiceRoller({
 
   const isRolling = isAttackerRolling || isDefenderRolling || (isExternallyRolling && phase === 'clash');
 
-  // 60-Second safety auto-close countdown
+  const atkSum = clashAtkDice[0] + clashAtkDice[1];
+  const defSum = clashDefDice[0] + clashDefDice[1];
+  const isTie = atkSum === defSum;
+  const atkWon = !isTie && atkSum > defSum;
+  const defWon = !isTie && defSum > atkSum;
+  const selectedAttackInfo = atkChar?.attacks?.[attackSelectionName];
+  const hasMultiplierDie = selectedAttackInfo && selectedAttackInfo.dice > 0;
+
+  const handleReRoll = () => {
+    if (isAttackerRolling || isDefenderRolling) return;
+    if (onTriggerRoll) {
+      onTriggerRoll(null, true); // Signal reroll reset
+    }
+  };
+
+  // 15-Second safety auto-roll countdown to prevent combat stalling
+  const autoRollRef = useRef({
+    isAttacker, hasAttackerRolled, handleRollAttacker,
+    isDefender, hasDefenderRolled, handleRollDefender,
+    phase, hasRolledMultiplier, handleRollMultiplierDie, onCombatComplete,
+    isHost, isTie, handleReRoll
+  });
+  
+  // Keep refs up to date without triggering useEffect re-runs
   useEffect(() => {
+    autoRollRef.current = {
+      isAttacker, hasAttackerRolled, handleRollAttacker,
+      isDefender, hasDefenderRolled, handleRollDefender,
+      phase, hasRolledMultiplier, handleRollMultiplierDie, onCombatComplete,
+      isHost, isTie, handleReRoll
+    };
+  });
+
+  useEffect(() => {
+    setSecondsRemaining(15);
     const timer = setInterval(() => {
       setSecondsRemaining((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          if (onForceClose) onForceClose();
-          else if (onClose) onClose();
+          const refs = autoRollRef.current;
+          
+          if (refs.phase === 'clash') {
+            if (!refs.hasAttackerRolled && (refs.isAttacker || refs.isHost)) refs.handleRollAttacker();
+            else if (!refs.hasDefenderRolled && (refs.isDefender || refs.isHost)) refs.handleRollDefender();
+          } else if (refs.phase === 'clash_summary') {
+            if (refs.isAttacker || refs.isHost) {
+              if (refs.isTie) refs.handleReRoll();
+              else if (refs.hasRolledMultiplier === false) refs.handleRollMultiplierDie();
+              else refs.onCombatComplete();
+            }
+          }
           return 0;
         }
         return prev - 1;
@@ -228,7 +272,7 @@ export default function KontrolaDiceRoller({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [onClose, onForceClose]);
+  }, [phase]);
 
   // Sync rolls when precalculatedRolls updates from peer
   useEffect(() => {
@@ -331,13 +375,7 @@ export default function KontrolaDiceRoller({
     }, 900);
   };
 
-  // Re-roll clash on stalemate / tie
-  const handleReRoll = () => {
-    if (isAttackerRolling || isDefenderRolling) return;
-    if (onTriggerRoll) {
-      onTriggerRoll(null, true); // Signal reroll reset
-    }
-  };
+
 
   // Interactive 2nd-stage multiplier die roll for "PER" character moves
   const handleRollMultiplierDie = () => {
@@ -357,13 +395,7 @@ export default function KontrolaDiceRoller({
     }, 850);
   };
 
-  const atkSum = clashAtkDice[0] + clashAtkDice[1];
-  const defSum = clashDefDice[0] + clashDefDice[1];
-  const isTie = atkSum === defSum;
-  const atkWon = !isTie && atkSum > defSum;
-  const defWon = !isTie && defSum > atkSum;
-  const selectedAttackInfo = atkChar?.attacks?.[attackSelectionName];
-  const hasMultiplierDie = selectedAttackInfo && selectedAttackInfo.dice > 0;
+
 
   const cardImg = attackSelectionName
     ? getCharacterAttackGraphicUrl(attackSelectionName)
