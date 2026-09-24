@@ -101,6 +101,10 @@ export const subscribeToMatch = (matchId, callback, onSubscribe = null, playerId
     callback(payload);
   });
 
+  channel.on('broadcast', { event: 'roll_off_animation' }, ({ payload }) => {
+    callback({ type: 'ROLL_OFF_ANIMATION', payload });
+  });
+
   channel.on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
     if (key && key !== 'spectator') {
       callback({ type: 'PLAYER_DISCONNECTED', payload: { playerId: key } });

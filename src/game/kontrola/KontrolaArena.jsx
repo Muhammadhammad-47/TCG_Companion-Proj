@@ -310,8 +310,8 @@ export default function KontrolaArena() {
     
     // Animate dice rolling for 1.2s before submitting result
     setTimeout(() => {
-      const d1 = rollDice(1)[0];
-      const d2 = rollDice(1)[0];
+      const d1 = rollDice(1).total;
+      const d2 = rollDice(1).total;
       const total = d1 + d2;
       const payload = { actionType: 'ROLL_OFF', actorId: playerId, total, dice: [d1, d2] };
       if (isHostRef.current) enqueueHostAction(payload);
@@ -384,11 +384,19 @@ export default function KontrolaArena() {
     return () => clearInterval(interval);
   }, [isHost, matchId, gameState?.status, gameState?.players?.length, playerName, playerId]);
 
-  // Removed aggressive beforeunload listener. Disconnects are now handled via Supabase Presence.
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && matchIdRef.current && playerIdRef.current && !isHostRef.current) {
+         requestSync(matchIdRef.current, playerIdRef.current);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+       document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
 
-  // ==========================================
-  // REAL-TIME SUPABASE MATCH EVENT LISTENER
-  // ==========================================
+  // Removed aggressive beforeunload listener. Disconnects are now handled via Supabase Presence.
   useEffect(() => {
     if (!matchId) return;
 
@@ -593,15 +601,15 @@ export default function KontrolaArena() {
           
           setGameState(prev => prev ? {
             ...prev,
-            logs: [`⚠️ ${prev.playerNames?.[dId] || 'A player'} disconnected! Waiting 60s for reconnection...`, ...(prev.logs || [])]
+            logs: [`⚠️ ${prev.playerNames?.[dId] || 'A player'} disconnected! Waiting 3 mins for reconnection...`, ...(prev.logs || [])]
           } : prev);
 
-          // Start a 60s timeout to forfeit them
+          // Start a 3-minute timeout to forfeit them
           if (isHostRef.current) {
             disconnectTimeoutsRef.current[dId] = setTimeout(() => {
               handlePlayerLeave(dId);
               delete disconnectTimeoutsRef.current[dId];
-            }, 60000);
+            }, 180000);
           }
         }
         // 13. Player Reconnected (Presence)
@@ -617,6 +625,15 @@ export default function KontrolaArena() {
           if (isHostRef.current && disconnectTimeoutsRef.current[rId]) {
             clearTimeout(disconnectTimeoutsRef.current[rId]);
             delete disconnectTimeoutsRef.current[rId];
+            
+            // Broadcast state to the reconnected player just in case they missed something
+            if (gameStateRef.current) {
+               broadcastState(matchIdRef.current, gameStateRef.current);
+            }
+          }
+
+          if (rId === playerIdRef.current && !isHostRef.current) {
+             requestSync(matchIdRef.current, playerIdRef.current);
           }
         }
       },
@@ -749,7 +766,8 @@ export default function KontrolaArena() {
 
       if (payload.actionType === 'ROLL_OFF') {
         const updatedRollOffs = { ...(currentState.rollOffs || {}), [payload.actorId]: payload.total };
-        let nextState = { ...currentState, rollOffs: updatedRollOffs };
+        const updatedRollOffDice = { ...(currentState.rollOffDice || {}), [payload.actorId]: payload.dice };
+        let nextState = { ...currentState, rollOffs: updatedRollOffs, rollOffDice: updatedRollOffDice };
         
         if (Object.keys(updatedRollOffs).length === currentState.players.length) {
           let maxTotal = -1;
@@ -1061,11 +1079,12 @@ export default function KontrolaArena() {
       let nextTurnPlayerId = actorId;
       const turnLogs = [log];
 
+      let pendingAttackX2For = currentState.pendingAttackX2For || null;
+
       if (livingPlayers.length <= 1) {
         matchWinner = updatedStates[livingPlayers[0]] ? { ...updatedStates[livingPlayers[0]], playerId: livingPlayers[0] } : matchWinner;
         nextTurnPlayerId = livingPlayers[0] || actorId;
       } else {
-        let pendingAttackX2For = currentState.pendingAttackX2For || null;
         if (resolved.extraTurnGranted || resolved.triggerAttackX2SecondHit) {
           nextTurnPlayerId = actorId;
           if (resolved.triggerAttackX2SecondHit) pendingAttackX2For = actorId;
@@ -3029,8 +3048,14 @@ export default function KontrolaArena() {
                       
                       <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', minHeight: '60px', alignItems: 'center' }}>
                         {hasRolled ? (
-                          <div style={{ fontSize: '3rem', color: '#39ff14', fontWeight: 'bold', textShadow: '0 0 15px rgba(57, 255, 20, 0.5)' }}>
-                            {gameState.rollOffs[pId]}
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+                            <div style={{ display: 'flex', gap: '15px' }}>
+                              <CanvasPipDie value={gameState.rollOffDice?.[pId]?.[0] || 1} theme="red" isRolling={false} size={55} />
+                              <CanvasPipDie value={gameState.rollOffDice?.[pId]?.[1] || 1} theme="red" isRolling={false} size={55} />
+                            </div>
+                            <div style={{ fontSize: '1.2rem', color: '#39ff14', fontWeight: 'bold', textShadow: '0 0 10px rgba(57, 255, 20, 0.4)' }}>
+                              Total: {gameState.rollOffs[pId]}
+                            </div>
                           </div>
                         ) : isRolling ? (
                           <>
