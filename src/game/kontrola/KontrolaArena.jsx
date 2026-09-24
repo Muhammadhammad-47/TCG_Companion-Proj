@@ -316,15 +316,7 @@ export default function KontrolaArena() {
     }, 1200);
   };
 
-  const handleDirectionSelect = (direction) => {
-    if (isProcessingAction) return;
-    setIsProcessingAction(true);
-    playClick();
-    const payload = { actionType: 'DIRECTION_SELECT', direction };
-    if (isHostRef.current) enqueueHostAction(payload);
-    else takeTurn(matchIdRef.current, { type: 'PLAYER_ACTION', payload });
-    setTimeout(() => setIsProcessingAction(false), 2500);
-  };
+
 
   // ==========================================
   // GLOBAL LOBBY SUBSCRIPTION (Ephemeral)
@@ -740,7 +732,7 @@ export default function KontrolaArena() {
   const executeActionResolution = (payload, precalculatedRolls = null) => {
     setGameState((currentState) => {
       if (!currentState) return currentState;
-      if (!['ROLL_OFF', 'DIRECTION_SELECT', 'CHARACTER_SELECT'].includes(payload.actionType) && !currentState.characterStates) return currentState;
+      if (!['ROLL_OFF', 'CHARACTER_SELECT'].includes(payload.actionType) && !currentState.characterStates) return currentState;
 
       if (payload.actionType === 'ROLL_OFF') {
         const updatedRollOffs = { ...(currentState.rollOffs || {}), [payload.actorId]: payload.total };
@@ -755,9 +747,10 @@ export default function KontrolaArena() {
               winnerId = pId;
             }
           }
-          nextState.status = 'direction_select';
+          nextState.status = 'character_select';
           nextState.turn = winnerId;
-          nextState.logs = [`🎲 Roll-off complete! ${currentState.playerNames?.[winnerId] || 'Player'} won with a ${maxTotal} and will choose rotation direction.`, ...(currentState.logs || [])];
+          nextState.turnDirection = 'clockwise';
+          nextState.logs = [`🎲 Roll-off complete! ${currentState.playerNames?.[winnerId] || 'Player'} won with a ${maxTotal} and gets the first turn! Character Selection phase has begun.`, ...(currentState.logs || [])];
         } else {
           nextState.logs = [`🎲 ${currentState.playerNames?.[payload.actorId] || 'Player'} rolled a ${payload.total}.`, ...(currentState.logs || [])];
         }
@@ -765,16 +758,7 @@ export default function KontrolaArena() {
         return nextState;
       }
 
-      if (payload.actionType === 'DIRECTION_SELECT') {
-        const nextState = {
-          ...currentState,
-          status: 'character_select',
-          turnDirection: payload.direction,
-          logs: [`🔄 Rotation set to ${payload.direction.toUpperCase()}. Character Selection phase has begun!`, ...(currentState.logs || [])]
-        };
-        broadcastState(matchIdRef.current, nextState);
-        return nextState;
-      }
+
 
       if (payload.actionType === 'CHARACTER_SELECT') {
         const { actorId, characterId } = payload;
@@ -3229,53 +3213,6 @@ export default function KontrolaArena() {
                     ⏳ Waiting for {gameState.activeDefenseState.defenderPlayerName} to prepare defense...
                   </p>
                 </div>
-              )}
-            </div>
-          )}
-
-          {/* DIRECTION SELECT MODAL */}
-          {gameState?.status === 'direction_select' && (
-            <div
-              style={{
-                position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                background: 'rgba(5, 10, 24, 0.95)', zIndex: 10000,
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff'
-              }}
-            >
-              <h2 style={{ color: 'var(--neon-cyan)', fontSize: '2.5rem', marginBottom: '20px', textShadow: '0 0 20px var(--neon-cyan)' }}>🔄 ROTATION DIRECTION 🔄</h2>
-              
-              {gameState.turn === playerId ? (
-                <>
-                  <p style={{ fontSize: '1.2rem', marginBottom: '40px', color: '#fff' }}>
-                    You won the roll-off! Choose the turn rotation direction:
-                  </p>
-                  <div style={{ display: 'flex', gap: '30px' }}>
-                    <button
-                      onClick={() => handleDirectionSelect('clockwise')}
-                      style={{
-                        background: 'rgba(0,0,0,0.5)', border: '2px solid #39ff14', borderRadius: '12px',
-                        padding: '20px 40px', color: '#39ff14', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer',
-                        transition: 'all 0.2s', boxShadow: '0 0 20px rgba(57, 255, 20, 0.2)'
-                      }}
-                    >
-                      CLOCKWISE (Right) ↻
-                    </button>
-                    <button
-                      onClick={() => handleDirectionSelect('counter')}
-                      style={{
-                        background: 'rgba(0,0,0,0.5)', border: '2px solid #00f0ff', borderRadius: '12px',
-                        padding: '20px 40px', color: '#00f0ff', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer',
-                        transition: 'all 0.2s', boxShadow: '0 0 20px rgba(0, 240, 255, 0.2)'
-                      }}
-                    >
-                      COUNTER-CLOCKWISE (Left) ↺
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <p style={{ fontSize: '1.5rem', color: 'var(--neon-cyan)', fontWeight: 'bold' }}>
-                  Waiting for {gameState.playerNames?.[gameState.turn] || 'the winner'} to select direction...
-                </p>
               )}
             </div>
           )}
