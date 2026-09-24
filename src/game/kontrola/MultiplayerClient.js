@@ -105,6 +105,18 @@ export const subscribeToMatch = (matchId, callback, onSubscribe = null, playerId
     callback({ type: 'ROLL_OFF_ANIMATION', payload });
   });
 
+  channel.on('broadcast', { event: 'action_effect' }, ({ payload }) => {
+    callback({ type: 'ACTION_EFFECT', payload });
+  });
+
+  channel.on('broadcast', { event: 'chat_message' }, ({ payload }) => {
+    callback({ type: 'CHAT_MESSAGE', payload });
+  });
+
+  channel.on('broadcast', { event: 'player_taunt' }, ({ payload }) => {
+    callback({ type: 'PLAYER_TAUNT', payload });
+  });
+
   channel.on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
     if (key && key !== 'spectator') {
       callback({ type: 'PLAYER_DISCONNECTED', payload: { playerId: key } });
