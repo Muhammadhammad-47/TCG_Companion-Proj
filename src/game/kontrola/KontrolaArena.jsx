@@ -649,7 +649,8 @@ export default function KontrolaArena() {
 
   const executeActionResolution = (payload, precalculatedRolls = null) => {
     setGameState((currentState) => {
-      if (!currentState || !currentState.characterStates) return currentState;
+      if (!currentState) return currentState;
+      if (!['ROLL_OFF', 'DIRECTION_SELECT', 'CHARACTER_SELECT'].includes(payload.actionType) && !currentState.characterStates) return currentState;
 
       if (payload.actionType === 'ROLL_OFF') {
         const updatedRollOffs = { ...(currentState.rollOffs || {}), [payload.actorId]: payload.total };
