@@ -113,6 +113,7 @@ export default function KontrolaArena() {
   const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [showTaunt, setShowTaunt] = useState(false);
   const [activeTauntBubble, setActiveTauntBubble] = useState(null);
+  const [countdownNumber, setCountdownNumber] = useState(3);
 
   // Synchronized Combat Clash & Dice
   const [activeCombat, setActiveCombat] = useState(null);
@@ -271,6 +272,21 @@ export default function KontrolaArena() {
 
 
   useEffect(() => {
+    if (gameState?.status === 'match_countdown') {
+      const timer = setInterval(() => {
+        setCountdownNumber((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    } else {
+      setCountdownNumber(3);
+    }
+  }, [gameState?.status]);  useEffect(() => {
     let timer;
     if (gameState?.activeDefenseState) {
       setDefenseSeconds(15);
@@ -859,10 +875,16 @@ export default function KontrolaArena() {
               };
             });
 
-            nextState.status = 'active';
+            nextState.status = 'match_countdown';
             nextState.deck = updatedDeck;
             nextState.hands = hands;
             nextState.characterStates = initialCharacterStates;
+            
+            if (isHostRef.current) {
+               setTimeout(() => {
+                  enqueueHostAction({ actionType: 'START_MATCH' });
+               }, 3000);
+            }
             
             // Turn goes back to the winner (the first person who picked)
             let winnerId = null;
@@ -887,7 +909,13 @@ export default function KontrolaArena() {
         broadcastState(matchIdRef.current, nextState);
         return nextState;
       }
-
+      
+      if (payload.actionType === 'START_MATCH') {
+        let nextState = { ...currentState };
+        nextState.status = 'active';
+        broadcastState(matchIdRef.current, nextState);
+        return nextState;
+      }
       if (payload.actionType === 'CLAIM_ET') {
         const char = currentState.characterStates[payload.actorId];
         if (!char || char.claimedTurnET) return currentState;
@@ -3072,7 +3100,7 @@ export default function KontrolaArena() {
           )}
 
           {/* ROLL-OFF MODAL */}
-          {gameState?.status === 'roll_off' && (
+          {(gameState?.status === 'roll_off' || gameState?.status === 'roll_off_complete') && (
             <div
               style={{
                 position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
@@ -3088,7 +3116,14 @@ export default function KontrolaArena() {
               </p>
               
               <div style={{ display: 'flex', gap: '30px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '50px' }}>
-                {gameState.players.map(pId => {
+                {[...gameState.players]
+                  .sort((a, b) => {
+                    if (gameState.status === 'roll_off_complete') {
+                      return (gameState.rollOffs?.[b] || 0) - (gameState.rollOffs?.[a] || 0);
+                    }
+                    return 0;
+                  })
+                  .map((pId, idx) => {
                   const hasRolled = Boolean(gameState.rollOffs?.[pId]);
                   const isRolling = rollingOffPlayers[pId];
                   return (
@@ -3102,7 +3137,12 @@ export default function KontrolaArena() {
                       boxShadow: hasRolled ? '0 0 20px rgba(57, 255, 20, 0.2)' : 'none',
                       transition: 'all 0.3s ease'
                     }}>
-                      <div style={{ fontWeight: '900', fontSize: '1.2rem', marginBottom: '15px', color: pId === playerId ? 'var(--neon-cyan)' : '#fff' }}>
+                      <div style={{ fontWeight: '900', fontSize: '1.2rem', marginBottom: '15px', color: pId === playerId ? 'var(--neon-cyan)' : '#fff', position: 'relative' }}>
+                        {gameState.status === 'roll_off_complete' && (
+                          <div style={{ position: 'absolute', top: '-40px', left: '50%', transform: 'translateX(-50%)', background: idx === 0 ? 'var(--neon-gold)' : '#333', color: idx === 0 ? '#000' : '#fff', padding: '4px 12px', borderRadius: '8px', fontSize: '1rem', boxShadow: idx === 0 ? '0 0 10px var(--neon-gold)' : 'none' }}>
+                            #{idx + 1}
+                          </div>
+                        )}
                         {gameState.playerNames?.[pId] || 'Player'}
                         {pId === playerId && ' (You)'}
                       </div>
@@ -3322,67 +3362,126 @@ export default function KontrolaArena() {
               style={{
                 position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
                 background: 'rgba(5, 10, 24, 0.95)', zIndex: 10000,
+                display: 'flex', color: '#fff'
+              }}
+             >
+                {/* LEFT DOCK - TURN ORDER LEADERBOARD */}
+                <div style={{
+                  width: '320px', background: 'rgba(0,0,0,0.8)', borderRight: '1px solid rgba(255,255,255,0.1)',
+                  padding: '30px 20px', display: 'flex', flexDirection: 'column', gap: '15px'
+                }}>
+                  <h3 style={{ color: 'var(--neon-gold)', textShadow: '0 0 10px var(--neon-gold)', textAlign: 'center', marginBottom: '20px' }}>TURN ORDER</h3>
+                  {[...gameState.players].sort((a,b) => (gameState.rollOffs?.[b] || 0) - (gameState.rollOffs?.[a] || 0)).map((pId, idx) => {
+                    const charId = gameState.characterSelections?.[pId];
+                    const charObj = charId ? KONTROLA_CHARACTERS[charId] : null;
+                    return (
+                      <div key={pId} style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '12px 15px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px',
+                        borderLeft: gameState.turn === pId ? '4px solid var(--neon-cyan)' : '4px solid transparent',
+                        transition: 'all 0.3s ease'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ color: 'var(--neon-gold)', fontWeight: 'bold' }}>#{idx + 1}</span>
+                          <span style={{ fontWeight: 'bold', color: gameState.turn === pId ? 'var(--neon-cyan)' : '#fff' }}>
+                            {gameState.playerNames?.[pId] || 'Player'}
+                          </span>
+                        </div>
+                        <div style={{
+                          width: '45px', height: '45px', borderRadius: '50%', background: charObj ? 'transparent' : 'rgba(255,255,255,0.1)',
+                          border: charObj ? `2px solid ${charObj.themeColor}` : '2px dashed rgba(255,255,255,0.3)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden'
+                        }}>
+                          {charObj ? <img src={getAssetUrl(charObj.image)} alt="char" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>?</span>}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* RIGHT SIDE - CHARACTER SELECTION GRID */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+                  <h2 style={{ color: 'var(--neon-cyan)', fontSize: '2.5rem', marginBottom: '20px', textShadow: '0 0 20px var(--neon-cyan)' }}>✨ CHARACTER SELECTION ✨</h2>
+                  
+                  {gameState.turn === playerId ? (
+                    <p style={{ fontSize: '1.2rem', marginBottom: '30px', color: '#fff' }}>
+                      It's your turn to choose a character!
+                    </p>
+                  ) : (
+                    <p style={{ fontSize: '1.5rem', color: 'var(--neon-cyan)', fontWeight: 'bold', marginBottom: '30px' }}>
+                      Waiting for {gameState.playerNames?.[gameState.turn] || 'the next player'} to choose a character...
+                    </p>
+                  )}
+
+                  <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'center', maxWidth: '900px' }}>
+                    {Object.values(KONTROLA_CHARACTERS).map((char) => {
+                      const isTaken = gameState && Object.values(gameState.characterSelections || {}).includes(char.id);
+                      let ownerName = null;
+                      if (isTaken) {
+                         const ownerId = Object.keys(gameState.characterSelections).find(id => gameState.characterSelections[id] === char.id);
+                         ownerName = gameState.playerNames?.[ownerId] || 'Taken';
+                      }
+                      return (
+                        <div
+                          key={char.id}
+                          onClick={() => {
+                            if (gameState.turn !== playerId) return;
+                            if (isTaken) {
+                              showNotice(`${char.name} has already been chosen!`, 'warning');
+                              return;
+                            }
+                            handleCharacterSelect(char.id);
+                          }}
+                          style={{
+                            background: isTaken ? 'rgba(30, 10, 20, 0.55)' : 'rgba(0, 0, 0, 0.45)',
+                            border: isTaken ? '1px dashed rgba(255, 42, 85, 0.5)' : `2px solid ${char.themeColor || 'var(--neon-cyan)'}`,
+                            borderRadius: '12px',
+                            padding: '15px',
+                            textAlign: 'center',
+                            cursor: gameState.turn === playerId && !isTaken ? 'pointer' : 'not-allowed',
+                            opacity: isTaken ? 0.45 : 1,
+                            width: '140px',
+                            transition: 'transform 0.2s',
+                            position: 'relative'
+                          }}
+                        >
+                          {isTaken && (
+                            <div style={{ position: 'absolute', top: -10, right: -10, background: '#ff2a55', color: '#fff', padding: '4px 8px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 'bold', zIndex: 10 }}>
+                              {ownerName}
+                            </div>
+                          )}
+                          <img src={getAssetUrl(char.image)} alt={char.name} style={{ width: '85px', height: '85px', borderRadius: '50%', border: `2px solid ${char.themeColor}` }} />
+                          <div style={{ fontWeight: 'bold', marginTop: '10px' }}>{char.name}</div>
+                          <div style={{ fontSize: '0.8rem', color: char.themeColor }}>{char.element}</div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+             </div>
+          )}
+
+          {/* MATCH COUNTDOWN MODAL */}
+          {gameState?.status === 'match_countdown' && (
+             <div
+              style={{
+                position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                background: 'rgba(5, 10, 24, 0.95)', zIndex: 10000,
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff'
               }}
              >
-                 <h2 style={{ color: 'var(--neon-cyan)', fontSize: '2.5rem', marginBottom: '20px', textShadow: '0 0 20px var(--neon-cyan)' }}>✨ CHARACTER SELECTION ✨</h2>
-                
-                 {gameState.turn === playerId ? (
-                   <p style={{ fontSize: '1.2rem', marginBottom: '20px', color: '#fff' }}>
-                     It's your turn to choose a character!
-                   </p>
-                 ) : (
-                   <p style={{ fontSize: '1.5rem', color: 'var(--neon-cyan)', fontWeight: 'bold', marginBottom: '20px' }}>
-                     Waiting for {gameState.playerNames?.[gameState.turn] || 'the next player'} to choose a character...
-                   </p>
-                 )}
-
-                 {/* Character Selection Grid (Visible to all players) */}
-                 <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', justifyContent: 'center', maxWidth: '900px' }}>
-                   {Object.values(KONTROLA_CHARACTERS).map((char) => {
-                     const isTaken = gameState && Object.values(gameState.characterSelections || {}).includes(char.id);
-                     let ownerName = null;
-                     if (isTaken) {
-                        const ownerId = Object.keys(gameState.characterSelections).find(id => gameState.characterSelections[id] === char.id);
-                        ownerName = gameState.playerNames?.[ownerId] || 'Taken';
-                     }
-                     return (
-                       <div
-                         key={char.id}
-                         onClick={() => {
-                           if (gameState.turn !== playerId) return;
-                           if (isTaken) {
-                             showNotice(`${char.name} has already been chosen!`, 'warning');
-                             return;
-                           }
-                           handleCharacterSelect(char.id);
-                         }}
-                         style={{
-                           background: isTaken ? 'rgba(30, 10, 20, 0.55)' : 'rgba(0, 0, 0, 0.45)',
-                           border: isTaken ? '1px dashed rgba(255, 42, 85, 0.5)' : `2px solid ${char.themeColor || 'var(--neon-cyan)'}`,
-                           borderRadius: '12px',
-                           padding: '15px',
-                           textAlign: 'center',
-                           cursor: gameState.turn === playerId && !isTaken ? 'pointer' : 'not-allowed',
-                           opacity: isTaken ? 0.45 : 1,
-                           width: '130px',
-                           transition: 'transform 0.2s',
-                           position: 'relative'
-                         }}
-                       >
-                         {isTaken && (
-                           <div style={{ position: 'absolute', top: -10, right: -10, background: '#ff2a55', color: '#fff', padding: '4px 8px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 'bold', zIndex: 10 }}>
-                             {ownerName}
-                           </div>
-                         )}
-                         <img src={getAssetUrl(char.image)} alt={char.name} style={{ width: '80px', height: '80px', borderRadius: '50%', border: `2px solid ${char.themeColor}` }} />
-                         <div style={{ fontWeight: 'bold', marginTop: '10px' }}>{char.name}</div>
-                         <div style={{ fontSize: '0.8rem', color: char.themeColor }}>{char.element}</div>
-                       </div>
-                     )
-                   })}
-                 </div>
-              </div>
+                <h1 style={{ 
+                  fontSize: '8rem', 
+                  color: 'var(--neon-gold)', 
+                  textShadow: '0 0 30px var(--neon-gold)',
+                  animation: 'zoomIn 0.5s ease-out'
+                }}>
+                  {countdownNumber > 0 ? countdownNumber : 'START!'}
+                </h1>
+                <p style={{ fontSize: '1.5rem', marginTop: '20px', color: 'var(--neon-cyan)' }}>
+                  Prepare for battle...
+                </p>
+             </div>
           )}
 
           {/* VISION X1 REVEAL MODAL */}
