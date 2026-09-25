@@ -21,12 +21,12 @@ import KontrolaChatModal from './KontrolaChatModal';
 import KontrolaTauntModal from './KontrolaTauntModal';
 import '../../pages/GamePage.css';
 
-// Collision-proof unique player ID (persisted for rejoining)
+// Collision-proof unique player ID (persisted for rejoining across tabs)
 const generateUniquePlayerId = () => {
-  let pid = sessionStorage.getItem('kontrola_player_id');
+  let pid = localStorage.getItem('kontrola_player_id');
   if (!pid) {
     pid = 'warr_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 7);
-    sessionStorage.setItem('kontrola_player_id', pid);
+    localStorage.setItem('kontrola_player_id', pid);
   }
   return pid;
 };
@@ -43,7 +43,10 @@ const generateRoomCode = () => {
 
 export default function KontrolaArena() {
   const navigate = useNavigate();
-  const [matchId, setMatchId] = useState('');
+  const [matchId, setMatchId] = useState(() => {
+    try { return localStorage.getItem('kontrola_current_match') || ''; } 
+    catch (e) { return ''; }
+  });
   const [gameState, setGameState] = useState(null);
   const [playerId] = useState(generateUniquePlayerId);
   const [currentUser, setCurrentUser] = useState(null);
@@ -105,6 +108,9 @@ export default function KontrolaArena() {
 
   const [chatMessages, setChatMessages] = useState([]);
   const [showChat, setShowChat] = useState(false);
+  const showChatRef = useRef(false);
+  useEffect(() => { showChatRef.current = showChat; }, [showChat]);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [showTaunt, setShowTaunt] = useState(false);
   const [activeTauntBubble, setActiveTauntBubble] = useState(null);
 
@@ -549,6 +555,10 @@ export default function KontrolaArena() {
         // 10. Chat and Taunts
         else if (event.type === 'CHAT_MESSAGE') {
           setChatMessages((prev) => [...prev, event.payload]);
+          if (!showChatRef.current) {
+            setUnreadChatCount((prev) => prev + 1);
+            if (soundFX?.playMenuHover) soundFX.playMenuHover();
+          }
         } else if (event.type === 'PLAYER_TAUNT') {
           setActiveTauntBubble(event.payload);
           setChatMessages((prev) => [...prev, { ...event.payload, text: `🗯️ [TAUNT]: "${event.payload.text}"` }]);
@@ -1262,6 +1272,7 @@ export default function KontrolaArena() {
       setIsHost(true);
       setIsSpectator(false);
       setError(null);
+      localStorage.setItem('kontrola_current_match', newMatchId);
 
       // Advertise room immediately to global lobby
       advertiseRoom({
@@ -1297,6 +1308,7 @@ export default function KontrolaArena() {
       tempState.playerNames = { [playerId]: finalName };
       setGameState(tempState);
       setError(null);
+      localStorage.setItem('kontrola_current_match', cleanId);
     } catch (err) {
       setError(err.message);
     }
@@ -2300,6 +2312,7 @@ export default function KontrolaArena() {
                       setGameState(null);
                       setMatchId('');
                       setIsSpectator(false);
+                      localStorage.removeItem('kontrola_current_match');
                     }}
                     style={{
                       padding: '8px 20px',
@@ -2989,9 +3002,34 @@ export default function KontrolaArena() {
           {/* Bottom Controls Bar */}
           <footer className="arena-bottom-controls" style={{ justifyContent: 'flex-start', marginTop: '12px' }}>
             <div className="bottom-left-buttons">
-              <button className="btn-arena-chat" onClick={() => { playClick(); setShowChat(true); }}>
+              <button 
+                className="btn-arena-chat" 
+                onClick={() => { playClick(); setShowChat(true); setUnreadChatCount(0); }}
+                style={{ position: 'relative' }}
+              >
                 <MessageSquare size={16} />
                 <span>CHAT</span>
+                {unreadChatCount > 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '-6px',
+                    right: '-6px',
+                    background: 'var(--neon-crimson)',
+                    color: '#fff',
+                    borderRadius: '50%',
+                    width: '20px',
+                    height: '20px',
+                    fontSize: '0.75rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 'bold',
+                    boxShadow: '0 0 10px var(--neon-crimson)',
+                    animation: 'bounce 0.4s ease-out'
+                  }}>
+                    {unreadChatCount}
+                  </div>
+                )}
               </button>
               {!isSpectator && (
                 <button
