@@ -4107,8 +4107,7 @@
   background: rgba(0, 0, 0, 0.85);
   border: 2px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
-  position: absolute;
-  bottom: 30px;
+  position: relative;
   transform-origin: bottom center;
   transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
   pointer-events: auto; /* Re-enable clicks on the cards themselves */
