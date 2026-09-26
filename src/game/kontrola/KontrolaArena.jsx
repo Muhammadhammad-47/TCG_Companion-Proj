@@ -420,13 +420,22 @@ export default function KontrolaArena() {
          requestSync(matchIdRef.current, playerIdRef.current);
       }
     };
+    
+    const handleBeforeUnload = (e) => {
+      if (matchIdRef.current && playerIdRef.current) {
+        // We use fetch with keepalive to reliably send the leave signal when the page unloads
+        // But since we rely on Supabase WebSockets, we will try to push it synchronously
+        broadcastLeave(matchIdRef.current, playerIdRef.current);
+      }
+    };
+    
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
     return () => {
        document.removeEventListener('visibilitychange', handleVisibilityChange);
+       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, []);
-
-  // Removed aggressive beforeunload listener. Disconnects are now handled via Supabase Presence.
   useEffect(() => {
     if (!matchId) return;
 
