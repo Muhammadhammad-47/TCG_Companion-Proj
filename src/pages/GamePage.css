@@ -4079,4 +4079,162 @@
 .boomerang-reflect {
   animation: boomerang-shimmer 0.6s ease-in-out;
 }
+/* ==========================================================================
+   PHASE 2: UNO-STYLE ACTION CARDS & RIGHT PANEL RESTRUCTURE
+   ========================================================================== */
+
+/* Fan Container at the bottom center */
+.action-cards-fan-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 800px;
+  height: 200px;
+  z-index: 50;
+  pointer-events: none; /* Let clicks pass through container */
+}
+
+/* Individual UNO-style card */
+.uno-action-card {
+  width: 130px;
+  height: 190px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.85);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+  position: absolute;
+  bottom: 30px;
+  transform-origin: bottom center;
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+  pointer-events: auto; /* Re-enable clicks on the cards themselves */
+  cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Selected state for UNO card */
+.uno-action-card.selected {
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+  transform: translateY(-40px) scale(1.15) !important;
+  z-index: 100 !important;
+}
+
+/* Hover state pops the card up */
+.uno-action-card:hover {
+  transform: translateY(-30px) scale(1.1) !important;
+  z-index: 99 !important;
+  border-color: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
+}
+
+.uno-action-card.disabled {
+  opacity: 0.5;
+  filter: grayscale(80%);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.uno-card-art {
+  height: 110px;
+  width: 100%;
+  overflow: hidden;
+  background: #000;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.uno-card-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.uno-card-info {
+  flex: 1;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.uno-card-title {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+}
+
+.uno-card-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 600;
+}
+
+/* Right Panel specific layout adjustments */
+.arena-col-right.phase2-restructure {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 300px;
+}
+
+.phase2-active-profile {
+  background: linear-gradient(180deg, rgba(12, 28, 60, 0.8) 0%, rgba(6, 16, 36, 0.9) 100%);
+  border: 1px solid var(--neon-cyan);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), inset 0 0 15px rgba(0, 240, 255, 0.1);
+}
+
+.phase2-profile-avatar {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: 2px solid var(--neon-cyan);
+  overflow: hidden;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+}
+
+.phase2-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.phase2-profile-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.phase2-profile-name {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.phase2-profile-metrics {
+  display: flex;
+  gap: 12px;
+  font-size: 0.85rem;
+  font-weight: bold;
+}
 

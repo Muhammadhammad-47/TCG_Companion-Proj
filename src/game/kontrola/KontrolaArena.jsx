@@ -287,7 +287,9 @@ export default function KontrolaArena() {
     } else {
       setCountdownNumber(3);
     }
-  }, [gameState?.status]);  useEffect(() => {
+  }, [gameState?.status]);
+  
+  useEffect(() => {
     let timer;
     if (gameState?.activeDefenseState) {
       setDefenseSeconds(15);
@@ -831,11 +833,24 @@ export default function KontrolaArena() {
           
           if (isHostRef.current) {
              setTimeout(() => {
-                enqueueHostAction({ actionType: 'START_CHARACTER_SELECT', winnerId });
+                enqueueHostAction({ actionType: 'SHOW_LEADERBOARD', winnerId });
              }, 3000);
           }
         } else {
           nextState.logs = [`🎲 ${currentState.playerNames?.[payload.actorId] || 'Player'} rolled a ${payload.total}.`, ...(currentState.logs || [])];
+        }
+        broadcastState(matchIdRef.current, nextState);
+        return nextState;
+      }
+      if (payload.actionType === 'SHOW_LEADERBOARD') {
+        let nextState = { ...currentState };
+        nextState.status = 'roll_off_leaderboard';
+        nextState.turn = payload.winnerId;
+        
+        if (isHostRef.current) {
+             setTimeout(() => {
+                enqueueHostAction({ actionType: 'START_CHARACTER_SELECT', winnerId: payload.winnerId });
+             }, 4000); // show leaderboard for 4 seconds
         }
         broadcastState(matchIdRef.current, nextState);
         return nextState;
@@ -1604,6 +1619,12 @@ export default function KontrolaArena() {
     };
     setChatMessages((prev) => [...prev, msg]);
     broadcastUIEvent(matchIdRef.current, 'chat_message', msg);
+    
+    if (!showChatRef.current) {
+      const toastId = 'toast_' + Date.now() + Math.random();
+      setChatToasts((prev) => [...prev, { ...msg, toastId, type: 'CHAT' }]);
+      setTimeout(() => setChatToasts((prev) => prev.filter(t => t.toastId !== toastId)), 4500);
+    }
   };
 
   const handleSendTaunt = (tauntText) => {
@@ -1618,6 +1639,12 @@ export default function KontrolaArena() {
     setChatMessages((prev) => [...prev, { ...msg, text: `🗯️ [TAUNT]: "${msg.text}"` }]);
     setTimeout(() => setActiveTauntBubble(null), 4500);
     broadcastUIEvent(matchIdRef.current, 'player_taunt', msg);
+    
+    if (!showChatRef.current) {
+      const toastId = 'toast_' + Date.now() + Math.random();
+      setChatToasts((prev) => [...prev, { ...msg, toastId, type: 'TAUNT' }]);
+      setTimeout(() => setChatToasts((prev) => prev.filter(t => t.toastId !== toastId)), 4500);
+    }
   };
 
   // ==========================================
@@ -2861,62 +2888,39 @@ export default function KontrolaArena() {
                   </div>
                 </div>
               </div>
-            </main>
 
-            {/* Right Column: Hand and Combat Actions */}
-            <aside className="arena-col-right" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {/* Hand of 10 Action Cards */}
-              <div className="arena-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                <div className="panel-title-bar">
-                  <span className="panel-kicker">
-                    {isSpectator ? 'SPECTATOR VIEW' : `YOUR HAND (${myHand.length}/10 CARDS)`}
-                  </span>
-                </div>
-
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(2, 1fr)',
-                    gap: '8px',
-                    padding: '10px',
-                    overflowY: 'auto',
-                    opacity: (!isMyTurn || isSpectator || isPendingSecondAttack) ? 0.6 : 1,
-                    pointerEvents: (!isMyTurn || isSpectator || isPendingSecondAttack) ? 'none' : 'auto'
-                  }}
-                >
-                  {myHand.map((card) => {
+              {/* Phase 2: Action Cards UNO Fan */}
+              {!isSpectator && myHand.length > 0 && (
+                <div className="action-cards-fan-container" style={{ opacity: (!isMyTurn || isPendingSecondAttack) ? 0.6 : 1 }}>
+                  {myHand.map((card, index) => {
+                    const mid = Math.floor(myHand.length / 2);
+                    const rotation = (index - mid) * 4; 
+                    const yOffset = Math.abs(index - mid) * 2; 
                     const isSelected = selectedActionCard?.id === card.id;
-                    const cardArt = getCardGraphicUrl(card.name, myCharacter.id);
-
+                    const cardArt = getCardGraphicUrl(card.name, myCharacter?.id);
+                    
                     return (
-                      <div
-                        key={card.id}
+                      <div 
+                        key={card.id} 
+                        className={`uno-action-card ${isSelected ? 'selected' : ''}`}
+                        style={{
+                          transform: `rotate(${rotation}deg) translateY(${yOffset}px)`,
+                          zIndex: isSelected ? 100 : index,
+                          marginLeft: index === 0 ? '0' : '-45px'
+                        }}
                         onClick={() => {
-                          if (isMyTurn && !isSpectator) {
+                          if (isMyTurn && !isPendingSecondAttack) {
                             playClick();
                             setSelectedActionCard(card);
                           }
                         }}
-                        style={{
-                          background: isSelected ? 'rgba(0, 240, 255, 0.2)' : 'rgba(0, 0, 0, 0.45)',
-                          border: isSelected ? '2px solid var(--neon-cyan)' : '1px solid rgba(255, 255, 255, 0.1)',
-                          boxShadow: isSelected ? '0 0 15px var(--neon-cyan)' : 'none',
-                          borderRadius: '8px',
-                          overflow: 'hidden',
-                          cursor: isMyTurn && !isSpectator ? 'pointer' : 'not-allowed',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          transition: 'all 0.15s ease'
-                        }}
                       >
-                        <div style={{ height: '70px', overflow: 'hidden', background: '#000' }}>
-                          <img src={cardArt} alt={card.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <div className="uno-card-art">
+                          <img src={cardArt} alt={card.name} />
                         </div>
-                        <div style={{ padding: '6px', fontSize: '0.75rem' }}>
-                          <div style={{ fontWeight: 'bold', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {card.name}
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', color: 'rgba(255,255,255,0.6)', fontSize: '0.68rem', marginTop: '2px' }}>
+                        <div className="uno-card-info">
+                          <div className="uno-card-title">{card.name}</div>
+                          <div className="uno-card-meta">
                             <span>{card.type}</span>
                             <span>⚡ {card.costET || 0}</span>
                           </div>
@@ -2925,7 +2929,27 @@ export default function KontrolaArena() {
                     );
                   })}
                 </div>
-              </div>
+              )}
+            </main>
+
+            {/* Right Column: Active Profile and Combat Actions */}
+            <aside className="arena-col-right phase2-restructure">
+              {/* Phase 2: Active Character Profile */}
+              {myCharacter && !isSpectator && (
+                <div className="phase2-active-profile">
+                  <div className="phase2-profile-avatar" style={{ borderColor: myCharacter.themeColor || 'var(--neon-cyan)' }}>
+                    <img src={getAssetUrl(myCharacter.image)} alt={myCharacter.name} />
+                  </div>
+                  <div className="phase2-profile-stats">
+                    <div className="phase2-profile-name">{myCharacter.name} (You)</div>
+                    <div className="phase2-profile-metrics">
+                      <span style={{ color: 'var(--neon-crimson)' }}>❤️ {myCharacter.hp}</span>
+                      <span style={{ color: 'var(--neon-gold)' }}>⚡ {myCharacter.energyTokens || 0}</span>
+                      <span style={{ color: 'var(--neon-cyan)' }}>🛡️ {myCharacter.shield || 0}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Target & Move Selection Panel */}
               {selectedActionCard && !isSpectator && (
@@ -3426,6 +3450,64 @@ export default function KontrolaArena() {
                   </p>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* ROLL OFF LEADERBOARD POPUP */}
+          {gameState?.status === 'roll_off_leaderboard' && (
+            <div
+              style={{
+                position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                background: 'rgba(5, 10, 24, 0.95)', zIndex: 10000,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff',
+                animation: 'fadeIn 0.3s ease'
+              }}
+            >
+              <h2 style={{ color: 'var(--neon-gold)', fontSize: '3rem', marginBottom: '30px', textShadow: '0 0 20px var(--neon-gold)' }}>
+                🏆 TURN ORDER LEADERBOARD 🏆
+              </h2>
+              <div style={{
+                background: 'rgba(0,0,0,0.8)', border: '2px solid var(--neon-gold)', borderRadius: '16px',
+                padding: '40px', display: 'flex', flexDirection: 'column', gap: '20px', minWidth: '400px',
+                boxShadow: '0 0 40px rgba(255, 215, 0, 0.3)'
+              }}>
+                {[...gameState.players].sort((a,b) => (gameState.rollOffs?.[b] || 0) - (gameState.rollOffs?.[a] || 0)).map((pId, idx) => (
+                  <div key={pId} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '16px 24px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px',
+                    borderLeft: idx === 0 ? '6px solid var(--neon-gold)' : '6px solid rgba(255,255,255,0.2)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                      <span style={{ color: idx === 0 ? 'var(--neon-gold)' : '#fff', fontWeight: '900', fontSize: '1.5rem' }}>#{idx + 1}</span>
+                      <span style={{ fontWeight: 'bold', fontSize: '1.4rem', color: pId === playerId ? 'var(--neon-cyan)' : '#fff' }}>
+                        {gameState.playerNames?.[pId] || 'Player'} {pId === playerId && '(You)'}
+                      </span>
+                    </div>
+                    <div style={{ color: 'var(--neon-green)', fontWeight: 'bold', fontSize: '1.2rem' }}>
+                      Roll: {gameState.rollOffs?.[pId]}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* MATCH COUNTDOWN OVERLAY */}
+          {gameState?.status === 'match_countdown' && (
+            <div
+              style={{
+                position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                background: 'rgba(0, 0, 0, 0.85)', zIndex: 99999,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff',
+              }}
+            >
+              <h1 style={{
+                color: 'var(--neon-cyan)', fontSize: '8rem', margin: 0,
+                textShadow: '0 0 50px var(--neon-cyan)', animation: 'pulse 1s infinite'
+              }}>
+                {countdownNumber > 0 ? countdownNumber : 'START!'}
+              </h1>
+              <p style={{ fontSize: '2rem', color: '#fff', marginTop: '20px' }}>The match is starting...</p>
             </div>
           )}
 
