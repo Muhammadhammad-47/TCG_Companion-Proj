@@ -113,6 +113,7 @@ export default function KontrolaArena() {
   const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [showTaunt, setShowTaunt] = useState(false);
   const [activeTauntBubble, setActiveTauntBubble] = useState(null);
+  const [chatToasts, setChatToasts] = useState([]);
   const [countdownNumber, setCountdownNumber] = useState(3);
 
   // Synchronized Combat Clash & Dice
@@ -329,11 +330,8 @@ export default function KontrolaArena() {
     // Broadcast animation to everyone!
     broadcastUIEvent(matchIdRef.current, 'roll_off_animation', { actorId: playerId });
     
-    // Also trigger it locally since broadcasts don't echo back to sender
+    // Trigger local animation (it will clear naturally when state sync arrives and hasRolled becomes true)
     setRollingOffPlayers(prev => ({ ...prev, [playerId]: true }));
-    setTimeout(() => {
-       setRollingOffPlayers(prev => ({ ...prev, [playerId]: false }));
-    }, 1200);
     
     // Local fallback for sound and processing lock
     playClick();
@@ -574,19 +572,26 @@ export default function KontrolaArena() {
           if (!showChatRef.current) {
             setUnreadChatCount((prev) => prev + 1);
             if (soundFX?.playMenuHover) soundFX.playMenuHover();
+            const toastId = 'toast_' + Date.now() + Math.random();
+            setChatToasts((prev) => [...prev, { ...event.payload, toastId, type: 'CHAT' }]);
+            setTimeout(() => setChatToasts((prev) => prev.filter(t => t.toastId !== toastId)), 4500);
           }
         } else if (event.type === 'PLAYER_TAUNT') {
           setActiveTauntBubble(event.payload);
           setChatMessages((prev) => [...prev, { ...event.payload, text: `🗯️ [TAUNT]: "${event.payload.text}"` }]);
           setTimeout(() => setActiveTauntBubble(null), 4500);
+          
+          if (!showChatRef.current) {
+             const toastId = 'toast_' + Date.now() + Math.random();
+             setChatToasts((prev) => [...prev, { ...event.payload, toastId, type: 'TAUNT' }]);
+             setTimeout(() => setChatToasts((prev) => prev.filter(t => t.toastId !== toastId)), 4500);
+          }
         }
         else if (event.type === 'ROLL_OFF_ANIMATION') {
           const { actorId } = event.payload || {};
           if (actorId) {
             setRollingOffPlayers(prev => ({ ...prev, [actorId]: true }));
-            setTimeout(() => {
-               setRollingOffPlayers(prev => ({ ...prev, [actorId]: false }));
-            }, 1200);
+            // It will naturally clear when state sync arrives and hasRolled becomes true
           }
         }
         // 11. Action Effects (Syncs Vision, Shakes, Sounds, Damage Popups)
@@ -642,10 +647,7 @@ export default function KontrolaArena() {
 
           // Start a 3-minute timeout to forfeit them
           if (isHostRef.current) {
-            disconnectTimeoutsRef.current[dId] = setTimeout(() => {
-              handlePlayerLeave(dId);
-              delete disconnectTimeoutsRef.current[dId];
-            }, 180000);
+            // User requested no auto-leave. Host must kick manually.
           }
         }
         // 13. Player Reconnected (Presence)
@@ -831,6 +833,12 @@ export default function KontrolaArena() {
       }
       if (payload.actionType === 'START_CHARACTER_SELECT') {
         let nextState = { ...currentState };
+        
+        // Sort players array based on rollOffs (highest first)
+        nextState.players = [...currentState.players].sort((a, b) => {
+          return (currentState.rollOffs?.[b] || 0) - (currentState.rollOffs?.[a] || 0);
+        });
+        
         nextState.status = 'character_select';
         nextState.turn = payload.winnerId;
         nextState.turnDirection = 'clockwise';
@@ -985,6 +993,12 @@ export default function KontrolaArena() {
       let newDeck = [...(currentState.deck || [])];
       let newHand = [...(currentState.hands?.[actorId] || [])];
       let resolved = {};
+      let matchWinner = currentState.winner;
+      let turnLogs = [log];
+      let pendingAttackX2For = currentState.pendingAttackX2For || null;
+      let nextTurnPlayerId = actorId;
+      let updatedStates = { ...currentState.characterStates };
+      let newDefenderHand = defenderChar ? [...(currentState.hands?.[targetId] || [])] : [];
 
       if (!isPass) {
         // Deduct ET Cost
@@ -1079,7 +1093,7 @@ export default function KontrolaArena() {
       }
 
       // Also discard the defender's card if they played one during the preparation window
-      let newDefenderHand = defenderChar ? [...(currentState.hands?.[targetId] || [])] : [];
+      newDefenderHand = defenderChar ? [...(currentState.hands?.[targetId] || [])] : [];
       let defenderDiscarded = false;
       if (precalculatedRolls?.defenseCard?.id) {
         const initLen = newDefenderHand.length;
@@ -1094,7 +1108,6 @@ export default function KontrolaArena() {
       }
 
       // Check if target was defeated and reward Stability Crystal
-      let matchWinner = null;
       if (newDefenderState && newDefenderState.hp <= 0 && !newDefenderState.isDefeated) {
         newDefenderState.isDefeated = true;
         newAttackerState.crystals = (newAttackerState.crystals || 1) + (newDefenderState.crystals || 1);
@@ -1105,8 +1118,8 @@ export default function KontrolaArena() {
         }
       }
 
-      const updatedStates = {
-        ...currentState.characterStates,
+      updatedStates = {
+        ...updatedStates,
         [actorId]: newAttackerState
       };
       if (targetId && targetId !== 'ALL' && newDefenderState) {
@@ -1135,11 +1148,6 @@ export default function KontrolaArena() {
       const livingPlayers = currentState.players.filter(
         (pId) => !updatedStates[pId]?.isDefeated
       );
-
-      let nextTurnPlayerId = actorId;
-      const turnLogs = [log];
-
-      let pendingAttackX2For = currentState.pendingAttackX2For || null;
 
       if (livingPlayers.length <= 1) {
         matchWinner = updatedStates[livingPlayers[0]] ? { ...updatedStates[livingPlayers[0]], playerId: livingPlayers[0] } : matchWinner;
@@ -2169,24 +2177,47 @@ export default function KontrolaArena() {
                             </div>
                           </div>
 
-                          {isRoomHost && (
-                            <span
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                background: 'rgba(255, 230, 0, 0.15)',
-                                border: '1px solid var(--neon-gold)',
-                                color: 'var(--neon-gold)',
-                                borderRadius: '6px',
-                                padding: '4px 10px',
-                                fontSize: '0.78rem',
-                                fontWeight: 'bold'
-                              }}
-                            >
-                              <Crown size={13} /> HOST
-                            </span>
-                          )}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            {isRoomHost && (
+                              <span
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  background: 'rgba(255, 230, 0, 0.15)',
+                                  border: '1px solid var(--neon-gold)',
+                                  color: 'var(--neon-gold)',
+                                  borderRadius: '6px',
+                                  padding: '4px 10px',
+                                  fontSize: '0.78rem',
+                                  fontWeight: 'bold'
+                                }}
+                              >
+                                <Crown size={13} /> HOST
+                              </span>
+                            )}
+                            {isHostRef.current && pId !== playerId && (
+                              <button
+                                onClick={() => enqueueHostAction({ actionType: 'PLAYER_LEAVE', playerId: pId })}
+                                style={{
+                                  background: 'rgba(255, 0, 50, 0.2)',
+                                  border: '1px solid rgba(255, 0, 50, 0.8)',
+                                  color: '#ff2a55',
+                                  borderRadius: '6px',
+                                  padding: '4px 10px',
+                                  fontSize: '0.78rem',
+                                  fontWeight: 'bold',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}
+                                title="Kick Player"
+                              >
+                                <X size={13} /> KICK
+                              </button>
+                            )}
+                          </div>
                         </div>
                       );
                     })}
@@ -2307,6 +2338,39 @@ export default function KontrolaArena() {
             </div>
           )}
 
+          {/* Chat & Taunt Toasts Overlay */}
+          <div style={{
+            position: 'absolute',
+            bottom: '80px',
+            left: '20px',
+            zIndex: 9999,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+            pointerEvents: 'none'
+          }}>
+            {chatToasts.map(toast => (
+               <div key={toast.toastId} style={{
+                 background: toast.type === 'TAUNT' ? 'linear-gradient(90deg, #ff2a55 0%, #880022 100%)' : 'rgba(10, 20, 35, 0.9)',
+                 border: toast.type === 'TAUNT' ? '2px solid #ff8899' : '1px solid rgba(0, 240, 255, 0.4)',
+                 borderRadius: '12px',
+                 padding: '10px 15px',
+                 color: '#fff',
+                 display: 'flex',
+                 flexDirection: 'column',
+                 gap: '4px',
+                 boxShadow: '0 5px 15px rgba(0,0,0,0.6)',
+                 animation: 'slideInLeft 0.3s ease-out, fadeOut 0.3s ease-in 4.2s forwards'
+               }}>
+                 <span style={{ fontSize: '0.75rem', color: toast.type === 'TAUNT' ? '#ffe600' : '#00f0ff', fontWeight: 'bold' }}>
+                   {toast.type === 'TAUNT' ? '🗯️ TAUNT' : '💬 MSG'} • {toast.senderName}
+                 </span>
+                 <span style={{ fontSize: '0.9rem', fontWeight: '500' }}>
+                   {toast.text.replace('🗯️ [TAUNT]: "', '').replace('"', '')}
+                 </span>
+               </div>
+            ))}
+          </div>
           {/* Leave Confirmation Modal */}
           {showLeaveConfirm && (
             <div className="arena-modal-backdrop" onClick={() => setShowLeaveConfirm(false)}>
