@@ -3,10 +3,9 @@ import { Trophy, X, Medal } from 'lucide-react';
 import { authService } from '../services/authService';
 import { leaderboardCache } from '../services/preferenceService';
 
-export const LeaderboardModal = ({ isOpen, onClose, fixedAppSource = null }) => {
+export const LeaderboardModal = ({ isOpen, onClose }) => {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState(fixedAppSource || 'global');
   const [isStale, setIsStale] = useState(false);
 
   useEffect(() => {
@@ -16,19 +15,13 @@ export const LeaderboardModal = ({ isOpen, onClose, fixedAppSource = null }) => 
     setLoading(true);
     setIsStale(false);
 
-    // If fixedAppSource is suddenly provided when already open, force update
-    if (fixedAppSource && activeTab !== fixedAppSource) {
-      setActiveTab(fixedAppSource);
-    }
-
     const fetchBoard = async () => {
       try {
-        const appSource = activeTab === 'global' ? null : activeTab;
-
+        // Fetch unified leaderboard (appSource param ignored in backend now)
         // stale-while-revalidate: returns cached rows immediately if available,
         // calls onUpdate with fresh data once the network request completes
         const rows = await leaderboardCache.fetchWithCache(
-          () => authService.getLeaderboard(25, appSource),
+          () => authService.getLeaderboard(25, null),
           (fresh) => {
             if (isMounted) {
               setPlayers(fresh);
@@ -56,7 +49,7 @@ export const LeaderboardModal = ({ isOpen, onClose, fixedAppSource = null }) => 
     return () => {
       isMounted = false;
     };
-  }, [isOpen, activeTab]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -115,47 +108,13 @@ export const LeaderboardModal = ({ isOpen, onClose, fixedAppSource = null }) => 
           <h2 style={{ color: 'var(--neon-gold, #ffe600)', margin: '0 0 4px 0', fontSize: '1.8rem', textTransform: 'uppercase', letterSpacing: '2px' }}>
             HALL OF FAME
           </h2>
-          <p style={{ color: 'rgba(255,255,255,0.6)', margin: 0, fontSize: '0.9rem' }}>Top Ranked Attention TCG Players</p>
+          <p style={{ color: 'rgba(255,255,255,0.6)', margin: 0, fontSize: '0.9rem' }}>Top Ranked Kontrola Players</p>
           {isStale && (
             <p style={{ color: 'rgba(255,255,255,0.35)', margin: '4px 0 0', fontSize: '0.75rem' }}>
               ↻ Refreshing…
             </p>
           )}
         </div>
-
-        {/* Tabs for multiple leaderboards (hidden if locked to a specific product) */}
-        {!fixedAppSource && (
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', justifyContent: 'center' }}>
-            <button
-              onClick={() => setActiveTab('global')}
-              style={{
-                background: activeTab === 'global' ? 'rgba(255, 215, 0, 0.15)' : 'rgba(255,255,255,0.05)',
-                border: activeTab === 'global' ? '1px solid var(--neon-gold, #ffe600)' : '1px solid rgba(255,255,255,0.1)',
-                color: activeTab === 'global' ? 'var(--neon-gold, #ffe600)' : 'rgba(255,255,255,0.6)',
-                padding: '8px 16px',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: 'bold'
-              }}
-            >
-              Global Overall
-            </button>
-            <button
-              onClick={() => setActiveTab('kontrola')}
-              style={{
-                background: activeTab === 'kontrola' ? 'rgba(0, 240, 255, 0.15)' : 'rgba(255,255,255,0.05)',
-                border: activeTab === 'kontrola' ? '1px solid var(--neon-cyan, #00f0ff)' : '1px solid rgba(255,255,255,0.1)',
-                color: activeTab === 'kontrola' ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.6)',
-                padding: '8px 16px',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: 'bold'
-              }}
-            >
-              Kontrola Mode
-            </button>
-          </div>
-        )}
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: '40px 0', color: 'rgba(255,255,255,0.5)' }}>

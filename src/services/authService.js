@@ -257,15 +257,17 @@ export const authService = {
   // Query top players leaderboard
   async getLeaderboard(limit = 10, appSource = null) {
     if (!supabase) return [];
+    
+    // Build query to fetch ranked players
     let query = supabase
       .from('profiles')
       .select('id, username, avatar_id, crystals_collected, matches_won, matches_played')
+      .gt('matches_played', 0)  // Only show players who have played at least one match
       .order('crystals_collected', { ascending: false })
       .limit(limit);
-      
-    if (appSource) {
-      query = query.eq('registered_app', appSource);
-    }
+    
+    // Note: appSource filtering removed since we only have one game (Kontrola) for now
+    // All players participate in the same unified leaderboard
     
     const { data, error } = await query;
 
