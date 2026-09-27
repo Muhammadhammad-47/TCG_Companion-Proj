@@ -4112,7 +4112,7 @@
   transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
   pointer-events: auto; /* Re-enable clicks on the cards themselves */
   cursor: pointer;
-  overflow: hidden;
+  overflow: visible; /* changed from hidden to let shadows bleed */
   display: flex;
   flex-direction: column;
 }

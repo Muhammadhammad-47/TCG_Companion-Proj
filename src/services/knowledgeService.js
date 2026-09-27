@@ -218,6 +218,7 @@ export const knowledgeService = {
       };
       if (suggestedAnswer) {
         updates.user_suggested_answer = suggestedAnswer.trim();
+        updates.admin_status = 'pending';
       }
 
       const { error } = await supabase

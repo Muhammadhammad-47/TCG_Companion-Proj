@@ -18,6 +18,8 @@ import AdminPage from './pages/admin/AdminPage.jsx';
 import DocsPage from './pages/DocsPage.jsx';
 import { authService } from './services/authService.js';
 import { knowledgeService } from './services/knowledgeService.js';
+import { economyService } from './services/economyService.js';
+import { StoreModal } from './components/StoreModal.jsx';
 
 const Avatar = ({ characterId, isSpeaking, currentVisemeFile }) => {
   const avatarConfig = CHAT_AVATARS[characterId] || CHAT_AVATARS.chyna;
@@ -215,19 +217,24 @@ export function Chat({ onBack, isOverlay = false }) {
     if (!suggestedAnswer.trim()) return;
     setIsSubmittingCorrection(true);
     setUserFeedback('unhelpful');
-    await knowledgeService.submitRuleCorrection({
-      questionId: lastQuestionId,
-      questionText: query || 'Official Rule Correction',
-      aiAnswer: answer,
-      suggestedAnswer: suggestedAnswer.trim(),
-      userId: currentUser?.id,
-      userName: userProfile?.display_name || currentUser?.email || 'Guest Player'
-    });
-    setIsSubmittingCorrection(false);
-    setShowCorrectionModal(false);
-    setSuggestedAnswer('');
-    setFeedbackSuccessMsg('Correction submitted to Game Masters for review!');
-    setTimeout(() => setFeedbackSuccessMsg(''), 4000);
+    try {
+      await knowledgeService.submitRuleCorrection({
+        questionId: lastQuestionId,
+        questionText: query || 'Official Rule Correction',
+        aiAnswer: answer,
+        suggestedAnswer: suggestedAnswer.trim(),
+        userId: currentUser?.id,
+        userName: userProfile?.display_name || currentUser?.email || 'Guest Player'
+      });
+    } catch (err) {
+      console.error('Error submitting correction:', err);
+    } finally {
+      setIsSubmittingCorrection(false);
+      setShowCorrectionModal(false);
+      setSuggestedAnswer('');
+      setFeedbackSuccessMsg('Correction submitted to Game Masters for review!');
+      setTimeout(() => setFeedbackSuccessMsg(''), 4000);
+    }
   };
 
   const handleSelectAvatar = (newAvatarId) => {
@@ -1250,6 +1257,8 @@ export function Hub() {
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isStoreOpen, setIsStoreOpen] = useState(false);
+  const [appSettings, setAppSettings] = useState({ match_cost: 1, premium_modules: ['kontrola'] });
 
   React.useLayoutEffect(() => {
     try {
@@ -1260,12 +1269,16 @@ export function Hub() {
   }, []);
 
   useEffect(() => {
+    economyService.getAppSettings().then(settings => {
+      setAppSettings(settings);
+    }).catch(err => console.warn('Failed fetching economy settings', err));
+
     authService.getCurrentUser().then((user) => {
       if (user) {
         setCurrentUser(user);
-        authService.getProfile(user.id).then((prof) => setUserProfile(prof));
+        authService.getProfile(user.id).then((prof) => setUserProfile(prof)).catch(err => console.warn('Failed profile fetch', err));
       }
-    });
+    }).catch(err => console.warn('Failed fetching user', err));
 
     const { data: { subscription } } = authService.onAuthStateChange((event, session, profile) => {
       setCurrentUser(session?.user || null);
@@ -1303,6 +1316,23 @@ export function Hub() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                     <span style={{ fontSize: '1rem' }}>💎</span>
                     <span style={{ fontWeight: 'bold', color: 'var(--neon-cyan)', fontSize: '0.85rem' }}>{userProfile?.crystals_collected || 0}</span>
+                    <button
+                      onClick={() => setIsStoreOpen(true)}
+                      style={{
+                        background: 'rgba(57, 255, 20, 0.2)',
+                        border: '1px solid #39ff14',
+                        color: '#39ff14',
+                        borderRadius: '4px',
+                        padding: '2px 6px',
+                        fontSize: '0.8rem',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        marginLeft: '4px'
+                      }}
+                      title="Get More Diamonds"
+                    >
+                      +
+                    </button>
                   </div>
                   <div style={{ borderLeft: '1px solid rgba(255,255,255,0.2)', paddingLeft: '8px', fontSize: '0.88rem', fontWeight: 'bold', color: '#fff' }}>
                     {userProfile?.username || 'Player'}
@@ -1324,62 +1354,58 @@ export function Hub() {
                         gap: '4px'
                       }}
                     >
-                      <Shield size={12} /> ADMIN
+                      <Settings size={14} /> Admin
                     </button>
                   )}
                   <button
-                    onClick={handleLogout}
-                    style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
-                    title="Sign Out"
+                    onClick={() => setIsLeaderboardOpen(true)}
+                    style={{
+                      background: 'rgba(255, 215, 0, 0.15)',
+                      border: '1px solid var(--neon-gold)',
+                      color: 'var(--neon-gold)',
+                      borderRadius: '6px',
+                      padding: '4px 8px',
+                      fontSize: '0.75rem',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
                   >
-                    <LogOut size={16} />
+                    <Trophy size={14} /> Rank
                   </button>
+                  <button onClick={handleLogout} style={{ background: 'transparent', border: 'none', color: '#ff4444', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold', marginLeft: '4px' }}>Logout</button>
                 </div>
               ) : (
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button
-                    onClick={() => setIsAuthModalOpen(true)}
-                    style={{
-                      background: 'rgba(0, 240, 255, 0.15)',
-                      border: '1.5px solid var(--neon-cyan)',
-                      color: 'var(--neon-cyan)',
-                      borderRadius: '10px',
-                      padding: '8px 16px',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      fontFamily: 'Rajdhani, sans-serif',
-                      fontSize: '0.95rem',
-                      boxShadow: '0 0 15px rgba(0, 240, 255, 0.25)'
-                    }}
-                  >
-                    <User size={16} />
-                    <span>PLAYER LOGIN</span>
-                  </button>
-                  <button
-                    onClick={() => navigate('/admin')}
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.06)',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      color: 'rgba(255, 255, 255, 0.7)',
-                      borderRadius: '10px',
-                      padding: '8px 12px',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      fontSize: '0.85rem'
-                    }}
-                    title="Admin Portal"
-                  >
-                    <Shield size={14} /> Admin
-                  </button>
-                </div>
+                <button
+                  onClick={() => setIsAuthModalOpen(true)}
+                  style={{
+                    background: 'rgba(0, 240, 255, 0.15)',
+                    border: '1px solid var(--neon-cyan)',
+                    color: 'var(--neon-cyan)',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    fontSize: '0.9rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Login / Play
+                </button>
               )}
             </div>
+            
+            <LeaderboardModal isOpen={isLeaderboardOpen} onClose={() => setIsLeaderboardOpen(false)} />
+            <StoreModal 
+              isOpen={isStoreOpen} 
+              onClose={() => setIsStoreOpen(false)} 
+              userProfile={userProfile} 
+              onPurchaseComplete={(amount) => {
+                setUserProfile(prev => ({ ...prev, crystals_collected: (prev?.crystals_collected || 0) + amount }));
+              }} 
+            />
+
 
             <div className="menu-bg-elements" style={{ width: '100%', height: '100%' }}>
               <div className="neon-streak-red"></div>
@@ -1428,6 +1454,14 @@ export function Hub() {
               <button
                 className="btn-enter-game-cta"
                 onClick={() => {
+                  const isPremium = appSettings?.premium_modules?.includes('kontrola');
+                  const cost = appSettings?.match_cost || 0;
+                  
+                  if (isPremium && (!currentUser || (userProfile?.crystals_collected || 0) < cost)) {
+                    setIsStoreOpen(true);
+                    return;
+                  }
+
                   try {
                     if (screen.orientation && screen.orientation.lock) {
                       screen.orientation.lock('landscape').catch(() => { });
@@ -1435,11 +1469,16 @@ export function Hub() {
                   } catch (e) { }
                   navigate('/kontrola');
                 }}
-                style={{ width: '100%', padding: '30px 40px', borderRadius: '24px', background: 'linear-gradient(90deg, #2a0845 0%, #6441A5 100%)', border: '2px solid #e0b0ff', color: '#e0b0ff' }}
+                style={{ width: '100%', padding: '30px 40px', borderRadius: '24px', background: 'linear-gradient(90deg, #2a0845 0%, #6441A5 100%)', border: '2px solid #e0b0ff', color: '#e0b0ff', position: 'relative' }}
               >
+                {appSettings?.premium_modules?.includes('kontrola') && (
+                  <div style={{ position: 'absolute', top: '-10px', right: '20px', background: 'rgba(0,0,0,0.8)', padding: '4px 12px', borderRadius: '12px', border: '1px solid var(--neon-gold)', color: 'var(--neon-gold)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '0.9rem' }}>💎</span> {appSettings.match_cost} / Match
+                  </div>
+                )}
                 <div style={{ marginRight: '20px', display: 'flex', alignItems: 'center' }}><Swords size={48} /></div>
                 <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '8px' }}>Kontrola Game (Premium)</div>
+                  <div style={{ fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '8px' }}>Kontrola Game</div>
                   <div style={{ fontSize: '1.2rem', opacity: 0.8, fontWeight: 'normal' }}>Online Multiplayer Card Battles</div>
                 </div>
               </button>

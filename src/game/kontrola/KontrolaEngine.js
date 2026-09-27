@@ -347,7 +347,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     } else if (attackSelectionName && attackerChar?.attacks?.[attackSelectionName]) {
       const atk = attackerChar.attacks[attackSelectionName];
       attackElement = atk.element || 'Physical';
-      if (atk.dice > 0 && (cardName === 'ATTACK X1' || cardName === 'ATTACK X2')) {
+      if (atk.dice > 0 && (cardName.includes('ATTACK X1') || cardName.includes('ATTACK X2'))) {
         const actionCardAP = cardName.includes('X2') ? 20 : 10;
         baseAP = dRoll.total * actionCardAP;
         log += ` [${attackSelectionName} with ${cardName}: ${dRoll.total} × ${actionCardAP} AP = ${baseAP} AP]`;

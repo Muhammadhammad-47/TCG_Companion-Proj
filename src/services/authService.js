@@ -255,13 +255,19 @@ export const authService = {
   },
 
   // Query top players leaderboard
-  async getLeaderboard(limit = 10) {
+  async getLeaderboard(limit = 10, appSource = null) {
     if (!supabase) return [];
-    const { data, error } = await supabase
+    let query = supabase
       .from('profiles')
       .select('id, username, avatar_id, crystals_collected, matches_won, matches_played')
       .order('crystals_collected', { ascending: false })
       .limit(limit);
+      
+    if (appSource) {
+      query = query.eq('registered_app', appSource);
+    }
+    
+    const { data, error } = await query;
 
     if (error) {
       console.warn('Failed to fetch leaderboard:', error);

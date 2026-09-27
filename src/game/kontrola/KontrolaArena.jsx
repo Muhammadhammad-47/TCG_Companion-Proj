@@ -15,10 +15,12 @@ import {
   broadcastUIEvent, rejectJoin
 } from './MultiplayerClient';
 import { authService } from '../../services/authService';
+import { economyService } from '../../services/economyService';
 import { getCardGraphicUrl, getCharacterAttackGraphicUrl, getWildCardGraphicUrl } from './kontrolaAssets';
 import KontrolaDiceRoller, { CanvasPipDie } from './KontrolaDiceRoller';
 import KontrolaChatModal from './KontrolaChatModal';
 import KontrolaTauntModal from './KontrolaTauntModal';
+import { LeaderboardModal } from '../../components/LeaderboardModal';
 import '../../pages/GamePage.css';
 
 // Collision-proof unique player ID (persisted for rejoining across tabs)
@@ -59,7 +61,7 @@ export default function KontrolaArena() {
     return 'Player';
   });
   const [isHost, setIsHost] = useState(false);
-  const [isJoining, setIsJoining] = useState(false);
+  const isJoiningRef = useRef(false);
   const [isSpectator, setIsSpectator] = useState(false);
   const [error, setError] = useState(null);
   const [inAppNotice, setInAppNotice] = useState(null);
@@ -101,6 +103,14 @@ export default function KontrolaArena() {
 
   const [selectedCharacter, setSelectedCharacter] = useState('chynaman');
   const [isPremium, setIsPremium] = useState(false);
+  const [appSettings, setAppSettings] = useState({ match_cost: 1, premium_modules: ['kontrola'] });
+
+  useEffect(() => {
+    economyService.getAppSettings().then(settings => {
+      setAppSettings(settings);
+      setIsPremium(settings?.premium_modules?.includes('kontrola') || false);
+    }).catch(err => console.warn('Failed fetching economy settings in Arena', err));
+  }, []);
 
   const [selectedActionCard, setSelectedActionCard] = useState(null);
   const [selectedCharacterAttack, setSelectedCharacterAttack] = useState(null);
@@ -115,6 +125,7 @@ export default function KontrolaArena() {
   const [activeTauntBubble, setActiveTauntBubble] = useState(null);
   const [chatToasts, setChatToasts] = useState([]);
   const [countdownNumber, setCountdownNumber] = useState(3);
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
 
   // Synchronized Combat Clash & Dice
   const [activeCombat, setActiveCombat] = useState(null);
@@ -124,6 +135,35 @@ export default function KontrolaArena() {
   const [isShaking, setIsShaking] = useState(false);
   const [turnFlash, setTurnFlash] = useState(false);
   const [winner, setWinner] = useState(null);
+
+  // Automatically log match results to DB when a winner is declared (Host only)
+  useEffect(() => {
+    if (winner && isHost && gameState) {
+      const logMatch = async () => {
+        try {
+          const players = gameState?.players || [];
+          // Log match history record
+          await authService.logMatchResult({
+            roomCode: matchId,
+            winnerId: winner.playerId,
+            winnerName: gameState?.playerNames?.[winner.playerId] || winner.name,
+            playerIds: players,
+            playerNames: players.map(pid => gameState?.playerNames?.[pid] || 'Unknown')
+          });
+          
+          // Update each player's stats (crystals and matches_won)
+          for (const pid of players) {
+            const isWinner = pid === winner.playerId;
+            const crystalsAwarded = isWinner ? 3 : 1; // Winner gets 3 crystals, loser gets 1
+            await authService.savePlayerMatchResult(pid, { won: isWinner, crystalsDelta: crystalsAwarded, appSource: 'kontrola' });
+          }
+        } catch (e) {
+          console.warn('Failed to log match results automatically', e);
+        }
+      };
+      logMatch();
+    }
+  }, [winner, isHost, matchId]);
   const [isProcessingAction, setIsProcessingAction] = useState(false);
   const [damagePopups, setDamagePopups] = useState([]); // [{id, value, isHeal, x, y}]
 
@@ -688,13 +728,13 @@ export default function KontrolaArena() {
       },
       () => {
         // Callback fired when channel is fully SUBSCRIBED
-        if (isJoining) {
+        if (isJoiningRef.current) {
           requestJoin(matchId, {
             playerId: playerIdRef.current,
             characterId: selectedCharacterRef.current,
             playerName: playerNameRef.current.trim() || 'Player'
           });
-          setIsJoining(false);
+          isJoiningRef.current = false;
           // Request sync from host in case match is in progress
           requestSync(matchId, playerIdRef.current);
         }
@@ -705,7 +745,7 @@ export default function KontrolaArena() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [matchId, isJoining]);
+  }, [matchId]);
 
   // ==========================================
   // DISCONNECT & HOST PROMOTION HANDLER
@@ -1287,6 +1327,35 @@ export default function KontrolaArena() {
         }
       });
 
+      // Update Match Summary Stats
+      let updatedStats = { ...(currentState.stats || { damageDealt: {}, cardsPlayed: {}, turnsTaken: {} }) };
+      
+      // Cards Played
+      if (!isPass) {
+        updatedStats.cardsPlayed[actorId] = (updatedStats.cardsPlayed[actorId] || 0) + 1;
+      }
+      
+      // Turns Taken
+      updatedStats.turnsTaken[actorId] = (updatedStats.turnsTaken[actorId] || 0) + 1;
+
+      // Damage Dealt (Compute from diff)
+      if (!isPass && actionCard?.type === 'ATTACK') {
+        let totalTurnDmg = 0;
+        if (targetId && targetId !== 'ALL' && newDefenderState) {
+           const prevDefHP = (currentState.characterStates?.[targetId]?.hp) ?? 0;
+           totalTurnDmg = Math.max(0, prevDefHP - newDefenderState.hp);
+        } else if (targetId === 'ALL' && resolved.aoeDamage) {
+           currentState.players.forEach(pId => {
+              if (pId !== actorId && !currentState.characterStates[pId]?.isDefeated) {
+                 const prevHp = currentState.characterStates[pId].hp;
+                 const newHp = Math.max(0, prevHp - resolved.aoeDamage);
+                 totalTurnDmg += Math.max(0, prevHp - newHp);
+              }
+           });
+        }
+        updatedStats.damageDealt[actorId] = (updatedStats.damageDealt[actorId] || 0) + totalTurnDmg;
+      }
+
       const nextState = {
         ...currentState,
         turn: nextTurnPlayerId,
@@ -1295,6 +1364,7 @@ export default function KontrolaArena() {
         deck: newDeck,
         hands: updatedHands,
         characterStates: updatedStates,
+        stats: updatedStats,
         logs: [...turnLogs, ...(currentState.logs || [])],
         winner: matchWinner
       };
@@ -1322,6 +1392,18 @@ export default function KontrolaArena() {
     if (playerName !== finalName) setPlayerName(finalName);
 
     try {
+      if (isPremium && !userProfile?.is_premium) {
+        const success = await authService.savePlayerMatchResult(currentUser?.id, {
+          won: false,
+          crystalsDelta: -appSettings.match_cost,
+          appSource: 'kontrola_toll'
+        });
+        if (!success) {
+          setError('Failed to deduct match cost. Please try again.');
+          return;
+        }
+      }
+
       const newMatchId = generateRoomCode();
       const initialState = await createMatch(newMatchId, playerId, selectedCharacter);
       initialState.isPremium = isPremium;
@@ -1360,15 +1442,40 @@ export default function KontrolaArena() {
 
     try {
       const cleanId = codeToJoin.trim().toUpperCase();
-      setMatchId(cleanId);
-      setIsHost(false);
-      setIsJoining(true); // Triggers requestJoin inside useEffect once channel connects
+      const lastMatch = localStorage.getItem('kontrola_current_match');
 
+      if (isPremium && !userProfile?.is_premium && cleanId !== lastMatch) {
+        const success = await authService.savePlayerMatchResult(currentUser?.id, {
+          won: false,
+          crystalsDelta: -appSettings.match_cost,
+          appSource: 'kontrola_toll'
+        });
+        if (!success) {
+          setError('Failed to deduct match cost. Please try again or purchase more Diamonds.');
+          return;
+        }
+      }
+
+      setIsHost(false);
+      
       const tempState = await joinMatch(cleanId, playerId, selectedCharacter);
       tempState.playerNames = { [playerId]: finalName };
       setGameState(tempState);
       setError(null);
       localStorage.setItem('kontrola_current_match', cleanId);
+      
+      if (matchId === cleanId) {
+        // Already subscribed to this room channel, but need to re-request join
+        requestJoin(cleanId, {
+          playerId: playerIdRef.current,
+          characterId: selectedCharacterRef.current,
+          playerName: finalName
+        });
+        requestSync(cleanId, playerIdRef.current);
+      } else {
+        isJoiningRef.current = true; // Triggers requestJoin inside useEffect once channel connects
+        setMatchId(cleanId);
+      }
     } catch (err) {
       setError(err.message);
     }
@@ -1587,7 +1694,7 @@ export default function KontrolaArena() {
     setActiveCombat(null);
     setIsDiceRollingSync(false);
     if (resolved && isHost && activeCombat) {
-      enqueueHostAction(activeCombat, activeCombat.precalculatedRolls);
+      enqueueHostAction({ ...activeCombat, actionType: 'RESOLVE_COMBAT' }, activeCombat.precalculatedRolls);
     }
   };
 
@@ -2459,12 +2566,12 @@ export default function KontrolaArena() {
             </div>
           )}
 
-          {/* Winner Modal */}
+          {/* Detailed Scoreboard & Winner Modal */}
           {winner && (
-            <div className="arena-modal-backdrop">
+            <div className="arena-modal-backdrop" style={{ zIndex: 999999 }}>
               <div
                 className="arena-modal-card"
-                style={{ border: '2px solid var(--neon-gold)', textAlign: 'center', padding: '32px' }}
+                style={{ border: '2px solid var(--neon-gold)', textAlign: 'center', padding: '32px', width: '100%', maxWidth: '500px' }}
               >
                 <Trophy size={64} color="var(--neon-gold)" style={{ margin: '0 auto 16px auto' }} />
                 <h1
@@ -2472,14 +2579,46 @@ export default function KontrolaArena() {
                     color: 'var(--neon-gold)',
                     fontFamily: 'Rajdhani, sans-serif',
                     fontSize: '2.4rem',
-                    margin: '0 0 8px 0'
+                    margin: '0 0 8px 0',
+                    textTransform: 'uppercase'
                   }}
                 >
-                  VICTORY ACHIEVED!
+                  {winner.playerId === playerId ? 'VICTORY ACHIEVED!' : 'MATCH CONCLUDED'}
                 </h1>
-                <p style={{ color: '#fff', fontSize: '1.2rem', margin: '0 0 24px 0' }}>
-                  <strong>{winner.name}</strong> restored balance and emerged victorious in Kontrola!
+                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '1.1rem', margin: '0 0 24px 0' }}>
+                  <strong>{gameState?.playerNames?.[winner.playerId] || winner.name}</strong> emerged victorious in Kontrola!
                 </p>
+
+                <div style={{ background: 'rgba(0,0,0,0.4)', borderRadius: '12px', padding: '16px', marginBottom: '24px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <h3 style={{ margin: '0 0 12px 0', color: 'var(--neon-cyan)', fontSize: '1.1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>MATCH SCOREBOARD</h3>
+                  {gameState?.players?.map((pid, idx) => {
+                    const charState = gameState?.characterStates?.[pid];
+                    const isWinner = pid === winner.playerId;
+                    const pName = gameState?.playerNames?.[pid] || 'Anonymous';
+                    const dmg = gameState?.stats?.damageDealt?.[pid] || 0;
+                    const cards = gameState?.stats?.cardsPlayed?.[pid] || 0;
+                    const turns = gameState?.stats?.turnsTaken?.[pid] || 0;
+                    return (
+                      <div key={pid} style={{ background: isWinner ? 'rgba(255, 215, 0, 0.15)' : 'rgba(255,255,255,0.05)', padding: '10px 14px', borderRadius: '8px', marginBottom: '8px', border: isWinner ? '1px solid var(--neon-gold)' : '1px solid transparent' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <span style={{ fontWeight: 'bold', color: isWinner ? '#ffe600' : '#fff' }}>{idx + 1}. {pName}</span>
+                            <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px' }}>{charState?.name}</span>
+                          </div>
+                          <div style={{ fontWeight: 'bold', color: charState?.hp > 0 ? '#39ff14' : '#ff4444' }}>
+                            {charState?.hp > 0 ? `${charState.hp} HP` : 'ELIMINATED'}
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px' }}>
+                          <span>⚔️ DMG: <strong style={{color: '#fff'}}>{dmg}</strong></span>
+                          <span>🃏 Cards: <strong style={{color: '#fff'}}>{cards}</strong></span>
+                          <span>⏳ Turns: <strong style={{color: '#fff'}}>{turns}</strong></span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
                 <button
                   onClick={() => {
                     setGameState(null);
@@ -2628,6 +2767,15 @@ export default function KontrolaArena() {
             <div className="hud-actions-group">
               <button
                 className="btn-hud-undo"
+                onClick={() => setIsLeaderboardOpen(true)}
+                style={{ borderColor: 'var(--neon-gold)', color: 'var(--neon-gold)' }}
+                title="View Match Rankings"
+              >
+                <Trophy size={16} />
+                <span>RANK</span>
+              </button>
+              <button
+                className="btn-hud-undo"
                 onClick={() => setShowLeaveConfirm(true)}
                 style={{ borderColor: 'var(--neon-crimson)', color: 'var(--neon-crimson)' }}
               >
@@ -2636,6 +2784,8 @@ export default function KontrolaArena() {
               </button>
             </div>
           </header>
+
+          <LeaderboardModal isOpen={isLeaderboardOpen} onClose={() => setIsLeaderboardOpen(false)} fixedAppSource="kontrola" />
 
           {/* Floating Arena Taunt Toast Banner */}
           {activeTauntBubble && (
@@ -2819,8 +2969,8 @@ export default function KontrolaArena() {
 
             {/* Center Column: Combat Orbit Stage */}
             <main
-              className="arena-col-center"
-              style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%' }}
+              className="arena-col-center phase2-restructure"
+              style={{ position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%' }}
             >
               <div
                 className="combat-orbit-stage"
@@ -2906,7 +3056,7 @@ export default function KontrolaArena() {
                         style={{
                           transform: `rotate(${rotation}deg) translateY(${yOffset}px)`,
                           zIndex: isSelected ? 100 : index,
-                          marginLeft: index === 0 ? '0' : '-45px'
+                          marginLeft: index === 0 ? '0' : '-25px'
                         }}
                         onClick={() => {
                           if (isMyTurn && !isPendingSecondAttack) {
@@ -2995,7 +3145,7 @@ export default function KontrolaArena() {
                     })}
                   </div>
 
-                  {!selectedActionCard?.name?.includes('LIGHTNING') && !selectedActionCard?.name?.includes('FIRE FLAME') && (
+                  {selectedActionCard?.type === 'ATTACK' && !selectedActionCard?.name?.includes('LIGHTNING') && !selectedActionCard?.name?.includes('FIRE FLAME') && !selectedActionCard?.name?.includes('BLITZ') && (
                     <>
                       <div className="panel-title-bar" style={{ marginBottom: '8px' }}>
                         <span className="panel-kicker" style={{ color: 'var(--neon-crimson)' }}>2. SELECT CHARACTER MOVE</span>

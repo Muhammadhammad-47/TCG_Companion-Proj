@@ -7,10 +7,11 @@ import {
   TrendingUp, Award, Layers, Users, Swords, UserX, UserCheck, Flame,
   Crown, Lock, Ban, Sparkles, Gem, Clock, Zap, LogOut, ChevronRight,
   Server, Globe, LayoutGrid, List, FileCode, Cpu, FileText, Download,
-  PlusCircle, FilePlus, Code, AlertCircle
+  PlusCircle, FilePlus, Code, AlertCircle, Coins, ShoppingCart
 } from 'lucide-react';
 import { authService } from '../../services/authService';
 import { knowledgeService, calculateGroqMetrics, GROQ_LIMITS } from '../../services/knowledgeService';
+import { economyService } from '../../services/economyService';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 
@@ -99,6 +100,16 @@ export default function AdminPage() {
   const [questionsLoading, setQuestionsLoading] = useState(false);
   const [questionFilter, setQuestionFilter] = useState('all');
   const [promotedSuccess, setPromotedSuccess] = useState('');
+  const [editingQuestionId, setEditingQuestionId] = useState(null);
+  const [editQuestionText, setEditQuestionText] = useState('');
+
+  // Monetization State
+  const [appSettings, setAppSettings] = useState({ match_cost: 1, premium_modules: ['kontrola'] });
+  const [storeBundles, setStoreBundles] = useState([]);
+  const [redeemCodes, setRedeemCodes] = useState([]);
+  const [isEconomyLoading, setIsEconomyLoading] = useState(false);
+  const [editingBundle, setEditingBundle] = useState(null);
+  const [editingCode, setEditingCode] = useState(null);
 
   // Quick Copy
   const [copiedKey, setCopiedKey] = useState('');
@@ -155,8 +166,25 @@ export default function AdminPage() {
       loadRules();
       loadDocuments();
       loadQuestions();
+      loadEconomyData();
     }
   }, [isAdmin]);
+
+  const loadEconomyData = async () => {
+    setIsEconomyLoading(true);
+    try {
+      const settings = await economyService.getAppSettings();
+      setAppSettings(settings);
+      const bundles = await economyService.getStoreBundles();
+      setStoreBundles(bundles);
+      const codes = await economyService.getAllRedeemCodes();
+      setRedeemCodes(codes);
+    } catch (e) {
+      console.warn('Failed to load economy data', e);
+    } finally {
+      setIsEconomyLoading(false);
+    }
+  };
 
   const loadUsers = async () => {
     setIsUsersLoading(true);
@@ -535,16 +563,27 @@ export default function AdminPage() {
     setTimeout(() => setModNotice(''), 3000);
   };
 
-  const handlePromoteQuestion = async (q) => {
-    const finalAnswer = q.user_suggested_answer || q.ai_answer || '';
+  const handleRejectQuestion = async (q) => {
+    try {
+      await knowledgeService.updateQuestionStatus(q.id, 'rejected');
+      setPromotedSuccess('Correction rejected and archived.');
+      loadQuestions();
+      setTimeout(() => setPromotedSuccess(''), 4000);
+    } catch (e) {
+      console.warn(e);
+    }
+  };
+
+  const handlePromoteQuestion = async (q, overrideAnswer = null) => {
+    const finalAnswer = overrideAnswer !== null ? overrideAnswer : (q.user_suggested_answer || q.ai_answer || '');
     const newRule = {
       topic: q.question_text.length > 50 ? q.question_text.substring(0, 47) + '...' : q.question_text,
       category: 'Combat',
       keywords: q.question_text.toLowerCase().split(' ').filter((w) => w.length > 3),
-      short_answer: finalAnswer.length > 150 ? finalAnswer.substring(0, 147) + '...' : finalAnswer,
+      shortAnswer: finalAnswer.length > 150 ? finalAnswer.substring(0, 147) + '...' : finalAnswer,
       details: `Official Answer to query: "${q.question_text}"\n\nAnswer: ${finalAnswer}`,
-      order_index: rules.length + 1,
-      is_active: true
+      orderIndex: rules.length + 1,
+      isActive: true
     };
 
     try {
@@ -635,6 +674,7 @@ export default function AdminPage() {
     { id: 'matches', label: 'Match History', icon: Swords, badge: matchHistory.length },
     { id: 'rules', label: 'Knowledge Base', icon: BookOpen, badge: `${documents.length || 1} Doc` },
     { id: 'questions', label: 'Questions Inbox', icon: HelpCircle, badge: questions.length },
+    { id: 'monetization', label: 'Monetization', icon: Coins, badge: 'Eco' },
     { id: 'tcg_apis', label: 'TCG APIs', icon: Server, badge: 'Live' }
   ];
 
@@ -1167,12 +1207,13 @@ export default function AdminPage() {
 
                   {/* Clean Minimal Rows Container */}
                   <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', overflow: 'hidden' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 1fr 1.2fr 1fr 1.4fr', padding: '10px 16px', background: 'rgba(6, 12, 28, 0.95)', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', fontSize: '0.74rem', color: 'rgba(255,255,255,0.7)', fontWeight: 'bold', letterSpacing: '1px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 1fr 1.2fr 1fr 1fr 1.8fr', padding: '10px 16px', background: 'rgba(6, 12, 28, 0.95)', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', fontSize: '0.74rem', color: 'rgba(255,255,255,0.7)', fontWeight: 'bold', letterSpacing: '1px' }}>
                       <span>USER / PLAYER</span>
                       <span>EMAIL</span>
                       <span>CRYSTALS</span>
                       <span>WIN RATE</span>
                       <span>STATUS</span>
+                      <span>PREMIUM</span>
                       <span style={{ textAlign: 'right' }}>ACTIONS</span>
                     </div>
 
@@ -1190,7 +1231,7 @@ export default function AdminPage() {
                               className="data-row"
                               style={{
                                 display: 'grid',
-                                gridTemplateColumns: '2fr 2fr 1fr 1.2fr 1fr 1.4fr',
+                                gridTemplateColumns: '2fr 2fr 1fr 1.2fr 1fr 1fr 1.8fr',
                                 alignItems: 'center',
                                 padding: '10px 16px',
                                 borderBottom: '1px solid rgba(255,255,255,0.06)',
@@ -1239,7 +1280,33 @@ export default function AdminPage() {
                                 </span>
                               </div>
 
-                              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+                              <div>
+                                {u.is_premium && (
+                                  <span style={{ color: 'var(--neon-gold)', fontWeight: 'bold', fontSize: '0.75rem', background: 'rgba(255,215,0,0.1)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--neon-gold)' }}>
+                                    PRO
+                                  </span>
+                                )}
+                              </div>
+
+                              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px', flexWrap: 'wrap' }}>
+                                <button
+                                  onClick={async () => {
+                                    await economyService.assignPremiumUser(u.id, !u.is_premium);
+                                    fetchData();
+                                  }}
+                                  style={{
+                                    background: u.is_premium ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 215, 0, 0.15)',
+                                    border: u.is_premium ? '1px solid rgba(255, 255, 255, 0.3)' : '1px solid var(--neon-gold)',
+                                    color: u.is_premium ? '#fff' : 'var(--neon-gold)',
+                                    padding: '4px 8px',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    fontSize: '0.74rem',
+                                    fontWeight: 'bold'
+                                  }}
+                                >
+                                  {u.is_premium ? 'Revoke PRO' : 'Grant PRO'}
+                                </button>
                                 <button
                                   onClick={() => { setCrystalModalUser(u); setNewCrystalCount(u.crystals_collected || 0); }}
                                   style={{
@@ -1982,33 +2049,265 @@ export default function AdminPage() {
                             </div>
                           )}
 
-                          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                            <button
-                              onClick={() => handlePromoteQuestion(q)}
-                              style={{
-                                background: 'rgba(57, 255, 20, 0.15)',
-                                border: '1px solid rgba(57, 255, 20, 0.3)',
-                                color: '#39ff14',
-                                padding: '5px 12px',
-                                borderRadius: '6px',
-                                cursor: 'pointer',
-                                fontWeight: '600',
-                                fontSize: '0.78rem',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '5px'
-                              }}
-                            >
-                              <Sparkles size={13} /> Promote to Knowledge Base
-                            </button>
-                          </div>
+                          {editingQuestionId === q.id ? (
+                            <div style={{ marginTop: '10px' }}>
+                              <textarea
+                                value={editQuestionText}
+                                onChange={(e) => setEditQuestionText(e.target.value)}
+                                style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '10px', borderRadius: '6px', fontSize: '0.85rem', marginBottom: '8px', minHeight: '80px', fontFamily: 'inherit', resize: 'vertical' }}
+                              />
+                              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                <button
+                                  onClick={() => setEditingQuestionId(null)}
+                                  style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 'bold' }}
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    handlePromoteQuestion(q, editQuestionText);
+                                    setEditingQuestionId(null);
+                                  }}
+                                  style={{ background: 'rgba(57, 255, 20, 0.15)', border: '1px solid rgba(57, 255, 20, 0.3)', color: '#39ff14', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '5px' }}
+                                >
+                                  <Sparkles size={13} /> Save & Promote
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
+                              <button
+                                onClick={() => handleRejectQuestion(q)}
+                                style={{
+                                  background: 'rgba(255, 77, 0, 0.15)',
+                                  border: '1px solid rgba(255, 77, 0, 0.3)',
+                                  color: '#ff4d00',
+                                  padding: '5px 12px',
+                                  borderRadius: '6px',
+                                  cursor: 'pointer',
+                                  fontWeight: '600',
+                                  fontSize: '0.78rem',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '5px'
+                                }}
+                              >
+                                Reject
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setEditingQuestionId(q.id);
+                                  setEditQuestionText(q.user_suggested_answer || q.ai_answer || '');
+                                }}
+                                style={{
+                                  background: 'rgba(255, 255, 255, 0.1)',
+                                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                                  color: '#fff',
+                                  padding: '5px 12px',
+                                  borderRadius: '6px',
+                                  cursor: 'pointer',
+                                  fontWeight: '600',
+                                  fontSize: '0.78rem',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '5px'
+                                }}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handlePromoteQuestion(q)}
+                                style={{
+                                  background: 'rgba(57, 255, 20, 0.15)',
+                                  border: '1px solid rgba(57, 255, 20, 0.3)',
+                                  color: '#39ff14',
+                                  padding: '5px 12px',
+                                  borderRadius: '6px',
+                                  cursor: 'pointer',
+                                  fontWeight: '600',
+                                  fontSize: '0.78rem',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '5px'
+                                }}
+                              >
+                                <Sparkles size={13} /> Promote to Knowledge Base
+                              </button>
+                            </div>
+                          )}
                         </div>
                       ))
                     )}
                   </div>
                 </div>
               )}
+              {/* =========================================================================
+                  PAGE 6: MONETIZATION
+              ========================================================================= */}
+              {activeTab === 'monetization' && (
+                <div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+                    
+                    {/* App Settings Card */}
+                    <div style={{ background: 'rgba(0, 240, 255, 0.05)', border: '1px solid var(--neon-cyan)', borderRadius: '12px', padding: '20px' }}>
+                      <h3 style={{ color: 'var(--neon-cyan)', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Coins size={18} /> Global Economy Settings
+                      </h3>
+                      
+                      <div style={{ marginBottom: '16px' }}>
+                        <label style={{ display: 'block', color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', marginBottom: '8px' }}>Kontrola Match Cost (Diamonds)</label>
+                        <input
+                          type="number"
+                          value={appSettings.match_cost}
+                          onChange={(e) => setAppSettings(prev => ({ ...prev, match_cost: parseInt(e.target.value) || 0 }))}
+                          style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '10px', borderRadius: '8px', width: '100%', fontSize: '1rem' }}
+                        />
+                      </div>
 
+                      <div style={{ marginBottom: '24px' }}>
+                        <label style={{ display: 'block', color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', marginBottom: '8px' }}>Premium Modules (Comma separated)</label>
+                        <input
+                          type="text"
+                          value={appSettings.premium_modules.join(', ')}
+                          onChange={(e) => setAppSettings(prev => ({ ...prev, premium_modules: e.target.value.split(',').map(s => s.trim()).filter(Boolean) }))}
+                          style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '10px', borderRadius: '8px', width: '100%', fontSize: '1rem' }}
+                        />
+                      </div>
+
+                      <button
+                        onClick={async () => {
+                          const success = await economyService.updateAppSettings(appSettings);
+                          if (success) {
+                            setModNotice('Global economy settings updated!');
+                          } else {
+                            setModNotice('Failed to update settings. (Did you run the SQL migration?)');
+                          }
+                        }}
+                        className="btn-enter-game-cta"
+                        style={{ width: '100%', padding: '12px', borderRadius: '8px', justifyContent: 'center' }}
+                      >
+                        <Save size={16} /> Save Economy Settings
+                      </button>
+                    </div>
+
+                    {/* Stripe / Bundles Card */}
+                    <div style={{ background: 'rgba(0, 240, 255, 0.05)', border: '1px solid var(--neon-cyan)', borderRadius: '12px', padding: '20px', gridColumn: '1 / -1' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                        <h3 style={{ color: 'var(--neon-cyan)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <ShoppingCart size={18} /> Store Bundles
+                        </h3>
+                        <button
+                          onClick={() => setEditingBundle({ title: '', description: '', image_url: '', crystal_amount: 0, price_usd: 0, discount_percent: 0 })}
+                          className="btn-enter-game-cta"
+                          style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '0.85rem' }}
+                        >
+                          <Plus size={14} /> Add Bundle
+                        </button>
+                      </div>
+
+                      {editingBundle && (
+                        <div style={{ background: 'rgba(0,0,0,0.5)', padding: '16px', borderRadius: '8px', marginBottom: '16px', border: '1px solid var(--neon-gold)' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                            <input type="text" placeholder="Title (e.g. Starter Pack)" value={editingBundle.title} onChange={e => setEditingBundle({...editingBundle, title: e.target.value})} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '8px', borderRadius: '4px' }} />
+                            <input type="text" placeholder="Image URL (optional)" value={editingBundle.image_url || ''} onChange={e => setEditingBundle({...editingBundle, image_url: e.target.value})} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '8px', borderRadius: '4px' }} />
+                          </div>
+                          <div style={{ marginBottom: '10px' }}>
+                            <textarea placeholder="Description" value={editingBundle.description || ''} onChange={e => setEditingBundle({...editingBundle, description: e.target.value})} style={{ width: '100%', background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '8px', borderRadius: '4px', resize: 'vertical' }} />
+                          </div>
+                          <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+                            <input type="number" placeholder="Diamonds" value={editingBundle.crystal_amount} onChange={e => setEditingBundle({...editingBundle, crystal_amount: parseInt(e.target.value) || 0})} style={{ flex: 1, background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '8px', borderRadius: '4px' }} />
+                            <input type="number" placeholder="Price $" value={editingBundle.price_usd} onChange={e => setEditingBundle({...editingBundle, price_usd: parseFloat(e.target.value) || 0})} style={{ flex: 1, background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '8px', borderRadius: '4px' }} />
+                            <input type="number" placeholder="Discount %" value={editingBundle.discount_percent || 0} onChange={e => setEditingBundle({...editingBundle, discount_percent: parseInt(e.target.value) || 0})} style={{ flex: 1, background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '8px', borderRadius: '4px' }} />
+                          </div>
+                          <div style={{ display: 'flex', gap: '10px' }}>
+                            <button onClick={async () => {
+                              const created = await economyService.upsertStoreBundle(editingBundle);
+                              if(created) { setEditingBundle(null); loadEconomyData(); }
+                            }} className="btn-enter-game-cta" style={{ flex: 1, padding: '8px', borderRadius: '4px' }}>Save</button>
+                            <button onClick={() => setEditingBundle(null)} style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
+                          </div>
+                        </div>
+                      )}
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
+                        {storeBundles.map(bundle => (
+                          <div key={bundle.id} style={{ background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column' }}>
+                            {bundle.image_url && <img src={bundle.image_url} alt="Bundle" style={{ width: '100%', height: '80px', objectFit: 'contain', marginBottom: '10px' }} />}
+                            <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fff' }}>{bundle.title}</div>
+                            {bundle.description && <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginBottom: '8px' }}>{bundle.description.substring(0, 50)}...</div>}
+                            <div style={{ fontSize: '0.9rem', color: 'var(--neon-cyan)', marginBottom: '10px' }}>💎 {bundle.crystal_amount} Crystals</div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--neon-gold)' }}>${bundle.price_usd}</div>
+                              {bundle.discount_percent > 0 && <div style={{ fontSize: '0.75rem', background: '#ff4444', color: '#fff', padding: '2px 4px', borderRadius: '4px' }}>-{bundle.discount_percent}%</div>}
+                            </div>
+                            
+                            <div style={{ display: 'flex', gap: '5px', marginTop: '10px' }}>
+                              <button onClick={() => setEditingBundle(bundle)} style={{ flex: 1, background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '4px', borderRadius: '4px', cursor: 'pointer' }}>Edit</button>
+                              <button onClick={async () => {
+                                await economyService.deleteStoreBundle(bundle.id);
+                                loadEconomyData();
+                              }} style={{ background: 'rgba(255,0,0,0.2)', color: '#ff4444', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}>Del</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Redeem Codes Card */}
+                    <div style={{ background: 'rgba(255, 215, 0, 0.05)', border: '1px solid var(--neon-gold)', borderRadius: '12px', padding: '20px', gridColumn: '1 / -1', marginTop: '16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                        <h3 style={{ color: 'var(--neon-gold)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Gem size={18} /> Redeem Promo Codes
+                        </h3>
+                        <button
+                          onClick={() => setEditingCode({ code: '', crystal_amount: 10, max_uses: 1 })}
+                          className="btn-enter-game-cta"
+                          style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '0.85rem' }}
+                        >
+                          <Plus size={14} /> Add Promo Code
+                        </button>
+                      </div>
+
+                      {editingCode && (
+                        <div style={{ background: 'rgba(0,0,0,0.5)', padding: '16px', borderRadius: '8px', marginBottom: '16px', border: '1px solid var(--neon-gold)' }}>
+                          <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+                            <input type="text" placeholder="Promo Code (e.g. FREEGEMS)" value={editingCode.code} onChange={e => setEditingCode({...editingCode, code: e.target.value.toUpperCase()})} style={{ flex: 1, background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '8px', borderRadius: '4px', textTransform: 'uppercase' }} />
+                            <input type="number" placeholder="Diamonds" value={editingCode.crystal_amount} onChange={e => setEditingCode({...editingCode, crystal_amount: parseInt(e.target.value) || 0})} style={{ width: '100px', background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '8px', borderRadius: '4px' }} />
+                            <input type="number" placeholder="Max Uses" value={editingCode.max_uses} onChange={e => setEditingCode({...editingCode, max_uses: parseInt(e.target.value) || 1})} style={{ width: '100px', background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '8px', borderRadius: '4px' }} />
+                          </div>
+                          <div style={{ display: 'flex', gap: '10px' }}>
+                            <button onClick={async () => {
+                              const created = await economyService.upsertRedeemCode(editingCode);
+                              if(created) { setEditingCode(null); loadEconomyData(); }
+                            }} className="btn-enter-game-cta" style={{ flex: 1, padding: '8px', borderRadius: '4px' }}>Save Code</button>
+                            <button onClick={() => setEditingCode(null)} style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
+                          </div>
+                        </div>
+                      )}
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
+                        {redeemCodes.map(c => (
+                          <div key={c.id} style={{ background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                            <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fff', letterSpacing: '1px' }}>{c.code}</div>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--neon-cyan)' }}>💎 {c.crystal_amount} Crystals</div>
+                            <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>Uses: {c.uses_count} / {c.max_uses}</div>
+                            
+                            <div style={{ display: 'flex', gap: '5px', marginTop: '10px' }}>
+                              <button onClick={() => setEditingCode(c)} style={{ flex: 1, background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '4px', borderRadius: '4px', cursor: 'pointer' }}>Edit</button>
+                              <button onClick={async () => {
+                                await economyService.deleteRedeemCode(c.id);
+                                loadEconomyData();
+                              }} style={{ background: 'rgba(255,0,0,0.2)', color: '#ff4444', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}>Del</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                    </div>
+
+                  </div>
+                </div>
+              )}
               {/* =========================================================================
                   PAGE 5: TCG APIS (CLEAN DEDICATED VIEW)
               ========================================================================= */}

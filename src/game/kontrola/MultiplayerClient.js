@@ -29,6 +29,7 @@ export const createMatch = async (matchId, hostId, characterId = 'chynaman') => 
     deck: [],
     hands: {},
     characterStates: {},
+    stats: { damageDealt: {}, cardsPlayed: {}, turnsTaken: {} },
     logs: [`Match ${matchId} created by Host. Waiting for players to join...`]
   };
 
