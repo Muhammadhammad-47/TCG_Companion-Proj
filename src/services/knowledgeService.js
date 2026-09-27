@@ -298,11 +298,13 @@ export const knowledgeService = {
       .from('user_questions')
       .update(updates)
       .eq('id', questionId)
-      .select()
-      .single();
+      .select();
 
-    if (error) throw error;
-    return data;
+    if (error) {
+      console.warn('updateQuestionStatus error:', error);
+      throw error;
+    }
+    return data && data.length > 0 ? data[0] : null;
   },
 
   // Admin: Promote question & approved answer directly to Knowledge Base
@@ -430,8 +432,9 @@ export const knowledgeService = {
           updated_at: updatedDoc.updatedAt
         }).eq('id', docId);
         
-        if (error && error.code !== '42P01') {
-          console.warn('knowledgeService: Supabase update error:', error);
+        if (error) {
+          // Table doesn't exist or other error - continue with localStorage only
+          console.warn('knowledgeService: Supabase update not available, using localStorage only:', error.code);
         }
       } catch (e) {
          console.warn('knowledgeService: Supabase update error', e);
@@ -496,8 +499,8 @@ export const knowledgeService = {
          }).select('id').single();
          if (!error && data) {
            newDoc.id = data.id;
-         } else if (error && error.code !== '42P01') {
-           console.warn('knowledgeService: Supabase insert error:', error);
+         } else if (error) {
+           console.warn('knowledgeService: Supabase insert not available, using localStorage:', error.code);
          }
        } catch (e) {
           console.warn('knowledgeService: Supabase insert exception', e);
@@ -520,8 +523,8 @@ export const knowledgeService = {
     if (supabase) {
        try {
           const { error } = await supabase.from('knowledge_documents').delete().eq('id', docId);
-          if (error && error.code !== '42P01') {
-            console.warn('knowledgeService: Supabase delete error:', error);
+          if (error) {
+            console.warn('knowledgeService: Supabase delete not available, using localStorage:', error.code);
           }
        } catch(e) {
           console.warn('knowledgeService: Supabase delete exception', e);
@@ -564,8 +567,8 @@ export const knowledgeService = {
           is_active: masterDoc.isActive,
           updated_at: masterDoc.updatedAt
         });
-        if (error && error.code !== '42P01') {
-          console.warn('knowledgeService: Supabase upsert error:', error);
+        if (error) {
+          console.warn('knowledgeService: Supabase upsert not available, using localStorage:', error.code);
         }
       } catch (e) {
          console.warn('knowledgeService: Supabase upsert exception', e);
