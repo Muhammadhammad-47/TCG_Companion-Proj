@@ -289,22 +289,24 @@ export const knowledgeService = {
 
   // Admin: Update question review status
   async updateQuestionStatus(questionId, status, adminApprovedAnswer = null) {
-    if (!supabase) return;
+    if (!supabase) throw new Error('Supabase not configured');
+    
     const updates = { admin_status: status };
     if (adminApprovedAnswer) {
       updates.admin_approved_answer = adminApprovedAnswer.trim();
     }
-    const { data, error } = await supabase
+    
+    const { error } = await supabase
       .from('user_questions')
       .update(updates)
-      .eq('id', questionId)
-      .select();
+      .eq('id', questionId);
 
     if (error) {
-      console.warn('updateQuestionStatus error:', error);
-      throw error;
+      console.error('updateQuestionStatus error:', error);
+      throw new Error(`Failed to update question: ${error.message}`);
     }
-    return data && data.length > 0 ? data[0] : null;
+    
+    return true;
   },
 
   // Admin: Promote question & approved answer directly to Knowledge Base
@@ -321,11 +323,19 @@ export const knowledgeService = {
   async fetchMasterDocumentFromDisk() {
     const baseUrl = import.meta.env.BASE_URL || '/';
     const cleanBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
-    const url = `${cleanBase}Knowledge Base/AI_Breakdowns.txt`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status} loading ${url}`);
-    const text = await res.text();
-    return text;
+    const url = `${cleanBase}Knowledge%20Base/AI_Breakdowns.txt`;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status} loading ${url}`);
+      const text = await res.text();
+      if (!text || text.trim().length === 0) {
+        throw new Error('File loaded but is empty');
+      }
+      return text;
+    } catch (err) {
+      console.error('fetchMasterDocumentFromDisk failed:', err, 'URL:', url);
+      throw err;
+    }
   },
 
   async fetchDocuments() {
@@ -333,7 +343,7 @@ export const knowledgeService = {
     if (supabase) {
       try {
         const { data, error } = await supabase.from('knowledge_documents').select('*');
-        if (!error && data) {
+        if (!error && data && data.length > 0) {
           return data.map(d => ({
             id: d.id,
             filename: d.filename,
@@ -348,7 +358,7 @@ export const knowledgeService = {
           }));
         }
       } catch (e) {
-        console.warn('knowledgeService: Supabase knowledge_documents table error or missing. Falling back to localStorage.', e);
+        console.warn('knowledgeService: Supabase knowledge_documents unavailable, using localStorage.', e);
       }
     }
 
@@ -365,7 +375,7 @@ export const knowledgeService = {
       console.warn('Failed parsing stored knowledge documents:', e);
     }
 
-    // Default: Load local master document public/Knowledge Base/AI_Breakdowns.txt
+    // 3. Default: Load local master document public/Knowledge Base/AI_Breakdowns.txt
     try {
       const masterContent = await this.fetchMasterDocumentFromDisk();
       const masterDoc = {
@@ -380,22 +390,26 @@ export const knowledgeService = {
         isActive: true,
         updatedAt: new Date().toISOString()
       };
+      // Save to localStorage so it persists
       localStorage.setItem('tcg_knowledge_documents_v2', JSON.stringify([masterDoc]));
       return [masterDoc];
     } catch (err) {
-      console.error('Failed to load initial AI_Breakdowns.txt from disk:', err);
-      return [{
+      console.error('Failed to load AI_Breakdowns.txt from disk:', err);
+      // Last resort: return empty master doc placeholder
+      const emptyMaster = {
         id: 'ai-breakdowns-master',
         filename: 'AI_Breakdowns.txt',
         title: 'Attention TCG Master Rulebook & AI Breakdowns',
         category: 'Master Rulebook',
-        content: '',
+        content: '# Master Rulebook\n\nNo content loaded yet. Please add rules to get started.',
         charCount: 0,
         estimatedTokens: 0,
         isMaster: true,
         isActive: true,
         updatedAt: new Date().toISOString()
-      }];
+      };
+      localStorage.setItem('tcg_knowledge_documents_v2', JSON.stringify([emptyMaster]));
+      return [emptyMaster];
     }
   },
 

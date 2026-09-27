@@ -567,14 +567,19 @@ export default function AdminPage() {
 
   const handleRejectQuestion = async (q) => {
     try {
-      await knowledgeService.updateQuestionStatus(q.id, 'rejected');
+      console.log('Rejecting question:', q.id);
+      const result = await knowledgeService.updateQuestionStatus(q.id, 'rejected');
+      console.log('Reject result:', result);
+      
       setPromotedSuccess('Correction rejected and archived.');
       // Immediately remove from local state
       setQuestions((prev) => prev.filter((item) => item.id !== q.id));
       loadQuestions(questionFilter);
       setTimeout(() => setPromotedSuccess(''), 4000);
     } catch (e) {
-      console.warn(e);
+      console.error('Reject error:', e);
+      setPromotedSuccess(`Error rejecting: ${e.message}`);
+      setTimeout(() => setPromotedSuccess(''), 4000);
     }
   };
 
@@ -591,6 +596,8 @@ export default function AdminPage() {
     };
 
     try {
+      console.log('Promoting question:', q.id);
+      
       // 1. Append directly to active Master Knowledge Base document
       const targetDocId = selectedDocId || 'ai-breakdowns-master';
       await knowledgeService.appendSectionToDocument(targetDocId, {
@@ -604,7 +611,9 @@ export default function AdminPage() {
       try {
         const created = await knowledgeService.promoteQuestionToKnowledge(q.id, newRule);
         if (created) setRules((prev) => [created, ...prev]);
-      } catch (e) {}
+      } catch (e) {
+        console.warn('Could not register in rules_knowledge:', e);
+      }
 
       setPromotedSuccess(`Appended question to Master Knowledge Document & approved!`);
       // Immediately remove promoted item from local state so it disappears from inbox
@@ -612,6 +621,7 @@ export default function AdminPage() {
       loadQuestions(questionFilter);
       setTimeout(() => setPromotedSuccess(''), 4000);
     } catch (e) {
+      console.error('Promote error:', e);
       alert('Failed to promote rule: ' + e.message);
     }
   };

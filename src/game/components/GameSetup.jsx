@@ -2,7 +2,7 @@
 import {
   Swords, Plus, Minus, ArrowLeft, RotateCw, RotateCcw,
   Crown, X, ChevronDown, ChevronUp, Users, Info, GripVertical, Edit2,
-  Settings, Shield, Dices
+  Shield, Dices
 } from 'lucide-react';
 import { APP_CONFIG } from '../../config';
 import { CHARACTERS, getAssetUrl } from '../data/characters';
