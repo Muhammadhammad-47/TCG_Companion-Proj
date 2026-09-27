@@ -1781,6 +1781,8 @@ export default function KontrolaArena() {
   if (!gameState || gameState.status === 'waiting' || gameState.status === 'joining') {
     return (
       <div className="webgl-canvas-frame portrait-mode" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+        {/* Leaderboard modal must live here too so it works in the lobby view */}
+        <LeaderboardModal isOpen={isLeaderboardOpen} onClose={() => setIsLeaderboardOpen(false)} fixedAppSource="kontrola" />
         <DynamicScaleWrapper>
           <div className="webgl-screen menu-screen" style={{ width: '100%', height: '100%', padding: '20px 28px', boxSizing: 'border-box', overflowY: 'auto' }}>
             {/* Ambient Streaks & Card Watermarks */}

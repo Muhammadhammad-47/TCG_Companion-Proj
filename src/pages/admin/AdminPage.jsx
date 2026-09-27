@@ -115,6 +115,19 @@ export default function AdminPage() {
   // Quick Copy
   const [copiedKey, setCopiedKey] = useState('');
 
+  // In-app confirm dialog (replaces all window.confirm / alert)
+  const [confirmDialog, setConfirmDialog] = useState(null);
+  // confirmDialog = { title, message, onConfirm, confirmLabel, isDanger }
+  const [inlineError, setInlineError] = useState('');
+
+  const showConfirm = (title, message, onConfirm, opts = {}) => {
+    setConfirmDialog({ title, message, onConfirm, confirmLabel: opts.confirmLabel || 'Confirm', isDanger: opts.isDanger !== false });
+  };
+  const showError = (msg) => {
+    setModNotice('⚠️ ' + msg);
+    setTimeout(() => setModNotice(''), 5000);
+  };
+
   // Orientation Lock
   useEffect(() => {
     try {
@@ -294,7 +307,7 @@ export default function AdminPage() {
       setModNotice(`User "${targetUser.username}" ${nextBanStatus ? 'suspended' : 'reinstated'} successfully.`);
       setTimeout(() => setModNotice(''), 4000);
     } catch (err) {
-      alert('Failed to update ban status: ' + err.message);
+      showError('Failed to update ban status: ' + err.message);
     } finally {
       setBanModalUser(null);
     }
@@ -304,7 +317,7 @@ export default function AdminPage() {
     if (!crystalModalUser) return;
     const parsed = parseInt(newCrystalCount, 10);
     if (isNaN(parsed) || parsed < 0) {
-      alert('Please enter a valid non-negative crystal count.');
+      showError('Please enter a valid non-negative crystal count.');
       return;
     }
     try {
@@ -315,7 +328,7 @@ export default function AdminPage() {
       setModNotice(`Updated crystals for ${crystalModalUser.username} to ${parsed} 💎`);
       setTimeout(() => setModNotice(''), 4000);
     } catch (err) {
-      alert('Failed to update crystals: ' + err.message);
+      showError('Failed to update crystals: ' + err.message);
     } finally {
       setCrystalModalUser(null);
     }
@@ -332,15 +345,21 @@ export default function AdminPage() {
   };
 
   const handleDeleteRule = async (ruleId) => {
-    if (!window.confirm('Permanently delete this game rule from knowledge base?')) return;
-    try {
-      await knowledgeService.deleteRule(ruleId);
-      setRules((prev) => prev.filter((r) => r.id !== ruleId));
-      setModNotice('Rule deleted successfully.');
-      setTimeout(() => setModNotice(''), 3000);
-    } catch (err) {
-      setRules((prev) => prev.filter((r) => r.id !== ruleId));
-    }
+    showConfirm(
+      'Delete Rule',
+      'Permanently delete this game rule from the knowledge base?',
+      async () => {
+        try {
+          await knowledgeService.deleteRule(ruleId);
+          setRules((prev) => prev.filter((r) => r.id !== ruleId));
+          setModNotice('Rule deleted successfully.');
+          setTimeout(() => setModNotice(''), 3000);
+        } catch (err) {
+          setRules((prev) => prev.filter((r) => r.id !== ruleId));
+        }
+      },
+      { confirmLabel: 'Delete', isDanger: true }
+    );
   };
 
   const handleSaveRule = async (e) => {
@@ -367,7 +386,7 @@ export default function AdminPage() {
       setEditingRule(null);
       setTimeout(() => setModNotice(''), 4000);
     } catch (err) {
-      alert('Failed to save rule: ' + err.message);
+      showError('Failed to save rule: ' + err.message);
     }
   };
 
@@ -451,9 +470,26 @@ export default function AdminPage() {
     if (!activeDoc) return;
     const metrics = calculateGroqMetrics(editDocData.content);
     if (metrics.status === 'EXCEEDED') {
-      if (!window.confirm(`⚠️ Caution: Document has ${metrics.charCount.toLocaleString()} chars, exceeding Groq's rubric context window of ${metrics.maxChars.toLocaleString()} chars. Prompts may exceed context limits. Save anyway?`)) {
-        return;
-      }
+      showConfirm(
+        'Document Exceeds Context Limit',
+        `Document has ${metrics.charCount.toLocaleString()} chars, exceeding Groq's context window of ${metrics.maxChars.toLocaleString()} chars. Prompts may exceed context limits. Save anyway?`,
+        async () => {
+          setIsSavingDoc(true);
+          try {
+            const updated = await knowledgeService.saveDocument(activeDoc.id, editDocData);
+            setDocuments((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
+            setModNotice(`Document "${updated.filename}" updated! (${metrics.charCount.toLocaleString()} chars)`);
+            setIsEditDocModalOpen(false);
+            setTimeout(() => setModNotice(''), 4000);
+          } catch (err) {
+            showError('Failed to save document: ' + err.message);
+          } finally {
+            setIsSavingDoc(false);
+          }
+        },
+        { confirmLabel: 'Save Anyway', isDanger: false }
+      );
+      return;
     }
     setIsSavingDoc(true);
     try {
@@ -463,7 +499,7 @@ export default function AdminPage() {
       setIsEditDocModalOpen(false);
       setTimeout(() => setModNotice(''), 4000);
     } catch (err) {
-      alert('Failed to save document: ' + err.message);
+      showError('Failed to save document: ' + err.message);
     } finally {
       setIsSavingDoc(false);
     }
@@ -473,7 +509,7 @@ export default function AdminPage() {
     e.preventDefault();
     if (!activeDoc) return;
     if (!appendData.title.trim() || !appendData.content.trim()) {
-      alert('Please fill in both the Question/Heading and Content/Answer fields.');
+      showError('Please fill in both the Question/Heading and Content/Answer fields.');
       return;
     }
     setIsSavingDoc(true);
@@ -485,7 +521,7 @@ export default function AdminPage() {
       setAppendData({ type: 'qa', title: '', content: '' });
       setTimeout(() => setModNotice(''), 4000);
     } catch (err) {
-      alert('Failed to append to document: ' + err.message);
+      showError('Failed to append to document: ' + err.message);
     } finally {
       setIsSavingDoc(false);
     }
@@ -494,7 +530,7 @@ export default function AdminPage() {
   const handleCreateNewDoc = async (e) => {
     e.preventDefault();
     if (!newDocData.filename.trim()) {
-      alert('Please provide a valid document filename.');
+      showError('Please provide a valid document filename.');
       return;
     }
     setIsSavingDoc(true);
@@ -507,7 +543,7 @@ export default function AdminPage() {
       setNewDocData({ filename: '', title: '', category: 'Tournament & Errata', content: '' });
       setTimeout(() => setModNotice(''), 4000);
     } catch (err) {
-      alert('Failed to create document: ' + err.message);
+      showError('Failed to create document: ' + err.message);
     } finally {
       setIsSavingDoc(false);
     }
@@ -517,37 +553,49 @@ export default function AdminPage() {
     const doc = documents.find((d) => d.id === docId);
     if (!doc) return;
     if (doc.isMaster || doc.id === 'ai-breakdowns-master') {
-      alert('The master document AI_Breakdowns.txt cannot be deleted. You can use "Reset Master Document" instead.');
+      showError('The master document AI_Breakdowns.txt cannot be deleted. Use "Reset Master Document" instead.');
       return;
     }
-    if (!window.confirm(`Permanently delete document "${doc.filename}"?`)) return;
-    setIsSavingDoc(true);
-    try {
-      await knowledgeService.deleteDocument(docId);
-      setDocuments((prev) => prev.filter((d) => d.id !== docId));
-      setSelectedDocId('ai-breakdowns-master');
-      setModNotice(`Document "${doc.filename}" removed.`);
-      setTimeout(() => setModNotice(''), 4000);
-    } catch (err) {
-      alert('Failed to delete document: ' + err.message);
-    } finally {
-      setIsSavingDoc(false);
-    }
+    showConfirm(
+      'Delete Document',
+      `Permanently delete document "${doc.filename}"? This cannot be undone.`,
+      async () => {
+        setIsSavingDoc(true);
+        try {
+          await knowledgeService.deleteDocument(docId);
+          setDocuments((prev) => prev.filter((d) => d.id !== docId));
+          setSelectedDocId('ai-breakdowns-master');
+          setModNotice(`Document "${doc.filename}" removed.`);
+          setTimeout(() => setModNotice(''), 4000);
+        } catch (err) {
+          showError('Failed to delete document: ' + err.message);
+        } finally {
+          setIsSavingDoc(false);
+        }
+      },
+      { confirmLabel: 'Delete', isDanger: true }
+    );
   };
 
   const handleResetMasterDoc = async () => {
-    if (!window.confirm('Reset AI_Breakdowns.txt to the original master copy from public/Knowledge Base/AI_Breakdowns.txt? This will discard any manual changes.')) return;
-    setIsSavingDoc(true);
-    try {
-      const masterDoc = await knowledgeService.resetMasterDocument();
-      setDocuments((prev) => prev.map((d) => (d.id === masterDoc.id ? masterDoc : d)));
-      setModNotice('AI_Breakdowns.txt restored from local disk file!');
-      setTimeout(() => setModNotice(''), 4000);
-    } catch (err) {
-      alert('Failed to reset master document: ' + err.message);
-    } finally {
-      setIsSavingDoc(false);
-    }
+    showConfirm(
+      'Reset Master Document',
+      'Reset AI_Breakdowns.txt to the original master copy from public/Knowledge Base/AI_Breakdowns.txt? This will discard any manual changes.',
+      async () => {
+        setIsSavingDoc(true);
+        try {
+          const masterDoc = await knowledgeService.resetMasterDocument();
+          setDocuments((prev) => prev.map((d) => (d.id === masterDoc.id ? masterDoc : d)));
+          setModNotice('AI_Breakdowns.txt restored from local disk file!');
+          setTimeout(() => setModNotice(''), 4000);
+        } catch (err) {
+          showError('Failed to reset master document: ' + err.message);
+        } finally {
+          setIsSavingDoc(false);
+        }
+      },
+      { confirmLabel: 'Reset', isDanger: true }
+    );
   };
 
   const handleDownloadDoc = (doc) => {
@@ -622,7 +670,7 @@ export default function AdminPage() {
       setTimeout(() => setPromotedSuccess(''), 4000);
     } catch (e) {
       console.error('Promote error:', e);
-      alert('Failed to promote rule: ' + e.message);
+      showError('Failed to promote rule: ' + e.message);
     }
   };
 
@@ -2657,6 +2705,26 @@ export default function AdminPage() {
 
         </div>
       </div>
+
+      {/* In-app Confirm Dialog (replaces window.confirm) */}
+      {confirmDialog && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}>
+          <div style={{ background: 'rgba(8, 16, 36, 0.98)', border: `2px solid ${confirmDialog.isDanger ? 'var(--neon-crimson)' : 'rgba(0,240,255,0.4)'}`, borderRadius: '16px', padding: '24px', maxWidth: '520px', width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.8)', fontFamily: 'Rajdhani, sans-serif' }}>
+            <h3 style={{ margin: '0 0 12px 0', color: confirmDialog.isDanger ? 'var(--neon-crimson)' : 'var(--neon-cyan)', fontSize: '1.3rem', fontWeight: 'bold', letterSpacing: '1px' }}>{confirmDialog.title}</h3>
+            <p style={{ margin: '0 0 20px 0', color: 'rgba(255,255,255,0.85)', fontSize: '0.95rem', lineHeight: '1.5' }}>{confirmDialog.message}</p>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setConfirmDialog(null)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.25)', background: 'transparent', color: '#fff', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold', transition: 'background 0.2s' }}
+                onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+                onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+              >Cancel</button>
+              <button onClick={() => { confirmDialog.onConfirm(); setConfirmDialog(null); }} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: confirmDialog.isDanger ? 'linear-gradient(135deg, #ff2a55, #cc0033)' : 'linear-gradient(135deg, #00f0ff, #0088ff)', color: confirmDialog.isDanger ? '#fff' : '#040a18', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold', boxShadow: `0 4px 12px ${confirmDialog.isDanger ? 'rgba(255,42,85,0.3)' : 'rgba(0,240,255,0.3)'}`, transition: 'transform 0.15s' }}
+                onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'}
+                onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
+              >{confirmDialog.confirmLabel}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

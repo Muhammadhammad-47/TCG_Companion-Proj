@@ -1272,6 +1272,7 @@ export function Hub() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isStoreOpen, setIsStoreOpen] = useState(false);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [appSettings, setAppSettings] = useState({ match_cost: 1, premium_modules: ['kontrola'] });
 
   React.useLayoutEffect(() => {
@@ -1329,166 +1330,162 @@ export function Hub() {
         <DynamicScaleWrapper>
           <div className="webgl-screen menu-screen" style={{ justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%', padding: '0 40px', boxSizing: 'border-box', position: 'relative' }}>
             
-            {/* Top Auth / Profile Bar */}
-            <div style={{ position: 'absolute', top: '20px', right: '28px', zIndex: 100, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {/* Top Auth / Profile Bar — full-width top strip */}
+            <div style={{
+              position: 'absolute', top: 0, left: 0, right: 0,
+              zIndex: 100,
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '10px 28px',
+              background: 'rgba(4, 10, 24, 0.75)',
+              borderBottom: '1px solid rgba(0, 240, 255, 0.12)',
+              backdropFilter: 'blur(12px)',
+              boxSizing: 'border-box'
+            }}>
+              {/* Left: Brand mark */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                fontFamily: 'Rajdhani, sans-serif', fontWeight: 'bold',
+                fontSize: '1rem', color: 'rgba(255,255,255,0.4)', letterSpacing: '2px'
+              }}>
+                <span className="brand-pill-badge" style={{ fontSize: '0.65rem', padding: '2px 7px', margin: 0 }}>注意!</span>
+                <span>TCG COMPANION HUB</span>
+              </div>
+
+              {/* Right: Auth area */}
               {currentUser ? (
-                <>
-                  {/* === INFO SECTION: crystals + username (non-interactive display) === */}
-                  <div style={{
-                    display: 'flex', alignItems: 'center', gap: '8px',
-                    background: 'rgba(8, 16, 36, 0.9)',
-                    padding: '8px 14px',
-                    borderRadius: '12px',
-                    border: '1px solid rgba(0, 240, 255, 0.25)',
-                    backdropFilter: 'blur(10px)'
-                  }}>
-                    {/* Crystal balance — clickable to open store */}
-                    <button
-                      onClick={() => setIsStoreOpen(true)}
-                      title="Buy more crystals"
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: '5px',
-                        background: 'rgba(0, 240, 255, 0.1)',
-                        border: '1px solid rgba(0, 240, 255, 0.4)',
-                        borderRadius: '8px',
-                        padding: '4px 10px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onMouseOver={e => e.currentTarget.style.background = 'rgba(0, 240, 255, 0.2)'}
-                      onMouseOut={e => e.currentTarget.style.background = 'rgba(0, 240, 255, 0.1)'}
-                    >
-                      <span style={{ fontSize: '1rem', lineHeight: 1 }}>💎</span>
-                      <span style={{ fontWeight: 'bold', color: 'var(--neon-cyan)', fontSize: '0.9rem', fontFamily: 'Rajdhani, sans-serif' }}>
-                        {userProfile?.crystals_collected || 0}
-                      </span>
-                      <span style={{ fontSize: '0.65rem', color: 'rgba(0,240,255,0.6)', marginLeft: '1px', fontFamily: 'Rajdhani, sans-serif', letterSpacing: '0.5px' }}>+ ADD</span>
-                    </button>
-
-                    {/* Divider */}
-                    <div style={{ width: '1px', height: '22px', background: 'rgba(255,255,255,0.15)' }} />
-
-                    {/* Username — static label */}
-                    <div style={{
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', position: 'relative' }}>
+                  {/* Crystal balance chip */}
+                  <button
+                    onClick={() => setIsStoreOpen(true)}
+                    title="Buy more crystals"
+                    style={{
                       display: 'flex', alignItems: 'center', gap: '6px',
-                      fontSize: '0.9rem', fontWeight: 'bold', color: '#e0e8ff',
-                      fontFamily: 'Rajdhani, sans-serif', letterSpacing: '0.5px'
-                    }}>
-                      <User size={14} style={{ opacity: 0.6 }} />
-                      <span>{userProfile?.username || 'Player'}</span>
-                      {userProfile?.is_admin && (
-                        <span style={{
-                          fontSize: '0.6rem', fontWeight: 'bold',
-                          background: 'rgba(255,215,0,0.2)', color: 'var(--neon-gold)',
-                          border: '1px solid rgba(255,215,0,0.4)',
-                          borderRadius: '4px', padding: '1px 5px',
-                          letterSpacing: '0.5px'
-                        }}>ADMIN</span>
-                      )}
-                    </div>
-                  </div>
+                      background: 'rgba(0, 240, 255, 0.08)',
+                      border: '1px solid rgba(0, 240, 255, 0.35)',
+                      borderRadius: '20px',
+                      padding: '6px 14px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      fontFamily: 'Rajdhani, sans-serif'
+                    }}
+                    onMouseOver={e => e.currentTarget.style.background = 'rgba(0,240,255,0.18)'}
+                    onMouseOut={e => e.currentTarget.style.background = 'rgba(0,240,255,0.08)'}
+                  >
+                    <span style={{ fontSize: '1rem', lineHeight: 1 }}>💎</span>
+                    <span style={{ fontWeight: 'bold', color: 'var(--neon-cyan)', fontSize: '0.95rem' }}>
+                      {userProfile?.crystals_collected || 0}
+                    </span>
+                    <span style={{ fontSize: '0.62rem', color: 'rgba(0,240,255,0.55)', letterSpacing: '0.5px' }}>+ ADD</span>
+                  </button>
 
-                  {/* === ACTION BUTTONS: clearly separated, distinctly styled === */}
+                  {/* Admin button — only if admin */}
                   {userProfile?.is_admin && (
                     <button
                       onClick={() => navigate('/admin')}
-                      title="Open Admin Command Deck"
+                      title="Command Deck"
                       style={{
                         display: 'flex', alignItems: 'center', gap: '6px',
-                        background: 'rgba(255, 215, 0, 0.18)',
-                        border: '1.5px solid var(--neon-gold)',
+                        background: 'rgba(255,215,0,0.12)',
+                        border: '1px solid rgba(255,215,0,0.4)',
                         color: 'var(--neon-gold)',
-                        borderRadius: '10px',
-                        padding: '8px 14px',
-                        fontSize: '0.82rem',
-                        fontWeight: 'bold',
+                        borderRadius: '20px',
+                        padding: '6px 14px',
+                        fontSize: '0.82rem', fontWeight: 'bold',
                         cursor: 'pointer',
-                        fontFamily: 'Rajdhani, sans-serif',
-                        letterSpacing: '0.5px',
-                        transition: 'all 0.2s ease',
-                        backdropFilter: 'blur(8px)'
+                        fontFamily: 'Rajdhani, sans-serif', letterSpacing: '0.5px',
+                        transition: 'all 0.2s ease'
                       }}
-                      onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,215,0,0.28)'; e.currentTarget.style.boxShadow = '0 0 12px rgba(255,215,0,0.3)'; }}
-                      onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,215,0,0.18)'; e.currentTarget.style.boxShadow = 'none'; }}
+                      onMouseOver={e => e.currentTarget.style.background = 'rgba(255,215,0,0.22)'}
+                      onMouseOut={e => e.currentTarget.style.background = 'rgba(255,215,0,0.12)'}
                     >
-                      <Settings size={15} />
-                      <span>Admin</span>
+                      <Settings size={14} /><span>Admin</span>
                     </button>
                   )}
 
-                  <button
-                    onClick={() => setIsLeaderboardOpen(true)}
-                    title="View Global Leaderboard"
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '6px',
-                      background: 'rgba(255, 215, 0, 0.18)',
-                      border: '1.5px solid var(--neon-gold)',
-                      color: 'var(--neon-gold)',
-                      borderRadius: '10px',
-                      padding: '8px 14px',
-                      fontSize: '0.82rem',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      fontFamily: 'Rajdhani, sans-serif',
-                      letterSpacing: '0.5px',
-                      transition: 'all 0.2s ease',
-                      backdropFilter: 'blur(8px)'
-                    }}
-                    onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,215,0,0.28)'; e.currentTarget.style.boxShadow = '0 0 12px rgba(255,215,0,0.3)'; }}
-                    onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,215,0,0.18)'; e.currentTarget.style.boxShadow = 'none'; }}
-                  >
-                    <Trophy size={15} />
-                    <span>Rank</span>
-                  </button>
+                  {/* Avatar circle — click to open dropdown */}
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      onClick={() => setIsProfileDropdownOpen(v => !v)}
+                      title={userProfile?.username || 'Player'}
+                      style={{
+                        width: '40px', height: '40px',
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #0d1a38, #1a2a50)',
+                        border: '2px solid rgba(0,240,255,0.5)',
+                        color: 'var(--neon-cyan)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        cursor: 'pointer',
+                        fontSize: '1rem', fontWeight: 'bold',
+                        fontFamily: 'Rajdhani, sans-serif',
+                        transition: 'all 0.2s ease',
+                        boxShadow: isProfileDropdownOpen ? '0 0 14px rgba(0,240,255,0.4)' : 'none'
+                      }}
+                      onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--neon-cyan)'; e.currentTarget.style.boxShadow = '0 0 14px rgba(0,240,255,0.4)'; }}
+                      onMouseOut={e => { if (!isProfileDropdownOpen) { e.currentTarget.style.borderColor = 'rgba(0,240,255,0.5)'; e.currentTarget.style.boxShadow = 'none'; } }}
+                    >
+                      {(userProfile?.username || 'P').charAt(0).toUpperCase()}
+                    </button>
 
-                  <button
-                    onClick={handleLogout}
-                    title="Sign out"
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '6px',
-                      background: 'rgba(255, 60, 60, 0.12)',
-                      border: '1.5px solid rgba(255, 80, 80, 0.5)',
-                      color: '#ff8080',
-                      borderRadius: '10px',
-                      padding: '8px 14px',
-                      fontSize: '0.82rem',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      fontFamily: 'Rajdhani, sans-serif',
-                      letterSpacing: '0.5px',
-                      transition: 'all 0.2s ease',
-                      backdropFilter: 'blur(8px)'
-                    }}
-                    onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,60,60,0.22)'; e.currentTarget.style.borderColor = 'rgba(255,80,80,0.8)'; }}
-                    onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,60,60,0.12)'; e.currentTarget.style.borderColor = 'rgba(255,80,80,0.5)'; }}
-                  >
-                    <LogOut size={15} />
-                    <span>Logout</span>
-                  </button>
-                </>
+                    {/* Dropdown menu */}
+                    {isProfileDropdownOpen && (
+                      <>
+                        {/* Click-outside backdrop */}
+                        <div
+                          style={{ position: 'fixed', inset: 0, zIndex: 199 }}
+                          onClick={() => setIsProfileDropdownOpen(false)}
+                        />
+                        <div style={{
+                          position: 'absolute', top: 'calc(100% + 10px)', right: 0,
+                          minWidth: '200px',
+                          background: 'rgba(6, 14, 32, 0.97)',
+                          border: '1px solid rgba(0,240,255,0.25)',
+                          borderRadius: '14px',
+                          padding: '8px',
+                          boxShadow: '0 12px 40px rgba(0,0,0,0.7)',
+                          backdropFilter: 'blur(16px)',
+                          zIndex: 200,
+                          fontFamily: 'Rajdhani, sans-serif'
+                        }}>
+                          {/* Profile header */}
+                          <div style={{ padding: '10px 12px 8px', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: '4px' }}>
+                            <div style={{ fontWeight: 'bold', color: '#fff', fontSize: '1rem' }}>{userProfile?.username || 'Player'}</div>
+                            <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', marginTop: '2px' }}>{currentUser?.email}</div>
+                            {userProfile?.is_admin && (
+                              <span style={{ display: 'inline-block', marginTop: '4px', fontSize: '0.62rem', fontWeight: 'bold', background: 'rgba(255,215,0,0.15)', color: 'var(--neon-gold)', border: '1px solid rgba(255,215,0,0.35)', borderRadius: '4px', padding: '1px 6px', letterSpacing: '0.5px' }}>ADMIN</span>
+                            )}
+                          </div>
+
+                          {/* Menu items */}
+                          <button onClick={() => { setIsProfileDropdownOpen(false); handleLogout(); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', background: 'transparent', border: 'none', color: '#ff8080', padding: '10px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.88rem', fontWeight: 'bold', fontFamily: 'Rajdhani, sans-serif', letterSpacing: '0.5px', transition: 'background 0.15s' }}
+                            onMouseOver={e => e.currentTarget.style.background = 'rgba(255,60,60,0.12)'}
+                            onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                          >
+                            <LogOut size={15} /><span>Sign Out</span>
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
               ) : (
                 <button
                   onClick={() => setIsAuthModalOpen(true)}
                   style={{
                     display: 'flex', alignItems: 'center', gap: '8px',
-                    background: 'rgba(0, 240, 255, 0.15)',
-                    border: '1.5px solid var(--neon-cyan)',
+                    background: 'rgba(0,240,255,0.12)',
+                    border: '1px solid rgba(0,240,255,0.4)',
                     color: 'var(--neon-cyan)',
-                    borderRadius: '10px',
-                    padding: '10px 20px',
-                    fontSize: '0.95rem',
-                    fontWeight: 'bold',
+                    borderRadius: '20px',
+                    padding: '8px 20px',
+                    fontSize: '0.9rem', fontWeight: 'bold',
                     cursor: 'pointer',
-                    fontFamily: 'Rajdhani, sans-serif',
-                    letterSpacing: '1px',
-                    backdropFilter: 'blur(8px)',
+                    fontFamily: 'Rajdhani, sans-serif', letterSpacing: '0.5px',
                     transition: 'all 0.2s ease'
                   }}
-                  onMouseOver={e => { e.currentTarget.style.background = 'rgba(0,240,255,0.25)'; e.currentTarget.style.boxShadow = '0 0 14px rgba(0,240,255,0.25)'; }}
-                  onMouseOut={e => { e.currentTarget.style.background = 'rgba(0,240,255,0.15)'; e.currentTarget.style.boxShadow = 'none'; }}
+                  onMouseOver={e => e.currentTarget.style.background = 'rgba(0,240,255,0.22)'}
+                  onMouseOut={e => e.currentTarget.style.background = 'rgba(0,240,255,0.12)'}
                 >
-                  <User size={16} />
-                  Login / Play
+                  <User size={15} />Login / Play
                 </button>
               )}
             </div>
