@@ -151,6 +151,11 @@ ALTER TABLE IF EXISTS user_questions ADD COLUMN IF NOT EXISTS matched_topic TEXT
 ALTER TABLE IF EXISTS user_questions ADD COLUMN IF NOT EXISTS admin_approved_answer TEXT;
 ALTER TABLE IF EXISTS user_questions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
 
+-- Drop old admin_status constraint if it exists and recreate it with all valid values
+ALTER TABLE IF EXISTS user_questions DROP CONSTRAINT IF EXISTS user_questions_admin_status_check;
+ALTER TABLE user_questions ADD CONSTRAINT user_questions_admin_status_check 
+CHECK (admin_status IN ('pending', 'rejected', 'approved_for_kb', 'approved', 'unhelpful'));
+
 ALTER TABLE IF EXISTS store_bundles ADD COLUMN IF NOT EXISTS title TEXT;
 ALTER TABLE IF EXISTS store_bundles ADD COLUMN IF NOT EXISTS crystal_amount INTEGER;
 ALTER TABLE IF EXISTS store_bundles ADD COLUMN IF NOT EXISTS discount_percent INTEGER DEFAULT 0;
