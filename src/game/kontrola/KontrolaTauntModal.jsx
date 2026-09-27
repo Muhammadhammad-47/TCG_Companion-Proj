@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, MessageCircle, Send } from 'lucide-react';
 import { soundFX } from '../utils/audio';
+import { tauntsService } from '../../services/preferenceService';
+import { authService } from '../../services/authService';
 
 const PREMADE_TAUNTS = [
   "You can't handle my true power!",
@@ -13,32 +15,23 @@ const PREMADE_TAUNTS = [
 export default function KontrolaTauntModal({ activePlayerName, onClose, onTaunt }) {
   const [customTaunt, setCustomTaunt] = useState('');
   const [recentTaunts, setRecentTaunts] = useState([]);
+  const [userId, setUserId] = useState(null);
 
+  // Load current user + recent taunts from DB/IndexedDB on mount
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('tcg_recent_taunts');
-      if (saved) {
-        setRecentTaunts(JSON.parse(saved));
-      }
-    } catch (e) {
-      console.error(e);
-    }
+    authService.getCurrentUser().then((user) => {
+      const uid = user?.id ?? null;
+      setUserId(uid);
+      tauntsService.getRecentTaunts(uid).then(setRecentTaunts);
+    });
   }, []);
 
-  const saveRecent = (msg) => {
-    try {
-      const updated = [msg, ...recentTaunts.filter(t => t !== msg)].slice(0, 3);
-      setRecentTaunts(updated);
-      localStorage.setItem('tcg_recent_taunts', JSON.stringify(updated));
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleSend = (msg) => {
-    if (!msg || !msg.trim()) return;
+  const handleSend = async (msg) => {
+    if (!msg?.trim()) return;
     soundFX.playMenuSelect();
-    saveRecent(msg.trim());
+    // Persist to DB / IndexedDB and update local state
+    const updated = await tauntsService.saveRecentTaunt(msg.trim(), userId);
+    setRecentTaunts(updated ?? recentTaunts);
     onTaunt(msg.trim());
     onClose();
   };

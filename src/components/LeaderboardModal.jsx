@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, X, Medal } from 'lucide-react';
 import { authService } from '../services/authService';
+import { leaderboardCache } from '../services/preferenceService';
 
 export const LeaderboardModal = ({ isOpen, onClose, fixedAppSource = null }) => {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(fixedAppSource || 'global');
+  const [isStale, setIsStale] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -21,10 +23,25 @@ export const LeaderboardModal = ({ isOpen, onClose, fixedAppSource = null }) => 
     const fetchBoard = async () => {
       try {
         const appSource = activeTab === 'global' ? null : activeTab;
-        const data = await authService.getLeaderboard(25, appSource);
+
+        // stale-while-revalidate: show cached immediately, refresh in background
+        const rows = await leaderboardCache.fetchWithCache(
+          () => authService.getLeaderboard(25, appSource),
+          (fresh) => {
+            if (isMounted) {
+              setPlayers(fresh);
+              setIsStale(false);
+              setLoading(false);
+            }
+          }
+        );
+
         if (isMounted) {
-          setPlayers(data || []);
+          setPlayers(rows || []);
           setLoading(false);
+          // Mark stale if data came from cache
+          const cached = await leaderboardCache.read();
+          setIsStale(cached?.isStale ?? false);
         }
       } catch (err) {
         console.warn('Leaderboard fetch error:', err);

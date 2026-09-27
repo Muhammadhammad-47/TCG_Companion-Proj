@@ -16,6 +16,7 @@ import {
 } from './MultiplayerClient';
 import { authService } from '../../services/authService';
 import { economyService } from '../../services/economyService';
+import { sessionService } from '../../services/preferenceService';
 import { getCardGraphicUrl, getCharacterAttackGraphicUrl, getWildCardGraphicUrl } from './kontrolaAssets';
 import KontrolaDiceRoller, { CanvasPipDie } from './KontrolaDiceRoller';
 import KontrolaChatModal from './KontrolaChatModal';
@@ -23,14 +24,20 @@ import KontrolaTauntModal from './KontrolaTauntModal';
 import { LeaderboardModal } from '../../components/LeaderboardModal';
 import '../../pages/GamePage.css';
 
-// Collision-proof unique player ID (persisted for rejoining across tabs)
+// Collision-proof unique player ID — sourced from DB or generated fresh.
+// generateUniquePlayerId is kept synchronous for useState initializer;
+// sessionService.getPlayerId() is called after auth loads to upgrade to DB-sourced ID.
 const generateUniquePlayerId = () => {
-  let pid = localStorage.getItem('kontrola_player_id');
-  if (!pid) {
-    pid = 'warr_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 7);
-    localStorage.setItem('kontrola_player_id', pid);
+  try {
+    let pid = localStorage.getItem('kontrola_player_id');
+    if (!pid) {
+      pid = 'warr_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 7);
+      localStorage.setItem('kontrola_player_id', pid);
+    }
+    return pid;
+  } catch {
+    return 'warr_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 7);
   }
-  return pid;
 };
 
 // Safe 6-character room code without ambiguous characters
@@ -46,7 +53,8 @@ const generateRoomCode = () => {
 export default function KontrolaArena() {
   const navigate = useNavigate();
   const [matchId, setMatchId] = useState(() => {
-    try { return localStorage.getItem('kontrola_current_match') || ''; } 
+    // Fast init from localStorage; sessionService will verify against DB after auth
+    try { return localStorage.getItem('kontrola_current_match') || ''; }
     catch (e) { return ''; }
   });
   const [gameState, setGameState] = useState(null);
@@ -84,6 +92,14 @@ export default function KontrolaArena() {
             }
           }
         });
+
+        // Restore last session match ID from DB if not already set
+        const currentMatchId = matchIdRef.current;
+        if (!currentMatchId) {
+          sessionService.getLastMatchId(user.id).then((savedMatchId) => {
+            if (savedMatchId) setMatchId(savedMatchId);
+          });
+        }
       }
     });
   }, []);
@@ -197,6 +213,15 @@ export default function KontrolaArena() {
       doLog();
     }
   }, [winner, isHost, gameState, currentUser, playerName, playerId]);
+
+  // Heartbeat: keep active_sessions row alive while in a match
+  useEffect(() => {
+    if (!matchId || !playerId || !gameState || gameState.status === 'finished') return;
+    const interval = setInterval(() => {
+      sessionService.heartbeat(matchId, playerId);
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, [matchId, playerId, gameState?.status]);
 
   // Action resolution queue on Host to prevent race conditions
   const actionQueueRef = useRef([]);
@@ -1405,7 +1430,8 @@ export default function KontrolaArena() {
       setIsHost(true);
       setIsSpectator(false);
       setError(null);
-      localStorage.setItem('kontrola_current_match', newMatchId);
+      // Persist session to DB + localStorage
+      sessionService.saveSession(newMatchId, playerId, 'host', currentUser?.id ?? null);
 
       // Advertise room immediately to global lobby
       advertiseRoom({
@@ -1433,7 +1459,8 @@ export default function KontrolaArena() {
 
     try {
       const cleanId = codeToJoin.trim().toUpperCase();
-      const lastMatch = localStorage.getItem('kontrola_current_match');
+      // Check last known match from session (DB or localStorage)
+      const lastMatch = await sessionService.getLastMatchId(currentUser?.id ?? null, playerId);
 
       if (isPremium && !userProfile?.is_premium && cleanId !== lastMatch) {
         const success = await authService.savePlayerMatchResult(currentUser?.id, {
@@ -1453,7 +1480,8 @@ export default function KontrolaArena() {
       tempState.playerNames = { [playerId]: finalName };
       setGameState(tempState);
       setError(null);
-      localStorage.setItem('kontrola_current_match', cleanId);
+      // Persist session to DB + localStorage
+      sessionService.saveSession(cleanId, playerId, 'player', currentUser?.id ?? null);
       
       if (matchId === cleanId) {
         // Already subscribed to this room channel, but need to re-request join
@@ -2538,7 +2566,8 @@ export default function KontrolaArena() {
                       setGameState(null);
                       setMatchId('');
                       setIsSpectator(false);
-                      localStorage.removeItem('kontrola_current_match');
+                      // Clear session from DB + localStorage
+                      sessionService.clearSession(matchId, playerId);
                     }}
                     style={{
                       padding: '8px 20px',
