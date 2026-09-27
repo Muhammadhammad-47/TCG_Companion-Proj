@@ -156,6 +156,11 @@ ALTER TABLE IF EXISTS user_questions DROP CONSTRAINT IF EXISTS user_questions_ad
 ALTER TABLE user_questions ADD CONSTRAINT user_questions_admin_status_check 
 CHECK (admin_status IN ('pending', 'rejected', 'approved_for_kb', 'approved', 'unhelpful'));
 
+-- Drop old user_rating constraint if it exists and recreate it with all valid values
+ALTER TABLE IF EXISTS user_questions DROP CONSTRAINT IF EXISTS user_questions_user_rating_check;
+ALTER TABLE user_questions ADD CONSTRAINT user_questions_user_rating_check 
+CHECK (user_rating IN ('helpful', 'unhelpful') OR user_rating IS NULL);
+
 ALTER TABLE IF EXISTS store_bundles ADD COLUMN IF NOT EXISTS title TEXT;
 ALTER TABLE IF EXISTS store_bundles ADD COLUMN IF NOT EXISTS crystal_amount INTEGER;
 ALTER TABLE IF EXISTS store_bundles ADD COLUMN IF NOT EXISTS discount_percent INTEGER DEFAULT 0;
