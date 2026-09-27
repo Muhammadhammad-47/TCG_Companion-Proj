@@ -1,4 +1,4 @@
-import { supabase } from './authService';
+import { supabase } from './supabaseClient';
 
 export const economyService = {
   // Fetch global app settings (match costs, premium modules)
