@@ -1657,6 +1657,7 @@ export default function BattleArena({
             winner={gameState.winner}
             players={players}
             turnNumber={turnNum}
+            gameStats={gameState.winner.stats || {}}
             onRematch={onRematch}
             onHome={onGoToMenu}
             onContinue={() => setGameState({ ...gameState, winner: null })}

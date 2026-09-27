@@ -7,9 +7,15 @@ import {
   RotateCcw, Home, Sparkles, ScrollText, Layers, Skull
 } from 'lucide-react';
 
-export default function WinnerModal({ winner, players, turnNumber, onRematch, onHome, onContinue }) {
+export default function WinnerModal({ winner, players, turnNumber, gameStats = {}, onRematch, onHome, onContinue }) {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const winnerChar = CHARACTERS[winner?.characterId] || CHARACTERS.chynaman;
+  
+  // Extract winner stats from gameStats or use defaults
+  const damageDealt = gameStats.damageDealt || winner?.stats?.damageDealt || 8500;
+  const damageTaken = gameStats.damageTaken || winner?.stats?.damageTaken || 2150;
+  const cardsPlayed = gameStats.cardsPlayed || winner?.stats?.cardsPlayed || 23;
+  const effectsTriggered = gameStats.effectsTriggered || winner?.stats?.effectsTriggered || 14;
 
   useEffect(() => {
     soundFX.playVictory();
@@ -106,7 +112,7 @@ export default function WinnerModal({ winner, players, turnNumber, onRematch, on
                   <Swords size={14} color="var(--neon-crimson)" />
                   <span>Damage Dealt</span>
                 </div>
-                <strong className="breakdown-val">8,500</strong>
+                <strong className="breakdown-val">{damageDealt.toLocaleString()}</strong>
               </div>
 
               <div className="breakdown-row">
@@ -114,7 +120,7 @@ export default function WinnerModal({ winner, players, turnNumber, onRematch, on
                   <Shield size={14} color="var(--neon-cyan)" />
                   <span>Damage Taken</span>
                 </div>
-                <strong className="breakdown-val">2,150</strong>
+                <strong className="breakdown-val">{damageTaken.toLocaleString()}</strong>
               </div>
 
               <div className="breakdown-row">
@@ -122,7 +128,7 @@ export default function WinnerModal({ winner, players, turnNumber, onRematch, on
                   <Layers size={14} color="#ffd700" />
                   <span>Cards Played</span>
                 </div>
-                <strong className="breakdown-val">23</strong>
+                <strong className="breakdown-val">{cardsPlayed}</strong>
               </div>
 
               <div className="breakdown-row">
@@ -130,7 +136,7 @@ export default function WinnerModal({ winner, players, turnNumber, onRematch, on
                   <Skull size={14} color="var(--neon-pink)" />
                   <span>Effects Triggered</span>
                 </div>
-                <strong className="breakdown-val">14</strong>
+                <strong className="breakdown-val">{effectsTriggered}</strong>
               </div>
             </div>
 

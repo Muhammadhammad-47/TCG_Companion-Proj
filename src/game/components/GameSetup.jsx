@@ -7,25 +7,31 @@ import {
 import { APP_CONFIG } from '../../config';
 import { CHARACTERS, getAssetUrl } from '../data/characters';
 import { soundFX } from '../utils/audio';
+import { authService } from '../../services/authService';
 
 
 export default function GameSetup({ onStartGame, onBack }) {
   const charKeys = ['chynaman', 'bee', 'katsumi', 'kiko'];
+  const [currentUser, setCurrentUser] = useState(null);
+  
+  // Load authenticated user
+  useEffect(() => {
+    authService.getCurrentUser().then((user) => {
+      if (user) setCurrentUser(user);
+    });
+  }, []);
   
   const [players, setPlayers] = useState(() => {
-    let cachedNames = {};
-    let playerCallsign = '';
-    try {
-      cachedNames = JSON.parse(localStorage.getItem('tcg_player_names_cache')) || {};
-      playerCallsign = localStorage.getItem('tcg_warrior_username') || '';
-    } catch (e) {}
-
+    // Start with default character names
     return charKeys.map((key, idx) => {
       const c = CHARACTERS[key] || CHARACTERS.chynaman;
-      const defaultName = idx === 0 && playerCallsign ? playerCallsign : c.name;
+      // Use current user's name for first player if available
+      const defaultName = idx === 0 && currentUser?.user_metadata?.username 
+        ? currentUser.user_metadata.username 
+        : c.name;
       return {
         id: `p-${idx + 1}`,
-        name: cachedNames[key] || defaultName,
+        name: defaultName,
         characterId: key,
         startingHP: 100,
         startingET: 5,
@@ -288,13 +294,8 @@ export default function GameSetup({ onStartGame, onBack }) {
                             const next = [...players];
                             next[idx].name = newName;
                             setPlayers(next);
-                            
-                            // Cache name
-                            try {
-                              const cache = JSON.parse(localStorage.getItem('tcg_player_names_cache')) || {};
-                              cache[p.characterId] = newName;
-                              localStorage.setItem('tcg_player_names_cache', JSON.stringify(cache));
-                            } catch(err) {}
+                            // Names are now only stored in-memory for this game session
+                            // Player profiles are DB-first on authentication
                           }}
                           className="player-name-text"
                           style={{
@@ -307,7 +308,7 @@ export default function GameSetup({ onStartGame, onBack }) {
                             outline: 'none',
                             borderBottom: '1px solid rgba(255,255,255,0.2)'
                           }}
-                          title="Click to edit name"
+                          title="Click to edit name (in-game only)"
                         />
                       </div>
 
