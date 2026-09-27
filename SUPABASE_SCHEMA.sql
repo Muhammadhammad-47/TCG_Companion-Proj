@@ -126,11 +126,16 @@ CREATE INDEX IF NOT EXISTS idx_knowledge_documents_is_master ON knowledge_docume
 CREATE TABLE IF NOT EXISTS store_bundles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
+  title TEXT,
   description TEXT,
-  bundle_type TEXT NOT NULL,
+  bundle_type TEXT NOT NULL DEFAULT 'one_time',
   crystals_amount INTEGER NOT NULL,
+  crystal_amount INTEGER,
   price_usd DECIMAL(10, 2) NOT NULL,
   discount_percent INTEGER DEFAULT 0,
+  display_order INTEGER DEFAULT 0,
+  expires_at TIMESTAMP WITH TIME ZONE,
+  image_url TEXT,
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -139,6 +144,7 @@ CREATE TABLE IF NOT EXISTS store_bundles (
 -- Create indexes
 CREATE INDEX IF NOT EXISTS idx_store_bundles_is_active ON store_bundles(is_active);
 CREATE INDEX IF NOT EXISTS idx_store_bundles_price ON store_bundles(price_usd);
+CREATE INDEX IF NOT EXISTS idx_store_bundles_display_order ON store_bundles(display_order);
 
 -- ============================================================================
 -- 7. REDEEM_CODES TABLE (Promo Codes & Gift Cards)
@@ -149,6 +155,7 @@ CREATE TABLE IF NOT EXISTS redeem_codes (
   crystal_amount INTEGER NOT NULL,
   max_uses INTEGER DEFAULT 1,
   uses_count INTEGER DEFAULT 0,
+  times_used INTEGER DEFAULT 0,
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -176,6 +183,14 @@ CREATE TABLE IF NOT EXISTS app_settings (
 -- Add missing columns to store_bundles if they don't exist
 ALTER TABLE IF EXISTS store_bundles ADD COLUMN IF NOT EXISTS bundle_type TEXT DEFAULT 'one_time';
 ALTER TABLE IF EXISTS store_bundles ADD COLUMN IF NOT EXISTS discount_percent INTEGER DEFAULT 0;
+ALTER TABLE IF EXISTS store_bundles ADD COLUMN IF NOT EXISTS title TEXT;
+ALTER TABLE IF EXISTS store_bundles ADD COLUMN IF NOT EXISTS display_order INTEGER DEFAULT 0;
+ALTER TABLE IF EXISTS store_bundles ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE IF EXISTS store_bundles ADD COLUMN IF NOT EXISTS image_url TEXT;
+ALTER TABLE IF EXISTS store_bundles ADD COLUMN IF NOT EXISTS crystal_amount INTEGER;
+
+-- Add missing columns to redeem_codes if they don't exist
+ALTER TABLE IF EXISTS redeem_codes ADD COLUMN IF NOT EXISTS times_used INTEGER DEFAULT 0;
 
 -- Add missing columns to profiles if they don't exist
 ALTER TABLE IF EXISTS profiles ADD COLUMN IF NOT EXISTS is_premium BOOLEAN DEFAULT FALSE;
@@ -269,6 +284,25 @@ CREATE POLICY "app_settings_select_all" ON app_settings FOR SELECT USING (true);
 --     true
 --   )
 -- ON CONFLICT DO NOTHING;
+
+-- ============================================================================
+-- SEED MASTER KNOWLEDGE DOCUMENT (Optional - uncomment to initialize)
+-- ============================================================================
+-- INSERT INTO knowledge_documents (id, filename, title, category, content, char_count, estimated_tokens, is_master, is_active, created_at, updated_at)
+-- VALUES (
+--   'ai-breakdowns-master',
+--   'AI_Breakdowns.txt',
+--   'Attention TCG Master Rulebook & AI Breakdowns',
+--   'Master Rulebook',
+--   'Placeholder. Will be populated from public/Knowledge Base/AI_Breakdowns.txt on first app load.',
+--   100,
+--   25,
+--   true,
+--   true,
+--   NOW(),
+--   NOW()
+-- )
+-- ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================================
 -- END OF SCHEMA

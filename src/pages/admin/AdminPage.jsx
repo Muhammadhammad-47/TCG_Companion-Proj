@@ -1221,22 +1221,21 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  {/* Clean Minimal Rows Container */}
+                  {/* Compact Minimal Table - No Redundant Columns */}
                   <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', overflow: 'hidden' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 1fr 1.2fr 1fr 1fr 1.8fr', padding: '10px 16px', background: 'rgba(6, 12, 28, 0.95)', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', fontSize: '0.74rem', color: 'rgba(255,255,255,0.7)', fontWeight: 'bold', letterSpacing: '1px' }}>
-                      <span>USER / PLAYER</span>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 2fr 0.8fr 1fr 0.7fr 1.2fr', padding: '8px 12px', background: 'rgba(6, 12, 28, 0.95)', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 'bold', letterSpacing: '0.5px' }}>
+                      <span>USER</span>
                       <span>EMAIL</span>
-                      <span>CRYSTALS</span>
+                      <span>💎 CRYSTALS</span>
                       <span>WIN RATE</span>
                       <span>STATUS</span>
-                      <span>PREMIUM</span>
                       <span style={{ textAlign: 'right' }}>ACTIONS</span>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       {filteredUsers.length === 0 ? (
-                        <div style={{ padding: '36px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '0.88rem' }}>
-                          No users found matching your search filter.
+                        <div style={{ padding: '32px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '0.88rem' }}>
+                          No users found.
                         </div>
                       ) : (
                         filteredUsers.map((u) => {
@@ -1247,113 +1246,116 @@ export default function AdminPage() {
                               className="data-row"
                               style={{
                                 display: 'grid',
-                                gridTemplateColumns: '2fr 2fr 1fr 1.2fr 1fr 1fr 1.8fr',
+                                gridTemplateColumns: '1.8fr 2fr 0.8fr 1fr 0.7fr 1.2fr',
                                 alignItems: 'center',
-                                padding: '10px 16px',
-                                borderBottom: '1px solid rgba(255,255,255,0.06)',
-                                background: u.is_banned ? 'rgba(255, 51, 102, 0.05)' : 'transparent',
-                                fontSize: '0.84rem'
+                                padding: '8px 12px',
+                                borderBottom: '1px solid rgba(255,255,255,0.04)',
+                                background: u.is_banned ? 'rgba(255, 51, 102, 0.04)' : 'transparent',
+                                fontSize: '0.82rem',
+                                gap: '8px'
                               }}
                             >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(0, 240, 255, 0.1)', border: '1px solid var(--neon-cyan, #00f0ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem' }}>
+                              {/* User Avatar + Name */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                                <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(0, 240, 255, 0.1)', border: '1px solid var(--neon-cyan, #00f0ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', flexShrink: 0 }}>
                                   ⚔️
                                 </div>
-                                <strong style={{ color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', fontSize: '0.95rem' }}>
+                                <strong style={{ color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                   {u.username}
                                 </strong>
                               </div>
 
-                              <div style={{ color: '#94a3b8', fontSize: '0.8rem' }}>{u.email}</div>
-
-                              <div>
-                                <span style={{ color: 'var(--neon-cyan, #00f0ff)', fontWeight: 'bold' }}>💎 {u.crystals_collected || 0}</span>
+                              {/* Email */}
+                              <div style={{ color: '#94a3b8', fontSize: '0.8rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {u.email}
                               </div>
 
-                              <div>
-                                <span style={{ color: winRate >= 50 ? '#39ff14' : '#ff88aa', fontWeight: 'bold' }}>
-                                  {winRate}%
-                                </span>
-                                <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.72rem', marginLeft: '4px' }}>
-                                  ({u.matches_won}/{u.matches_played})
-                                </span>
+                              {/* Crystals */}
+                              <div style={{ color: 'var(--neon-cyan, #00f0ff)', fontWeight: 'bold', fontSize: '0.85rem' }}>
+                                {u.crystals_collected || 0}
                               </div>
 
+                              {/* Win Rate */}
+                              <div style={{ color: winRate >= 50 ? '#39ff14' : '#ff88aa', fontWeight: 'bold', fontSize: '0.85rem' }}>
+                                {winRate}%
+                              </div>
+
+                              {/* Status Badge */}
                               <div>
                                 <span
                                   style={{
-                                    background: u.is_banned ? 'rgba(255, 51, 102, 0.1)' : 'rgba(57, 255, 20, 0.1)',
+                                    background: u.is_banned ? 'rgba(255, 51, 102, 0.15)' : 'rgba(57, 255, 20, 0.15)',
                                     color: u.is_banned ? '#ff88aa' : '#39ff14',
-                                    border: u.is_banned ? '1px solid rgba(255, 51, 102, 0.3)' : '1px solid rgba(57, 255, 20, 0.3)',
-                                    padding: '2px 7px',
-                                    borderRadius: '4px',
-                                    fontSize: '0.7rem',
-                                    fontWeight: 'bold',
-                                    letterSpacing: '0.5px'
+                                    padding: '2px 6px',
+                                    borderRadius: '3px',
+                                    fontSize: '0.65rem',
+                                    fontWeight: 'bold'
                                   }}
                                 >
-                                  {u.is_banned ? 'SUSPENDED' : 'ACTIVE'}
+                                  {u.is_banned ? 'BANNED' : u.is_premium ? 'PRO' : 'ACT'}
                                 </span>
                               </div>
 
-                              <div>
-                                {u.is_premium && (
-                                  <span style={{ color: 'var(--neon-gold)', fontWeight: 'bold', fontSize: '0.75rem', background: 'rgba(255,215,0,0.1)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--neon-gold)' }}>
-                                    PRO
-                                  </span>
-                                )}
-                              </div>
-
-                              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px', flexWrap: 'wrap' }}>
+                              {/* Compact Action Buttons */}
+                              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '4px' }}>
                                 <button
                                   onClick={async () => {
                                     await economyService.assignPremiumUser(u.id, !u.is_premium);
-                                    fetchData();
+                                    loadUsers();
                                   }}
+                                  title={u.is_premium ? 'Revoke PRO' : 'Grant PRO'}
                                   style={{
-                                    background: u.is_premium ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 215, 0, 0.15)',
-                                    border: u.is_premium ? '1px solid rgba(255, 255, 255, 0.3)' : '1px solid var(--neon-gold)',
-                                    color: u.is_premium ? '#fff' : 'var(--neon-gold)',
-                                    padding: '4px 8px',
-                                    borderRadius: '6px',
+                                    background: 'transparent',
+                                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                                    color: 'var(--neon-gold)',
+                                    padding: '3px 6px',
+                                    borderRadius: '4px',
                                     cursor: 'pointer',
-                                    fontSize: '0.74rem',
-                                    fontWeight: 'bold'
+                                    fontSize: '0.7rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
                                   }}
                                 >
-                                  {u.is_premium ? 'Revoke PRO' : 'Grant PRO'}
+                                  <Crown size={12} />
                                 </button>
                                 <button
                                   onClick={() => { setCrystalModalUser(u); setNewCrystalCount(u.crystals_collected || 0); }}
+                                  title="Edit Crystals"
                                   style={{
-                                    background: 'rgba(255, 230, 0, 0.1)',
+                                    background: 'transparent',
                                     border: '1px solid rgba(255, 230, 0, 0.3)',
-                                    color: 'var(--neon-gold, #ffe600)',
-                                    padding: '4px 8px',
-                                    borderRadius: '6px',
+                                    color: 'var(--neon-gold)',
+                                    padding: '3px 6px',
+                                    borderRadius: '4px',
                                     cursor: 'pointer',
-                                    fontSize: '0.74rem',
-                                    fontWeight: 'bold'
+                                    fontSize: '0.7rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
                                   }}
                                 >
-                                  💎 Crystals
+                                  <Gem size={12} />
                                 </button>
-
                                 <button
                                   onClick={() => setBanModalUser(u)}
                                   disabled={u.id === currentUser?.id}
+                                  title={u.is_banned ? 'Reinstate' : 'Suspend'}
                                   style={{
-                                    background: u.is_banned ? 'rgba(57, 255, 20, 0.15)' : 'rgba(255, 51, 102, 0.15)',
-                                    border: u.is_banned ? '1px solid #39ff14' : '1px solid var(--neon-crimson, #ff3366)',
+                                    background: 'transparent',
+                                    border: u.is_banned ? '1px solid rgba(57, 255, 20, 0.3)' : '1px solid rgba(255, 51, 102, 0.3)',
                                     color: u.is_banned ? '#39ff14' : '#ff88aa',
-                                    padding: '4px 8px',
-                                    borderRadius: '6px',
+                                    padding: '3px 6px',
+                                    borderRadius: '4px',
                                     cursor: u.id === currentUser?.id ? 'not-allowed' : 'pointer',
-                                    fontSize: '0.74rem',
-                                    fontWeight: 'bold'
+                                    fontSize: '0.7rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    opacity: u.id === currentUser?.id ? 0.5 : 1
                                   }}
                                 >
-                                  {u.is_banned ? 'Reinstate' : 'Suspend'}
+                                  {u.is_banned ? <UserCheck size={12} /> : <Ban size={12} />}
                                 </button>
                               </div>
                             </div>
@@ -1362,6 +1364,44 @@ export default function AdminPage() {
                       )}
                     </div>
                   </div>
+
+                  {/* Modals for Crystal Adjustment */}
+                  {crystalModalUser && (
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                      <div style={{ background: 'rgba(14, 22, 42, 0.95)', border: '1.5px solid var(--neon-cyan)', borderRadius: '12px', padding: '20px', maxWidth: '300px', width: '90%' }}>
+                        <h3 style={{ color: 'var(--neon-cyan)', margin: '0 0 14px 0', fontSize: '1rem' }}>Adjust Crystals: {crystalModalUser.username}</h3>
+                        <input
+                          type="number"
+                          value={newCrystalCount}
+                          onChange={(e) => setNewCrystalCount(parseInt(e.target.value) || 0)}
+                          style={{ width: '100%', padding: '8px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(0,240,255,0.3)', color: '#fff', borderRadius: '6px', marginBottom: '12px', boxSizing: 'border-box', fontSize: '0.9rem' }}
+                        />
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button onClick={handleSaveCrystals} style={{ flex: 1, background: 'rgba(0,240,255,0.2)', border: '1px solid var(--neon-cyan)', color: 'var(--neon-cyan)', padding: '8px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Save</button>
+                          <button onClick={() => setCrystalModalUser(null)} style={{ flex: 1, background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', padding: '8px', borderRadius: '6px', cursor: 'pointer' }}>Cancel</button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {banModalUser && (
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                      <div style={{ background: 'rgba(14, 22, 42, 0.95)', border: '1.5px solid var(--neon-crimson)', borderRadius: '12px', padding: '20px', maxWidth: '300px', width: '90%' }}>
+                        <h3 style={{ color: '#ff88aa', margin: '0 0 8px 0', fontSize: '1rem' }}>
+                          {banModalUser.is_banned ? 'Reinstate' : 'Suspend'} User?
+                        </h3>
+                        <p style={{ color: 'rgba(255,255,255,0.7)', margin: '0 0 14px 0', fontSize: '0.9rem' }}>
+                          {banModalUser.username}
+                        </p>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button onClick={() => handleToggleBan(banModalUser)} style={{ flex: 1, background: banModalUser.is_banned ? 'rgba(57,255,20,0.2)' : 'rgba(255,51,102,0.2)', border: banModalUser.is_banned ? '1px solid #39ff14' : '1px solid var(--neon-crimson)', color: banModalUser.is_banned ? '#39ff14' : '#ff88aa', padding: '8px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
+                            {banModalUser.is_banned ? 'Reinstate' : 'Suspend'}
+                          </button>
+                          <button onClick={() => setBanModalUser(null)} style={{ flex: 1, background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', padding: '8px', borderRadius: '6px', cursor: 'pointer' }}>Cancel</button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1490,19 +1530,19 @@ export default function AdminPage() {
               ========================================================================= */}
               {activeTab === 'rules' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {/* ── COMPACT HEADER: Doc pills + inline stats + action buttons ── */}
+                  {/* ── COMPACT HEADER: Inline stats with action buttons ── */}
                   <div style={{
                     background: 'rgba(10, 18, 38, 0.9)',
                     border: '1px solid rgba(0, 240, 255, 0.22)',
                     borderRadius: '12px',
-                    padding: '11px 14px',
+                    padding: '10px 14px',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '10px',
+                    gap: '12px',
                     flexWrap: 'wrap'
                   }}>
-                    {/* Doc selector pills */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flex: 1, minWidth: 0, flexWrap: 'wrap' }}>
+                    {/* Doc selector pills - more compact */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1, minWidth: 0, flexWrap: 'wrap' }}>
                       {documents.map((doc) => {
                         const isSelected = doc.id === (activeDoc?.id || selectedDocId);
                         return (
@@ -1510,72 +1550,68 @@ export default function AdminPage() {
                             key={doc.id}
                             onClick={() => setSelectedDocId(doc.id)}
                             style={{
-                              display: 'flex', alignItems: 'center', gap: '4px',
-                              padding: '5px 10px', borderRadius: '20px',
+                              display: 'flex', alignItems: 'center', gap: '3px',
+                              padding: '4px 8px', borderRadius: '16px',
                               border: isSelected ? '1.5px solid var(--neon-cyan, #00f0ff)' : '1px solid rgba(255,255,255,0.12)',
                               background: isSelected ? 'rgba(0, 240, 255, 0.15)' : 'rgba(14, 22, 42, 0.7)',
                               color: isSelected ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.6)',
-                              cursor: 'pointer', fontWeight: 'bold', fontSize: '0.77rem',
+                              cursor: 'pointer', fontWeight: 'bold', fontSize: '0.75rem',
                               fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
                               transition: 'all 0.15s ease', whiteSpace: 'nowrap'
                             }}
                           >
-                            <FileText size={11} />
-                            {doc.filename}
-                            {doc.isMaster && <span style={{ fontSize: '0.58rem', background: 'rgba(0,240,255,0.25)', color: '#fff', padding: '0px 4px', borderRadius: '10px' }}>M</span>}
-                            <span style={{ fontSize: '0.63rem', color: 'rgba(255,255,255,0.35)' }}>
-                              {((doc.content?.length || 0) / 1024).toFixed(0)}KB
-                            </span>
+                            <FileText size={10} />
+                            {doc.filename.replace('.txt', '')}
                           </button>
                         );
                       })}
                     </div>
 
                     {/* Inline stats */}
-                    <div style={{ display: 'flex', gap: '14px', fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)', flexShrink: 0 }}>
-                      <span><span style={{ color: '#fff', fontWeight: 'bold', fontSize: '0.82rem' }}>{filteredDocQAPairs.length}</span> Q&As</span>
-                      <span><span style={{ color: '#fff', fontWeight: 'bold', fontSize: '0.82rem' }}>{parsedDocData.lineCount}</span> lines</span>
+                    <div style={{ display: 'flex', gap: '10px', fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)', flexShrink: 0 }}>
+                      <span><strong style={{ color: '#fff' }}>{filteredDocQAPairs.length}</strong> Q&As</span>
+                      <span><strong style={{ color: '#fff' }}>{parsedDocData.lineCount}</strong> lines</span>
                     </div>
 
-                    {/* Action buttons - compact icons */}
-                    <div style={{ display: 'flex', gap: '4px', flexShrink: 0, flexWrap: 'nowrap' }}>
-                      <button onClick={() => setIsNewDocModalOpen(true)} title="New Document" style={{ background: 'transparent', border: '1px solid rgba(0,240,255,0.4)', color: 'var(--neon-cyan, #00f0ff)', padding: '5px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '3px' }}><Plus size={11} /> New</button>
-                      <button onClick={() => setIsAppendModalOpen(true)} title="Append Q&A" style={{ background: 'transparent', border: '1px solid rgba(57,255,20,0.4)', color: '#39ff14', padding: '5px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '3px' }}><FilePlus size={11} /> Add</button>
-                      <button onClick={handleOpenEditDocModal} title="Edit Document" style={{ background: 'linear-gradient(90deg,#00f0ff,#0088ff)', border: 'none', color: '#050a18', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '3px' }}><Edit2 size={11} /> Edit</button>
-                      <button onClick={() => handleDownloadDoc(activeDoc)} title="Export" style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.65)', padding: '5px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '3px' }}><Download size={11} /></button>
+                    {/* Action buttons - compact icons only */}
+                    <div style={{ display: 'flex', gap: '3px', flexShrink: 0, flexWrap: 'nowrap' }}>
+                      <button onClick={() => setIsNewDocModalOpen(true)} title="New Document" style={{ background: 'transparent', border: '1px solid rgba(0,240,255,0.4)', color: 'var(--neon-cyan, #00f0ff)', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Plus size={11} /></button>
+                      <button onClick={() => setIsAppendModalOpen(true)} title="Append Q&A" style={{ background: 'transparent', border: '1px solid rgba(57,255,20,0.4)', color: '#39ff14', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FilePlus size={11} /></button>
+                      <button onClick={handleOpenEditDocModal} title="Edit Document" style={{ background: 'linear-gradient(90deg,#00f0ff,#0088ff)', border: 'none', color: '#050a18', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Edit2 size={11} /></button>
+                      <button onClick={() => handleDownloadDoc(activeDoc)} title="Export" style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.65)', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Download size={11} /></button>
                       {activeDoc?.isMaster ? (
-                        <button onClick={handleResetMasterDoc} title="Reset Master" style={{ background: 'transparent', border: '1px solid rgba(255,230,0,0.3)', color: 'var(--neon-gold, #ffe600)', padding: '5px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '3px' }}><RefreshCw size={11} /></button>
+                        <button onClick={handleResetMasterDoc} title="Reset Master" style={{ background: 'transparent', border: '1px solid rgba(255,230,0,0.3)', color: 'var(--neon-gold, #ffe600)', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RefreshCw size={11} /></button>
                       ) : (
-                        <button onClick={() => handleDeleteDoc(activeDoc?.id)} title="Delete" style={{ background: 'transparent', border: '1px solid rgba(255,42,85,0.3)', color: '#ff88aa', padding: '5px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '3px' }}><Trash2 size={11} /></button>
+                        <button onClick={() => handleDeleteDoc(activeDoc?.id)} title="Delete" style={{ background: 'transparent', border: '1px solid rgba(255,42,85,0.3)', color: '#ff88aa', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Trash2 size={11} /></button>
                       )}
                     </div>
                   </div>
 
                   {/* ── SEARCH + VIEW TOGGLE ROW ── */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ position: 'relative', flex: 1, maxWidth: '380px' }}>
+                    <div style={{ position: 'relative', flex: 1, maxWidth: '300px' }}>
                       <Search size={13} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.35)', pointerEvents: 'none' }} />
                       <input
                         type="text"
                         placeholder="Search Q&A..."
                         value={docSearchQuery}
                         onChange={(e) => setDocSearchQuery(e.target.value)}
-                        style={{ width: '100%', boxSizing: 'border-box', padding: '7px 10px 7px 32px', background: 'rgba(5,10,24,0.85)', border: '1px solid rgba(0,240,255,0.2)', borderRadius: '8px', color: '#fff', fontSize: '0.81rem', outline: 'none' }}
+                        style={{ width: '100%', boxSizing: 'border-box', padding: '6px 10px 6px 30px', background: 'rgba(5,10,24,0.85)', border: '1px solid rgba(0,240,255,0.2)', borderRadius: '6px', color: '#fff', fontSize: '0.8rem', outline: 'none' }}
                       />
                     </div>
 
-                    <div style={{ display: 'flex', background: 'rgba(5,10,24,0.85)', border: '1px solid rgba(0,240,255,0.2)', borderRadius: '8px', padding: '2px', marginLeft: 'auto' }}>
+                    <div style={{ display: 'flex', background: 'rgba(5,10,24,0.85)', border: '1px solid rgba(0,240,255,0.2)', borderRadius: '6px', padding: '2px', marginLeft: 'auto' }}>
                       <button
                         onClick={() => setDocViewMode('breakdown')}
-                        style={{ background: docViewMode === 'breakdown' ? 'rgba(0,240,255,0.18)' : 'transparent', border: 'none', color: docViewMode === 'breakdown' ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.45)', padding: '5px 11px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}
+                        style={{ background: docViewMode === 'breakdown' ? 'rgba(0,240,255,0.18)' : 'transparent', border: 'none', color: docViewMode === 'breakdown' ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.45)', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.73rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '3px' }}
                       >
-                        <LayoutGrid size={12} /> Q&A
+                        <LayoutGrid size={11} /> List
                       </button>
                       <button
                         onClick={() => setDocViewMode('raw')}
-                        style={{ background: docViewMode === 'raw' ? 'rgba(0,240,255,0.18)' : 'transparent', border: 'none', color: docViewMode === 'raw' ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.45)', padding: '5px 11px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}
+                        style={{ background: docViewMode === 'raw' ? 'rgba(0,240,255,0.18)' : 'transparent', border: 'none', color: docViewMode === 'raw' ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.45)', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.73rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '3px' }}
                       >
-                        <Code size={12} /> Raw
+                        <Code size={11} /> Raw
                       </button>
                     </div>
                   </div>
@@ -1584,37 +1620,34 @@ export default function AdminPage() {
                   {docViewMode === 'breakdown' ? (
                     <div>
                       {filteredDocQAPairs.length === 0 ? (
-                        <div style={{ background: 'rgba(14,22,42,0.5)', border: '1px dashed rgba(0,240,255,0.2)', borderRadius: '12px', padding: '50px 20px', textAlign: 'center', color: 'rgba(255,255,255,0.45)' }}>
-                          <p style={{ margin: '0 0 12px', fontSize: '0.9rem' }}>
+                        <div style={{ background: 'rgba(14,22,42,0.5)', border: '1px dashed rgba(0,240,255,0.2)', borderRadius: '10px', padding: '40px 20px', textAlign: 'center', color: 'rgba(255,255,255,0.45)', fontSize: '0.88rem' }}>
+                          <p style={{ margin: '0 0 10px' }}>
                             {docsLoading ? 'Loading...' : docSearchQuery ? `No results for "${docSearchQuery}"` : 'No Q&A blocks yet.'}
                           </p>
-                          {!docsLoading && <button onClick={() => setIsAppendModalOpen(true)} style={{ background: 'rgba(0,240,255,0.1)', border: '1px solid var(--neon-cyan,#00f0ff)', color: 'var(--neon-cyan,#00f0ff)', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.82rem' }}>+ Add Q&A</button>}
+                          {!docsLoading && <button onClick={() => setIsAppendModalOpen(true)} style={{ background: 'rgba(0,240,255,0.1)', border: '1px solid var(--neon-cyan,#00f0ff)', color: 'var(--neon-cyan,#00f0ff)', padding: '5px 14px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}>+ Add Q&A</button>}
                         </div>
                       ) : (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(310px, 1fr))', gap: '9px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
                           {filteredDocQAPairs.map((item, idx) => (
                             <div
                               key={idx}
-                              style={{ background: 'rgba(14,22,42,0.45)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '13px', display: 'flex', flexDirection: 'column', gap: '7px' }}
+                              style={{ background: 'rgba(14,22,42,0.45)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '11px', display: 'flex', flexDirection: 'column', gap: '6px' }}
                             >
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-                                <span style={{ fontSize: '0.67rem', color: 'rgba(255,255,255,0.32)', fontWeight: 'bold', flexShrink: 0 }}>#{idx + 1}</span>
+                                <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.32)', fontWeight: 'bold', flexShrink: 0 }}>#{idx + 1}</span>
                                 <button
                                   onClick={() => handleCopy(item.fullBlock, `qa-${idx}`)}
-                                  style={{ background: 'none', border: 'none', color: copiedKey === `qa-${idx}` ? '#39ff14' : 'rgba(255,255,255,0.3)', cursor: 'pointer', fontSize: '0.68rem', display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0, padding: 0 }}
+                                  style={{ background: 'none', border: 'none', color: copiedKey === `qa-${idx}` ? '#39ff14' : 'rgba(255,255,255,0.3)', cursor: 'pointer', fontSize: '0.65rem', display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0, padding: 0 }}
                                 >
-                                  {copiedKey === `qa-${idx}` ? <Check size={10} /> : <Copy size={10} />}
+                                  {copiedKey === `qa-${idx}` ? <Check size={9} /> : <Copy size={9} />}
                                 </button>
                               </div>
-                              <h3 style={{ fontSize: '0.88rem', color: 'var(--neon-cyan, #00f0ff)', margin: 0, fontWeight: 'bold', lineHeight: '1.4' }}>
+                              <h3 style={{ fontSize: '0.86rem', color: 'var(--neon-cyan, #00f0ff)', margin: 0, fontWeight: 'bold', lineHeight: '1.3' }}>
                                 {item.question}
                               </h3>
-                              <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.7)', lineHeight: '1.5', margin: 0, whiteSpace: 'pre-wrap', maxHeight: '110px', overflowY: 'auto', paddingRight: '3px' }}>
+                              <p style={{ fontSize: '0.76rem', color: 'rgba(255,255,255,0.65)', lineHeight: '1.4', margin: 0, whiteSpace: 'pre-wrap', maxHeight: '100px', overflowY: 'auto', paddingRight: '2px' }}>
                                 {item.answer}
                               </p>
-                              <div style={{ fontSize: '0.63rem', color: 'rgba(255,255,255,0.28)', marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px' }}>
-                                {item.charLen} chars
-                              </div>
                             </div>
                           ))}
                         </div>
@@ -1622,30 +1655,24 @@ export default function AdminPage() {
                     </div>
                   ) : (
                     /* Raw view */
-                    <div style={{ background: 'rgba(5,10,24,0.97)', border: '1px solid rgba(0,240,255,0.2)', borderRadius: '10px', overflow: 'hidden' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 13px', background: 'rgba(10,18,38,0.95)', borderBottom: '1px solid rgba(0,240,255,0.15)' }}>
+                    <div style={{ background: 'rgba(5,10,24,0.97)', border: '1px solid rgba(0,240,255,0.2)', borderRadius: '8px', overflow: 'hidden' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'rgba(10,18,38,0.95)', borderBottom: '1px solid rgba(0,240,255,0.15)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <FileCode size={13} color="var(--neon-cyan,#00f0ff)" />
-                          <span style={{ fontSize: '0.79rem', fontWeight: 'bold', color: '#fff', fontFamily: 'monospace' }}>{activeDoc?.filename}</span>
-                          <span style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.38)' }}>{parsedDocData.lineCount} lines</span>
+                          <FileCode size={12} color="var(--neon-cyan,#00f0ff)" />
+                          <span style={{ fontSize: '0.77rem', fontWeight: 'bold', color: '#fff', fontFamily: 'monospace' }}>{activeDoc?.filename}</span>
                         </div>
-                        <div style={{ display: 'flex', gap: '5px' }}>
-                          <button onClick={() => handleCopy(activeDoc?.content || '', 'raw-doc')} style={{ background: 'rgba(0,240,255,0.1)', border: '1px solid rgba(0,240,255,0.3)', color: 'var(--neon-cyan,#00f0ff)', padding: '3px 9px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                            {copiedKey === 'raw-doc' ? <Check size={10} /> : <Copy size={10} />} {copiedKey === 'raw-doc' ? 'Copied' : 'Copy'}
-                          </button>
-                          <button onClick={handleOpenEditDocModal} style={{ background: 'linear-gradient(90deg,#00f0ff,#0088ff)', border: 'none', color: '#050a18', padding: '3px 9px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 'bold' }}>
-                            Edit
-                          </button>
-                        </div>
+                        <button onClick={() => handleCopy(activeDoc?.content || '', 'raw-doc')} style={{ background: 'rgba(0,240,255,0.1)', border: '1px solid rgba(0,240,255,0.3)', color: 'var(--neon-cyan,#00f0ff)', padding: '2px 8px', borderRadius: '3px', cursor: 'pointer', fontSize: '0.68rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                          {copiedKey === 'raw-doc' ? <Check size={9} /> : <Copy size={9} />}
+                        </button>
                       </div>
-                      <div style={{ maxHeight: '540px', overflowY: 'auto', padding: '9px 13px', fontFamily: 'Consolas,"Fira Code",monospace', fontSize: '0.77rem', color: '#e2e8f0', lineHeight: '1.55', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                      <div style={{ maxHeight: '500px', overflowY: 'auto', padding: '8px 12px', fontFamily: 'Consolas,"Fira Code",monospace', fontSize: '0.75rem', color: '#e2e8f0', lineHeight: '1.5', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
                         {(activeDoc?.content || '').split('\n').map((line, lIdx) => {
                           const isHeading = /^[0-9]+\.\s+[A-Z\s&]+/.test(line);
                           const isQuestion = line.trim().endsWith('?');
                           const isHighlighted = docSearchQuery && line.toLowerCase().includes(docSearchQuery.toLowerCase());
                           return (
                             <div key={lIdx} style={{ display: 'flex', background: isHighlighted ? 'rgba(255,230,0,0.12)' : 'transparent', borderLeft: isHighlighted ? '2px solid var(--neon-gold,#ffe600)' : 'none', paddingLeft: isHighlighted ? '6px' : '2px' }}>
-                              <span style={{ width: '35px', flexShrink: 0, color: 'rgba(255,255,255,0.2)', userSelect: 'none', textAlign: 'right', paddingRight: '9px' }}>{lIdx + 1}</span>
+                              <span style={{ width: '30px', flexShrink: 0, color: 'rgba(255,255,255,0.2)', userSelect: 'none', textAlign: 'right', paddingRight: '8px', fontSize: '0.7rem' }}>{lIdx + 1}</span>
                               <span style={{ flex: 1, color: isHeading ? 'var(--neon-gold,#ffe600)' : isQuestion ? 'var(--neon-cyan,#00f0ff)' : '#cbd5e1', fontWeight: isHeading || isQuestion ? 'bold' : 'normal' }}>
                                 {line || '\u00A0'}
                               </span>
@@ -1857,165 +1884,147 @@ export default function AdminPage() {
               ========================================================================= */}
               {activeTab === 'monetization' && (
                 <div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-                    
-                    {/* App Settings Card */}
-                    <div style={{ background: 'rgba(0, 240, 255, 0.05)', border: '1px solid var(--neon-cyan)', borderRadius: '12px', padding: '20px' }}>
-                      <h3 style={{ color: 'var(--neon-cyan)', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Coins size={18} /> Global Economy Settings
-                      </h3>
-                      
-                      <div style={{ marginBottom: '16px' }}>
-                        <label style={{ display: 'block', color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', marginBottom: '8px' }}>Kontrola Match Cost (Diamonds)</label>
+                  {/* Global Economy Settings - Simple 2-Column Form */}
+                  <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+                    <h2 style={{ fontSize: '1rem', fontWeight: 'bold', color: 'var(--neon-cyan)', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Coins size={16} /> Global Economy Settings
+                    </h2>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                      <div>
+                        <label style={{ display: 'block', color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem', marginBottom: '4px', fontWeight: 'bold', letterSpacing: '0.5px' }}>MATCH COST</label>
                         <input
                           type="number"
                           value={appSettings.match_cost}
                           onChange={(e) => setAppSettings(prev => ({ ...prev, match_cost: parseInt(e.target.value) || 0 }))}
-                          style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '10px', borderRadius: '8px', width: '100%', fontSize: '1rem' }}
+                          style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(0,240,255,0.2)', color: '#fff', padding: '6px 8px', borderRadius: '6px', fontSize: '0.85rem', boxSizing: 'border-box' }}
                         />
                       </div>
-
-                      <div style={{ marginBottom: '24px' }}>
-                        <label style={{ display: 'block', color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', marginBottom: '8px' }}>Premium Modules (Comma separated)</label>
+                      <div>
+                        <label style={{ display: 'block', color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem', marginBottom: '4px', fontWeight: 'bold', letterSpacing: '0.5px' }}>PREMIUM MODULES</label>
                         <input
                           type="text"
                           value={appSettings.premium_modules.join(', ')}
                           onChange={(e) => setAppSettings(prev => ({ ...prev, premium_modules: e.target.value.split(',').map(s => s.trim()).filter(Boolean) }))}
-                          style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '10px', borderRadius: '8px', width: '100%', fontSize: '1rem' }}
+                          style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(0,240,255,0.2)', color: '#fff', padding: '6px 8px', borderRadius: '6px', fontSize: '0.85rem', boxSizing: 'border-box' }}
                         />
                       </div>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        const success = await economyService.updateAppSettings(appSettings);
+                        setModNotice(success ? 'Settings updated!' : 'Failed to update settings.');
+                        setTimeout(() => setModNotice(''), 3000);
+                      }}
+                      style={{ width: '100%', background: 'rgba(0, 240, 255, 0.15)', border: '1px solid var(--neon-cyan)', color: 'var(--neon-cyan)', padding: '6px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}
+                    >
+                      <Save size={12} style={{ display: 'inline', marginRight: '4px' }} /> Save
+                    </button>
+                  </div>
 
+                  {/* Store Bundles - Simple Table/List */}
+                  <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px' }}>
+                    <div style={{ background: 'rgba(6, 12, 28, 0.95)', borderBottom: '1px solid rgba(0, 240, 255, 0.15)', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <h2 style={{ color: 'var(--neon-cyan)', margin: 0, fontSize: '0.95rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <ShoppingCart size={16} /> Store Bundles ({storeBundles.length})
+                      </h2>
                       <button
-                        onClick={async () => {
-                          const success = await economyService.updateAppSettings(appSettings);
-                          if (success) {
-                            setModNotice('Global economy settings updated!');
-                          } else {
-                            setModNotice('Failed to update settings. (Did you run the SQL migration?)');
-                          }
-                        }}
-                        className="btn-enter-game-cta"
-                        style={{ width: '100%', padding: '12px', borderRadius: '8px', justifyContent: 'center' }}
+                        onClick={() => setEditingBundle({ title: '', description: '', image_url: '', crystal_amount: 0, price_usd: 0, discount_percent: 0 })}
+                        style={{ background: 'rgba(0, 240, 255, 0.15)', border: '1px solid var(--neon-cyan)', color: 'var(--neon-cyan)', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}
                       >
-                        <Save size={16} /> Save Economy Settings
+                        <Plus size={12} /> Add
                       </button>
                     </div>
 
-                    {/* Stripe / Bundles Card */}
-                    <div style={{ background: 'rgba(0, 240, 255, 0.05)', border: '1px solid var(--neon-cyan)', borderRadius: '12px', padding: '20px', gridColumn: '1 / -1' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                        <h3 style={{ color: 'var(--neon-cyan)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <ShoppingCart size={18} /> Store Bundles
-                        </h3>
-                        <button
-                          onClick={() => setEditingBundle({ title: '', description: '', image_url: '', crystal_amount: 0, price_usd: 0, discount_percent: 0 })}
-                          className="btn-enter-game-cta"
-                          style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '0.85rem' }}
-                        >
-                          <Plus size={14} /> Add Bundle
-                        </button>
-                      </div>
-
-                      {editingBundle && (
-                        <div style={{ background: 'rgba(0,0,0,0.5)', padding: '16px', borderRadius: '8px', marginBottom: '16px', border: '1px solid var(--neon-gold)' }}>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
-                            <input type="text" placeholder="Title (e.g. Starter Pack)" value={editingBundle.title} onChange={e => setEditingBundle({...editingBundle, title: e.target.value})} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '8px', borderRadius: '4px' }} />
-                            <input type="text" placeholder="Image URL (optional)" value={editingBundle.image_url || ''} onChange={e => setEditingBundle({...editingBundle, image_url: e.target.value})} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '8px', borderRadius: '4px' }} />
-                          </div>
-                          <div style={{ marginBottom: '10px' }}>
-                            <textarea placeholder="Description" value={editingBundle.description || ''} onChange={e => setEditingBundle({...editingBundle, description: e.target.value})} style={{ width: '100%', background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '8px', borderRadius: '4px', resize: 'vertical' }} />
-                          </div>
-                          <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-                            <input type="number" placeholder="Diamonds" value={editingBundle.crystal_amount} onChange={e => setEditingBundle({...editingBundle, crystal_amount: parseInt(e.target.value) || 0})} style={{ flex: 1, background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '8px', borderRadius: '4px' }} />
-                            <input type="number" placeholder="Price $" value={editingBundle.price_usd} onChange={e => setEditingBundle({...editingBundle, price_usd: parseFloat(e.target.value) || 0})} style={{ flex: 1, background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '8px', borderRadius: '4px' }} />
-                            <input type="number" placeholder="Discount %" value={editingBundle.discount_percent || 0} onChange={e => setEditingBundle({...editingBundle, discount_percent: parseInt(e.target.value) || 0})} style={{ flex: 1, background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '8px', borderRadius: '4px' }} />
-                          </div>
-                          <div style={{ display: 'flex', gap: '10px' }}>
-                            <button onClick={async () => {
-                              const created = await economyService.upsertStoreBundle(editingBundle);
-                              if(created) { setEditingBundle(null); loadEconomyData(); }
-                            }} className="btn-enter-game-cta" style={{ flex: 1, padding: '8px', borderRadius: '4px' }}>Save</button>
-                            <button onClick={() => setEditingBundle(null)} style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
-                          </div>
+                    {editingBundle && (
+                      <div style={{ background: 'rgba(0, 0, 0, 0.4)', padding: '12px 16px', borderBottom: '1px solid rgba(255, 230, 0, 0.3)' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+                          <input type="text" placeholder="Title" value={editingBundle.title} onChange={e => setEditingBundle({...editingBundle, title: e.target.value})} style={{ background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '6px', borderRadius: '4px', fontSize: '0.8rem' }} />
+                          <input type="number" placeholder="Crystals" value={editingBundle.crystal_amount} onChange={e => setEditingBundle({...editingBundle, crystal_amount: parseInt(e.target.value) || 0})} style={{ background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '6px', borderRadius: '4px', fontSize: '0.8rem' }} />
+                          <input type="number" placeholder="Price $" value={editingBundle.price_usd} onChange={e => setEditingBundle({...editingBundle, price_usd: parseFloat(e.target.value) || 0})} style={{ background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '6px', borderRadius: '4px', fontSize: '0.8rem' }} />
+                          <input type="number" placeholder="Discount %" value={editingBundle.discount_percent || 0} onChange={e => setEditingBundle({...editingBundle, discount_percent: parseInt(e.target.value) || 0})} style={{ background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '6px', borderRadius: '4px', fontSize: '0.8rem' }} />
                         </div>
-                      )}
+                        <input type="text" placeholder="Image URL (optional)" value={editingBundle.image_url || ''} onChange={e => setEditingBundle({...editingBundle, image_url: e.target.value})} style={{ width: '100%', background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '6px', borderRadius: '4px', fontSize: '0.8rem', boxSizing: 'border-box', marginBottom: '8px' }} />
+                        <textarea placeholder="Description" value={editingBundle.description || ''} onChange={e => setEditingBundle({...editingBundle, description: e.target.value})} style={{ width: '100%', background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '6px', borderRadius: '4px', fontSize: '0.8rem', boxSizing: 'border-box', resize: 'vertical', minHeight: '60px', marginBottom: '8px' }} />
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button onClick={async () => { const created = await economyService.upsertStoreBundle(editingBundle); if(created) { setEditingBundle(null); loadEconomyData(); } }} style={{ flex: 1, background: 'rgba(0, 240, 255, 0.15)', border: '1px solid var(--neon-cyan)', color: 'var(--neon-cyan)', padding: '6px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.75rem' }}>Save</button>
+                          <button onClick={() => setEditingBundle(null)} style={{ flex: 1, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}>Cancel</button>
+                        </div>
+                      </div>
+                    )}
 
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
-                        {storeBundles.map(bundle => (
-                          <div key={bundle.id} style={{ background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column' }}>
-                            {bundle.image_url && <img src={bundle.image_url} alt="Bundle" style={{ width: '100%', height: '80px', objectFit: 'contain', marginBottom: '10px' }} />}
-                            <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fff' }}>{bundle.title}</div>
-                            {bundle.description && <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginBottom: '8px' }}>{bundle.description.substring(0, 50)}...</div>}
-                            <div style={{ fontSize: '0.9rem', color: 'var(--neon-cyan)', marginBottom: '10px' }}>💎 {bundle.crystal_amount} Crystals</div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--neon-gold)' }}>${bundle.price_usd}</div>
-                              {bundle.discount_percent > 0 && <div style={{ fontSize: '0.75rem', background: '#ff4444', color: '#fff', padding: '2px 4px', borderRadius: '4px' }}>-{bundle.discount_percent}%</div>}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 0 }}>
+                      {storeBundles.length === 0 ? (
+                        <div style={{ padding: '20px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>No bundles yet.</div>
+                      ) : (
+                        storeBundles.map((bundle, idx) => (
+                          <div key={bundle.id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 0.8fr', alignItems: 'center', gap: '12px', padding: '10px 16px', borderBottom: idx < storeBundles.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none', fontSize: '0.82rem' }}>
+                            <div>
+                              <div style={{ color: '#fff', fontWeight: 'bold' }}>{bundle.title}</div>
+                              {bundle.description && <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>{bundle.description.substring(0, 40)}</div>}
                             </div>
-                            
-                            <div style={{ display: 'flex', gap: '5px', marginTop: '10px' }}>
-                              <button onClick={() => setEditingBundle(bundle)} style={{ flex: 1, background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '4px', borderRadius: '4px', cursor: 'pointer' }}>Edit</button>
-                              <button onClick={async () => {
-                                await economyService.deleteStoreBundle(bundle.id);
-                                loadEconomyData();
-                              }} style={{ background: 'rgba(255,0,0,0.2)', color: '#ff4444', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}>Del</button>
+                            <div style={{ color: 'var(--neon-cyan)' }}>💎 {bundle.crystal_amount}</div>
+                            <div style={{ color: 'var(--neon-gold)' }}>${bundle.price_usd}</div>
+                            {bundle.discount_percent > 0 && <div style={{ background: 'rgba(255, 68, 68, 0.2)', color: '#ff4444', padding: '2px 6px', borderRadius: '3px', fontSize: '0.75rem', fontWeight: 'bold' }}>-{bundle.discount_percent}%</div>}
+                            {!bundle.discount_percent && <div></div>}
+                            <div style={{ display: 'flex', gap: '3px', justifyContent: 'flex-end' }}>
+                              <button onClick={() => setEditingBundle(bundle)} style={{ background: 'transparent', border: '1px solid rgba(0,240,255,0.3)', color: 'var(--neon-cyan)', padding: '2px 6px', borderRadius: '3px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Edit"><Edit2 size={11} /></button>
+                              <button onClick={async () => { await economyService.deleteStoreBundle(bundle.id); loadEconomyData(); }} style={{ background: 'transparent', border: '1px solid rgba(255,51,102,0.3)', color: '#ff88aa', padding: '2px 6px', borderRadius: '3px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Delete"><Trash2 size={11} /></button>
                             </div>
                           </div>
-                        ))}
-                      </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+
+                  {/* Redeem Codes - Simple Table */}
+                  <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 215, 0, 0.2)', borderRadius: '12px', overflow: 'hidden' }}>
+                    <div style={{ background: 'rgba(6, 12, 28, 0.95)', borderBottom: '1px solid rgba(255, 215, 0, 0.15)', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <h2 style={{ color: 'var(--neon-gold)', margin: 0, fontSize: '0.95rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Gem size={16} /> Promo Codes ({redeemCodes.length})
+                      </h2>
+                      <button
+                        onClick={() => setEditingCode({ code: '', crystal_amount: 10, max_uses: 1 })}
+                        style={{ background: 'rgba(255, 215, 0, 0.15)', border: '1px solid var(--neon-gold)', color: 'var(--neon-gold)', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        <Plus size={12} /> Add
+                      </button>
                     </div>
 
-                    {/* Redeem Codes Card */}
-                    <div style={{ background: 'rgba(255, 215, 0, 0.05)', border: '1px solid var(--neon-gold)', borderRadius: '12px', padding: '20px', gridColumn: '1 / -1', marginTop: '16px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                        <h3 style={{ color: 'var(--neon-gold)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <Gem size={18} /> Redeem Promo Codes
-                        </h3>
-                        <button
-                          onClick={() => setEditingCode({ code: '', crystal_amount: 10, max_uses: 1 })}
-                          className="btn-enter-game-cta"
-                          style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '0.85rem' }}
-                        >
-                          <Plus size={14} /> Add Promo Code
-                        </button>
-                      </div>
-
-                      {editingCode && (
-                        <div style={{ background: 'rgba(0,0,0,0.5)', padding: '16px', borderRadius: '8px', marginBottom: '16px', border: '1px solid var(--neon-gold)' }}>
-                          <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-                            <input type="text" placeholder="Promo Code (e.g. FREEGEMS)" value={editingCode.code} onChange={e => setEditingCode({...editingCode, code: e.target.value.toUpperCase()})} style={{ flex: 1, background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '8px', borderRadius: '4px', textTransform: 'uppercase' }} />
-                            <input type="number" placeholder="Diamonds" value={editingCode.crystal_amount} onChange={e => setEditingCode({...editingCode, crystal_amount: parseInt(e.target.value) || 0})} style={{ width: '100px', background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '8px', borderRadius: '4px' }} />
-                            <input type="number" placeholder="Max Uses" value={editingCode.max_uses} onChange={e => setEditingCode({...editingCode, max_uses: parseInt(e.target.value) || 1})} style={{ width: '100px', background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '8px', borderRadius: '4px' }} />
-                          </div>
-                          <div style={{ display: 'flex', gap: '10px' }}>
-                            <button onClick={async () => {
-                              const created = await economyService.upsertRedeemCode(editingCode);
-                              if(created) { setEditingCode(null); loadEconomyData(); }
-                            }} className="btn-enter-game-cta" style={{ flex: 1, padding: '8px', borderRadius: '4px' }}>Save Code</button>
-                            <button onClick={() => setEditingCode(null)} style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
-                          </div>
+                    {editingCode && (
+                      <div style={{ background: 'rgba(0, 0, 0, 0.4)', padding: '12px 16px', borderBottom: '1px solid rgba(255, 215, 0, 0.3)' }}>
+                        <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                          <input type="text" placeholder="Code (FREEGEMS)" value={editingCode.code} onChange={e => setEditingCode({...editingCode, code: e.target.value.toUpperCase()})} style={{ flex: 1, background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '6px', borderRadius: '4px', fontSize: '0.8rem', textTransform: 'uppercase' }} />
+                          <input type="number" placeholder="Crystals" value={editingCode.crystal_amount} onChange={e => setEditingCode({...editingCode, crystal_amount: parseInt(e.target.value) || 0})} style={{ width: '100px', background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '6px', borderRadius: '4px', fontSize: '0.8rem' }} />
+                          <input type="number" placeholder="Max Uses" value={editingCode.max_uses} onChange={e => setEditingCode({...editingCode, max_uses: parseInt(e.target.value) || 1})} style={{ width: '100px', background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '6px', borderRadius: '4px', fontSize: '0.8rem' }} />
                         </div>
-                      )}
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button onClick={async () => { const created = await economyService.upsertRedeemCode(editingCode); if(created) { setEditingCode(null); loadEconomyData(); } }} style={{ flex: 1, background: 'rgba(255, 215, 0, 0.15)', border: '1px solid var(--neon-gold)', color: 'var(--neon-gold)', padding: '6px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.75rem' }}>Save</button>
+                          <button onClick={() => setEditingCode(null)} style={{ flex: 1, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}>Cancel</button>
+                        </div>
+                      </div>
+                    )}
 
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
-                        {redeemCodes.map(c => (
-                          <div key={c.id} style={{ background: 'rgba(255,255,255,0.05)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                            <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fff', letterSpacing: '1px' }}>{c.code}</div>
-                            <div style={{ fontSize: '0.85rem', color: 'var(--neon-cyan)' }}>💎 {c.crystal_amount} Crystals</div>
-                            <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>Uses: {c.uses_count} / {c.max_uses}</div>
-                            
-                            <div style={{ display: 'flex', gap: '5px', marginTop: '10px' }}>
-                              <button onClick={() => setEditingCode(c)} style={{ flex: 1, background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '4px', borderRadius: '4px', cursor: 'pointer' }}>Edit</button>
-                              <button onClick={async () => {
-                                await economyService.deleteRedeemCode(c.id);
-                                loadEconomyData();
-                              }} style={{ background: 'rgba(255,0,0,0.2)', color: '#ff4444', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}>Del</button>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 0 }}>
+                      {redeemCodes.length === 0 ? (
+                        <div style={{ padding: '20px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>No promo codes yet.</div>
+                      ) : (
+                        redeemCodes.map((c, idx) => (
+                          <div key={c.id} style={{ display: 'grid', gridTemplateColumns: '1.5fr 0.8fr 0.8fr 1fr 0.6fr', alignItems: 'center', gap: '12px', padding: '10px 16px', borderBottom: idx < redeemCodes.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none', fontSize: '0.82rem' }}>
+                            <div style={{ color: '#fff', fontFamily: 'monospace', fontWeight: 'bold' }}>{c.code}</div>
+                            <div style={{ color: 'var(--neon-cyan)' }}>💎 {c.crystal_amount}</div>
+                            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem' }}>{c.times_used || 0} / {c.max_uses}</div>
+                            <div style={{ color: c.times_used >= c.max_uses ? '#ff88aa' : '#39ff14', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                              {c.times_used >= c.max_uses ? 'EXPIRED' : 'ACTIVE'}
+                            </div>
+                            <div style={{ display: 'flex', gap: '3px', justifyContent: 'flex-end' }}>
+                              <button onClick={() => setEditingCode(c)} style={{ background: 'transparent', border: '1px solid rgba(255,215,0,0.3)', color: 'var(--neon-gold)', padding: '2px 6px', borderRadius: '3px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Edit"><Edit2 size={11} /></button>
+                              <button onClick={async () => { await economyService.deleteRedeemCode(c.id); loadEconomyData(); }} style={{ background: 'transparent', border: '1px solid rgba(255,51,102,0.3)', color: '#ff88aa', padding: '2px 6px', borderRadius: '3px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Delete"><Trash2 size={11} /></button>
                             </div>
                           </div>
-                        ))}
-                      </div>
-
+                        ))
+                      )}
                     </div>
-
                   </div>
                 </div>
               )}

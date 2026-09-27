@@ -121,16 +121,17 @@ export const knowledgeService = {
   // Admin: Create new rule
   async createRule(ruleData) {
     if (!supabase) throw new Error('Supabase is not configured.');
+    const shortAnswer = ruleData.shortAnswer || ruleData.short_answer || '';
     const { data, error } = await supabase
       .from('rules_knowledge')
       .insert({
         topic: ruleData.topic.trim(),
         category: ruleData.category || 'Gameplay',
         keywords: ruleData.keywords || [],
-        short_answer: ruleData.shortAnswer.trim(),
+        short_answer: shortAnswer.trim(),
         details: ruleData.details.trim(),
-        order_index: ruleData.orderIndex || 0,
-        is_active: ruleData.isActive !== false,
+        order_index: ruleData.orderIndex || ruleData.order_index || 0,
+        is_active: ruleData.isActive !== undefined ? ruleData.isActive : (ruleData.is_active !== false),
         updated_at: new Date().toISOString()
       })
       .select()
@@ -149,9 +150,12 @@ export const knowledgeService = {
     if (updates.category !== undefined) dbPayload.category = updates.category;
     if (updates.keywords !== undefined) dbPayload.keywords = updates.keywords;
     if (updates.shortAnswer !== undefined) dbPayload.short_answer = updates.shortAnswer.trim();
+    if (updates.short_answer !== undefined) dbPayload.short_answer = updates.short_answer.trim();
     if (updates.details !== undefined) dbPayload.details = updates.details.trim();
     if (updates.orderIndex !== undefined) dbPayload.order_index = updates.orderIndex;
+    if (updates.order_index !== undefined) dbPayload.order_index = updates.order_index;
     if (updates.isActive !== undefined) dbPayload.is_active = updates.isActive;
+    if (updates.is_active !== undefined) dbPayload.is_active = updates.is_active;
     dbPayload.updated_at = new Date().toISOString();
 
     const { data, error } = await supabase
