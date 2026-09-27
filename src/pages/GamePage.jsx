@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Trophy, Settings, RotateCcw, X } from 'lucide-react';
 import LoadingScreen from '../game/components/LoadingScreen';
-
 import MainMenu from '../game/components/MainMenu';
 import GameSetup from '../game/components/GameSetup';
 import BattleArena from '../game/components/BattleArena';
@@ -10,11 +9,12 @@ import { createInitialGameState } from '../game/utils/gameEngine';
 import { soundFX } from '../game/utils/audio';
 import { useNavigate } from 'react-router-dom';
 import { ScaleWrapper } from '../components/ScaleWrapper';
+import { authService } from '../services/authService.js';
 
 export default function GamePage() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('menu'); // 'menu' | 'setup' | 'arena' | 'rules'
+  const [activeTab, setActiveTab] = useState('menu');
   const [rulesReturnTab, setRulesReturnTab] = useState('menu');
   const [gameState, setGameState] = useState(null);
   const [historyStack, setHistoryStack] = useState([]);
@@ -22,6 +22,48 @@ export default function GamePage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [showNewMatchModal, setShowNewMatchModal] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const hasLoggedWinnerRef = useRef(false);
+
+  React.useEffect(() => {
+    // Load authenticated user for DB writes
+    authService.getCurrentUser().then((user) => {
+      if (user) setCurrentUser(user);
+    });
+  }, []);
+
+  // Log local game winner to DB whenever winner is set
+  React.useEffect(() => {
+    if (!gameState?.winner || hasLoggedWinnerRef.current) return;
+    hasLoggedWinnerRef.current = true;
+    const winner = gameState.winner;
+    const players = gameState.players || [];
+
+    const doLog = async () => {
+      try {
+        await authService.logMatchResult({
+          roomCode: 'LOCAL_' + Date.now().toString(36).toUpperCase(),
+          winnerId: currentUser?.id || null,
+          winnerName: winner.name || 'Player',
+          playerIds: [],
+          playerNames: players.map(p => p.name || 'Player'),
+          gameMode: 'local',
+          crystalsAwarded: 1
+        });
+        if (currentUser?.id) {
+          const isWinner = players[0]?.id === winner.id || players[0]?.name === winner.name;
+          await authService.savePlayerMatchResult(currentUser.id, {
+            won: isWinner,
+            crystalsDelta: isWinner ? 2 : 0,
+            appSource: 'companion_hub'
+          });
+        }
+      } catch (e) {
+        console.warn('GamePage: Failed to log local match to DB:', e);
+      }
+    };
+    doLog();
+  }, [gameState?.winner, currentUser]);
 
   React.useEffect(() => {
     const handleFsChange = () => {
@@ -84,6 +126,7 @@ export default function GamePage() {
   };
 
   const handleStartGame = ({ players, direction, turnTimerDuration = 60 }) => {
+    hasLoggedWinnerRef.current = false;
     const initialState = createInitialGameState(players);
     initialState.direction = direction;
     initialState.turnDuration = turnTimerDuration;
@@ -92,28 +135,16 @@ export default function GamePage() {
     setActiveTab('arena');
   };
 
-  // Quick 1v1 Duel Mode (Chynaman vs Zabina "Bee" Sole)
+  // Quick 1v1 Duel Mode — name from DB profile, localStorage only as last resort
   const handleStartQuickDuel = () => {
-    let playerName = 'Player 1';
-    try {
-      playerName = localStorage.getItem('tcg_username') || localStorage.getItem('tcg_warrior_username') || 'Player 1';
-    } catch (e) {}
+    hasLoggedWinnerRef.current = false;
+    const playerName = currentUser
+      ? (currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'Player 1')
+      : (() => { try { return localStorage.getItem('tcg_warrior_username') || 'Player 1'; } catch { return 'Player 1'; } })();
 
     const duelPlayers = [
-      {
-        name: playerName,
-        characterId: 'chynaman',
-        startingHP: 100,
-        startingET: 5,
-        startingCrystals: 2
-      },
-      {
-        name: 'Player 2',
-        characterId: 'bee',
-        startingHP: 100,
-        startingET: 5,
-        startingCrystals: 2
-      }
+      { name: playerName, characterId: 'chynaman', startingHP: 100, startingET: 5, startingCrystals: 2 },
+      { name: 'Player 2', characterId: 'bee', startingHP: 100, startingET: 5, startingCrystals: 2 }
     ];
     handleStartGame({ players: duelPlayers, direction: 'clockwise', turnTimerDuration: 60 });
   };

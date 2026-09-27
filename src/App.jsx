@@ -162,21 +162,18 @@ export function Chat({ onBack, isOverlay = false }) {
   const [useExactSync, setUseExactSync] = useState(true);
   const AVATAR_STORAGE_KEY = 'tcg_companion_chat_avatar';
   const [selectedAvatarId, setSelectedAvatarId] = useState(() => {
+    // Start with localStorage as instant cache, DB will override on auth load
     try {
       const cached = localStorage.getItem(AVATAR_STORAGE_KEY);
       if (cached && CHAT_AVATARS[cached]) return cached;
-    } catch (e) {
-      console.warn('Failed reading avatar from localStorage:', e);
-    }
+    } catch (e) {}
     return 'chyna';
   });
   const [currentVisemeFile, setCurrentVisemeFile] = useState(() => {
     try {
       const cached = localStorage.getItem(AVATAR_STORAGE_KEY);
-      if (cached && CHAT_AVATARS[cached]) {
-        return getVisemeFileForChar(cached, 'CLOSED');
-      }
-    } catch (e) { }
+      if (cached && CHAT_AVATARS[cached]) return getVisemeFileForChar(cached, 'CLOSED');
+    } catch (e) {}
     return getVisemeFileForChar('chyna', 'CLOSED');
   });
   const [activeRules, setActiveRules] = useState(RULES_KNOWLEDGE);
@@ -190,16 +187,26 @@ export function Chat({ onBack, isOverlay = false }) {
   const [userProfile, setUserProfile] = useState(null);
 
   useEffect(() => {
-    // Load dynamic knowledge base from Supabase with instant fallback
+    // Load knowledge base from Supabase
     knowledgeService.fetchRulesKnowledge().then((loaded) => {
       if (loaded && loaded.length > 0) setActiveRules(loaded);
     });
 
-    // Check user session
+    // Load user session and sync avatar from DB profile
     authService.getCurrentUser().then((user) => {
       if (user) {
         setCurrentUser(user);
-        authService.getProfile(user.id).then((prof) => setUserProfile(prof));
+        authService.getProfile(user.id).then((prof) => {
+          if (prof) {
+            setUserProfile(prof);
+            // Sync avatar from DB — DB is authoritative
+            if (prof.avatar_id && CHAT_AVATARS[prof.avatar_id]) {
+              setSelectedAvatarId(prof.avatar_id);
+              setCurrentVisemeFile(getVisemeFileForChar(prof.avatar_id, 'CLOSED'));
+              try { localStorage.setItem(AVATAR_STORAGE_KEY, prof.avatar_id); } catch (e) {}
+            }
+          }
+        });
       }
     });
   }, []);
@@ -247,11 +254,16 @@ export function Chat({ onBack, isOverlay = false }) {
     setAnswer('');
     setStatus('');
 
-    try {
-      localStorage.setItem(AVATAR_STORAGE_KEY, newAvatarId);
-    } catch (e) {
-      console.warn('Failed saving avatar to localStorage:', e);
+    // Write to localStorage as instant cache
+    try { localStorage.setItem(AVATAR_STORAGE_KEY, newAvatarId); } catch (e) {}
+
+    // Write to DB profile as authoritative source
+    if (currentUser?.id) {
+      authService.updateProfile(currentUser.id, { avatar_id: newAvatarId }).catch(e =>
+        console.warn('Failed to save avatar to DB:', e)
+      );
     }
+
     setCurrentVisemeFile(getVisemeFileForChar(newAvatarId, 'CLOSED'));
 
     // Disallowed and preferred voice filters per client specification

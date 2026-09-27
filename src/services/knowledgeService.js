@@ -1,13 +1,18 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import { RULES_KNOWLEDGE as FALLBACK_RULES } from '../game/data/rulesKnowledge.js';
 
-// In-memory cache for ultra-fast instant answers with zero lag
+// In-memory cache for ultra-fast instant answers
 let cachedRules = null;
 let lastCacheTime = 0;
 const CACHE_TTL_MS = 60000; // 1 minute
 
 export const knowledgeService = {
-  // Fetch active rules with automatic fallback to static RULES_KNOWLEDGE
+
+  // =========================================================================
+  // RULES KNOWLEDGE
+  // =========================================================================
+
+  // Fetch active rules — always Supabase first, static fallback only if DB unreachable
   async fetchRulesKnowledge(forceRefresh = false) {
     const now = Date.now();
     if (!forceRefresh && cachedRules && now - lastCacheTime < CACHE_TTL_MS) {
@@ -19,7 +24,6 @@ export const knowledgeService = {
     }
 
     try {
-      // 1500ms safety timeout to guarantee zero delay for players
       const fetchPromise = supabase
         .from('rules_knowledge')
         .select('*')
@@ -38,7 +42,6 @@ export const knowledgeService = {
         return FALLBACK_RULES;
       }
 
-      // Format DB rows to match the engine's expected structure
       const formatted = data.map((item) => ({
         id: item.id,
         topic: item.topic,
@@ -54,60 +57,31 @@ export const knowledgeService = {
       lastCacheTime = now;
       return formatted;
     } catch (err) {
-      console.warn('knowledgeService: Using fallback rules knowledge due to network error:', err);
+      console.warn('knowledgeService: Network error, using static fallback rules:', err);
       cachedRules = FALLBACK_RULES;
       return FALLBACK_RULES;
     }
   },
 
-  // Admin: Fetch all rules including inactive (with automatic fallback to official GDD rules)
+  // Admin: Fetch all rules (including inactive) — Supabase only, no fallback
   async fetchAllRulesForAdmin() {
-    let dbRules = [];
-    if (supabase) {
-      try {
-        const { data, error } = await supabase
-          .from('rules_knowledge')
-          .select('*')
-          .order('order_index', { ascending: true });
+    if (!supabase) return [];
+    const { data, error } = await supabase
+      .from('rules_knowledge')
+      .select('*')
+      .order('order_index', { ascending: true });
 
-        if (!error && data && data.length > 0) {
-          dbRules = data;
-        }
-      } catch (err) {
-        console.warn('knowledgeService: Supabase query error, using fallback rules:', err);
-      }
+    if (error) {
+      console.warn('knowledgeService: fetchAllRulesForAdmin error:', error);
+      return [];
     }
 
-    // If Supabase table is empty or unseeded, populate with official Attention TCG rules
-    if (dbRules.length === 0) {
-      return FALLBACK_RULES.map((r, idx) => {
-        let cat = 'Combat';
-        const t = (r.topic || '').toLowerCase();
-        if (t.includes('setup') || t.includes('start') || t.includes('begin') || t.includes('hand')) cat = 'Setup';
-        else if (t.includes('energy') || t.includes('et')) cat = 'Energy';
-        else if (t.includes('lore') || t.includes('story') || t.includes('objective') || t.includes('caca')) cat = 'Lore';
-        else if (t.includes('character') || t.includes('move') || t.includes('abilities') || t.includes('wild')) cat = 'Characters';
-        else if (t.includes('zombie') || t.includes('poison') || t.includes('antidote')) cat = 'Combat';
-
-        return {
-          id: `rule-${idx + 1}`,
-          topic: r.topic,
-          category: r.category || cat,
-          keywords: Array.isArray(r.keywords) ? r.keywords : [],
-          short_answer: r.short_answer || r.shortAnswer || '',
-          details: r.details || '',
-          order_index: r.order_index || r.orderIndex || idx + 1,
-          is_active: r.is_active !== undefined ? r.is_active : true
-        };
-      });
-    }
-
-    return dbRules.map((r, idx) => ({
+    return (data || []).map((r, idx) => ({
       id: r.id,
       topic: r.topic || 'Untitled Rule',
       category: r.category || 'Combat',
-      keywords: Array.isArray(r.keywords) ? r.keywords : (r.keywords ? [r.keywords] : []),
-      short_answer: r.short_answer || r.shortAnswer || '',
+      keywords: Array.isArray(r.keywords) ? r.keywords : [],
+      short_answer: r.short_answer || '',
       details: r.details || '',
       order_index: r.order_index ?? idx + 1,
       is_active: r.is_active !== false
@@ -118,18 +92,18 @@ export const knowledgeService = {
     return this.fetchAllRulesForAdmin();
   },
 
-  // Admin: Create new rule
+  // Admin: Create new rule — Supabase only, throws on error
   async createRule(ruleData) {
     if (!supabase) throw new Error('Supabase is not configured.');
-    const shortAnswer = ruleData.shortAnswer || ruleData.short_answer || '';
+    const shortAnswer = (ruleData.shortAnswer || ruleData.short_answer || '').trim();
     const { data, error } = await supabase
       .from('rules_knowledge')
       .insert({
         topic: ruleData.topic.trim(),
         category: ruleData.category || 'Gameplay',
         keywords: ruleData.keywords || [],
-        short_answer: shortAnswer.trim(),
-        details: ruleData.details.trim(),
+        short_answer: shortAnswer,
+        details: (ruleData.details || '').trim(),
         order_index: ruleData.orderIndex || ruleData.order_index || 0,
         is_active: ruleData.isActive !== undefined ? ruleData.isActive : (ruleData.is_active !== false),
         updated_at: new Date().toISOString()
@@ -138,11 +112,11 @@ export const knowledgeService = {
       .single();
 
     if (error) throw error;
-    cachedRules = null; // Invalidate cache
+    cachedRules = null;
     return data;
   },
 
-  // Admin: Update rule
+  // Admin: Update rule — Supabase only, throws on error
   async updateRule(id, updates) {
     if (!supabase) throw new Error('Supabase is not configured.');
     const dbPayload = {};
@@ -166,11 +140,11 @@ export const knowledgeService = {
       .single();
 
     if (error) throw error;
-    cachedRules = null; // Invalidate cache
+    cachedRules = null;
     return data;
   },
 
-  // Admin: Delete rule
+  // Admin: Delete rule — Supabase only, throws on error
   async deleteRule(id) {
     if (!supabase) throw new Error('Supabase is not configured.');
     const { error } = await supabase
@@ -183,7 +157,11 @@ export const knowledgeService = {
     return true;
   },
 
-  // Log user question in background (fire-and-forget, zero blocking)
+  // =========================================================================
+  // USER QUESTIONS
+  // =========================================================================
+
+  // Log user question — fire and forget, never blocks
   async logUserQuestion({ userId = null, userName = 'Guest Player', questionText, aiAnswer, matchedTopic = null, appSource = 'companion_hub' }) {
     if (!supabase || !questionText) return null;
     try {
@@ -203,7 +181,7 @@ export const knowledgeService = {
         .single();
 
       if (error) {
-        console.warn('Could not log question to user_questions:', error);
+        console.warn('Could not log question:', error);
         return null;
       }
       return data?.id;
@@ -213,23 +191,19 @@ export const knowledgeService = {
     }
   },
 
-  // Submit feedback on an answer (Thumbs Up / Thumbs Down / Suggested Correction)
+  // Submit feedback — Supabase only
   async submitFeedback(questionId, rating, suggestedAnswer = null) {
     if (!supabase || !questionId) return false;
     try {
-      const updates = {
-        user_rating: rating
-      };
+      const updates = { user_rating: rating };
       if (suggestedAnswer) {
         updates.user_suggested_answer = suggestedAnswer.trim();
         updates.admin_status = 'pending';
       }
-
       const { error } = await supabase
         .from('user_questions')
         .update(updates)
         .eq('id', questionId);
-
       return !error;
     } catch (e) {
       console.warn('Feedback update failed:', e);
@@ -237,7 +211,7 @@ export const knowledgeService = {
     }
   },
 
-  // Direct rule correction submission (works even if questionId is null or guest)
+  // Submit rule correction — Supabase only
   async submitRuleCorrection({ questionId = null, questionText = '', aiAnswer = '', suggestedAnswer, userId = null, userName = 'Guest Player' }) {
     if (!suggestedAnswer || !suggestedAnswer.trim()) return false;
     try {
@@ -259,9 +233,6 @@ export const knowledgeService = {
           app_source: 'companion_hub',
           created_at: new Date().toISOString()
         });
-      if (error) {
-        console.warn('Could not insert rule correction directly:', error);
-      }
       return !error;
     } catch (e) {
       console.warn('Direct rule correction submit failed:', e);
@@ -269,8 +240,8 @@ export const knowledgeService = {
     }
   },
 
-  // Admin: Fetch user questions with optional filtering
-  async fetchUserQuestions({ filter = 'all', limit = 50 } = {}) {
+  // Admin: Fetch questions — always Supabase, filter by pending by default
+  async fetchUserQuestions({ filter = 'pending', limit = 50 } = {}) {
     if (!supabase) return [];
     let query = supabase
       .from('user_questions')
@@ -281,8 +252,9 @@ export const knowledgeService = {
     if (filter === 'unhelpful') {
       query = query.eq('user_rating', 'unhelpful');
     } else if (filter === 'corrections') {
-      query = query.not('user_suggested_answer', 'is', null);
-    } else if (filter === 'pending') {
+      query = query.not('user_suggested_answer', 'is', null).eq('admin_status', 'pending');
+    } else {
+      // 'all', 'pending' — only show unresolved questions
       query = query.eq('admin_status', 'pending');
     }
 
@@ -291,15 +263,13 @@ export const knowledgeService = {
     return data || [];
   },
 
-  // Admin: Update question review status
+  // Admin: Update question status — Supabase only, throws on error
   async updateQuestionStatus(questionId, status, adminApprovedAnswer = null) {
     if (!supabase) throw new Error('Supabase not configured');
-    
-    const updates = { admin_status: status };
+    const updates = { admin_status: status, updated_at: new Date().toISOString() };
     if (adminApprovedAnswer) {
       updates.admin_approved_answer = adminApprovedAnswer.trim();
     }
-    
     const { error } = await supabase
       .from('user_questions')
       .update(updates)
@@ -309,80 +279,114 @@ export const knowledgeService = {
       console.error('updateQuestionStatus error:', error);
       throw new Error(`Failed to update question: ${error.message}`);
     }
-    
     return true;
   },
 
-  // Admin: Promote question & approved answer directly to Knowledge Base
+  // Admin: Promote question to knowledge base
   async promoteQuestionToKnowledge(questionId, ruleData) {
     const createdRule = await this.createRule(ruleData);
-    await this.updateQuestionStatus(questionId, 'approved_for_kb', ruleData.shortAnswer);
+    await this.updateQuestionStatus(questionId, 'approved_for_kb', ruleData.shortAnswer || ruleData.short_answer);
     return createdRule;
   },
 
   // =========================================================================
-  // DOCUMENT-BASED KNOWLEDGE BASE (AI_Breakdowns.txt & Custom Expansions)
+  // KNOWLEDGE DOCUMENTS — Supabase authoritative, disk file as seed only
   // =========================================================================
 
   async fetchMasterDocumentFromDisk() {
     const baseUrl = import.meta.env.BASE_URL || '/';
     const cleanBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
     const url = `${cleanBase}Knowledge%20Base/AI_Breakdowns.txt`;
-    try {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status} loading ${url}`);
-      const text = await res.text();
-      if (!text || text.trim().length === 0) {
-        throw new Error('File loaded but is empty');
-      }
-      return text;
-    } catch (err) {
-      console.error('fetchMasterDocumentFromDisk failed:', err, 'URL:', url);
-      throw err;
-    }
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status} loading ${url}`);
+    const text = await res.text();
+    if (!text || text.trim().length === 0) throw new Error('AI_Breakdowns.txt is empty');
+    return text;
   },
 
   async fetchDocuments() {
-    // 1. Try Supabase
-    if (supabase) {
-      try {
-        const { data, error } = await supabase.from('knowledge_documents').select('*');
-        if (!error && data && data.length > 0) {
-          return data.map(d => ({
-            id: d.id,
-            filename: d.filename,
-            title: d.title,
-            category: d.category,
-            content: d.content,
-            charCount: d.char_count,
-            estimatedTokens: d.estimated_tokens,
-            isMaster: d.is_master,
-            isActive: d.is_active,
-            updatedAt: d.updated_at
-          }));
-        }
-      } catch (e) {
-        console.warn('knowledgeService: Supabase knowledge_documents unavailable, using localStorage.', e);
-      }
-    }
+    if (!supabase) return this._loadDocumentsFromDiskFallback();
 
-    // 2. Fallback to localStorage
     try {
-      const stored = localStorage.getItem('tcg_knowledge_documents_v2');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      }
-    } catch (e) {
-      console.warn('Failed parsing stored knowledge documents:', e);
-    }
+      const { data, error } = await supabase
+        .from('knowledge_documents')
+        .select('*')
+        .order('created_at', { ascending: true });
 
-    // 3. Default: Load local master document public/Knowledge Base/AI_Breakdowns.txt
+      if (error) throw error;
+
+      // If Supabase has documents, return them
+      if (data && data.length > 0) {
+        return data.map(d => ({
+          id: d.id,
+          filename: d.filename,
+          title: d.title,
+          category: d.category,
+          content: d.content,
+          charCount: d.char_count,
+          estimatedTokens: d.estimated_tokens,
+          isMaster: d.is_master,
+          isActive: d.is_active,
+          updatedAt: d.updated_at
+        }));
+      }
+
+      // If DB is empty, seed it from disk and return
+      return await this._seedMasterDocumentToSupabase();
+    } catch (e) {
+      console.warn('knowledgeService: fetchDocuments Supabase error:', e);
+      return this._loadDocumentsFromDiskFallback();
+    }
+  },
+
+  // Internal: seed master doc to Supabase from disk file
+  async _seedMasterDocumentToSupabase() {
     try {
       const masterContent = await this.fetchMasterDocumentFromDisk();
       const masterDoc = {
+        id: 'ai-breakdowns-master',
+        filename: 'AI_Breakdowns.txt',
+        title: 'Attention TCG Master Rulebook & AI Breakdowns',
+        category: 'Master Rulebook',
+        content: masterContent,
+        char_count: masterContent.length,
+        estimated_tokens: Math.ceil(masterContent.length / 4),
+        is_master: true,
+        is_active: true,
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from('knowledge_documents')
+        .upsert(masterDoc, { onConflict: 'id' })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return [{
+        id: data.id,
+        filename: data.filename,
+        title: data.title,
+        category: data.category,
+        content: data.content,
+        charCount: data.char_count,
+        estimatedTokens: data.estimated_tokens,
+        isMaster: data.is_master,
+        isActive: data.is_active,
+        updatedAt: data.updated_at
+      }];
+    } catch (e) {
+      console.warn('knowledgeService: Could not seed master document to Supabase:', e);
+      return this._loadDocumentsFromDiskFallback();
+    }
+  },
+
+  // Internal: last-resort fallback when Supabase is fully unavailable
+  async _loadDocumentsFromDiskFallback() {
+    try {
+      const masterContent = await this.fetchMasterDocumentFromDisk();
+      return [{
         id: 'ai-breakdowns-master',
         filename: 'AI_Breakdowns.txt',
         title: 'Attention TCG Master Rulebook & AI Breakdowns',
@@ -393,81 +397,75 @@ export const knowledgeService = {
         isMaster: true,
         isActive: true,
         updatedAt: new Date().toISOString()
-      };
-      // Save to localStorage so it persists
-      localStorage.setItem('tcg_knowledge_documents_v2', JSON.stringify([masterDoc]));
-      return [masterDoc];
-    } catch (err) {
-      console.error('Failed to load AI_Breakdowns.txt from disk:', err);
-      // Last resort: return empty master doc placeholder
-      const emptyMaster = {
+      }];
+    } catch {
+      return [{
         id: 'ai-breakdowns-master',
         filename: 'AI_Breakdowns.txt',
         title: 'Attention TCG Master Rulebook & AI Breakdowns',
         category: 'Master Rulebook',
-        content: '# Master Rulebook\n\nNo content loaded yet. Please add rules to get started.',
+        content: '# Master Rulebook\n\nNo content loaded yet.',
         charCount: 0,
         estimatedTokens: 0,
         isMaster: true,
         isActive: true,
         updatedAt: new Date().toISOString()
-      };
-      localStorage.setItem('tcg_knowledge_documents_v2', JSON.stringify([emptyMaster]));
-      return [emptyMaster];
+      }];
     }
   },
 
+  // Save document — always writes to Supabase, throws on error
   async saveDocument(docId, updates) {
-    const docs = await this.fetchDocuments();
-    const docIndex = docs.findIndex((d) => d.id === docId);
-    if (docIndex === -1) throw new Error(`Document with ID ${docId} not found.`);
+    if (!supabase) throw new Error('Supabase is not configured.');
 
-    const target = docs[docIndex];
+    const docs = await this.fetchDocuments();
+    const target = docs.find((d) => d.id === docId);
+    if (!target) throw new Error(`Document ${docId} not found.`);
+
     const newContent = updates.content !== undefined ? updates.content : target.content;
     const charCount = newContent.length;
     const estimatedTokens = Math.ceil(charCount / 4);
 
-    const updatedDoc = {
-      ...target,
-      ...updates,
+    const payload = {
+      filename: updates.filename ?? target.filename,
+      title: updates.title ?? target.title,
+      category: updates.category ?? target.category,
       content: newContent,
-      charCount,
-      estimatedTokens,
-      updatedAt: new Date().toISOString()
+      char_count: charCount,
+      estimated_tokens: estimatedTokens,
+      is_master: target.isMaster,
+      is_active: target.isActive,
+      updated_at: new Date().toISOString()
     };
 
-    if (supabase) {
-      try {
-        const { error } = await supabase.from('knowledge_documents').update({
-          filename: updatedDoc.filename,
-          title: updatedDoc.title,
-          category: updatedDoc.category,
-          content: updatedDoc.content,
-          char_count: updatedDoc.charCount,
-          estimated_tokens: updatedDoc.estimatedTokens,
-          is_master: updatedDoc.isMaster,
-          is_active: updatedDoc.isActive,
-          updated_at: updatedDoc.updatedAt
-        }).eq('id', docId);
-        
-        if (error) {
-          // Table doesn't exist or other error - continue with localStorage only
-          console.warn('knowledgeService: Supabase update not available, using localStorage only:', error.code);
-        }
-      } catch (e) {
-         console.warn('knowledgeService: Supabase update error', e);
-      }
-    }
+    const { data, error } = await supabase
+      .from('knowledge_documents')
+      .update(payload)
+      .eq('id', docId)
+      .select()
+      .single();
 
-    docs[docIndex] = updatedDoc;
-    localStorage.setItem('tcg_knowledge_documents_v2', JSON.stringify(docs));
-    return updatedDoc;
+    if (error) throw new Error(`Failed to save document: ${error.message}`);
+
+    return {
+      id: data.id,
+      filename: data.filename,
+      title: data.title,
+      category: data.category,
+      content: data.content,
+      charCount: data.char_count,
+      estimatedTokens: data.estimated_tokens,
+      isMaster: data.is_master,
+      isActive: data.is_active,
+      updatedAt: data.updated_at
+    };
   },
 
+  // Append section to document — always Supabase
   async appendSectionToDocument(docId, { title, content, type = 'qa' }) {
     const docs = await this.fetchDocuments();
     const doc = docs.find((d) => d.id === docId);
-    if (!doc) throw new Error(`Document with ID ${docId} not found.`);
+    if (!doc) throw new Error(`Document ${docId} not found.`);
 
     let addition = '';
     if (type === 'qa') {
@@ -481,127 +479,107 @@ export const knowledgeService = {
     return this.saveDocument(docId, { content: newContent });
   },
 
+  // Create new document — always Supabase
   async createDocument({ filename, title, category = 'Custom Expansion', content = '' }) {
-    const docs = await this.fetchDocuments();
+    if (!supabase) throw new Error('Supabase is not configured.');
+
     const cleanName = filename.trim().replace(/[^a-zA-Z0-9_\-\.]/g, '_');
     const safeFilename = cleanName.endsWith('.txt') ? cleanName : `${cleanName}.txt`;
     const charCount = content.length;
-    
-    // Attempt Supabase insert if supported, else generate local ID
-    let docId = `doc-${Date.now()}`;
-    const newDoc = {
-      id: docId,
-      filename: safeFilename,
-      title: (title || safeFilename).trim(),
-      category: (category || 'General').trim(),
-      content,
-      charCount,
-      estimatedTokens: Math.ceil(charCount / 4),
-      isMaster: false,
-      isActive: true,
-      updatedAt: new Date().toISOString()
+
+    const { data, error } = await supabase
+      .from('knowledge_documents')
+      .insert({
+        filename: safeFilename,
+        title: (title || safeFilename).trim(),
+        category: (category || 'General').trim(),
+        content,
+        char_count: charCount,
+        estimated_tokens: Math.ceil(charCount / 4),
+        is_master: false,
+        is_active: true,
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) throw new Error(`Failed to create document: ${error.message}`);
+
+    return {
+      id: data.id,
+      filename: data.filename,
+      title: data.title,
+      category: data.category,
+      content: data.content,
+      charCount: data.char_count,
+      estimatedTokens: data.estimated_tokens,
+      isMaster: data.is_master,
+      isActive: data.is_active,
+      updatedAt: data.updated_at
     };
-
-    if (supabase) {
-       try {
-         const { data, error } = await supabase.from('knowledge_documents').insert({
-            filename: newDoc.filename,
-            title: newDoc.title,
-            category: newDoc.category,
-            content: newDoc.content,
-            char_count: newDoc.charCount,
-            estimated_tokens: newDoc.estimatedTokens,
-            is_master: newDoc.isMaster,
-            is_active: newDoc.isActive,
-            updated_at: newDoc.updatedAt
-         }).select('id').single();
-         if (!error && data) {
-           newDoc.id = data.id;
-         } else if (error) {
-           console.warn('knowledgeService: Supabase insert not available, using localStorage:', error.code);
-         }
-       } catch (e) {
-          console.warn('knowledgeService: Supabase insert exception', e);
-       }
-    }
-
-    const updatedList = [...docs, newDoc];
-    localStorage.setItem('tcg_knowledge_documents_v2', JSON.stringify(updatedList));
-    return newDoc;
   },
 
+  // Delete document — always Supabase
   async deleteDocument(docId) {
+    if (!supabase) throw new Error('Supabase is not configured.');
+
     const docs = await this.fetchDocuments();
     const target = docs.find((d) => d.id === docId);
     if (!target) throw new Error('Document not found');
     if (target.isMaster || target.id === 'ai-breakdowns-master') {
-      throw new Error('Master document AI_Breakdowns.txt cannot be deleted. You can reset it to original default instead.');
-    }
-    
-    if (supabase) {
-       try {
-          const { error } = await supabase.from('knowledge_documents').delete().eq('id', docId);
-          if (error) {
-            console.warn('knowledgeService: Supabase delete not available, using localStorage:', error.code);
-          }
-       } catch(e) {
-          console.warn('knowledgeService: Supabase delete exception', e);
-       }
+      throw new Error('Master document cannot be deleted. Use "Reset Master Document" instead.');
     }
 
-    const filtered = docs.filter((d) => d.id !== docId);
-    localStorage.setItem('tcg_knowledge_documents_v2', JSON.stringify(filtered));
+    const { error } = await supabase
+      .from('knowledge_documents')
+      .delete()
+      .eq('id', docId);
+
+    if (error) throw new Error(`Failed to delete document: ${error.message}`);
     return true;
   },
 
+  // Reset master document — re-seeds from disk file to Supabase
   async resetMasterDocument() {
+    if (!supabase) throw new Error('Supabase is not configured.');
+
     const masterContent = await this.fetchMasterDocumentFromDisk();
-    const docs = await this.fetchDocuments();
-    const masterIndex = docs.findIndex((d) => d.isMaster || d.id === 'ai-breakdowns-master');
     const masterDoc = {
       id: 'ai-breakdowns-master',
       filename: 'AI_Breakdowns.txt',
       title: 'Attention TCG Master Rulebook & AI Breakdowns',
       category: 'Master Rulebook',
       content: masterContent,
-      charCount: masterContent.length,
-      estimatedTokens: Math.ceil(masterContent.length / 4),
-      isMaster: true,
-      isActive: true,
-      updatedAt: new Date().toISOString()
+      char_count: masterContent.length,
+      estimated_tokens: Math.ceil(masterContent.length / 4),
+      is_master: true,
+      is_active: true,
+      updated_at: new Date().toISOString()
     };
 
-    if (supabase) {
-      try {
-        const { error } = await supabase.from('knowledge_documents').upsert({
-          id: masterDoc.id,
-          filename: masterDoc.filename,
-          title: masterDoc.title,
-          category: masterDoc.category,
-          content: masterDoc.content,
-          char_count: masterDoc.charCount,
-          estimated_tokens: masterDoc.estimatedTokens,
-          is_master: masterDoc.isMaster,
-          is_active: masterDoc.isActive,
-          updated_at: masterDoc.updatedAt
-        });
-        if (error) {
-          console.warn('knowledgeService: Supabase upsert not available, using localStorage:', error.code);
-        }
-      } catch (e) {
-         console.warn('knowledgeService: Supabase upsert exception', e);
-      }
-    }
+    const { data, error } = await supabase
+      .from('knowledge_documents')
+      .upsert(masterDoc, { onConflict: 'id' })
+      .select()
+      .single();
 
-    if (masterIndex >= 0) {
-      docs[masterIndex] = masterDoc;
-    } else {
-      docs.unshift(masterDoc);
-    }
-    localStorage.setItem('tcg_knowledge_documents_v2', JSON.stringify(docs));
-    return masterDoc;
+    if (error) throw new Error(`Failed to reset master document: ${error.message}`);
+
+    return {
+      id: data.id,
+      filename: data.filename,
+      title: data.title,
+      category: data.category,
+      content: data.content,
+      charCount: data.char_count,
+      estimatedTokens: data.estimated_tokens,
+      isMaster: data.is_master,
+      isActive: data.is_active,
+      updatedAt: data.updated_at
+    };
   },
 
+  // Load all active knowledge as combined text — always from Supabase
   async loadActiveKnowledgeText() {
     try {
       const docs = await this.fetchDocuments();
@@ -622,9 +600,9 @@ export const knowledgeService = {
 export const GROQ_LIMITS = {
   MODEL: 'openai/gpt-oss-120b',
   MAX_CONTEXT_TOKENS: 32768,
-  MAX_CONTEXT_CHARS: 131072, // 32,768 tokens * 4 chars/token
-  SAFE_PROMPT_CHARS: 32768,  // 8,192 tokens safe single-turn prompt budget
-  RECOMMENDED_MAX_CHUNK_CHARS: 4000, // Safe maximum single-turn rule chunk (~1000 tokens)
+  MAX_CONTEXT_CHARS: 131072,
+  SAFE_PROMPT_CHARS: 32768,
+  RECOMMENDED_MAX_CHUNK_CHARS: 4000,
   WARNING_THRESHOLD_PERCENT: 80
 };
 
@@ -635,15 +613,15 @@ export const calculateGroqMetrics = (text = '') => {
   const estimatedTokens = Math.ceil(charCount / 4);
   const utilizationPercent = Math.min(100, Math.round((charCount / GROQ_LIMITS.MAX_CONTEXT_CHARS) * 100));
 
-  let status = 'SAFE'; // 'SAFE' | 'WARNING' | 'EXCEEDED'
+  let status = 'SAFE';
   let message = 'Within Groq context budget';
 
   if (charCount > GROQ_LIMITS.MAX_CONTEXT_CHARS) {
     status = 'EXCEEDED';
-    message = `Exceeds Groq context limit of ${GROQ_LIMITS.MAX_CONTEXT_CHARS.toLocaleString()} chars (${GROQ_LIMITS.MAX_CONTEXT_TOKENS.toLocaleString()} tokens)`;
+    message = `Exceeds Groq context limit of ${GROQ_LIMITS.MAX_CONTEXT_CHARS.toLocaleString()} chars`;
   } else if (charCount > GROQ_LIMITS.MAX_CONTEXT_CHARS * (GROQ_LIMITS.WARNING_THRESHOLD_PERCENT / 100)) {
     status = 'WARNING';
-    message = `Approaching Groq context rubric threshold (>${GROQ_LIMITS.WARNING_THRESHOLD_PERCENT}%)`;
+    message = `Approaching Groq context threshold (>${GROQ_LIMITS.WARNING_THRESHOLD_PERCENT}%)`;
   }
 
   return {
@@ -659,4 +637,3 @@ export const calculateGroqMetrics = (text = '') => {
     model: GROQ_LIMITS.MODEL
   };
 };
-

@@ -138,32 +138,10 @@ export default function KontrolaArena() {
 
   // Automatically log match results to DB when a winner is declared (Host only)
   useEffect(() => {
-    if (winner && isHost && gameState) {
-      const logMatch = async () => {
-        try {
-          const players = gameState?.players || [];
-          // Log match history record
-          await authService.logMatchResult({
-            roomCode: matchId,
-            winnerId: winner.playerId,
-            winnerName: gameState?.playerNames?.[winner.playerId] || winner.name,
-            playerIds: players,
-            playerNames: players.map(pid => gameState?.playerNames?.[pid] || 'Unknown')
-          });
-          
-          // Update each player's stats (crystals and matches_won)
-          for (const pid of players) {
-            const isWinner = pid === winner.playerId;
-            const crystalsAwarded = isWinner ? 3 : 1; // Winner gets 3 crystals, loser gets 1
-            await authService.savePlayerMatchResult(pid, { won: isWinner, crystalsDelta: crystalsAwarded, appSource: 'kontrola' });
-          }
-        } catch (e) {
-          console.warn('Failed to log match results automatically', e);
-        }
-      };
-      logMatch();
-    }
+    // Only the second guarded effect below handles match logging.
+    // This block intentionally left empty to avoid duplicate DB writes.
   }, [winner, isHost, matchId]);
+
   const [isProcessingAction, setIsProcessingAction] = useState(false);
   const [damagePopups, setDamagePopups] = useState([]); // [{id, value, isHeal, x, y}]
 
@@ -178,7 +156,7 @@ export default function KontrolaArena() {
     }, 1700);
   };
 
-  // Record match victory and award crystals
+  // Record match victory and award crystals — single guarded effect, DB only
   useEffect(() => {
     if (winner && !hasLoggedMatchRef.current) {
       hasLoggedMatchRef.current = true;
@@ -186,24 +164,37 @@ export default function KontrolaArena() {
       const allPlayerNames = allPlayerIds.map(
         (pid) => gameState?.playerNames?.[pid] || gameState?.characterStates?.[pid]?.name || 'Player'
       );
-      
-      // Host logs the global match record for history
-      if (isHost) {
-        authService.logMatchResult({
-          roomCode: matchIdRef.current || 'KONTROLA_ARENA',
-          winnerId: null, // Host can't know opponent's Supabase UUID, so leave null
-          winnerName: winner.name || gameState?.playerNames?.[winner.playerId] || playerName || 'Player',
-          playerIds: allPlayerIds,
-          playerNames: allPlayerNames,
-          gameMode: 'kontrola',
-          crystalsAwarded: 1
-        });
-      }
-      
-      // Winner logs their own victory to their Supabase profile
-      if (currentUser?.id && winner.playerId === playerId) {
-        authService.savePlayerMatchResult(currentUser.id, { won: true, crystalsDelta: 1, appSource: 'kontrola' });
-      }
+
+      const doLog = async () => {
+        try {
+          // Host logs the global match record
+          if (isHost) {
+            await authService.logMatchResult({
+              roomCode: matchIdRef.current || 'KONTROLA_ARENA',
+              winnerId: currentUser?.id || null, // use Supabase UUID if available
+              winnerName: winner.name || gameState?.playerNames?.[winner.playerId] || playerName || 'Player',
+              playerIds: allPlayerIds,
+              playerNames: allPlayerNames,
+              gameMode: 'kontrola',
+              crystalsAwarded: 3
+            });
+          }
+
+          // Winner gets 3 crystals, loser gets 1 — only for authenticated users
+          if (currentUser?.id) {
+            const isWinner = winner.playerId === playerId;
+            await authService.savePlayerMatchResult(currentUser.id, {
+              won: isWinner,
+              crystalsDelta: isWinner ? 3 : 1,
+              appSource: 'kontrola'
+            });
+          }
+        } catch (e) {
+          console.warn('Failed to log match result to DB:', e);
+        }
+      };
+
+      doLog();
     }
   }, [winner, isHost, gameState, currentUser, playerName, playerId]);
 

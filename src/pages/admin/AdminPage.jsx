@@ -99,7 +99,7 @@ export default function AdminPage() {
   // Questions
   const [questions, setQuestions] = useState([]);
   const [questionsLoading, setQuestionsLoading] = useState(false);
-  const [questionFilter, setQuestionFilter] = useState('all');
+  const [questionFilter, setQuestionFilter] = useState('pending');
   const [promotedSuccess, setPromotedSuccess] = useState('');
   const [editingQuestionId, setEditingQuestionId] = useState(null);
   const [editQuestionText, setEditQuestionText] = useState('');

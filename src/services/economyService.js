@@ -49,12 +49,7 @@ export const economyService = {
       return data || [];
     } catch (e) {
       console.warn('Economy: Failed to fetch store bundles.', e);
-      // Fallback bundles for UI testing if table doesn't exist yet
-      return [
-        { id: 'b1', title: 'Starter Pack', crystal_amount: 5, price_usd: 1.99 },
-        { id: 'b2', title: 'Pro Bundle', crystal_amount: 15, price_usd: 4.99 },
-        { id: 'b3', title: 'Whale Cache', crystal_amount: 50, price_usd: 14.99 }
-      ];
+      return [];
     }
   },
 
