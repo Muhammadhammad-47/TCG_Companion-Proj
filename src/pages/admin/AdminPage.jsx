@@ -241,10 +241,11 @@ export default function AdminPage() {
     }
   };
 
-  const loadQuestions = async () => {
+  const loadQuestions = async (filter) => {
     setQuestionsLoading(true);
+    const activeFilter = filter !== undefined ? filter : questionFilter;
     try {
-      const data = await knowledgeService.fetchUserQuestions(questionFilter);
+      const data = await knowledgeService.fetchUserQuestions({ filter: activeFilter });
       setQuestions(data || []);
     } catch (e) {
       console.warn('Failed loading questions:', e);
@@ -568,7 +569,9 @@ export default function AdminPage() {
     try {
       await knowledgeService.updateQuestionStatus(q.id, 'rejected');
       setPromotedSuccess('Correction rejected and archived.');
-      loadQuestions();
+      // Immediately remove from local state
+      setQuestions((prev) => prev.filter((item) => item.id !== q.id));
+      loadQuestions(questionFilter);
       setTimeout(() => setPromotedSuccess(''), 4000);
     } catch (e) {
       console.warn(e);
@@ -604,7 +607,9 @@ export default function AdminPage() {
       } catch (e) {}
 
       setPromotedSuccess(`Appended question to Master Knowledge Document & approved!`);
-      loadQuestions();
+      // Immediately remove promoted item from local state so it disappears from inbox
+      setQuestions((prev) => prev.filter((item) => item.id !== q.id));
+      loadQuestions(questionFilter);
       setTimeout(() => setPromotedSuccess(''), 4000);
     } catch (e) {
       alert('Failed to promote rule: ' + e.message);
@@ -1474,371 +1479,131 @@ export default function AdminPage() {
                   PAGE 3: KNOWLEDGE BASE (DOCUMENT-CENTRIC ENGINE & GROQ RUBRIC)
               ========================================================================= */}
               {activeTab === 'rules' && (
-                <div>
-                  {/* Top KPI Cards: Document Status */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', marginBottom: '14px' }}>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>ACTIVE DOCUMENT</div>
-                        <div style={{ fontSize: '1.15rem', fontWeight: '600', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '160px' }}>
-                          {activeDoc?.filename || 'AI_Breakdowns.txt'}
-                        </div>
-                        <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.6)' }}>
-                          {activeDoc?.isMaster ? 'Master Rulebook' : activeDoc?.category || 'Custom Document'}
-                        </div>
-                      </div>
-                      <FileText size={20} color="rgba(255,255,255,0.4)" />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {/* ── COMPACT HEADER: Doc pills + inline stats + action buttons ── */}
+                  <div style={{
+                    background: 'rgba(10, 18, 38, 0.9)',
+                    border: '1px solid rgba(0, 240, 255, 0.22)',
+                    borderRadius: '12px',
+                    padding: '11px 14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    flexWrap: 'wrap'
+                  }}>
+                    {/* Doc selector pills */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flex: 1, minWidth: 0, flexWrap: 'wrap' }}>
+                      {documents.map((doc) => {
+                        const isSelected = doc.id === (activeDoc?.id || selectedDocId);
+                        return (
+                          <button
+                            key={doc.id}
+                            onClick={() => setSelectedDocId(doc.id)}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: '4px',
+                              padding: '5px 10px', borderRadius: '20px',
+                              border: isSelected ? '1.5px solid var(--neon-cyan, #00f0ff)' : '1px solid rgba(255,255,255,0.12)',
+                              background: isSelected ? 'rgba(0, 240, 255, 0.15)' : 'rgba(14, 22, 42, 0.7)',
+                              color: isSelected ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.6)',
+                              cursor: 'pointer', fontWeight: 'bold', fontSize: '0.77rem',
+                              fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
+                              transition: 'all 0.15s ease', whiteSpace: 'nowrap'
+                            }}
+                          >
+                            <FileText size={11} />
+                            {doc.filename}
+                            {doc.isMaster && <span style={{ fontSize: '0.58rem', background: 'rgba(0,240,255,0.25)', color: '#fff', padding: '0px 4px', borderRadius: '10px' }}>M</span>}
+                            <span style={{ fontSize: '0.63rem', color: 'rgba(255,255,255,0.35)' }}>
+                              {((doc.content?.length || 0) / 1024).toFixed(0)}KB
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
 
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>TOTAL DOCUMENTS</div>
-                        <div style={{ fontSize: '1.15rem', fontWeight: '600', color: '#fff' }}>
-                          {documents.length || 1} Registered
-                        </div>
-                        <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.6)' }}>
-                          1 Master · {Math.max(0, documents.length - 1)} Expansions
-                        </div>
-                      </div>
-                      <Layers size={20} color="rgba(255,255,255,0.4)" />
+                    {/* Inline stats */}
+                    <div style={{ display: 'flex', gap: '14px', fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)', flexShrink: 0 }}>
+                      <span><span style={{ color: '#fff', fontWeight: 'bold', fontSize: '0.82rem' }}>{filteredDocQAPairs.length}</span> Q&As</span>
+                      <span><span style={{ color: '#fff', fontWeight: 'bold', fontSize: '0.82rem' }}>{parsedDocData.lineCount}</span> lines</span>
                     </div>
 
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>DOCUMENT VOLUME</div>
-                        <div style={{ fontSize: '1.15rem', fontWeight: '600', color: '#fff' }}>
-                          {(activeDoc?.content?.length || 0).toLocaleString()} <span style={{ fontSize: '0.8rem', fontWeight: 'normal', color: 'rgba(255,255,255,0.5)' }}>chars</span>
-                        </div>
-                        <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.6)' }}>
-                          {parsedDocData.lineCount.toLocaleString()} Lines
-                        </div>
-                      </div>
-                      <BookOpen size={20} color="rgba(255,255,255,0.4)" />
+                    {/* Action buttons - compact icons */}
+                    <div style={{ display: 'flex', gap: '4px', flexShrink: 0, flexWrap: 'nowrap' }}>
+                      <button onClick={() => setIsNewDocModalOpen(true)} title="New Document" style={{ background: 'transparent', border: '1px solid rgba(0,240,255,0.4)', color: 'var(--neon-cyan, #00f0ff)', padding: '5px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '3px' }}><Plus size={11} /> New</button>
+                      <button onClick={() => setIsAppendModalOpen(true)} title="Append Q&A" style={{ background: 'transparent', border: '1px solid rgba(57,255,20,0.4)', color: '#39ff14', padding: '5px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '3px' }}><FilePlus size={11} /> Add</button>
+                      <button onClick={handleOpenEditDocModal} title="Edit Document" style={{ background: 'linear-gradient(90deg,#00f0ff,#0088ff)', border: 'none', color: '#050a18', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '3px' }}><Edit2 size={11} /> Edit</button>
+                      <button onClick={() => handleDownloadDoc(activeDoc)} title="Export" style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.65)', padding: '5px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '3px' }}><Download size={11} /></button>
+                      {activeDoc?.isMaster ? (
+                        <button onClick={handleResetMasterDoc} title="Reset Master" style={{ background: 'transparent', border: '1px solid rgba(255,230,0,0.3)', color: 'var(--neon-gold, #ffe600)', padding: '5px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '3px' }}><RefreshCw size={11} /></button>
+                      ) : (
+                        <button onClick={() => handleDeleteDoc(activeDoc?.id)} title="Delete" style={{ background: 'transparent', border: '1px solid rgba(255,42,85,0.3)', color: '#ff88aa', padding: '5px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '3px' }}><Trash2 size={11} /></button>
+                      )}
                     </div>
                   </div>
 
-                  {/* DOCUMENT SELECTOR & CRUD TOOLBAR */}
-                  <div
-                    style={{
-                      background: 'rgba(10, 18, 38, 0.9)',
-                      border: '1px solid rgba(0, 240, 255, 0.25)',
-                      borderRadius: '12px',
-                      padding: '12px 14px',
-                      marginBottom: '14px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '10px'
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                      {/* Document Tabs */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: '0.76rem', color: 'rgba(255,255,255,0.5)', fontWeight: 'bold', marginRight: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                          DOCUMENTS:
-                        </span>
-                        {documents.map((doc) => {
-                          const isSelected = doc.id === (activeDoc?.id || selectedDocId);
-                          return (
-                            <button
-                              key={doc.id}
-                              onClick={() => setSelectedDocId(doc.id)}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                padding: '5px 12px',
-                                borderRadius: '8px',
-                                border: isSelected ? '1px solid var(--neon-cyan, #00f0ff)' : '1px solid rgba(255,255,255,0.12)',
-                                background: isSelected ? 'rgba(0, 240, 255, 0.18)' : 'rgba(14, 22, 42, 0.65)',
-                                color: isSelected ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.7)',
-                                cursor: 'pointer',
-                                fontWeight: 'bold',
-                                fontSize: '0.8rem',
-                                fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
-                                transition: 'all 0.15s ease'
-                              }}
-                            >
-                              <FileText size={13} />
-                              <span>{doc.filename}</span>
-                              {doc.isMaster && (
-                                <span style={{ fontSize: '0.65rem', background: 'rgba(0, 240, 255, 0.25)', color: '#fff', padding: '1px 5px', borderRadius: '4px' }}>
-                                  MASTER
-                                </span>
-                              )}
-                              <span style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.45)' }}>
-                                ({((doc.content?.length || 0) / 1024).toFixed(1)} KB)
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      {/* Document Action Buttons */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                        <button
-                          onClick={() => setIsNewDocModalOpen(true)}
-                          style={{
-                            background: 'rgba(0, 240, 255, 0.1)',
-                            border: '1px solid var(--neon-cyan, #00f0ff)',
-                            color: 'var(--neon-cyan, #00f0ff)',
-                            padding: '5px 12px',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            fontSize: '0.78rem',
-                            fontWeight: 'bold',
-                            fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '5px'
-                          }}
-                        >
-                          <Plus size={13} /> NEW DOCUMENT
-                        </button>
-
-                        <button
-                          onClick={() => setIsAppendModalOpen(true)}
-                          style={{
-                            background: 'rgba(57, 255, 20, 0.12)',
-                            border: '1px solid #39ff14',
-                            color: '#39ff14',
-                            padding: '5px 12px',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            fontSize: '0.78rem',
-                            fontWeight: 'bold',
-                            fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '5px'
-                          }}
-                        >
-                          <FilePlus size={13} /> APPEND TO DOC
-                        </button>
-
-                        <button
-                          onClick={handleOpenEditDocModal}
-                          style={{
-                            background: 'linear-gradient(90deg, #00f0ff 0%, #0088ff 100%)',
-                            border: 'none',
-                            color: '#050a18',
-                            padding: '5px 14px',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            fontSize: '0.78rem',
-                            fontWeight: 'bold',
-                            fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '5px'
-                          }}
-                        >
-                          <Edit2 size={13} /> EDIT FULL DOC
-                        </button>
-
-                        <button
-                          onClick={() => handleDownloadDoc(activeDoc)}
-                          title="Download updated .txt file to disk"
-                          style={{
-                            background: 'rgba(255, 255, 255, 0.08)',
-                            border: '1px solid rgba(255, 255, 255, 0.2)',
-                            color: '#fff',
-                            padding: '5px 10px',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            fontSize: '0.78rem',
-                            fontWeight: 'bold',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}
-                        >
-                          <Download size={13} /> EXPORT .TXT
-                        </button>
-
-                        {activeDoc?.isMaster ? (
-                          <button
-                            onClick={handleResetMasterDoc}
-                            title="Reset AI_Breakdowns.txt to local public file"
-                            style={{
-                              background: 'rgba(255, 230, 0, 0.08)',
-                              border: '1px solid rgba(255, 230, 0, 0.3)',
-                              color: 'var(--neon-gold, #ffe600)',
-                              padding: '5px 10px',
-                              borderRadius: '6px',
-                              cursor: 'pointer',
-                              fontSize: '0.76rem',
-                              fontWeight: 'bold',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px'
-                            }}
-                          >
-                            <RefreshCw size={12} /> RESET MASTER
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleDeleteDoc(activeDoc?.id)}
-                            style={{
-                              background: 'rgba(255, 42, 85, 0.1)',
-                              border: '1px solid rgba(255, 42, 85, 0.3)',
-                              color: '#ff88aa',
-                              padding: '5px 10px',
-                              borderRadius: '6px',
-                              cursor: 'pointer',
-                              fontSize: '0.76rem',
-                              fontWeight: 'bold',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px'
-                            }}
-                          >
-                            <Trash2 size={12} /> DELETE
-                          </button>
-                        )}
-                      </div>
+                  {/* ── SEARCH + VIEW TOGGLE ROW ── */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ position: 'relative', flex: 1, maxWidth: '380px' }}>
+                      <Search size={13} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.35)', pointerEvents: 'none' }} />
+                      <input
+                        type="text"
+                        placeholder="Search Q&A..."
+                        value={docSearchQuery}
+                        onChange={(e) => setDocSearchQuery(e.target.value)}
+                        style={{ width: '100%', boxSizing: 'border-box', padding: '7px 10px 7px 32px', background: 'rgba(5,10,24,0.85)', border: '1px solid rgba(0,240,255,0.2)', borderRadius: '8px', color: '#fff', fontSize: '0.81rem', outline: 'none' }}
+                      />
                     </div>
 
-                    {/* Toolbar Row 2: Search + Mode Switcher + Section Outline */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                      <div style={{ position: 'relative', width: '280px' }}>
-                        <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.4)' }} />
-                        <input
-                          type="text"
-                          placeholder={`Search in ${activeDoc?.filename || 'document'}...`}
-                          value={docSearchQuery}
-                          onChange={(e) => setDocSearchQuery(e.target.value)}
-                          style={{
-                            width: '100%',
-                            boxSizing: 'border-box',
-                            padding: '6px 10px 6px 30px',
-                            background: 'rgba(5, 10, 24, 0.85)',
-                            border: '1px solid rgba(0, 240, 255, 0.25)',
-                            borderRadius: '6px',
-                            color: '#fff',
-                            fontSize: '0.8rem',
-                            outline: 'none'
-                          }}
-                        />
-                      </div>
-
-                      {/* View Mode Toggle */}
-                      <div style={{ display: 'flex', background: 'rgba(5, 10, 24, 0.85)', border: '1px solid rgba(0, 240, 255, 0.25)', borderRadius: '6px', padding: '2px' }}>
-                        <button
-                          onClick={() => setDocViewMode('breakdown')}
-                          style={{
-                            background: docViewMode === 'breakdown' ? 'rgba(0, 240, 255, 0.2)' : 'transparent',
-                            border: 'none',
-                            color: docViewMode === 'breakdown' ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.5)',
-                            padding: '4px 10px',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '0.76rem',
-                            fontWeight: 'bold',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '5px'
-                          }}
-                        >
-                          <LayoutGrid size={13} />
-                          <span>Q&A Breakdowns ({filteredDocQAPairs.length})</span>
-                        </button>
-                        <button
-                          onClick={() => setDocViewMode('raw')}
-                          style={{
-                            background: docViewMode === 'raw' ? 'rgba(0, 240, 255, 0.2)' : 'transparent',
-                            border: 'none',
-                            color: docViewMode === 'raw' ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.5)',
-                            padding: '4px 10px',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '0.76rem',
-                            fontWeight: 'bold',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '5px'
-                          }}
-                        >
-                          <Code size={13} />
-                          <span>Raw Document ({parsedDocData.lineCount} Lines)</span>
-                        </button>
-                      </div>
+                    <div style={{ display: 'flex', background: 'rgba(5,10,24,0.85)', border: '1px solid rgba(0,240,255,0.2)', borderRadius: '8px', padding: '2px', marginLeft: 'auto' }}>
+                      <button
+                        onClick={() => setDocViewMode('breakdown')}
+                        style={{ background: docViewMode === 'breakdown' ? 'rgba(0,240,255,0.18)' : 'transparent', border: 'none', color: docViewMode === 'breakdown' ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.45)', padding: '5px 11px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        <LayoutGrid size={12} /> Q&A
+                      </button>
+                      <button
+                        onClick={() => setDocViewMode('raw')}
+                        style={{ background: docViewMode === 'raw' ? 'rgba(0,240,255,0.18)' : 'transparent', border: 'none', color: docViewMode === 'raw' ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.45)', padding: '5px 11px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        <Code size={12} /> Raw
+                      </button>
                     </div>
                   </div>
 
-                  {/* INSPECTOR VIEWPORT */}
+                  {/* ── CONTENT VIEWPORT ── */}
                   {docViewMode === 'breakdown' ? (
-                    /* VIEW 1: PARSED Q&A CARDS BREAKDOWN */
                     <div>
                       {filteredDocQAPairs.length === 0 ? (
-                        <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '40px', textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>
-                          <p style={{ fontSize: '0.95rem', margin: '0 0 10px 0' }}>
-                            {docsLoading ? 'Loading document content...' : `No Q&A blocks found matching "${docSearchQuery}".`}
+                        <div style={{ background: 'rgba(14,22,42,0.5)', border: '1px dashed rgba(0,240,255,0.2)', borderRadius: '12px', padding: '50px 20px', textAlign: 'center', color: 'rgba(255,255,255,0.45)' }}>
+                          <p style={{ margin: '0 0 12px', fontSize: '0.9rem' }}>
+                            {docsLoading ? 'Loading...' : docSearchQuery ? `No results for "${docSearchQuery}"` : 'No Q&A blocks yet.'}
                           </p>
-                          <button
-                            onClick={() => setIsAppendModalOpen(true)}
-                            style={{ background: 'rgba(0, 240, 255, 0.1)', border: '1px solid var(--neon-cyan, #00f0ff)', color: 'var(--neon-cyan, #00f0ff)', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
-                          >
-                            + Append New Q&A to this Document
-                          </button>
+                          {!docsLoading && <button onClick={() => setIsAppendModalOpen(true)} style={{ background: 'rgba(0,240,255,0.1)', border: '1px solid var(--neon-cyan,#00f0ff)', color: 'var(--neon-cyan,#00f0ff)', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.82rem' }}>+ Add Q&A</button>}
                         </div>
                       ) : (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '12px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(310px, 1fr))', gap: '9px' }}>
                           {filteredDocQAPairs.map((item, idx) => (
                             <div
                               key={idx}
-                              style={{
-                                background: 'rgba(14, 22, 42, 0.4)',
-                                border: '1px solid rgba(255, 255, 255, 0.1)',
-                                borderRadius: '8px',
-                                padding: '14px',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                justifyContent: 'space-between',
-                                transition: 'background 0.15s ease'
-                              }}
+                              style={{ background: 'rgba(14,22,42,0.45)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '13px', display: 'flex', flexDirection: 'column', gap: '7px' }}
                             >
-                              <div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                  <span style={{ fontSize: '0.72rem', background: 'rgba(255, 255, 255, 0.1)', color: 'rgba(255,255,255,0.7)', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
-                                    #{idx + 1}
-                                  </span>
-
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>
-                                      {item.charLen} chars
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <h3 style={{ fontSize: '0.96rem', color: '#fff', margin: '0 0 8px 0', fontWeight: 'bold', lineHeight: '1.4' }}>
-                                  {item.question}
-                                </h3>
-
-                                <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.7)', lineHeight: '1.5', whiteSpace: 'pre-wrap', maxHeight: '160px', overflowY: 'auto', paddingRight: '4px' }}>
-                                  {item.answer}
-                                </div>
-                              </div>
-
-                              <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '8px', marginTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>
-                                  {activeDoc?.filename}
-                                </span>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                                <span style={{ fontSize: '0.67rem', color: 'rgba(255,255,255,0.32)', fontWeight: 'bold', flexShrink: 0 }}>#{idx + 1}</span>
                                 <button
                                   onClick={() => handleCopy(item.fullBlock, `qa-${idx}`)}
-                                  style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    color: copiedKey === `qa-${idx}` ? '#39ff14' : 'rgba(255,255,255,0.6)',
-                                    cursor: 'pointer',
-                                    fontSize: '0.72rem',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '4px'
-                                  }}
+                                  style={{ background: 'none', border: 'none', color: copiedKey === `qa-${idx}` ? '#39ff14' : 'rgba(255,255,255,0.3)', cursor: 'pointer', fontSize: '0.68rem', display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0, padding: 0 }}
                                 >
-                                  {copiedKey === `qa-${idx}` ? <Check size={12} /> : <Copy size={12} />}
-                                  <span>{copiedKey === `qa-${idx}` ? 'Copied' : 'Copy'}</span>
+                                  {copiedKey === `qa-${idx}` ? <Check size={10} /> : <Copy size={10} />}
                                 </button>
+                              </div>
+                              <h3 style={{ fontSize: '0.88rem', color: 'var(--neon-cyan, #00f0ff)', margin: 0, fontWeight: 'bold', lineHeight: '1.4' }}>
+                                {item.question}
+                              </h3>
+                              <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.7)', lineHeight: '1.5', margin: 0, whiteSpace: 'pre-wrap', maxHeight: '110px', overflowY: 'auto', paddingRight: '3px' }}>
+                                {item.answer}
+                              </p>
+                              <div style={{ fontSize: '0.63rem', color: 'rgba(255,255,255,0.28)', marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px' }}>
+                                {item.charLen} chars
                               </div>
                             </div>
                           ))}
@@ -1846,97 +1611,32 @@ export default function AdminPage() {
                       )}
                     </div>
                   ) : (
-                    /* VIEW 2: RAW DOCUMENT LINE-NUMBERED VIEWER */
-                    <div style={{ background: 'rgba(6, 12, 28, 0.95)', border: '1px solid rgba(0, 240, 255, 0.25)', borderRadius: '12px', overflow: 'hidden' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', background: 'rgba(10, 18, 38, 0.9)', borderBottom: '1px solid rgba(0, 240, 255, 0.2)' }}>
+                    /* Raw view */
+                    <div style={{ background: 'rgba(5,10,24,0.97)', border: '1px solid rgba(0,240,255,0.2)', borderRadius: '10px', overflow: 'hidden' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 13px', background: 'rgba(10,18,38,0.95)', borderBottom: '1px solid rgba(0,240,255,0.15)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <FileCode size={16} color="var(--neon-cyan, #00f0ff)" />
-                          <span style={{ fontSize: '0.82rem', fontWeight: 'bold', color: '#fff', fontFamily: 'monospace' }}>
-                            {activeDoc?.filename}
-                          </span>
-                          <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)' }}>
-                            ({parsedDocData.lineCount} lines · {(activeDoc?.content?.length || 0).toLocaleString()} chars)
-                          </span>
+                          <FileCode size={13} color="var(--neon-cyan,#00f0ff)" />
+                          <span style={{ fontSize: '0.79rem', fontWeight: 'bold', color: '#fff', fontFamily: 'monospace' }}>{activeDoc?.filename}</span>
+                          <span style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.38)' }}>{parsedDocData.lineCount} lines</span>
                         </div>
-
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <button
-                            onClick={() => handleCopy(activeDoc?.content || '', 'raw-doc')}
-                            style={{
-                              background: 'rgba(0, 240, 255, 0.1)',
-                              border: '1px solid rgba(0, 240, 255, 0.3)',
-                              color: 'var(--neon-cyan, #00f0ff)',
-                              padding: '4px 10px',
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              fontSize: '0.75rem',
-                              fontWeight: 'bold',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px'
-                            }}
-                          >
-                            {copiedKey === 'raw-doc' ? <Check size={12} /> : <Copy size={12} />}
-                            <span>{copiedKey === 'raw-doc' ? 'Copied Full Document' : 'Copy All'}</span>
+                        <div style={{ display: 'flex', gap: '5px' }}>
+                          <button onClick={() => handleCopy(activeDoc?.content || '', 'raw-doc')} style={{ background: 'rgba(0,240,255,0.1)', border: '1px solid rgba(0,240,255,0.3)', color: 'var(--neon-cyan,#00f0ff)', padding: '3px 9px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                            {copiedKey === 'raw-doc' ? <Check size={10} /> : <Copy size={10} />} {copiedKey === 'raw-doc' ? 'Copied' : 'Copy'}
                           </button>
-
-                          <button
-                            onClick={handleOpenEditDocModal}
-                            style={{
-                              background: 'linear-gradient(90deg, #00f0ff 0%, #0088ff 100%)',
-                              border: 'none',
-                              color: '#050a18',
-                              padding: '4px 12px',
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              fontSize: '0.75rem',
-                              fontWeight: 'bold'
-                            }}
-                          >
-                            Edit In Modal
+                          <button onClick={handleOpenEditDocModal} style={{ background: 'linear-gradient(90deg,#00f0ff,#0088ff)', border: 'none', color: '#050a18', padding: '3px 9px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 'bold' }}>
+                            Edit
                           </button>
                         </div>
                       </div>
-
-                      <div
-                        style={{
-                          maxHeight: '520px',
-                          overflowY: 'auto',
-                          padding: '12px 16px',
-                          fontFamily: 'Consolas, "Fira Code", monospace',
-                          fontSize: '0.8rem',
-                          color: '#e2e8f0',
-                          lineHeight: '1.6',
-                          whiteSpace: 'pre-wrap',
-                          wordBreak: 'break-word',
-                          background: 'rgba(5, 10, 24, 0.95)'
-                        }}
-                      >
+                      <div style={{ maxHeight: '540px', overflowY: 'auto', padding: '9px 13px', fontFamily: 'Consolas,"Fira Code",monospace', fontSize: '0.77rem', color: '#e2e8f0', lineHeight: '1.55', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
                         {(activeDoc?.content || '').split('\n').map((line, lIdx) => {
                           const isHeading = /^[0-9]+\.\s+[A-Z\s&]+/.test(line);
                           const isQuestion = line.trim().endsWith('?');
                           const isHighlighted = docSearchQuery && line.toLowerCase().includes(docSearchQuery.toLowerCase());
-
                           return (
-                            <div
-                              key={lIdx}
-                              style={{
-                                display: 'flex',
-                                background: isHighlighted ? 'rgba(255, 230, 0, 0.15)' : 'transparent',
-                                borderLeft: isHighlighted ? '2px solid var(--neon-gold, #ffe600)' : 'none',
-                                padding: '1px 0'
-                              }}
-                            >
-                              <span style={{ width: '42px', flexShrink: 0, color: 'rgba(255,255,255,0.25)', userSelect: 'none', textAlign: 'right', paddingRight: '12px' }}>
-                                {lIdx + 1}
-                              </span>
-                              <span
-                                style={{
-                                  flex: 1,
-                                  color: isHeading ? 'var(--neon-gold, #ffe600)' : isQuestion ? 'var(--neon-cyan, #00f0ff)' : '#cbd5e1',
-                                  fontWeight: isHeading || isQuestion ? 'bold' : 'normal'
-                                }}
-                              >
+                            <div key={lIdx} style={{ display: 'flex', background: isHighlighted ? 'rgba(255,230,0,0.12)' : 'transparent', borderLeft: isHighlighted ? '2px solid var(--neon-gold,#ffe600)' : 'none', paddingLeft: isHighlighted ? '6px' : '2px' }}>
+                              <span style={{ width: '35px', flexShrink: 0, color: 'rgba(255,255,255,0.2)', userSelect: 'none', textAlign: 'right', paddingRight: '9px' }}>{lIdx + 1}</span>
+                              <span style={{ flex: 1, color: isHeading ? 'var(--neon-gold,#ffe600)' : isQuestion ? 'var(--neon-cyan,#00f0ff)' : '#cbd5e1', fontWeight: isHeading || isQuestion ? 'bold' : 'normal' }}>
                                 {line || '\u00A0'}
                               </span>
                             </div>
@@ -1992,7 +1692,7 @@ export default function AdminPage() {
                       {['all', 'unhelpful', 'suggested_only'].map((f) => (
                         <button
                           key={f}
-                          onClick={() => { setQuestionFilter(f); loadQuestions(); }}
+                          onClick={() => { setQuestionFilter(f); loadQuestions(f); }}
                           style={{
                             padding: '5px 10px',
                             borderRadius: '6px',

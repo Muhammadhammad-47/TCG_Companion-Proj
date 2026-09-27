@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
-import { Send, X, Bot, Swords, ArrowLeft, ThumbsUp, ThumbsDown, User, Shield, LogOut, Check } from 'lucide-react';
+import { Send, X, Bot, Swords, ArrowLeft, ThumbsUp, ThumbsDown, User, Shield, LogOut, Check, Trophy } from 'lucide-react';
 import axios from 'axios';
 import { Groq } from 'groq-sdk';
 import './App.css';
@@ -1259,6 +1259,7 @@ export function Hub() {
   const [userProfile, setUserProfile] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isStoreOpen, setIsStoreOpen] = useState(false);
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const [appSettings, setAppSettings] = useState({ match_cost: 1, premium_modules: ['kontrola'] });
 
   React.useLayoutEffect(() => {
