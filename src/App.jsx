@@ -20,6 +20,7 @@ import { authService } from './services/authService.js';
 import { knowledgeService } from './services/knowledgeService.js';
 import { economyService } from './services/economyService.js';
 import { StoreModal } from './components/StoreModal.jsx';
+import { LeaderboardModal } from './components/LeaderboardModal.jsx';
 
 const Avatar = ({ characterId, isSpeaking, currentVisemeFile }) => {
   const avatarConfig = CHAT_AVATARS[characterId] || CHAT_AVATARS.chyna;

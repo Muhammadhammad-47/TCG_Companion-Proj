@@ -14,6 +14,7 @@ import { knowledgeService, calculateGroqMetrics, GROQ_LIMITS } from '../../servi
 import { economyService } from '../../services/economyService';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 export default function AdminPage() {
   const navigate = useNavigate();
