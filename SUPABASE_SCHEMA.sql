@@ -126,16 +126,10 @@ CREATE INDEX IF NOT EXISTS idx_knowledge_documents_is_master ON knowledge_docume
 CREATE TABLE IF NOT EXISTS store_bundles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
-  title TEXT,
   description TEXT,
-  bundle_type TEXT NOT NULL DEFAULT 'one_time',
+  bundle_type TEXT DEFAULT 'one_time',
   crystals_amount INTEGER NOT NULL,
-  crystal_amount INTEGER,
   price_usd DECIMAL(10, 2) NOT NULL,
-  discount_percent INTEGER DEFAULT 0,
-  display_order INTEGER DEFAULT 0,
-  expires_at TIMESTAMP WITH TIME ZONE,
-  image_url TEXT,
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -144,7 +138,6 @@ CREATE TABLE IF NOT EXISTS store_bundles (
 -- Create indexes
 CREATE INDEX IF NOT EXISTS idx_store_bundles_is_active ON store_bundles(is_active);
 CREATE INDEX IF NOT EXISTS idx_store_bundles_price ON store_bundles(price_usd);
-CREATE INDEX IF NOT EXISTS idx_store_bundles_display_order ON store_bundles(display_order);
 
 -- ============================================================================
 -- 7. REDEEM_CODES TABLE (Promo Codes & Gift Cards)
@@ -179,27 +172,31 @@ CREATE TABLE IF NOT EXISTS app_settings (
 -- ============================================================================
 -- FIX EXISTING TABLES - Add missing columns to prevent errors
 -- ============================================================================
+-- Run these one at a time if batch execution fails
+
+BEGIN;
 
 -- Add missing columns to store_bundles if they don't exist
-ALTER TABLE IF EXISTS store_bundles ADD COLUMN IF NOT EXISTS bundle_type TEXT DEFAULT 'one_time';
-ALTER TABLE IF EXISTS store_bundles ADD COLUMN IF NOT EXISTS discount_percent INTEGER DEFAULT 0;
-ALTER TABLE IF EXISTS store_bundles ADD COLUMN IF NOT EXISTS title TEXT;
-ALTER TABLE IF EXISTS store_bundles ADD COLUMN IF NOT EXISTS display_order INTEGER DEFAULT 0;
-ALTER TABLE IF EXISTS store_bundles ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP WITH TIME ZONE;
-ALTER TABLE IF EXISTS store_bundles ADD COLUMN IF NOT EXISTS image_url TEXT;
-ALTER TABLE IF EXISTS store_bundles ADD COLUMN IF NOT EXISTS crystal_amount INTEGER;
+ALTER TABLE store_bundles ADD COLUMN IF NOT EXISTS title TEXT;
+ALTER TABLE store_bundles ADD COLUMN IF NOT EXISTS crystal_amount INTEGER;
+ALTER TABLE store_bundles ADD COLUMN IF NOT EXISTS discount_percent INTEGER DEFAULT 0;
+ALTER TABLE store_bundles ADD COLUMN IF NOT EXISTS display_order INTEGER DEFAULT 0;
+ALTER TABLE store_bundles ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE store_bundles ADD COLUMN IF NOT EXISTS image_url TEXT;
 
 -- Add missing columns to redeem_codes if they don't exist
-ALTER TABLE IF EXISTS redeem_codes ADD COLUMN IF NOT EXISTS times_used INTEGER DEFAULT 0;
+ALTER TABLE redeem_codes ADD COLUMN IF NOT EXISTS times_used INTEGER DEFAULT 0;
 
 -- Add missing columns to profiles if they don't exist
-ALTER TABLE IF EXISTS profiles ADD COLUMN IF NOT EXISTS is_premium BOOLEAN DEFAULT FALSE;
-ALTER TABLE IF EXISTS profiles ADD COLUMN IF NOT EXISTS registered_app TEXT DEFAULT 'companion_hub';
-ALTER TABLE IF EXISTS profiles ADD COLUMN IF NOT EXISTS last_active_app TEXT DEFAULT 'companion_hub';
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_premium BOOLEAN DEFAULT FALSE;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS registered_app TEXT DEFAULT 'companion_hub';
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS last_active_app TEXT DEFAULT 'companion_hub';
 
 -- Add missing columns to user_questions if they don't exist
-ALTER TABLE IF EXISTS user_questions ADD COLUMN IF NOT EXISTS matched_topic TEXT;
-ALTER TABLE IF EXISTS user_questions ADD COLUMN IF NOT EXISTS admin_approved_answer TEXT;
+ALTER TABLE user_questions ADD COLUMN IF NOT EXISTS matched_topic TEXT;
+ALTER TABLE user_questions ADD COLUMN IF NOT EXISTS admin_approved_answer TEXT;
+
+COMMIT;
 
 -- ============================================================================
 -- SECURITY POLICIES (Row Level Security)
