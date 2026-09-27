@@ -1295,6 +1295,12 @@ export function Hub() {
     }).catch(err => console.warn('Failed fetching user', err));
 
     const { data: { subscription } } = authService.onAuthStateChange((event, session, profile) => {
+      // Ignore transient token refresh events that don't change actual auth state
+      // Only update on SIGNED_IN, SIGNED_OUT, USER_UPDATED
+      if (event === 'TOKEN_REFRESHED' && session?.user && currentUser?.id === session.user.id) {
+        // Token refreshed but user didn't change — no-op to prevent flicker
+        return;
+      }
       setCurrentUser(session?.user || null);
       setUserProfile(profile);
     });
@@ -1324,87 +1330,164 @@ export function Hub() {
           <div className="webgl-screen menu-screen" style={{ justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%', padding: '0 40px', boxSizing: 'border-box', position: 'relative' }}>
             
             {/* Top Auth / Profile Bar */}
-            <div style={{ position: 'absolute', top: '24px', right: '32px', zIndex: 100, display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ position: 'absolute', top: '20px', right: '28px', zIndex: 100, display: 'flex', alignItems: 'center', gap: '8px' }}>
               {currentUser ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(8, 16, 36, 0.85)', padding: '6px 14px', borderRadius: '12px', border: '1px solid rgba(0, 240, 255, 0.3)', backdropFilter: 'blur(8px)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <span style={{ fontSize: '1rem' }}>💎</span>
-                    <span style={{ fontWeight: 'bold', color: 'var(--neon-cyan)', fontSize: '0.85rem' }}>{userProfile?.crystals_collected || 0}</span>
+                <>
+                  {/* === INFO SECTION: crystals + username (non-interactive display) === */}
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    background: 'rgba(8, 16, 36, 0.9)',
+                    padding: '8px 14px',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(0, 240, 255, 0.25)',
+                    backdropFilter: 'blur(10px)'
+                  }}>
+                    {/* Crystal balance — clickable to open store */}
                     <button
                       onClick={() => setIsStoreOpen(true)}
+                      title="Buy more crystals"
                       style={{
-                        background: 'rgba(57, 255, 20, 0.2)',
-                        border: '1px solid #39ff14',
-                        color: '#39ff14',
-                        borderRadius: '4px',
-                        padding: '2px 6px',
-                        fontSize: '0.8rem',
-                        fontWeight: 'bold',
+                        display: 'flex', alignItems: 'center', gap: '5px',
+                        background: 'rgba(0, 240, 255, 0.1)',
+                        border: '1px solid rgba(0, 240, 255, 0.4)',
+                        borderRadius: '8px',
+                        padding: '4px 10px',
                         cursor: 'pointer',
-                        marginLeft: '4px'
+                        transition: 'all 0.2s ease'
                       }}
-                      title="Get More Diamonds"
+                      onMouseOver={e => e.currentTarget.style.background = 'rgba(0, 240, 255, 0.2)'}
+                      onMouseOut={e => e.currentTarget.style.background = 'rgba(0, 240, 255, 0.1)'}
                     >
-                      +
+                      <span style={{ fontSize: '1rem', lineHeight: 1 }}>💎</span>
+                      <span style={{ fontWeight: 'bold', color: 'var(--neon-cyan)', fontSize: '0.9rem', fontFamily: 'Rajdhani, sans-serif' }}>
+                        {userProfile?.crystals_collected || 0}
+                      </span>
+                      <span style={{ fontSize: '0.65rem', color: 'rgba(0,240,255,0.6)', marginLeft: '1px', fontFamily: 'Rajdhani, sans-serif', letterSpacing: '0.5px' }}>+ ADD</span>
                     </button>
+
+                    {/* Divider */}
+                    <div style={{ width: '1px', height: '22px', background: 'rgba(255,255,255,0.15)' }} />
+
+                    {/* Username — static label */}
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      fontSize: '0.9rem', fontWeight: 'bold', color: '#e0e8ff',
+                      fontFamily: 'Rajdhani, sans-serif', letterSpacing: '0.5px'
+                    }}>
+                      <User size={14} style={{ opacity: 0.6 }} />
+                      <span>{userProfile?.username || 'Player'}</span>
+                      {userProfile?.is_admin && (
+                        <span style={{
+                          fontSize: '0.6rem', fontWeight: 'bold',
+                          background: 'rgba(255,215,0,0.2)', color: 'var(--neon-gold)',
+                          border: '1px solid rgba(255,215,0,0.4)',
+                          borderRadius: '4px', padding: '1px 5px',
+                          letterSpacing: '0.5px'
+                        }}>ADMIN</span>
+                      )}
+                    </div>
                   </div>
-                  <div style={{ borderLeft: '1px solid rgba(255,255,255,0.2)', paddingLeft: '8px', fontSize: '0.88rem', fontWeight: 'bold', color: '#fff' }}>
-                    {userProfile?.username || 'Player'}
-                  </div>
+
+                  {/* === ACTION BUTTONS: clearly separated, distinctly styled === */}
                   {userProfile?.is_admin && (
                     <button
                       onClick={() => navigate('/admin')}
+                      title="Open Admin Command Deck"
                       style={{
-                        background: 'rgba(255, 215, 0, 0.15)',
-                        border: '1px solid var(--neon-gold)',
+                        display: 'flex', alignItems: 'center', gap: '6px',
+                        background: 'rgba(255, 215, 0, 0.18)',
+                        border: '1.5px solid var(--neon-gold)',
                         color: 'var(--neon-gold)',
-                        borderRadius: '6px',
-                        padding: '4px 8px',
-                        fontSize: '0.75rem',
+                        borderRadius: '10px',
+                        padding: '8px 14px',
+                        fontSize: '0.82rem',
                         fontWeight: 'bold',
                         cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px'
+                        fontFamily: 'Rajdhani, sans-serif',
+                        letterSpacing: '0.5px',
+                        transition: 'all 0.2s ease',
+                        backdropFilter: 'blur(8px)'
                       }}
+                      onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,215,0,0.28)'; e.currentTarget.style.boxShadow = '0 0 12px rgba(255,215,0,0.3)'; }}
+                      onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,215,0,0.18)'; e.currentTarget.style.boxShadow = 'none'; }}
                     >
-                      <Settings size={14} /> Admin
+                      <Settings size={15} />
+                      <span>Admin</span>
                     </button>
                   )}
+
                   <button
                     onClick={() => setIsLeaderboardOpen(true)}
+                    title="View Global Leaderboard"
                     style={{
-                      background: 'rgba(255, 215, 0, 0.15)',
-                      border: '1px solid var(--neon-gold)',
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      background: 'rgba(255, 215, 0, 0.18)',
+                      border: '1.5px solid var(--neon-gold)',
                       color: 'var(--neon-gold)',
-                      borderRadius: '6px',
-                      padding: '4px 8px',
-                      fontSize: '0.75rem',
+                      borderRadius: '10px',
+                      padding: '8px 14px',
+                      fontSize: '0.82rem',
                       fontWeight: 'bold',
                       cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px'
+                      fontFamily: 'Rajdhani, sans-serif',
+                      letterSpacing: '0.5px',
+                      transition: 'all 0.2s ease',
+                      backdropFilter: 'blur(8px)'
                     }}
+                    onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,215,0,0.28)'; e.currentTarget.style.boxShadow = '0 0 12px rgba(255,215,0,0.3)'; }}
+                    onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,215,0,0.18)'; e.currentTarget.style.boxShadow = 'none'; }}
                   >
-                    <Trophy size={14} /> Rank
+                    <Trophy size={15} />
+                    <span>Rank</span>
                   </button>
-                  <button onClick={handleLogout} style={{ background: 'transparent', border: 'none', color: '#ff4444', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold', marginLeft: '4px' }}>Logout</button>
-                </div>
+
+                  <button
+                    onClick={handleLogout}
+                    title="Sign out"
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      background: 'rgba(255, 60, 60, 0.12)',
+                      border: '1.5px solid rgba(255, 80, 80, 0.5)',
+                      color: '#ff8080',
+                      borderRadius: '10px',
+                      padding: '8px 14px',
+                      fontSize: '0.82rem',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      fontFamily: 'Rajdhani, sans-serif',
+                      letterSpacing: '0.5px',
+                      transition: 'all 0.2s ease',
+                      backdropFilter: 'blur(8px)'
+                    }}
+                    onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,60,60,0.22)'; e.currentTarget.style.borderColor = 'rgba(255,80,80,0.8)'; }}
+                    onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,60,60,0.12)'; e.currentTarget.style.borderColor = 'rgba(255,80,80,0.5)'; }}
+                  >
+                    <LogOut size={15} />
+                    <span>Logout</span>
+                  </button>
+                </>
               ) : (
                 <button
                   onClick={() => setIsAuthModalOpen(true)}
                   style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
                     background: 'rgba(0, 240, 255, 0.15)',
-                    border: '1px solid var(--neon-cyan)',
+                    border: '1.5px solid var(--neon-cyan)',
                     color: 'var(--neon-cyan)',
-                    borderRadius: '8px',
-                    padding: '8px 16px',
-                    fontSize: '0.9rem',
+                    borderRadius: '10px',
+                    padding: '10px 20px',
+                    fontSize: '0.95rem',
                     fontWeight: 'bold',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    fontFamily: 'Rajdhani, sans-serif',
+                    letterSpacing: '1px',
+                    backdropFilter: 'blur(8px)',
+                    transition: 'all 0.2s ease'
                   }}
+                  onMouseOver={e => { e.currentTarget.style.background = 'rgba(0,240,255,0.25)'; e.currentTarget.style.boxShadow = '0 0 14px rgba(0,240,255,0.25)'; }}
+                  onMouseOut={e => { e.currentTarget.style.background = 'rgba(0,240,255,0.15)'; e.currentTarget.style.boxShadow = 'none'; }}
                 >
+                  <User size={16} />
                   Login / Play
                 </button>
               )}
@@ -1486,8 +1569,24 @@ export function Hub() {
                 style={{ width: '100%', padding: '30px 40px', borderRadius: '24px', background: 'linear-gradient(90deg, #2a0845 0%, #6441A5 100%)', border: '2px solid #e0b0ff', color: '#e0b0ff', position: 'relative' }}
               >
                 {appSettings?.premium_modules?.includes('kontrola') && (
-                  <div style={{ position: 'absolute', top: '-10px', right: '20px', background: 'rgba(0,0,0,0.8)', padding: '4px 12px', borderRadius: '12px', border: '1px solid var(--neon-gold)', color: 'var(--neon-gold)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '0.9rem' }}>💎</span> {appSettings.match_cost} / Match
+                  <div style={{
+                    position: 'absolute', top: '-14px', right: '24px',
+                    background: 'linear-gradient(135deg, #1a0a00, #2d1500)',
+                    padding: '5px 14px',
+                    borderRadius: '20px',
+                    border: '2px solid var(--neon-gold)',
+                    color: 'var(--neon-gold)',
+                    fontWeight: 'bold',
+                    display: 'flex', alignItems: 'center', gap: '5px',
+                    fontSize: '0.82rem',
+                    fontFamily: 'Rajdhani, sans-serif',
+                    letterSpacing: '0.5px',
+                    boxShadow: '0 0 12px rgba(255,215,0,0.25)',
+                    pointerEvents: 'none'
+                  }}>
+                    <span style={{ fontSize: '0.95rem' }}>💎</span>
+                    <span>{appSettings.match_cost}</span>
+                    <span style={{ opacity: 0.7, fontSize: '0.72rem' }}>/ MATCH</span>
                   </div>
                 )}
                 <div style={{ marginRight: '20px', display: 'flex', alignItems: 'center' }}><Swords size={48} /></div>

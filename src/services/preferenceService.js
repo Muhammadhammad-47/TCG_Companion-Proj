@@ -264,8 +264,12 @@ export const sessionService = {
       }
     }
 
-    // Fallback to localStorage
-    try { return localStorage.getItem(SESSION_LS_MATCH) || null; } catch {}
+    // Fallback to localStorage (works for both authenticated and guest players)
+    try {
+      const stored = localStorage.getItem(SESSION_LS_MATCH);
+      if (stored) return stored;
+    } catch {}
+    
     return null;
   },
 

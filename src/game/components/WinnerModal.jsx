@@ -4,7 +4,7 @@ import { CHARACTERS, getAssetUrl } from '../data/characters';
 import { soundFX } from '../utils/audio';
 import {
   Trophy, Crown, Swords, Shield, Heart, Clock,
-  RotateCcw, Home, Sparkles, ScrollText, Layers, Skull
+  RotateCcw, Home, Sparkles, ScrollText, Layers, Skull, X
 } from 'lucide-react';
 
 export default function WinnerModal({ winner, players, turnNumber, gameStats = {}, onRematch, onHome, onContinue }) {

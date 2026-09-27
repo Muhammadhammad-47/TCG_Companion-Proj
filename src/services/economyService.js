@@ -46,7 +46,18 @@ export const economyService = {
         .order('price_usd', { ascending: true });
       
       if (error) throw error;
-      return data || [];
+      
+      // Defensive deduplication: prevent duplicate bundles from rendering
+      // (DB should have unique constraints, but this ensures clean UI)
+      const seen = new Set();
+      const deduped = (data || []).filter(b => {
+        const key = `${b.crystals_amount || b.crystal_amount}_${b.price_usd}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      
+      return deduped;
     } catch (e) {
       console.warn('Economy: Failed to fetch store bundles.', e);
       return [];

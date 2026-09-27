@@ -11,10 +11,11 @@ export const LeaderboardModal = ({ isOpen, onClose, fixedAppSource = null }) => 
 
   useEffect(() => {
     if (!isOpen) return;
-    
+
     let isMounted = true;
     setLoading(true);
-    
+    setIsStale(false);
+
     // If fixedAppSource is suddenly provided when already open, force update
     if (fixedAppSource && activeTab !== fixedAppSource) {
       setActiveTab(fixedAppSource);
@@ -24,7 +25,8 @@ export const LeaderboardModal = ({ isOpen, onClose, fixedAppSource = null }) => 
       try {
         const appSource = activeTab === 'global' ? null : activeTab;
 
-        // stale-while-revalidate: show cached immediately, refresh in background
+        // stale-while-revalidate: returns cached rows immediately if available,
+        // calls onUpdate with fresh data once the network request completes
         const rows = await leaderboardCache.fetchWithCache(
           () => authService.getLeaderboard(25, appSource),
           (fresh) => {
@@ -39,9 +41,9 @@ export const LeaderboardModal = ({ isOpen, onClose, fixedAppSource = null }) => 
         if (isMounted) {
           setPlayers(rows || []);
           setLoading(false);
-          // Mark stale if data came from cache
-          const cached = await leaderboardCache.read();
-          setIsStale(cached?.isStale ?? false);
+          // If we got cached data, the background refresh will call onUpdate above
+          // Mark stale only when rows came from cache (network fetch still pending)
+          setIsStale(rows?.length > 0);
         }
       } catch (err) {
         console.warn('Leaderboard fetch error:', err);
@@ -114,6 +116,11 @@ export const LeaderboardModal = ({ isOpen, onClose, fixedAppSource = null }) => 
             HALL OF FAME
           </h2>
           <p style={{ color: 'rgba(255,255,255,0.6)', margin: 0, fontSize: '0.9rem' }}>Top Ranked Attention TCG Players</p>
+          {isStale && (
+            <p style={{ color: 'rgba(255,255,255,0.35)', margin: '4px 0 0', fontSize: '0.75rem' }}>
+              ↻ Refreshing…
+            </p>
+          )}
         </div>
 
         {/* Tabs for multiple leaderboards (hidden if locked to a specific product) */}

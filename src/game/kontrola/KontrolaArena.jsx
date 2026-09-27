@@ -1408,8 +1408,9 @@ export default function KontrolaArena() {
     if (playerName !== finalName) setPlayerName(finalName);
 
     try {
-      if (isPremium && !userProfile?.is_premium) {
-        const success = await authService.savePlayerMatchResult(currentUser?.id, {
+      // Premium match cost — only charge authenticated premium users
+      if (isPremium && !userProfile?.is_premium && currentUser?.id) {
+        const success = await authService.savePlayerMatchResult(currentUser.id, {
           won: false,
           crystalsDelta: -appSettings.match_cost,
           appSource: 'kontrola_toll'
@@ -1462,8 +1463,9 @@ export default function KontrolaArena() {
       // Check last known match from session (DB or localStorage)
       const lastMatch = await sessionService.getLastMatchId(currentUser?.id ?? null, playerId);
 
-      if (isPremium && !userProfile?.is_premium && cleanId !== lastMatch) {
-        const success = await authService.savePlayerMatchResult(currentUser?.id, {
+      // Premium match cost — only charge authenticated premium users for NEW rooms
+      if (isPremium && !userProfile?.is_premium && currentUser?.id && cleanId !== lastMatch) {
+        const success = await authService.savePlayerMatchResult(currentUser.id, {
           won: false,
           crystalsDelta: -appSettings.match_cost,
           appSource: 'kontrola_toll'
@@ -1916,7 +1918,48 @@ export default function KontrolaArena() {
 
                 {/* Removed Character Selection Carousel from Lobby */}
 
-                {/* 3. Three-Tab Lobby Navigation */}
+                {/* 3. Leaderboard Button */}
+                <div style={{ marginBottom: '16px' }}>
+                  <button
+                    onClick={() => { playClick(); setIsLeaderboardOpen(true); }}
+                    style={{
+                      width: '100%',
+                      padding: '14px 20px',
+                      borderRadius: '12px',
+                      border: '2px solid var(--neon-gold)',
+                      background: 'linear-gradient(135deg, rgba(255, 230, 0, 0.2) 0%, rgba(255, 200, 0, 0.1) 100%)',
+                      color: 'var(--neon-gold)',
+                      fontWeight: 'bold',
+                      fontFamily: 'Rajdhani, sans-serif',
+                      fontSize: '1.2rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '12px',
+                      transition: 'all 0.3s ease',
+                      boxShadow: '0 4px 15px rgba(255, 230, 0, 0.2)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '1px'
+                    }}
+                    onMouseOver={(e) => {
+                      e.target.style.background = 'linear-gradient(135deg, rgba(255, 230, 0, 0.3) 0%, rgba(255, 200, 0, 0.2) 100%)';
+                      e.target.style.boxShadow = '0 6px 20px rgba(255, 230, 0, 0.3)';
+                      e.target.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.target.style.background = 'linear-gradient(135deg, rgba(255, 230, 0, 0.2) 0%, rgba(255, 200, 0, 0.1) 100%)';
+                      e.target.style.boxShadow = '0 4px 15px rgba(255, 230, 0, 0.2)';
+                      e.target.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    <Trophy size={24} />
+                    <span>VIEW LEADERBOARD</span>
+                    <Crown size={20} />
+                  </button>
+                </div>
+
+                {/* 4. Three-Tab Lobby Navigation */}
                 <div style={{ display: 'flex', gap: '10px', borderBottom: '1px solid rgba(0, 240, 255, 0.2)', paddingBottom: '8px' }}>
                   <button
                     onClick={() => { playClick(); setLobbyTab('browse'); }}

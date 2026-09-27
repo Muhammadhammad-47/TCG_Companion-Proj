@@ -13,32 +13,40 @@ import { authService } from '../../services/authService';
 export default function GameSetup({ onStartGame, onBack }) {
   const charKeys = ['chynaman', 'bee', 'katsumi', 'kiko'];
   const [currentUser, setCurrentUser] = useState(null);
-  
-  // Load authenticated user
-  useEffect(() => {
-    authService.getCurrentUser().then((user) => {
-      if (user) setCurrentUser(user);
-    });
-  }, []);
-  
-  const [players, setPlayers] = useState(() => {
-    // Start with default character names
-    return charKeys.map((key, idx) => {
+
+  const [players, setPlayers] = useState(() =>
+    charKeys.map((key, idx) => {
       const c = CHARACTERS[key] || CHARACTERS.chynaman;
-      // Use current user's name for first player if available
-      const defaultName = idx === 0 && currentUser?.user_metadata?.username 
-        ? currentUser.user_metadata.username 
-        : c.name;
       return {
         id: `p-${idx + 1}`,
-        name: defaultName,
+        name: c.name,          // default; updated reactively once auth loads
         characterId: key,
         startingHP: 100,
         startingET: 5,
         startingCrystals: 1
       };
+    })
+  );
+
+  // Load authenticated user and patch Player 1's name from DB profile
+  useEffect(() => {
+    authService.getCurrentUser().then(async (user) => {
+      if (!user) return;
+      setCurrentUser(user);
+      // Prefer DB profile username over auth metadata
+      const profile = await authService.getProfile(user.id);
+      const username =
+        profile?.username ||
+        user.user_metadata?.username ||
+        user.email?.split('@')[0] ||
+        null;
+      if (username) {
+        setPlayers(prev =>
+          prev.map((p, idx) => (idx === 0 ? { ...p, name: username } : p))
+        );
+      }
     });
-  });
+  }, []);
 
   const [showConfig, setShowConfig] = useState(true);
   const [draggedIdx, setDraggedIdx] = useState(null);

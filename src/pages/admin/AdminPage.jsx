@@ -1937,17 +1937,90 @@ export default function AdminPage() {
 
                     {editingBundle && (
                       <div style={{ background: 'rgba(0, 0, 0, 0.4)', padding: '12px 16px', borderBottom: '1px solid rgba(255, 230, 0, 0.3)' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '8px', marginBottom: '8px' }}>
-                          <input type="text" placeholder="Title" value={editingBundle.title} onChange={e => setEditingBundle({...editingBundle, title: e.target.value})} style={{ background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '6px', borderRadius: '4px', fontSize: '0.8rem' }} />
-                          <input type="number" placeholder="Crystals" value={editingBundle.crystal_amount} onChange={e => setEditingBundle({...editingBundle, crystal_amount: parseInt(e.target.value) || 0})} style={{ background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '6px', borderRadius: '4px', fontSize: '0.8rem' }} />
-                          <input type="number" placeholder="Price $" value={editingBundle.price_usd} onChange={e => setEditingBundle({...editingBundle, price_usd: parseFloat(e.target.value) || 0})} style={{ background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '6px', borderRadius: '4px', fontSize: '0.8rem' }} />
-                          <input type="number" placeholder="Discount %" value={editingBundle.discount_percent || 0} onChange={e => setEditingBundle({...editingBundle, discount_percent: parseInt(e.target.value) || 0})} style={{ background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '6px', borderRadius: '4px', fontSize: '0.8rem' }} />
+                        <h3 style={{ color: 'var(--neon-cyan)', fontSize: '0.9rem', margin: '0 0 10px 0', fontWeight: 'bold' }}>
+                          {editingBundle.id ? 'Edit Bundle' : 'Create New Bundle'}
+                        </h3>
+                        
+                        {/* Row 1: Basic Info */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+                          <div>
+                            <label style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.7)', display: 'block', marginBottom: '3px' }}>Bundle Title *</label>
+                            <input 
+                              type="text" 
+                              placeholder="e.g. Starter Pack" 
+                              value={editingBundle.title} 
+                              onChange={e => setEditingBundle({...editingBundle, title: e.target.value})} 
+                              style={{ width: '100%', background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '6px', borderRadius: '4px', fontSize: '0.8rem', boxSizing: 'border-box' }} 
+                            />
+                          </div>
+                          <div>
+                            <label style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.7)', display: 'block', marginBottom: '3px' }}>Crystal Amount *</label>
+                            <input 
+                              type="number" 
+                              placeholder="5" 
+                              value={editingBundle.crystal_amount} 
+                              onChange={e => setEditingBundle({...editingBundle, crystal_amount: parseInt(e.target.value) || 0})} 
+                              style={{ width: '100%', background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '6px', borderRadius: '4px', fontSize: '0.8rem', boxSizing: 'border-box' }} 
+                            />
+                          </div>
+                          <div>
+                            <label style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.7)', display: 'block', marginBottom: '3px' }}>Price (USD) *</label>
+                            <input 
+                              type="number" 
+                              step="0.01" 
+                              placeholder="1.99" 
+                              value={editingBundle.price_usd} 
+                              onChange={e => setEditingBundle({...editingBundle, price_usd: parseFloat(e.target.value) || 0})} 
+                              style={{ width: '100%', background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '6px', borderRadius: '4px', fontSize: '0.8rem', boxSizing: 'border-box' }} 
+                            />
+                          </div>
+                          <div>
+                            <label style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.7)', display: 'block', marginBottom: '3px' }}>Discount %</label>
+                            <input 
+                              type="number" 
+                              placeholder="0" 
+                              min="0" 
+                              max="100" 
+                              value={editingBundle.discount_percent || 0} 
+                              onChange={e => setEditingBundle({...editingBundle, discount_percent: parseInt(e.target.value) || 0})} 
+                              style={{ width: '100%', background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '6px', borderRadius: '4px', fontSize: '0.8rem', boxSizing: 'border-box' }} 
+                            />
+                          </div>
                         </div>
-                        <input type="text" placeholder="Image URL (optional)" value={editingBundle.image_url || ''} onChange={e => setEditingBundle({...editingBundle, image_url: e.target.value})} style={{ width: '100%', background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '6px', borderRadius: '4px', fontSize: '0.8rem', boxSizing: 'border-box', marginBottom: '8px' }} />
-                        <textarea placeholder="Description" value={editingBundle.description || ''} onChange={e => setEditingBundle({...editingBundle, description: e.target.value})} style={{ width: '100%', background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '6px', borderRadius: '4px', fontSize: '0.8rem', boxSizing: 'border-box', resize: 'vertical', minHeight: '60px', marginBottom: '8px' }} />
+                        
+                        {/* Row 2: Image URL */}
+                        <div style={{ marginBottom: '8px' }}>
+                          <label style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.7)', display: 'block', marginBottom: '3px' }}>Image URL (optional)</label>
+                          <input 
+                            type="text" 
+                            placeholder="https://example.com/bundle-image.png" 
+                            value={editingBundle.image_url || ''} 
+                            onChange={e => setEditingBundle({...editingBundle, image_url: e.target.value})} 
+                            style={{ width: '100%', background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '6px', borderRadius: '4px', fontSize: '0.8rem', boxSizing: 'border-box' }} 
+                          />
+                        </div>
+                        
+                        {/* Row 3: Description */}
+                        <div style={{ marginBottom: '12px' }}>
+                          <label style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.7)', display: 'block', marginBottom: '3px' }}>Description</label>
+                          <textarea 
+                            placeholder="Brief description of this bundle (e.g., 'Get started with a quick boost!')" 
+                            value={editingBundle.description || ''} 
+                            onChange={e => setEditingBundle({...editingBundle, description: e.target.value})} 
+                            style={{ width: '100%', background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '6px', borderRadius: '4px', fontSize: '0.8rem', boxSizing: 'border-box', resize: 'vertical', minHeight: '50px' }} 
+                          />
+                        </div>
+                        
+                        {/* Help Text */}
+                        <div style={{ background: 'rgba(0, 240, 255, 0.1)', border: '1px solid rgba(0, 240, 255, 0.3)', borderRadius: '4px', padding: '8px', marginBottom: '8px', fontSize: '0.7rem', color: 'rgba(255,255,255,0.8)' }}>
+                          💡 <strong>Field Guide:</strong> Title appears as the main bundle name. Crystal Amount = diamonds awarded. Price in USD cents (1.99 = $1.99). Discount % shows a red badge if &gt; 0.
+                        </div>
+                        
                         <div style={{ display: 'flex', gap: '6px' }}>
-                          <button onClick={async () => { const created = await economyService.upsertStoreBundle(editingBundle); if(created) { setEditingBundle(null); loadEconomyData(); } }} style={{ flex: 1, background: 'rgba(0, 240, 255, 0.15)', border: '1px solid var(--neon-cyan)', color: 'var(--neon-cyan)', padding: '6px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.75rem' }}>Save</button>
-                          <button onClick={() => setEditingBundle(null)} style={{ flex: 1, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}>Cancel</button>
+                          <button onClick={async () => { const created = await economyService.upsertStoreBundle(editingBundle); if(created) { setEditingBundle(null); loadEconomyData(); } }} style={{ flex: 1, background: 'rgba(0, 240, 255, 0.15)', border: '1px solid var(--neon-cyan)', color: 'var(--neon-cyan)', padding: '8px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}>
+                            {editingBundle.id ? 'Update Bundle' : 'Create Bundle'}
+                          </button>
+                          <button onClick={() => setEditingBundle(null)} style={{ flex: 1, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>Cancel</button>
                         </div>
                       </div>
                     )}
