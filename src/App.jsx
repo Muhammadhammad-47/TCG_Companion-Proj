@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
-import { Send, X, Bot, Swords, ArrowLeft, ThumbsUp, ThumbsDown, User, Shield, LogOut, Check, Trophy } from 'lucide-react';
+import { Send, X, Bot, Swords, ArrowLeft, ThumbsUp, ThumbsDown, User, Shield, LogOut, Check, Trophy, Settings } from 'lucide-react';
 import axios from 'axios';
 import { Groq } from 'groq-sdk';
 import './App.css';
