@@ -1285,11 +1285,17 @@ export default function KontrolaArena() {
         (pId) => !updatedStates[pId]?.isDefeated
       );
 
+      // Cards that should NEVER grant an extra turn regardless of resolved flags
+      const isStatusOrHealCard = actionCard && ['STATUS', 'HEAL', 'OTHERS', 'TACTICAL', 'DEFENSE', 'SPECIAL'].includes(actionCard.type);
+
       if (livingPlayers.length <= 1) {
         matchWinner = updatedStates[livingPlayers[0]] ? { ...updatedStates[livingPlayers[0]], playerId: livingPlayers[0] } : matchWinner;
         nextTurnPlayerId = livingPlayers[0] || actorId;
       } else {
-        if (resolved.extraTurnGranted || resolved.triggerAttackX2SecondHit) {
+        // STATUS/HEAL/OTHERS/TACTICAL/DEFENSE cards must ALWAYS advance the turn — never stay on same player
+        const grantExtraTurn = !isStatusOrHealCard && (resolved.extraTurnGranted || resolved.triggerAttackX2SecondHit);
+
+        if (grantExtraTurn) {
           nextTurnPlayerId = actorId;
           if (resolved.triggerAttackX2SecondHit) pendingAttackX2For = actorId;
         } else {
