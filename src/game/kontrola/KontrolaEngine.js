@@ -236,6 +236,9 @@ export const rollDice = (count = 1) => {
 
 // Authoritative turn resolution
 export const resolveTurn = (actionCard, attackerChar, attackerState, defenderState, attackSelectionName = null, precalculatedRolls = null) => {
+  if (!actionCard) {
+    return { log: 'Combat error: no action card provided.', newAttackerState: attackerState, newDefenderState: defenderState };
+  }
   let log = `${attackerState.name} played ${actionCard.name}.`;
   let damage = 0;
   let heal = 0;

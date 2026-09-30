@@ -1348,13 +1348,18 @@ export default function AdminPage() {
                               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '4px' }}>
                                 <button
                                   onClick={async () => {
-                                    await economyService.assignPremiumUser(u.id, !u.is_premium);
-                                    loadUsers();
+                                    const success = await economyService.assignPremiumUser(u.id, !u.is_premium);
+                                    if (success) {
+                                      setModNotice(u.is_premium ? `PRO revoked from ${u.username}` : `PRO granted to ${u.username}`);
+                                      loadUsers();
+                                    } else {
+                                      setModNotice('Failed to update PRO status. Check DB schema.');
+                                    }
                                   }}
                                   title={u.is_premium ? 'Revoke PRO' : 'Grant PRO'}
                                   style={{
-                                    background: 'transparent',
-                                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                                    background: u.is_premium ? 'rgba(255, 230, 0, 0.2)' : 'transparent',
+                                    border: u.is_premium ? '1px solid rgba(255, 215, 0, 0.7)' : '1px solid rgba(255, 215, 0, 0.3)',
                                     color: 'var(--neon-gold)',
                                     padding: '3px 6px',
                                     borderRadius: '4px',

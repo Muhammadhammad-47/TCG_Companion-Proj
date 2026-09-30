@@ -612,7 +612,11 @@ export default function KontrolaArena() {
         // 7. Synchronized Dice Screen Roll
         else if (event.type === 'DICE_SCREEN_ROLLED') {
           if (event.payload?.isReroll) {
-            setActiveCombat((prev) => prev ? { ...prev, precalculatedRolls: {} } : prev);
+            // Preserve defenseCard when re-rolling on a tie — only reset the dice rolls
+            setActiveCombat((prev) => {
+              const kept = { defenseCard: prev?.precalculatedRolls?.defenseCard ?? null };
+              return prev ? { ...prev, precalculatedRolls: kept } : prev;
+            });
           } else if (event.payload?.precalculatedRolls) {
             setActiveCombat((prev) => prev ? { ...prev, precalculatedRolls: { ...(prev.precalculatedRolls || {}), ...event.payload.precalculatedRolls } } : prev);
           }
@@ -620,12 +624,10 @@ export default function KontrolaArena() {
         }
         // 8. Synchronized Dice Screen Close
         else if (event.type === 'DICE_SCREEN_CLOSE') {
-          const { resolved, combatData, precalculatedRolls } = event.payload || {};
           setActiveCombat(null);
           setIsDiceRollingSync(false);
-          if (resolved && isHostRef.current && combatData) {
-            enqueueHostAction(combatData, precalculatedRolls);
-          }
+          // NOTE: The host handles RESOLVE_COMBAT directly in handleCloseDiceScreen().
+          // Do NOT call enqueueHostAction here — that would double-execute combat resolution.
         }
         // 9. Client Action received by Host
         else if (event.type === 'PLAYER_ACTION') {
@@ -869,12 +871,12 @@ export default function KontrolaArena() {
       if (!currentState) return currentState;
       if (!['ROLL_OFF', 'CHARACTER_SELECT', 'RESOLVE_COMBAT'].includes(payload.actionType) && !currentState.characterStates) return currentState;
 
-      // RESOLVE_COMBAT: treat identically to a standard action resolution
-      // (payload already has actorId, actionCard, targetId, attackSelectionName from the original ATTACK_DECLARED spread)
+      // RESOLVE_COMBAT: falls through to the generic resolution block at the bottom of this function.
+      // The payload already carries actorId, actionCard, targetId, attackSelectionName, and precalculatedRolls
+      // from the original ATTACK_DECLARED spread — no special handling needed here.
+      // IMPORTANT: do NOT add an early return inside this block or combat resolution will be skipped.
       if (payload.actionType === 'RESOLVE_COMBAT') {
-        // fall through to the generic resolution block below — no special handling needed
-        // just reassign actionType so it doesn't match any special case and flows to the bottom
-        payload = { ...payload }; // safe copy — avoid mutating the original
+        payload = { ...payload }; // safe copy — avoid mutating the caller's object
       }
 
       if (payload.actionType === 'ROLL_OFF') {
@@ -1074,13 +1076,17 @@ export default function KontrolaArena() {
         const activeDefense = currentState.activeDefenseState;
         if (!activeDefense) return currentState;
 
-        const precalculatedRolls = {};
+        // defenseCard goes into precalculatedRolls so the engine can read it
+        // via precalculatedRolls?.defenseCard (null when defender skipped)
+        const precalculatedRolls = {
+          defenseCard: payload.defenseCard ?? null
+        };
         const activeCombat = {
           ...activeDefense,
-          actionType: 'RESOLVE_COMBAT',   // ← set correct actionType now so it resolves correctly
-          actorId: activeDefense.actorId,  // ensure actorId is set (from original payload spread)
+          actionType: 'RESOLVE_COMBAT',   // set correct actionType so resolution works
+          actorId: activeDefense.actorId,  // ensure actorId is set
           precalculatedRolls,
-          defenseCard: payload.defenseCard
+          defenseCard: payload.defenseCard ?? null
         };
 
         // Notify all clients to open dice screen (delay slightly to ensure state is clear)
@@ -1285,14 +1291,19 @@ export default function KontrolaArena() {
         (pId) => !updatedStates[pId]?.isDefeated
       );
 
-      // Cards that should NEVER grant an extra turn regardless of resolved flags
-      const isStatusOrHealCard = actionCard && ['STATUS', 'HEAL', 'OTHERS', 'TACTICAL', 'DEFENSE', 'SPECIAL'].includes(actionCard.type);
+      // Cards that should NEVER grant an extra turn regardless of resolved flags.
+      // TIME MACHINE is type 'OTHERS' but is the sole exception — it explicitly grants an extra turn.
+      // ATTACK X2 is type 'ATTACK' and handles its second-hit via triggerAttackX2SecondHit.
+      const isStatusOrHealCard = actionCard &&
+        ['STATUS', 'HEAL', 'OTHERS', 'TACTICAL', 'DEFENSE', 'SPECIAL'].includes(actionCard.type) &&
+        actionCard.name !== 'TIME MACHINE';
 
       if (livingPlayers.length <= 1) {
         matchWinner = updatedStates[livingPlayers[0]] ? { ...updatedStates[livingPlayers[0]], playerId: livingPlayers[0] } : matchWinner;
         nextTurnPlayerId = livingPlayers[0] || actorId;
       } else {
         // STATUS/HEAL/OTHERS/TACTICAL/DEFENSE cards must ALWAYS advance the turn — never stay on same player
+        // Exception: TIME MACHINE (OTHERS) is explicitly allowed to grant an extra turn
         const grantExtraTurn = !isStatusOrHealCard && (resolved.extraTurnGranted || resolved.triggerAttackX2SecondHit);
 
         if (grantExtraTurn) {
@@ -1759,7 +1770,11 @@ export default function KontrolaArena() {
       setActiveCombat((prev) => prev ? { ...prev, precalculatedRolls: { ...(prev.precalculatedRolls || {}), ...newRolls } } : prev);
       broadcastUIEvent(matchId, 'dice_screen_rolled', { timestamp: Date.now(), precalculatedRolls: newRolls });
     } else if (isReroll) {
-      setActiveCombat((prev) => prev ? { ...prev, precalculatedRolls: {} } : prev);
+      // Preserve defenseCard when re-rolling on a tie — only reset the dice rolls
+      setActiveCombat((prev) => {
+        const kept = { defenseCard: prev?.precalculatedRolls?.defenseCard ?? null };
+        return prev ? { ...prev, precalculatedRolls: kept } : prev;
+      });
       broadcastUIEvent(matchId, 'dice_screen_rolled', { timestamp: Date.now(), isReroll: true });
     } else {
       broadcastUIEvent(matchId, 'dice_screen_rolled', { timestamp: Date.now() });
@@ -3598,14 +3613,6 @@ export default function KontrolaArena() {
               {gameState.rollOffs?.[playerId] && (!gameState.tiebreakPool || !gameState.tiebreakPool.includes(playerId) || gameState.rollOffs?.[playerId]) && (
                 <div style={{ fontSize: '1.3rem', color: '#39ff14', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px', animation: 'pulse 1.5s infinite alternate' }}>
                   <CheckCircle2 size={24} /> Waiting for others to roll...
-                </div>
-              )}
-            </div>
-          )}
-              )}
-              {gameState.rollOffs?.[playerId] && (
-                <div style={{ fontSize: '1.3rem', color: '#39ff14', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px', animation: 'pulse 1.5s infinite alternate' }}>
-                  <CheckCircle2 size={24} /> Waiting for opponent to roll...
                 </div>
               )}
             </div>

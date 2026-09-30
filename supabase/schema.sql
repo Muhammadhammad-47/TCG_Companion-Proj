@@ -16,12 +16,14 @@ create table if not exists public.profiles (
   matches_won integer default 0,
   crystals_collected integer default 0,
   is_banned boolean default false,
+  is_premium boolean default false,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- Ensure is_banned exists if re-running on an existing table
+-- Ensure is_banned and is_premium exist if re-running on an existing table
 alter table public.profiles add column if not exists is_banned boolean default false;
+alter table public.profiles add column if not exists is_premium boolean default false;
 
 -- Case-insensitive unique callsign index
 create unique index if not exists idx_profiles_lower_username on public.profiles (lower(trim(username)));
