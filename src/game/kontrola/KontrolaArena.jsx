@@ -867,30 +867,64 @@ export default function KontrolaArena() {
   const executeActionResolution = (payload, precalculatedRolls = null) => {
     setGameState((currentState) => {
       if (!currentState) return currentState;
-      if (!['ROLL_OFF', 'CHARACTER_SELECT'].includes(payload.actionType) && !currentState.characterStates) return currentState;
+      if (!['ROLL_OFF', 'CHARACTER_SELECT', 'RESOLVE_COMBAT'].includes(payload.actionType) && !currentState.characterStates) return currentState;
+
+      // RESOLVE_COMBAT: treat identically to a standard action resolution
+      // (payload already has actorId, actionCard, targetId, attackSelectionName from the original ATTACK_DECLARED spread)
+      if (payload.actionType === 'RESOLVE_COMBAT') {
+        // fall through to the generic resolution block below — no special handling needed
+        // just reassign actionType so it doesn't match any special case and flows to the bottom
+        payload = { ...payload }; // safe copy — avoid mutating the original
+      }
 
       if (payload.actionType === 'ROLL_OFF') {
         const updatedRollOffs = { ...(currentState.rollOffs || {}), [payload.actorId]: payload.total };
         const updatedRollOffDice = { ...(currentState.rollOffDice || {}), [payload.actorId]: payload.dice };
+        // tiebreakPool: if set, only players in this list need to re-roll
+        const activePlayers = currentState.tiebreakPool || currentState.players;
         let nextState = { ...currentState, rollOffs: updatedRollOffs, rollOffDice: updatedRollOffDice };
-        
-        if (Object.keys(updatedRollOffs).length === currentState.players.length) {
+
+        const allActiveRolled = activePlayers.every(pId => updatedRollOffs[pId] !== undefined);
+
+        if (allActiveRolled) {
+          // Find the highest total among active rollers
           let maxTotal = -1;
-          let winnerId = null;
-          for (const pId of currentState.players) {
-            if (updatedRollOffs[pId] > maxTotal) {
-              maxTotal = updatedRollOffs[pId];
-              winnerId = pId;
-            }
+          for (const pId of activePlayers) {
+            if (updatedRollOffs[pId] > maxTotal) maxTotal = updatedRollOffs[pId];
           }
-          nextState.status = 'roll_off_complete';
-          nextState.rollOffWinner = winnerId;
-          nextState.logs = [`🎲 Roll-off complete! ${currentState.playerNames?.[winnerId] || 'Player'} won with a ${maxTotal} and gets the first turn! Transitioning in 3s...`, ...(currentState.logs || [])];
-          
-          if (isHostRef.current) {
-             setTimeout(() => {
+          // Find all players who tied for the top spot
+          const tiedPlayers = activePlayers.filter(pId => updatedRollOffs[pId] === maxTotal);
+
+          if (tiedPlayers.length > 1) {
+            // TIE — reset only the tied players and keep everyone else's rolls
+            const resetRollOffs = { ...updatedRollOffs };
+            const resetRollOffDice = { ...updatedRollOffDice };
+            tiedPlayers.forEach(pId => {
+              delete resetRollOffs[pId];
+              delete resetRollOffDice[pId];
+            });
+            const tiedNames = tiedPlayers.map(pId => currentState.playerNames?.[pId] || 'Player').join(' & ');
+            nextState.status = 'roll_off'; // back to rolling
+            nextState.tiebreakPool = tiedPlayers; // only these players re-roll
+            nextState.rollOffs = resetRollOffs;
+            nextState.rollOffDice = resetRollOffDice;
+            nextState.logs = [
+              `⚔️ TIE BREAKER! ${tiedNames} both rolled ${maxTotal}! Re-roll to determine who goes first!`,
+              ...(currentState.logs || [])
+            ];
+          } else {
+            // Clear winner
+            const winnerId = tiedPlayers[0];
+            nextState.status = 'roll_off_complete';
+            nextState.tiebreakPool = null;
+            nextState.rollOffWinner = winnerId;
+            nextState.logs = [`🎲 Roll-off complete! ${currentState.playerNames?.[winnerId] || 'Player'} won with a ${maxTotal} and gets first pick! Transitioning in 3s...`, ...(currentState.logs || [])];
+
+            if (isHostRef.current) {
+              setTimeout(() => {
                 enqueueHostAction({ actionType: 'SHOW_LEADERBOARD', winnerId });
-             }, 3000);
+              }, 3000);
+            }
           }
         } else {
           nextState.logs = [`🎲 ${currentState.playerNames?.[payload.actorId] || 'Player'} rolled a ${payload.total}.`, ...(currentState.logs || [])];
@@ -1043,6 +1077,8 @@ export default function KontrolaArena() {
         const precalculatedRolls = {};
         const activeCombat = {
           ...activeDefense,
+          actionType: 'RESOLVE_COMBAT',   // ← set correct actionType now so it resolves correctly
+          actorId: activeDefense.actorId,  // ensure actorId is set (from original payload spread)
           precalculatedRolls,
           defenseCard: payload.defenseCard
         };
@@ -1081,11 +1117,7 @@ export default function KontrolaArena() {
       let newDefenderHand = defenderChar ? [...(currentState.hands?.[targetId] || [])] : [];
 
       if (!isPass) {
-        // Deduct ET Cost
-        const cost = actionCard?.costET || (actionCard?.type === 'ATTACK' ? 1 : 0);
-        newAttackerState.energyTokens = Math.max(0, (newAttackerState.energyTokens || 5) - cost);
-
-        // Resolve Turn via Engine
+        // Resolve Turn via Engine (ET cost deducted only after confirming not a tie)
         resolved = resolveTurn(
           actionCard,
           KONTROLA_CHARACTERS[attackerChar.id] || attackerChar,
@@ -1094,6 +1126,30 @@ export default function KontrolaArena() {
           attackSelectionName,
           precalculatedRolls
         );
+
+        // If the engine signals a tie, do NOT commit the result — the DiceRoller
+        // will surface the re-roll button and the host will be called again with new rolls.
+        // We also restore the ET cost so the attacker is not penalised for a re-roll.
+        if (resolved.isTie) {
+          const tieLogs = [resolved.log, ...(currentState.logs || [])];
+          // Restore the ET that was deducted — tie should not cost ET
+          const restoredAttackerState = {
+            ...currentState.characterStates[actorId],
+            energyTokens: (currentState.characterStates[actorId]?.energyTokens || 0)  // keep original, cost not yet written
+          };
+          const tieState = {
+            ...currentState,
+            logs: tieLogs,
+            // keep characterStates untouched — ET cost not applied on tie
+          };
+          broadcastState(matchIdRef.current, tieState);
+          return tieState;
+        }
+
+        // Not a tie — now commit the ET cost
+        const cost = actionCard?.costET || (actionCard?.type === 'ATTACK' ? 1 : 0);
+        newAttackerState.energyTokens = Math.max(0, (newAttackerState.energyTokens || 5) - cost);
+
         newAttackerState = resolved.newAttackerState;
         newDefenderState = resolved.newDefenderState;
         log = resolved.log;
@@ -3422,10 +3478,22 @@ export default function KontrolaArena() {
                 animation: 'fadeIn 0.3s ease'
               }}
             >
-              <h2 style={{ color: 'var(--neon-gold)', fontSize: '2.8rem', marginBottom: '10px', textShadow: '0 0 20px var(--neon-gold)' }}>🎲 ROLL-OFF 🎲</h2>
-              <p style={{ fontSize: '1.2rem', marginBottom: '40px', color: '#00f0ff', background: 'rgba(0, 240, 255, 0.1)', padding: '10px 20px', borderRadius: '8px', border: '1px solid rgba(0, 240, 255, 0.3)' }}>
-                All players must roll 2 dice to determine who strikes first!
-              </p>
+              {/* Title — changes to TIEBREAKER when applicable */}
+              {gameState.tiebreakPool ? (
+                <>
+                  <h2 style={{ color: '#ff2a55', fontSize: '2.8rem', marginBottom: '10px', textShadow: '0 0 20px #ff2a55' }}>⚔️ TIE BREAKER ⚔️</h2>
+                  <p style={{ fontSize: '1.1rem', marginBottom: '40px', color: '#ff8899', background: 'rgba(255, 42, 85, 0.1)', padding: '10px 20px', borderRadius: '8px', border: '1px solid rgba(255, 42, 85, 0.4)' }}>
+                    {gameState.tiebreakPool.map(pId => gameState.playerNames?.[pId] || 'Player').join(' & ')} tied! Re-roll to decide who picks first.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h2 style={{ color: 'var(--neon-gold)', fontSize: '2.8rem', marginBottom: '10px', textShadow: '0 0 20px var(--neon-gold)' }}>🎲 ROLL-OFF 🎲</h2>
+                  <p style={{ fontSize: '1.2rem', marginBottom: '40px', color: '#00f0ff', background: 'rgba(0, 240, 255, 0.1)', padding: '10px 20px', borderRadius: '8px', border: '1px solid rgba(0, 240, 255, 0.3)' }}>
+                    All players must roll 2 dice to determine who picks their character first!
+                  </p>
+                </>
+              )}
               
               <div style={{ display: 'flex', gap: '30px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '50px' }}>
                 {[...gameState.players]
@@ -3436,17 +3504,21 @@ export default function KontrolaArena() {
                     return 0;
                   })
                   .map((pId, idx) => {
+                  const isTiebreakParticipant = !gameState.tiebreakPool || gameState.tiebreakPool.includes(pId);
                   const hasRolled = Boolean(gameState.rollOffs?.[pId]);
                   const isRolling = rollingOffPlayers[pId];
+                  // Players sitting out a tiebreak are shown greyed-out with their previous roll
+                  const isSittingOut = gameState.tiebreakPool && !gameState.tiebreakPool.includes(pId);
                   return (
                     <div key={pId} style={{ 
-                      background: hasRolled ? 'rgba(57, 255, 20, 0.08)' : 'rgba(0,0,0,0.6)', 
+                      background: isSittingOut ? 'rgba(0,0,0,0.3)' : hasRolled ? 'rgba(57, 255, 20, 0.08)' : 'rgba(0,0,0,0.6)', 
                       padding: '25px 35px', 
                       borderRadius: '16px', 
-                      border: hasRolled ? '2px solid #39ff14' : '1px solid rgba(255,255,255,0.2)', 
+                      border: isSittingOut ? '1px solid rgba(255,255,255,0.08)' : hasRolled ? '2px solid #39ff14' : '1px solid rgba(255,255,255,0.2)', 
                       minWidth: '180px', 
                       textAlign: 'center',
-                      boxShadow: hasRolled ? '0 0 20px rgba(57, 255, 20, 0.2)' : 'none',
+                      opacity: isSittingOut ? 0.45 : 1,
+                      boxShadow: hasRolled && !isSittingOut ? '0 0 20px rgba(57, 255, 20, 0.2)' : 'none',
                       transition: 'all 0.3s ease'
                     }}>
                       <div style={{ fontWeight: '900', fontSize: '1.2rem', marginBottom: '15px', color: pId === playerId ? 'var(--neon-cyan)' : '#fff', position: 'relative' }}>
@@ -3457,6 +3529,7 @@ export default function KontrolaArena() {
                         )}
                         {gameState.playerNames?.[pId] || 'Player'}
                         {pId === playerId && ' (You)'}
+                        {isSittingOut && <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>Sitting out</div>}
                       </div>
                       
                       <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', minHeight: '60px', alignItems: 'center' }}>
@@ -3466,7 +3539,7 @@ export default function KontrolaArena() {
                               <CanvasPipDie value={gameState.rollOffDice?.[pId]?.[0] || 1} theme="red" isRolling={false} size={55} />
                               <CanvasPipDie value={gameState.rollOffDice?.[pId]?.[1] || 1} theme="red" isRolling={false} size={55} />
                             </div>
-                            <div style={{ fontSize: '1.2rem', color: '#39ff14', fontWeight: 'bold', textShadow: '0 0 10px rgba(57, 255, 20, 0.4)' }}>
+                            <div style={{ fontSize: '1.2rem', color: isSittingOut ? 'rgba(255,255,255,0.4)' : '#39ff14', fontWeight: 'bold', textShadow: isSittingOut ? 'none' : '0 0 10px rgba(57, 255, 20, 0.4)' }}>
                               Total: {gameState.rollOffs[pId]}
                             </div>
                           </div>
@@ -3480,21 +3553,25 @@ export default function KontrolaArena() {
                         )}
                       </div>
                       
-                      {hasRolled && <div style={{ marginTop: '10px', color: '#39ff14', fontSize: '0.9rem' }}>Roll Complete</div>}
+                      {hasRolled && !isSittingOut && <div style={{ marginTop: '10px', color: '#39ff14', fontSize: '0.9rem' }}>Roll Complete</div>}
                       {isRolling && <div style={{ marginTop: '10px', color: '#ff2a55', fontSize: '0.9rem', animation: 'pulse 0.5s infinite alternate' }}>Rolling...</div>}
-                      {!hasRolled && !isRolling && <div style={{ marginTop: '10px', color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem' }}>Waiting...</div>}
+                      {!hasRolled && !isRolling && isTiebreakParticipant && <div style={{ marginTop: '10px', color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem' }}>Waiting...</div>}
                     </div>
                   );
                 })}
               </div>
 
-              {!isSpectator && !gameState.rollOffs?.[playerId] && (
+              {/* Show roll button only if: not spectator, haven't rolled yet, AND either no tiebreak or you're in the tiebreak pool */}
+              {!isSpectator && !gameState.rollOffs?.[playerId] && (!gameState.tiebreakPool || gameState.tiebreakPool.includes(playerId)) && (
                 <button
                   onClick={handleRollOff}
                   disabled={rollingOffPlayers[playerId]}
                   style={{
-                    background: 'linear-gradient(180deg, #ff2a55 0%, #a80022 100%)',
-                    border: '2px solid #ff8899', borderRadius: '12px', padding: '18px 50px',
+                    background: gameState.tiebreakPool
+                      ? 'linear-gradient(180deg, #ff2a55 0%, #a80022 100%)'
+                      : 'linear-gradient(180deg, #ff2a55 0%, #a80022 100%)',
+                    border: gameState.tiebreakPool ? '2px solid #ff8899' : '2px solid #ff8899',
+                    borderRadius: '12px', padding: '18px 50px',
                     color: '#fff', fontSize: '1.5rem', fontWeight: '900', 
                     cursor: rollingOffPlayers[playerId] ? 'wait' : 'pointer',
                     boxShadow: '0 0 30px rgba(255, 42, 85, 0.6)',
@@ -3503,8 +3580,22 @@ export default function KontrolaArena() {
                   }}
                 >
                   <Dices size={28} />
-                  {rollingOffPlayers[playerId] ? 'ROLLING DICE...' : 'ROLL 2 DICE'}
+                  {rollingOffPlayers[playerId] ? 'ROLLING DICE...' : gameState.tiebreakPool ? '🎲 RE-ROLL TO BREAK TIE' : 'ROLL 2 DICE'}
                 </button>
+              )}
+              {/* Sitting-out players see a waiting message */}
+              {!isSpectator && gameState.tiebreakPool && !gameState.tiebreakPool.includes(playerId) && (
+                <div style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Clock size={20} /> Waiting for the tied players to re-roll...
+                </div>
+              )}
+              {gameState.rollOffs?.[playerId] && (!gameState.tiebreakPool || !gameState.tiebreakPool.includes(playerId) || gameState.rollOffs?.[playerId]) && (
+                <div style={{ fontSize: '1.3rem', color: '#39ff14', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px', animation: 'pulse 1.5s infinite alternate' }}>
+                  <CheckCircle2 size={24} /> Waiting for others to roll...
+                </div>
+              )}
+            </div>
+          )}
               )}
               {gameState.rollOffs?.[playerId] && (
                 <div style={{ fontSize: '1.3rem', color: '#39ff14', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px', animation: 'pulse 1.5s infinite alternate' }}>

@@ -365,7 +365,15 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     log += ` Clash: Attacker ${attackerRoll.total} vs Defender ${defenderRoll.total}.`;
 
     if (isClashTie) {
-      log += ` Clash Tied (${attackerRoll.total} vs ${defenderRoll.total})! Attack neutralized.`;
+      // Per the official rules: a tie means both must re-roll — the DiceRoller handles this UI-side.
+      // We signal the tie back so the host does NOT resolve and the dice screen stays open for a re-roll.
+      log += ` ⚔️ CLASH TIED (${attackerRoll.total} vs ${defenderRoll.total})! Both players must re-roll!`;
+      return {
+        newAttackerState: attackerState,
+        newDefenderState: defenderState,
+        log,
+        isTie: true  // signal to the host engine to not finalize — re-roll required
+      };
     } else if (atkWin) {
       let finalDamage = baseAP;
 
