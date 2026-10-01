@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
-import { Send, X, Bot, Swords, ArrowLeft, ThumbsUp, ThumbsDown, User, Shield, LogOut, Check, Trophy, Settings, Music } from 'lucide-react';
+import { Send, X, Bot, Swords, ArrowLeft, ThumbsUp, ThumbsDown, User, Shield, LogOut, Check, Trophy, Settings, Music, Lock } from 'lucide-react';
 import axios from 'axios';
 import { Groq } from 'groq-sdk';
 import './App.css';
@@ -1603,44 +1603,84 @@ export function Hub() {
                 </div>
               </button>
 
-              {/* Music Upload Button — PRO only */}
-              {userProfile?.is_premium && (
-                <button
-                  className="btn-enter-game-cta"
-                  onClick={() => setIsMusicModalOpen(true)}
-                  style={{ width: '100%', padding: '25px 40px', borderRadius: '24px', background: 'linear-gradient(90deg, #1a0f2e 0%, #0f0820 100%)', border: '2px solid rgba(168, 85, 247, 0.5)', color: '#c084fc', position: 'relative' }}
-                >
+              {/* Music Upload Button — Show to all, disabled for non-PRO */}
+              <button
+                className="btn-enter-game-cta"
+                onClick={() => {
+                  if (!userProfile?.is_premium) {
+                    setIsStoreOpen(true);
+                    return;
+                  }
+                  setIsMusicModalOpen(true);
+                }}
+                style={{ 
+                  width: '100%', 
+                  padding: '25px 40px', 
+                  borderRadius: '24px', 
+                  background: userProfile?.is_premium 
+                    ? 'linear-gradient(90deg, #1a0f2e 0%, #0f0820 100%)' 
+                    : 'linear-gradient(90deg, rgba(26,15,46,0.3) 0%, rgba(15,8,32,0.3) 100%)', 
+                  border: userProfile?.is_premium 
+                    ? '2px solid rgba(168, 85, 247, 0.5)' 
+                    : '2px solid rgba(168, 85, 247, 0.2)', 
+                  color: userProfile?.is_premium ? '#c084fc' : 'rgba(192, 132, 252, 0.4)', 
+                  position: 'relative',
+                  cursor: userProfile?.is_premium ? 'pointer' : 'pointer',
+                  opacity: userProfile?.is_premium ? 1 : 0.6,
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                <div style={{
+                  position: 'absolute', top: '-14px', right: '24px',
+                  background: 'linear-gradient(135deg, #1a0a00, #2d1500)',
+                  padding: '5px 14px',
+                  borderRadius: '20px',
+                  border: '2px solid var(--neon-gold)',
+                  color: 'var(--neon-gold)',
+                  fontWeight: 'bold',
+                  display: 'flex', alignItems: 'center', gap: '5px',
+                  fontSize: '0.75rem',
+                  fontFamily: 'Rajdhani, sans-serif',
+                  letterSpacing: '0.5px',
+                  boxShadow: '0 0 12px rgba(255,215,0,0.25)',
+                  pointerEvents: 'none'
+                }}>
+                  <span>👑 PRO ONLY</span>
+                </div>
+                {!userProfile?.is_premium && (
                   <div style={{
-                    position: 'absolute', top: '-14px', right: '24px',
-                    background: 'linear-gradient(135deg, #1a0a00, #2d1500)',
-                    padding: '5px 14px',
-                    borderRadius: '20px',
+                    position: 'absolute',
+                    top: '50%',
+                    right: '30px',
+                    transform: 'translateY(-50%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '50%',
+                    background: 'rgba(0,0,0,0.5)',
                     border: '2px solid var(--neon-gold)',
-                    color: 'var(--neon-gold)',
-                    fontWeight: 'bold',
-                    display: 'flex', alignItems: 'center', gap: '5px',
-                    fontSize: '0.75rem',
-                    fontFamily: 'Rajdhani, sans-serif',
-                    letterSpacing: '0.5px',
-                    boxShadow: '0 0 12px rgba(255,215,0,0.25)',
-                    pointerEvents: 'none'
+                    boxShadow: '0 0 16px rgba(255,215,0,0.3)'
                   }}>
-                    <span>👑 PRO ONLY</span>
+                    <Lock size={24} style={{ color: 'var(--neon-gold)' }} />
                   </div>
-                  <div style={{ marginRight: '20px', display: 'flex', alignItems: 'center' }}><Music size={48} /></div>
-                  <div style={{ textAlign: 'left' }}>
-                    <div style={{ fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '8px' }}>Submit Music</div>
-                    <div style={{ fontSize: '1.2rem', opacity: 0.8, fontWeight: 'normal' }}>Share Tracks for Gameplay</div>
+                )}
+                <div style={{ marginRight: '20px', display: 'flex', alignItems: 'center' }}><Music size={48} /></div>
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '8px' }}>Submit Music</div>
+                  <div style={{ fontSize: '1.2rem', opacity: 0.8, fontWeight: 'normal' }}>
+                    {userProfile?.is_premium ? 'Share Tracks for Gameplay' : 'Upgrade to PRO to Share'}
                   </div>
-                </button>
-              )}
+                </div>
+              </button>
             </div>
           </div>
         </DynamicScaleWrapper>
       </div>
 
       {/* Music Submission Modal */}
-      {isMusicModalOpen && (
+      {isMusicModalOpen && userProfile?.is_premium && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '20px' }}>
           <div style={{ width: '100%', maxWidth: '500px', background: 'rgba(14, 22, 42, 0.98)', border: '2px solid rgba(168, 85, 247, 0.5)', borderRadius: '20px', padding: '32px', boxShadow: '0 0 40px rgba(168,85,247,0.3)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
