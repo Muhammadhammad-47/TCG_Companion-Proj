@@ -364,6 +364,7 @@ create table if not exists public.user_music (
   username text not null,
   title text not null,
   music_url text not null,
+  file_path text,
   status text default 'pending' check (status in ('pending', 'approved', 'rejected')),
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null

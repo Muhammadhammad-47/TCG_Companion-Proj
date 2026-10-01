@@ -1279,7 +1279,7 @@ export function Hub() {
   // Music submission modal state
   const [isMusicModalOpen, setIsMusicModalOpen] = useState(false);
   const [musicTitle, setMusicTitle] = useState('');
-  const [musicUrl, setMusicUrl] = useState('');
+  const [musicFile, setMusicFile] = useState(null);
   const [musicSubmitting, setMusicSubmitting] = useState(false);
   const [musicNotice, setMusicNotice] = useState('');
 
@@ -1648,13 +1648,13 @@ export function Hub() {
                 <Music size={24} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '10px' }} />
                 Submit Music Track
               </h2>
-              <button onClick={() => { setIsMusicModalOpen(false); setMusicTitle(''); setMusicUrl(''); setMusicNotice(''); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', padding: '4px' }}>
+              <button onClick={() => { setIsMusicModalOpen(false); setMusicTitle(''); setMusicFile(null); setMusicNotice(''); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', padding: '4px' }}>
                 <X size={24} />
               </button>
             </div>
 
             <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.95rem', marginBottom: '24px', fontFamily: 'Outfit, sans-serif', lineHeight: '1.5' }}>
-              Submit your music track for admin approval. Once approved, players can enjoy it during matches!
+              Upload your music track for admin approval. Once approved, players can enjoy it during matches!
             </p>
 
             {musicNotice && (
@@ -1679,45 +1679,44 @@ export function Hub() {
 
             <div style={{ marginBottom: '24px' }}>
               <label style={{ display: 'block', color: '#c084fc', fontSize: '0.9rem', marginBottom: '8px', fontWeight: 'bold', letterSpacing: '0.5px', fontFamily: 'Rajdhani, sans-serif' }}>
-                MUSIC URL *
+                AUDIO FILE *
               </label>
               <input
-                type="url"
-                value={musicUrl}
-                onChange={(e) => setMusicUrl(e.target.value)}
-                placeholder="https://example.com/music.mp3"
-                style={{ width: '100%', boxSizing: 'border-box', padding: '12px 16px', background: 'rgba(5, 10, 24, 0.8)', border: '1.5px solid rgba(168,85,247,0.3)', borderRadius: '10px', color: '#fff', fontSize: '1rem', fontFamily: 'Outfit, sans-serif' }}
+                type="file"
+                accept="audio/mpeg,audio/mp3,audio/wav,audio/ogg,audio/webm,.mp3,.wav,.ogg"
+                onChange={(e) => setMusicFile(e.target.files[0])}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '12px 16px', background: 'rgba(5, 10, 24, 0.8)', border: '1.5px solid rgba(168,85,247,0.3)', borderRadius: '10px', color: '#fff', fontSize: '1rem', fontFamily: 'Outfit, sans-serif', cursor: 'pointer' }}
               />
               <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', marginTop: '6px', fontFamily: 'Outfit, sans-serif' }}>
-                Direct link to audio file (MP3, OGG, WAV). Must be publicly accessible and CORS-enabled.
+                MP3, WAV, or OGG format. Maximum 10MB. {musicFile && `Selected: ${musicFile.name} (${(musicFile.size / 1024 / 1024).toFixed(2)} MB)`}
               </div>
             </div>
 
             <button
               onClick={async () => {
-                if (!musicTitle.trim() || !musicUrl.trim()) {
-                  setMusicNotice('⚠️ Please fill in both fields.');
+                if (!musicTitle.trim() || !musicFile) {
+                  setMusicNotice('⚠️ Please provide both title and audio file.');
                   setTimeout(() => setMusicNotice(''), 3000);
                   return;
                 }
                 setMusicSubmitting(true);
                 try {
-                  const result = await musicService.submitMusic(currentUser.id, userProfile.username, musicTitle.trim(), musicUrl.trim());
+                  const result = await musicService.uploadAndSubmitMusic(currentUser.id, userProfile.username, musicTitle.trim(), musicFile);
                   if (result.success) {
-                    setMusicNotice('✅ Track submitted for approval!');
+                    setMusicNotice('✅ Track uploaded and submitted for approval!');
                     setTimeout(() => {
                       setIsMusicModalOpen(false);
                       setMusicTitle('');
-                      setMusicUrl('');
+                      setMusicFile(null);
                       setMusicNotice('');
                     }, 2000);
                   } else {
-                    setMusicNotice(`❌ ${result.message || 'Failed to submit.'}`);
+                    setMusicNotice(`❌ ${result.message || 'Failed to upload.'}`);
                     setTimeout(() => setMusicNotice(''), 4000);
                   }
                 } catch (e) {
-                  console.error('Music submission error:', e);
-                  setMusicNotice('❌ Error submitting track.');
+                  console.error('Music upload error:', e);
+                  setMusicNotice('❌ Error uploading track.');
                   setTimeout(() => setMusicNotice(''), 4000);
                 } finally {
                   setMusicSubmitting(false);
@@ -1726,7 +1725,7 @@ export function Hub() {
               disabled={musicSubmitting}
               style={{ width: '100%', padding: '14px', background: musicSubmitting ? 'rgba(168,85,247,0.3)' : 'linear-gradient(90deg, #c084fc 0%, #a855f7 100%)', border: 'none', borderRadius: '12px', color: '#000', fontSize: '1.1rem', fontWeight: 'bold', cursor: musicSubmitting ? 'not-allowed' : 'pointer', fontFamily: 'Rajdhani, sans-serif', letterSpacing: '1px', boxShadow: '0 0 20px rgba(168,85,247,0.4)' }}
             >
-              {musicSubmitting ? 'SUBMITTING...' : 'SUBMIT FOR APPROVAL'}
+              {musicSubmitting ? 'UPLOADING...' : 'UPLOAD & SUBMIT FOR APPROVAL'}
             </button>
           </div>
         </div>

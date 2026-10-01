@@ -1,7 +1,72 @@
 import { supabase } from './supabaseClient';
 
 export const musicService = {
-  // User: Submit music for approval (PRO only)
+  // Upload music file to Supabase Storage and create database entry
+  async uploadAndSubmitMusic(userId, username, title, audioFile) {
+    if (!supabase) return { success: false, message: 'DB not connected' };
+    
+    try {
+      // 1. Validate file
+      const allowedTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/webm'];
+      if (!allowedTypes.includes(audioFile.type)) {
+        return { success: false, message: 'Invalid file type. Please upload MP3, WAV, or OGG files.' };
+      }
+
+      // Max size 10MB
+      const maxSize = 10 * 1024 * 1024;
+      if (audioFile.size > maxSize) {
+        return { success: false, message: 'File too large. Maximum size is 10MB.' };
+      }
+
+      // 2. Generate unique filename
+      const fileExt = audioFile.name.split('.').pop();
+      const fileName = `${userId}_${Date.now()}.${fileExt}`;
+      const filePath = `user-music/${fileName}`;
+
+      // 3. Upload to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('music')
+        .upload(filePath, audioFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      // 4. Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('music')
+        .getPublicUrl(filePath);
+
+      // 5. Create database entry
+      const { data, error } = await supabase
+        .from('user_music')
+        .insert({
+          user_id: userId,
+          username,
+          title,
+          music_url: publicUrl,
+          file_path: filePath,
+          status: 'pending',
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) {
+        // Rollback - delete uploaded file
+        await supabase.storage.from('music').remove([filePath]);
+        throw error;
+      }
+
+      return { success: true, message: 'Music uploaded and submitted for approval!', data };
+    } catch (e) {
+      console.error('Music: Failed to upload', e);
+      return { success: false, message: e.message || 'Failed to upload music.' };
+    }
+  },
+
+  // User: Submit music for approval (PRO only) - LEGACY URL method
   async submitMusic(userId, username, title, musicUrl) {
     if (!supabase) return { success: false, message: 'DB not connected' };
     try {
@@ -115,16 +180,32 @@ export const musicService = {
     }
   },
 
-  // Admin: Delete music entry
+  // Admin: Delete music entry and file from storage
   async deleteMusic(musicId) {
     if (!supabase) return false;
     try {
+      // First get the file_path
+      const { data: music } = await supabase
+        .from('user_music')
+        .select('file_path')
+        .eq('id', musicId)
+        .single();
+
+      // Delete from database
       const { error } = await supabase
         .from('user_music')
         .delete()
         .eq('id', musicId);
 
       if (error) throw error;
+
+      // Delete from storage if file_path exists
+      if (music?.file_path) {
+        await supabase.storage
+          .from('music')
+          .remove([music.file_path]);
+      }
+
       return true;
     } catch (e) {
       console.error('Music: Failed to delete', e);
