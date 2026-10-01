@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Wifi, Swords, Shield, Skull, Zap, ScrollText, MessageSquare,
   Dices, Crown, Trophy, Layers, Clock, HelpCircle, X, Eye, Users, RefreshCw,
-  Lock, Radio, AlertTriangle, Play, Sparkles, CheckCircle2, SkipForward, FastForward
+  Lock, Radio, AlertTriangle, Play, Sparkles, CheckCircle2, SkipForward, FastForward,
+  Music, Pause, Volume2, VolumeX, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { DynamicScaleWrapper } from '../../components/DynamicScaleWrapper';
 import { soundFX } from '../utils/audio';
@@ -16,6 +17,7 @@ import {
 } from './MultiplayerClient';
 import { authService } from '../../services/authService';
 import { economyService } from '../../services/economyService';
+import { musicService } from '../../services/musicService';
 import { sessionService } from '../../services/preferenceService';
 import { getCardGraphicUrl, getCharacterAttackGraphicUrl, getWildCardGraphicUrl } from './kontrolaAssets';
 import KontrolaDiceRoller, { CanvasPipDie } from './KontrolaDiceRoller';
@@ -102,6 +104,13 @@ export default function KontrolaArena() {
         }
       }
     });
+
+    // Load approved music tracks for gameplay
+    musicService.getApprovedMusic().then((tracks) => {
+      if (tracks && tracks.length > 0) {
+        setMusicTracks(tracks);
+      }
+    }).catch(err => console.warn('Failed to load music tracks:', err));
   }, []);
 
   // In-app floating alert/toast helper
@@ -119,7 +128,7 @@ export default function KontrolaArena() {
 
   const [selectedCharacter, setSelectedCharacter] = useState('chynaman');
   const [isPremium, setIsPremium] = useState(false);
-  const [appSettings, setAppSettings] = useState({ match_cost: 1, premium_modules: ['kontrola'] });
+  const [appSettings, setAppSettings] = useState({ match_cost: 1, premium_modules: ['kontrola'], module_costs: {} });
 
   useEffect(() => {
     economyService.getAppSettings().then(settings => {
@@ -140,6 +149,15 @@ export default function KontrolaArena() {
   const [showTaunt, setShowTaunt] = useState(false);
   const [activeTauntBubble, setActiveTauntBubble] = useState(null);
   const [chatToasts, setChatToasts] = useState([]);
+
+  // Music Player State
+  const [musicTracks, setMusicTracks] = useState([]);
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMusicPlayerOpen, setIsMusicPlayerOpen] = useState(false);
+  const [volume, setVolume] = useState(0.5);
+  const [isMuted, setIsMuted] = useState(false);
+  const audioRef = useRef(null);
   const [countdownNumber, setCountdownNumber] = useState(3);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
 
@@ -324,6 +342,35 @@ export default function KontrolaArena() {
     }, timeRemaining);
     return () => clearTimeout(timer);
   }, [revealedVision]);
+
+  // Music player audio control
+  useEffect(() => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.play().catch(err => {
+        console.warn('Audio playback failed:', err);
+        setIsPlaying(false);
+      });
+    } else {
+      audioRef.current.pause();
+    }
+  }, [isPlaying, currentTrackIndex]);
+
+  // Update audio volume and mute
+  useEffect(() => {
+    if (!audioRef.current) return;
+    audioRef.current.volume = isMuted ? 0 : volume;
+  }, [volume, isMuted]);
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+      }
+    };
+  }, []);
 
   // ==========================================
 
@@ -1481,11 +1528,12 @@ export default function KontrolaArena() {
     if (playerName !== finalName) setPlayerName(finalName);
 
     try {
-      // Premium match cost — only charge authenticated premium users
+      // Premium match cost — only charge authenticated premium users (PRO bypass honored)
       if (isPremium && !userProfile?.is_premium && currentUser?.id) {
+        const moduleCost = appSettings.module_costs?.kontrola ?? appSettings.match_cost;
         const success = await authService.savePlayerMatchResult(currentUser.id, {
           won: false,
-          crystalsDelta: -appSettings.match_cost,
+          crystalsDelta: -moduleCost,
           appSource: 'kontrola_toll'
         });
         if (!success) {
@@ -1536,11 +1584,12 @@ export default function KontrolaArena() {
       // Check last known match from session (DB or localStorage)
       const lastMatch = await sessionService.getLastMatchId(currentUser?.id ?? null, playerId);
 
-      // Premium match cost — only charge authenticated premium users for NEW rooms
+      // Premium match cost — only charge authenticated premium users for NEW rooms (PRO bypass honored)
       if (isPremium && !userProfile?.is_premium && currentUser?.id && cleanId !== lastMatch) {
+        const moduleCost = appSettings.module_costs?.kontrola ?? appSettings.match_cost;
         const success = await authService.savePlayerMatchResult(currentUser.id, {
           won: false,
-          crystalsDelta: -appSettings.match_cost,
+          crystalsDelta: -moduleCost,
           appSource: 'kontrola_toll'
         });
         if (!success) {
@@ -4012,6 +4061,182 @@ export default function KontrolaArena() {
               onForceClose={() => handleCloseDiceScreen(false)}
               onCombatComplete={() => handleCloseDiceScreen(true)}
             />
+          )}
+
+          {/* Floating Music Player Widget */}
+          {musicTracks.length > 0 && (
+            <div style={{
+              position: 'fixed',
+              bottom: '20px',
+              right: '20px',
+              background: 'rgba(14, 22, 42, 0.95)',
+              border: '2px solid rgba(168, 85, 247, 0.5)',
+              borderRadius: '16px',
+              padding: isMusicPlayerOpen ? '16px' : '12px',
+              minWidth: isMusicPlayerOpen ? '320px' : '60px',
+              maxWidth: '350px',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.8)',
+              zIndex: 9999,
+              backdropFilter: 'blur(12px)',
+              transition: 'all 0.3s ease',
+              fontFamily: 'Rajdhani, sans-serif'
+            }}>
+              {/* Header with toggle */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMusicPlayerOpen ? '12px' : '0' }}>
+                <button
+                  onClick={() => setIsMusicPlayerOpen(!isMusicPlayerOpen)}
+                  style={{ background: 'none', border: 'none', color: '#c084fc', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <Music size={24} />
+                  {isMusicPlayerOpen && <span style={{ fontWeight: 'bold', fontSize: '1.1rem', letterSpacing: '0.5px' }}>MUSIC</span>}
+                </button>
+                {isMusicPlayerOpen && (
+                  <button
+                    onClick={() => setIsMusicPlayerOpen(false)}
+                    style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', padding: '4px' }}
+                  >
+                    <ChevronDown size={20} />
+                  </button>
+                )}
+              </div>
+
+              {/* Expanded player content */}
+              {isMusicPlayerOpen && (
+                <>
+                  {/* Track info */}
+                  <div style={{ marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                    <div style={{ color: '#fff', fontWeight: 'bold', fontSize: '0.95rem', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {musicTracks[currentTrackIndex]?.title || 'No Track'}
+                    </div>
+                    <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem' }}>
+                      by {musicTracks[currentTrackIndex]?.username || 'Unknown'}
+                    </div>
+                  </div>
+
+                  {/* Playback controls */}
+                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+                    <button
+                      onClick={() => {
+                        const newIndex = currentTrackIndex > 0 ? currentTrackIndex - 1 : musicTracks.length - 1;
+                        setCurrentTrackIndex(newIndex);
+                        setIsPlaying(true);
+                      }}
+                      style={{ background: 'rgba(168,85,247,0.2)', border: '1px solid rgba(168,85,247,0.4)', color: '#c084fc', padding: '8px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      title="Previous"
+                    >
+                      <SkipForward size={18} style={{ transform: 'rotate(180deg)' }} />
+                    </button>
+
+                    <button
+                      onClick={() => setIsPlaying(!isPlaying)}
+                      style={{ background: 'linear-gradient(135deg, #c084fc, #a855f7)', border: 'none', color: '#000', padding: '12px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 16px rgba(168,85,247,0.4)' }}
+                      title={isPlaying ? 'Pause' : 'Play'}
+                    >
+                      {isPlaying ? <Pause size={24} /> : <Play size={24} />}
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        const newIndex = currentTrackIndex < musicTracks.length - 1 ? currentTrackIndex + 1 : 0;
+                        setCurrentTrackIndex(newIndex);
+                        setIsPlaying(true);
+                      }}
+                      style={{ background: 'rgba(168,85,247,0.2)', border: '1px solid rgba(168,85,247,0.4)', color: '#c084fc', padding: '8px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      title="Next"
+                    >
+                      <SkipForward size={18} />
+                    </button>
+                  </div>
+
+                  {/* Volume control */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                    <button
+                      onClick={() => setIsMuted(!isMuted)}
+                      style={{ background: 'none', border: 'none', color: isMuted ? '#ff88aa' : '#c084fc', cursor: 'pointer', padding: '4px' }}
+                      title={isMuted ? 'Unmute' : 'Mute'}
+                    >
+                      {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                    </button>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={volume * 100}
+                      onChange={(e) => setVolume(parseFloat(e.target.value) / 100)}
+                      style={{ flex: 1, accentColor: '#c084fc' }}
+                      title="Volume"
+                    />
+                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem', minWidth: '35px' }}>
+                      {Math.round(volume * 100)}%
+                    </span>
+                  </div>
+
+                  {/* Playlist */}
+                  <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginBottom: '6px', fontWeight: 'bold', letterSpacing: '0.5px' }}>
+                    PLAYLIST ({musicTracks.length})
+                  </div>
+                  <div style={{ maxHeight: '150px', overflowY: 'auto', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '6px' }}>
+                    {musicTracks.map((track, idx) => (
+                      <button
+                        key={track.id}
+                        onClick={() => {
+                          setCurrentTrackIndex(idx);
+                          setIsPlaying(true);
+                        }}
+                        style={{
+                          width: '100%',
+                          textAlign: 'left',
+                          background: idx === currentTrackIndex ? 'rgba(168,85,247,0.2)' : 'transparent',
+                          border: idx === currentTrackIndex ? '1px solid rgba(168,85,247,0.4)' : '1px solid transparent',
+                          color: idx === currentTrackIndex ? '#c084fc' : 'rgba(255,255,255,0.7)',
+                          padding: '8px 10px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          marginBottom: '4px',
+                          fontSize: '0.8rem',
+                          fontFamily: 'Rajdhani, sans-serif',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseOver={e => {
+                          if (idx !== currentTrackIndex) {
+                            e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                          }
+                        }}
+                        onMouseOut={e => {
+                          if (idx !== currentTrackIndex) {
+                            e.currentTarget.style.background = 'transparent';
+                          }
+                        }}
+                      >
+                        <div style={{ fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {track.title}
+                        </div>
+                        <div style={{ fontSize: '0.7rem', opacity: 0.7, marginTop: '2px' }}>
+                          by {track.username}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Hidden audio element */}
+              <audio
+                ref={audioRef}
+                src={musicTracks[currentTrackIndex]?.music_url}
+                autoPlay={isPlaying}
+                loop={false}
+                volume={isMuted ? 0 : volume}
+                onEnded={() => {
+                  // Auto-advance to next track
+                  const nextIndex = currentTrackIndex < musicTracks.length - 1 ? currentTrackIndex + 1 : 0;
+                  setCurrentTrackIndex(nextIndex);
+                  setIsPlaying(true);
+                }}
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+              />
+            </div>
           )}
         </div>
       </DynamicScaleWrapper>

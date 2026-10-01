@@ -355,3 +355,36 @@ create policy "Admins can manage matches"
   on public.matches for all using (
     exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
   );
+
+
+-- 5. USER MUSIC TABLE (User-submitted music for gameplay with admin approval)
+create table if not exists public.user_music (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users(id) on delete set null,
+  username text not null,
+  title text not null,
+  music_url text not null,
+  status text default 'pending' check (status in ('pending', 'approved', 'rejected')),
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.user_music enable row level security;
+
+drop policy if exists "Anyone can view approved music" on public.user_music;
+create policy "Anyone can view approved music" 
+  on public.user_music for select using (status = 'approved');
+
+drop policy if exists "Users can submit music" on public.user_music;
+create policy "Users can submit music" 
+  on public.user_music for insert with check (auth.uid() = user_id);
+
+drop policy if exists "Users can view own submissions" on public.user_music;
+create policy "Users can view own submissions" 
+  on public.user_music for select using (auth.uid() = user_id);
+
+drop policy if exists "Admins can manage all music" on public.user_music;
+create policy "Admins can manage all music" 
+  on public.user_music for all using (
+    exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
+  );

@@ -12,10 +12,10 @@ export const economyService = {
         .single();
       
       if (error) throw error;
-      return data || { match_cost: 1, premium_modules: [] };
+      return data || { match_cost: 1, premium_modules: [], module_costs: {} };
     } catch (e) {
       console.warn('Economy: Failed to fetch app_settings, using fallback.', e);
-      return { match_cost: 1, premium_modules: [] };
+      return { match_cost: 1, premium_modules: [], module_costs: {} };
     }
   },
 

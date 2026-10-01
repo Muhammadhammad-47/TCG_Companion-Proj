@@ -7,11 +7,12 @@ import {
   TrendingUp, Award, Layers, Users, Swords, UserX, UserCheck, Flame,
   Crown, Lock, Ban, Sparkles, Gem, Clock, Zap, LogOut, ChevronRight,
   Server, Globe, LayoutGrid, List, FileCode, Cpu, FileText, Download,
-  PlusCircle, FilePlus, Code, AlertCircle, Coins, ShoppingCart
+  PlusCircle, FilePlus, Code, AlertCircle, Coins, ShoppingCart, Music, Play, Pause
 } from 'lucide-react';
 import { authService } from '../../services/authService';
 import { knowledgeService, calculateGroqMetrics, GROQ_LIMITS } from '../../services/knowledgeService';
 import { economyService } from '../../services/economyService';
+import { musicService } from '../../services/musicService';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
@@ -105,12 +106,17 @@ export default function AdminPage() {
   const [editQuestionText, setEditQuestionText] = useState('');
 
   // Monetization State
-  const [appSettings, setAppSettings] = useState({ match_cost: 1, premium_modules: ['kontrola'] });
+  const [appSettings, setAppSettings] = useState({ match_cost: 1, premium_modules: ['kontrola'], module_costs: {} });
   const [storeBundles, setStoreBundles] = useState([]);
   const [redeemCodes, setRedeemCodes] = useState([]);
   const [isEconomyLoading, setIsEconomyLoading] = useState(false);
   const [editingBundle, setEditingBundle] = useState(null);
   const [editingCode, setEditingCode] = useState(null);
+
+  // Music Library State
+  const [musicTracks, setMusicTracks] = useState([]);
+  const [musicLoading, setMusicLoading] = useState(false);
+  const [musicFilter, setMusicFilter] = useState('pending'); // 'all' | 'pending' | 'approved' | 'rejected'
 
   // Quick Copy
   const [copiedKey, setCopiedKey] = useState('');
@@ -181,6 +187,7 @@ export default function AdminPage() {
       loadDocuments();
       loadQuestions();
       loadEconomyData();
+      loadMusic();
     }
   }, [isAdmin]);
 
@@ -197,6 +204,18 @@ export default function AdminPage() {
       console.warn('Failed to load economy data', e);
     } finally {
       setIsEconomyLoading(false);
+    }
+  };
+
+  const loadMusic = async () => {
+    setMusicLoading(true);
+    try {
+      const tracks = await musicService.getAllMusic();
+      setMusicTracks(tracks || []);
+    } catch (e) {
+      console.warn('Failed to load music tracks:', e);
+    } finally {
+      setMusicLoading(false);
     }
   };
 
@@ -739,6 +758,7 @@ export default function AdminPage() {
     { id: 'rules', label: 'Knowledge Base', icon: BookOpen, badge: `${documents.length || 1} Doc` },
     { id: 'questions', label: 'Questions Inbox', icon: HelpCircle, badge: questions.length },
     { id: 'monetization', label: 'Monetization', icon: Coins, badge: 'Eco' },
+    { id: 'music', label: 'Music Library', icon: Music, badge: musicTracks.filter(m => m.status === 'pending').length || 0 },
     { id: 'tcg_apis', label: 'TCG APIs', icon: Server, badge: 'Live' }
   ];
 
@@ -1937,6 +1957,157 @@ export default function AdminPage() {
               ========================================================================= */}
               {activeTab === 'monetization' && (
                 <div>
+                  {/* ── MODULE ACCESS CONFIGURATION ─────────────────────────────────── */}
+                  <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+                    <h2 style={{ fontSize: '1rem', fontWeight: 'bold', color: 'var(--neon-cyan)', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <LayoutGrid size={16} /> Module Access Configuration
+                    </h2>
+                    <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', margin: '0 0 16px 0' }}>
+                      Set each module to Free or Premium. Premium modules require crystals per match. PRO users bypass all crystal costs.
+                    </p>
+
+                    {/* Module cards */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
+                      {[
+                        { slug: 'chatbot',    label: 'TCG Chatbot',           icon: '🤖', desc: 'AI chat companion & rules knowledge base' },
+                        { slug: 'calculator', label: 'Score Calculator',      icon: '🎲', desc: 'Tabletop score tracker & simulator' },
+                        { slug: 'kontrola',   label: 'Kontrola Game',         icon: '⚔️', desc: 'Online multiplayer card battle arena' },
+                      ].map(({ slug, label, icon, desc }) => {
+                        const isPremium = appSettings.premium_modules?.includes(slug);
+                        const moduleCost = appSettings.module_costs?.[slug] ?? appSettings.match_cost ?? 1;
+                        return (
+                          <div key={slug} style={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr auto',
+                            gap: '12px',
+                            alignItems: 'center',
+                            background: isPremium ? 'rgba(255, 215, 0, 0.06)' : 'rgba(0, 240, 255, 0.04)',
+                            border: `1px solid ${isPremium ? 'rgba(255,215,0,0.3)' : 'rgba(0,240,255,0.15)'}`,
+                            borderRadius: '10px',
+                            padding: '12px 14px',
+                            transition: 'all 0.2s ease'
+                          }}>
+                            {/* Left: module info + cost input */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <span style={{ fontSize: '1.5rem', lineHeight: 1 }}>{icon}</span>
+                              <div>
+                                <div style={{ fontWeight: 'bold', color: '#fff', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  {label}
+                                  {isPremium && (
+                                    <span style={{ fontSize: '0.62rem', fontWeight: 'bold', background: 'rgba(255,215,0,0.15)', color: 'var(--neon-gold)', border: '1px solid rgba(255,215,0,0.4)', borderRadius: '4px', padding: '1px 6px', letterSpacing: '0.5px' }}>
+                                      PREMIUM
+                                    </span>
+                                  )}
+                                  {!isPremium && (
+                                    <span style={{ fontSize: '0.62rem', fontWeight: 'bold', background: 'rgba(0,240,255,0.1)', color: 'var(--neon-cyan)', border: '1px solid rgba(0,240,255,0.3)', borderRadius: '4px', padding: '1px 6px', letterSpacing: '0.5px' }}>
+                                      FREE
+                                    </span>
+                                  )}
+                                </div>
+                                <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)', marginTop: '2px' }}>{desc}</div>
+                              </div>
+                            </div>
+
+                            {/* Right: toggle + cost input */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              {/* Crystal cost input — only shown when premium */}
+                              {isPremium && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                  <span style={{ fontSize: '0.9rem' }}>💎</span>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={moduleCost}
+                                    onChange={(e) => {
+                                      const val = parseInt(e.target.value) || 0;
+                                      setAppSettings(prev => ({
+                                        ...prev,
+                                        module_costs: { ...(prev.module_costs || {}), [slug]: val }
+                                      }));
+                                    }}
+                                    style={{
+                                      width: '52px',
+                                      background: 'rgba(0,0,0,0.35)',
+                                      border: '1px solid rgba(255,215,0,0.35)',
+                                      color: 'var(--neon-gold)',
+                                      padding: '4px 6px',
+                                      borderRadius: '6px',
+                                      fontSize: '0.82rem',
+                                      fontWeight: 'bold',
+                                      textAlign: 'center',
+                                      boxSizing: 'border-box'
+                                    }}
+                                  />
+                                  <span style={{ fontSize: '0.68rem', color: 'rgba(255,215,0,0.55)', whiteSpace: 'nowrap' }}>/ match</span>
+                                </div>
+                              )}
+
+                              {/* Free / Premium toggle */}
+                              <button
+                                onClick={() => {
+                                  setAppSettings(prev => {
+                                    const mods = prev.premium_modules || [];
+                                    return {
+                                      ...prev,
+                                      premium_modules: mods.includes(slug)
+                                        ? mods.filter(m => m !== slug)
+                                        : [...mods, slug]
+                                    };
+                                  });
+                                }}
+                                title={isPremium ? 'Set to Free' : 'Set to Premium'}
+                                style={{
+                                  display: 'flex', alignItems: 'center', gap: '5px',
+                                  background: isPremium ? 'rgba(255,215,0,0.15)' : 'rgba(0,240,255,0.08)',
+                                  border: `1px solid ${isPremium ? 'rgba(255,215,0,0.5)' : 'rgba(0,240,255,0.3)'}`,
+                                  color: isPremium ? 'var(--neon-gold)' : 'var(--neon-cyan)',
+                                  borderRadius: '8px',
+                                  padding: '5px 12px',
+                                  cursor: 'pointer',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 'bold',
+                                  fontFamily: 'Rajdhani, sans-serif',
+                                  letterSpacing: '0.5px',
+                                  whiteSpace: 'nowrap',
+                                  transition: 'all 0.2s ease'
+                                }}
+                              >
+                                {isPremium ? <><Lock size={11} /> Set Free</> : <><Crown size={11} /> Set Premium</>}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* PRO bypass notice */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,215,0,0.06)', border: '1px solid rgba(255,215,0,0.2)', borderRadius: '8px', padding: '10px 14px', marginBottom: '14px' }}>
+                      <Crown size={14} style={{ color: 'var(--neon-gold)', flexShrink: 0 }} />
+                      <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>
+                        <strong style={{ color: 'var(--neon-gold)' }}>PRO users</strong> always bypass crystal costs on all premium modules. Grant PRO status to a player from the <strong style={{ color: '#fff' }}>Users</strong> tab.
+                      </span>
+                    </div>
+
+                    {/* Save button */}
+                    <button
+                      onClick={async () => {
+                        // Sync match_cost to the lowest set premium module cost for backwards compatibility
+                        const premiumMods = appSettings.premium_modules || [];
+                        const costs = appSettings.module_costs || {};
+                        const lowestCost = premiumMods.length > 0
+                          ? Math.min(...premiumMods.map(m => costs[m] ?? appSettings.match_cost ?? 1))
+                          : appSettings.match_cost ?? 1;
+                        const payload = { ...appSettings, match_cost: lowestCost };
+                        const success = await economyService.updateAppSettings(payload);
+                        setModNotice(success ? '✅ Module settings saved!' : '❌ Failed to save. Check DB connection.');
+                        setTimeout(() => setModNotice(''), 3500);
+                      }}
+                      style={{ width: '100%', background: 'rgba(0,240,255,0.15)', border: '1px solid var(--neon-cyan)', color: 'var(--neon-cyan)', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                    >
+                      <Save size={13} /> Save Module Configuration
+                    </button>
+                  </div>
+
                   {/* Global Economy Settings - Simple 2-Column Form */}
                   <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
                     <h2 style={{ fontSize: '1rem', fontWeight: 'bold', color: 'var(--neon-cyan)', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -2149,6 +2320,215 @@ export default function AdminPage() {
                             </div>
                           </div>
                         ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {/* =========================================================================
+                  PAGE 7: MUSIC LIBRARY (USER SUBMISSIONS & APPROVAL)
+              ========================================================================= */}
+              {activeTab === 'music' && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <div>
+                      <h2 style={{ fontSize: '1.35rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px' }}>
+                        MUSIC LIBRARY
+                      </h2>
+                      <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>
+                        User-submitted tracks for gameplay. PRO users can submit, admins approve.
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      {/* Filter buttons */}
+                      {['all', 'pending', 'approved', 'rejected'].map((filter) => (
+                        <button
+                          key={filter}
+                          onClick={() => setMusicFilter(filter)}
+                          style={{
+                            padding: '5px 12px',
+                            borderRadius: '6px',
+                            border: `1px solid ${musicFilter === filter ? 'var(--neon-cyan)' : 'rgba(255,255,255,0.2)'}`,
+                            background: musicFilter === filter ? 'rgba(0,240,255,0.15)' : 'transparent',
+                            color: musicFilter === filter ? 'var(--neon-cyan)' : 'rgba(255,255,255,0.6)',
+                            cursor: 'pointer',
+                            fontSize: '0.75rem',
+                            fontWeight: 'bold',
+                            textTransform: 'uppercase',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          {filter}
+                        </button>
+                      ))}
+                      <button
+                        onClick={loadMusic}
+                        disabled={musicLoading}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '5px',
+                          padding: '5px 12px',
+                          borderRadius: '6px',
+                          border: '1px solid rgba(255,255,255,0.2)',
+                          background: 'rgba(255,255,255,0.05)',
+                          color: '#fff',
+                          cursor: musicLoading ? 'not-allowed' : 'pointer',
+                          fontSize: '0.75rem',
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        <RefreshCw size={12} className={musicLoading ? 'spin' : ''} /> Refresh
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Stats cards */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px', marginBottom: '16px' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>TOTAL TRACKS</div>
+                      <div style={{ fontSize: '1.3rem', fontWeight: '600', color: '#fff' }}>{musicTracks.length}</div>
+                    </div>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>PENDING</div>
+                      <div style={{ fontSize: '1.3rem', fontWeight: '600', color: 'var(--neon-gold)' }}>{musicTracks.filter(m => m.status === 'pending').length}</div>
+                    </div>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>APPROVED</div>
+                      <div style={{ fontSize: '1.3rem', fontWeight: '600', color: '#39ff14' }}>{musicTracks.filter(m => m.status === 'approved').length}</div>
+                    </div>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>REJECTED</div>
+                      <div style={{ fontSize: '1.3rem', fontWeight: '600', color: '#ff88aa' }}>{musicTracks.filter(m => m.status === 'rejected').length}</div>
+                    </div>
+                  </div>
+
+                  {/* Tracks list */}
+                  <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', overflow: 'hidden' }}>
+                    <div style={{ background: 'rgba(6, 12, 28, 0.95)', borderBottom: '1px solid rgba(0, 240, 255, 0.15)', padding: '12px 16px', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 0.8fr auto', gap: '12px', fontSize: '0.7rem', fontWeight: 'bold', color: 'rgba(255,255,255,0.6)', letterSpacing: '1px' }}>
+                      <div>TRACK & UPLOADER</div>
+                      <div>URL</div>
+                      <div>SUBMITTED</div>
+                      <div>STATUS</div>
+                      <div style={{ textAlign: 'center' }}>ACTIONS</div>
+                    </div>
+
+                    <div style={{ maxHeight: '480px', overflowY: 'auto' }}>
+                      {musicLoading ? (
+                        <div style={{ padding: '40px', textAlign: 'center', color: 'rgba(255,255,255,0.4)' }}>
+                          <RefreshCw size={24} className="spin" style={{ marginBottom: '8px' }} />
+                          <div>Loading music tracks...</div>
+                        </div>
+                      ) : musicTracks.filter(m => musicFilter === 'all' || m.status === musicFilter).length === 0 ? (
+                        <div style={{ padding: '40px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '0.9rem' }}>
+                          No {musicFilter !== 'all' ? musicFilter : ''} tracks found.
+                        </div>
+                      ) : (
+                        musicTracks.filter(m => musicFilter === 'all' || m.status === musicFilter).map((track, idx, arr) => {
+                          const statusColors = {
+                            pending: { bg: 'rgba(255,215,0,0.1)', color: 'var(--neon-gold)', border: 'rgba(255,215,0,0.3)' },
+                            approved: { bg: 'rgba(57,255,20,0.1)', color: '#39ff14', border: 'rgba(57,255,20,0.3)' },
+                            rejected: { bg: 'rgba(255,51,102,0.1)', color: '#ff88aa', border: 'rgba(255,51,102,0.3)' }
+                          };
+                          const statusStyle = statusColors[track.status] || statusColors.pending;
+                          const submittedDate = new Date(track.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+                          return (
+                            <div key={track.id} className="data-row" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 0.8fr auto', alignItems: 'center', gap: '12px', padding: '12px 16px', borderBottom: idx < arr.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none', fontSize: '0.85rem', background: idx % 2 === 0 ? 'rgba(0,0,0,0.1)' : 'transparent', border: '1px solid transparent' }}>
+                              {/* Track & Uploader */}
+                              <div>
+                                <div style={{ color: '#fff', fontWeight: 'bold', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <Music size={13} style={{ color: 'var(--neon-cyan)', flexShrink: 0 }} />
+                                  {track.title}
+                                </div>
+                                <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)' }}>
+                                  by <strong style={{ color: 'var(--neon-cyan)' }}>{track.username}</strong>
+                                </div>
+                              </div>
+
+                              {/* URL */}
+                              <div>
+                                <a href={track.music_url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--neon-cyan)', fontSize: '0.75rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px', wordBreak: 'break-all' }}>
+                                  <ExternalLink size={11} />
+                                  {track.music_url.length > 30 ? track.music_url.substring(0, 30) + '...' : track.music_url}
+                                </a>
+                              </div>
+
+                              {/* Date */}
+                              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem' }}>
+                                {submittedDate}
+                              </div>
+
+                              {/* Status Badge */}
+                              <div>
+                                <span style={{ fontSize: '0.65rem', fontWeight: 'bold', background: statusStyle.bg, color: statusStyle.color, border: `1px solid ${statusStyle.border}`, padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                  {track.status}
+                                </span>
+                              </div>
+
+                              {/* Actions */}
+                              <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                                {track.status === 'pending' && (
+                                  <>
+                                    <button
+                                      onClick={async () => {
+                                        const success = await musicService.updateMusicStatus(track.id, 'approved');
+                                        if (success) {
+                                          setModNotice(`✅ Approved "${track.title}"!`);
+                                          setTimeout(() => setModNotice(''), 3000);
+                                          loadMusic();
+                                        } else {
+                                          showError('Failed to approve track.');
+                                        }
+                                      }}
+                                      title="Approve"
+                                      style={{ background: 'rgba(57,255,20,0.1)', border: '1px solid rgba(57,255,20,0.3)', color: '#39ff14', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 'bold' }}
+                                    >
+                                      <CheckCircle2 size={12} /> Approve
+                                    </button>
+                                    <button
+                                      onClick={async () => {
+                                        const success = await musicService.updateMusicStatus(track.id, 'rejected');
+                                        if (success) {
+                                          setModNotice(`❌ Rejected "${track.title}"`);
+                                          setTimeout(() => setModNotice(''), 3000);
+                                          loadMusic();
+                                        } else {
+                                          showError('Failed to reject track.');
+                                        }
+                                      }}
+                                      title="Reject"
+                                      style={{ background: 'rgba(255,51,102,0.1)', border: '1px solid rgba(255,51,102,0.3)', color: '#ff88aa', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 'bold' }}
+                                    >
+                                      <XCircle size={12} /> Reject
+                                    </button>
+                                  </>
+                                )}
+                                <button
+                                  onClick={async () => {
+                                    showConfirm(
+                                      'Delete Track',
+                                      `Permanently delete "${track.title}" by ${track.username}? This cannot be undone.`,
+                                      async () => {
+                                        const success = await musicService.deleteMusic(track.id);
+                                        if (success) {
+                                          setModNotice(`🗑️ Deleted "${track.title}"`);
+                                          setTimeout(() => setModNotice(''), 3000);
+                                          loadMusic();
+                                        } else {
+                                          showError('Failed to delete track.');
+                                        }
+                                      },
+                                      { confirmLabel: 'Delete', isDanger: true }
+                                    );
+                                  }}
+                                  title="Delete"
+                                  style={{ background: 'transparent', border: '1px solid rgba(255,51,102,0.3)', color: '#ff88aa', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                >
+                                  <Trash2 size={11} />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })
                       )}
                     </div>
                   </div>

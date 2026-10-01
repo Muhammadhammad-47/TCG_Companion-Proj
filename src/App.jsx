@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
-import { Send, X, Bot, Swords, ArrowLeft, ThumbsUp, ThumbsDown, User, Shield, LogOut, Check, Trophy, Settings } from 'lucide-react';
+import { Send, X, Bot, Swords, ArrowLeft, ThumbsUp, ThumbsDown, User, Shield, LogOut, Check, Trophy, Settings, Music } from 'lucide-react';
 import axios from 'axios';
 import { Groq } from 'groq-sdk';
 import './App.css';
@@ -19,6 +19,7 @@ import DocsPage from './pages/DocsPage.jsx';
 import { authService } from './services/authService.js';
 import { knowledgeService } from './services/knowledgeService.js';
 import { economyService } from './services/economyService.js';
+import { musicService } from './services/musicService.js';
 import { StoreModal } from './components/StoreModal.jsx';
 import { LeaderboardModal } from './components/LeaderboardModal.jsx';
 
@@ -1273,7 +1274,14 @@ export function Hub() {
   const [isStoreOpen, setIsStoreOpen] = useState(false);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
-  const [appSettings, setAppSettings] = useState({ match_cost: 1, premium_modules: ['kontrola'] });
+  const [appSettings, setAppSettings] = useState({ match_cost: 1, premium_modules: ['kontrola'], module_costs: {} });
+
+  // Music submission modal state
+  const [isMusicModalOpen, setIsMusicModalOpen] = useState(false);
+  const [musicTitle, setMusicTitle] = useState('');
+  const [musicUrl, setMusicUrl] = useState('');
+  const [musicSubmitting, setMusicSubmitting] = useState(false);
+  const [musicNotice, setMusicNotice] = useState('');
 
   React.useLayoutEffect(() => {
     try {
@@ -1548,10 +1556,12 @@ export function Hub() {
               <button
                 className="btn-enter-game-cta"
                 onClick={() => {
-                  const isPremium = appSettings?.premium_modules?.includes('kontrola');
-                  const cost = appSettings?.match_cost || 0;
+                  const isPremiumModule = appSettings?.premium_modules?.includes('kontrola');
+                  const moduleCost = appSettings?.module_costs?.kontrola ?? appSettings?.match_cost ?? 1;
+                  const userHasPRO = userProfile?.is_premium === true;
                   
-                  if (isPremium && (!currentUser || (userProfile?.crystals_collected || 0) < cost)) {
+                  // If module is premium AND user doesn't have PRO bypass AND (not logged in OR insufficient crystals)
+                  if (isPremiumModule && !userHasPRO && (!currentUser || (userProfile?.crystals_collected || 0) < moduleCost)) {
                     setIsStoreOpen(true);
                     return;
                   }
@@ -1582,7 +1592,7 @@ export function Hub() {
                     pointerEvents: 'none'
                   }}>
                     <span style={{ fontSize: '0.95rem' }}>💎</span>
-                    <span>{appSettings.match_cost}</span>
+                    <span>{appSettings.module_costs?.kontrola ?? appSettings.match_cost}</span>
                     <span style={{ opacity: 0.7, fontSize: '0.72rem' }}>/ MATCH</span>
                   </div>
                 )}
@@ -1592,10 +1602,135 @@ export function Hub() {
                   <div style={{ fontSize: '1.2rem', opacity: 0.8, fontWeight: 'normal' }}>Online Multiplayer Card Battles</div>
                 </div>
               </button>
+
+              {/* Music Upload Button — PRO only */}
+              {userProfile?.is_premium && (
+                <button
+                  className="btn-enter-game-cta"
+                  onClick={() => setIsMusicModalOpen(true)}
+                  style={{ width: '100%', padding: '25px 40px', borderRadius: '24px', background: 'linear-gradient(90deg, #1a0f2e 0%, #0f0820 100%)', border: '2px solid rgba(168, 85, 247, 0.5)', color: '#c084fc', position: 'relative' }}
+                >
+                  <div style={{
+                    position: 'absolute', top: '-14px', right: '24px',
+                    background: 'linear-gradient(135deg, #1a0a00, #2d1500)',
+                    padding: '5px 14px',
+                    borderRadius: '20px',
+                    border: '2px solid var(--neon-gold)',
+                    color: 'var(--neon-gold)',
+                    fontWeight: 'bold',
+                    display: 'flex', alignItems: 'center', gap: '5px',
+                    fontSize: '0.75rem',
+                    fontFamily: 'Rajdhani, sans-serif',
+                    letterSpacing: '0.5px',
+                    boxShadow: '0 0 12px rgba(255,215,0,0.25)',
+                    pointerEvents: 'none'
+                  }}>
+                    <span>👑 PRO ONLY</span>
+                  </div>
+                  <div style={{ marginRight: '20px', display: 'flex', alignItems: 'center' }}><Music size={48} /></div>
+                  <div style={{ textAlign: 'left' }}>
+                    <div style={{ fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '8px' }}>Submit Music</div>
+                    <div style={{ fontSize: '1.2rem', opacity: 0.8, fontWeight: 'normal' }}>Share Tracks for Gameplay</div>
+                  </div>
+                </button>
+              )}
             </div>
           </div>
         </DynamicScaleWrapper>
       </div>
+
+      {/* Music Submission Modal */}
+      {isMusicModalOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '20px' }}>
+          <div style={{ width: '100%', maxWidth: '500px', background: 'rgba(14, 22, 42, 0.98)', border: '2px solid rgba(168, 85, 247, 0.5)', borderRadius: '20px', padding: '32px', boxShadow: '0 0 40px rgba(168,85,247,0.3)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#c084fc', margin: 0, fontFamily: 'Rajdhani, sans-serif', letterSpacing: '1px' }}>
+                <Music size={24} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '10px' }} />
+                Submit Music Track
+              </h2>
+              <button onClick={() => { setIsMusicModalOpen(false); setMusicTitle(''); setMusicUrl(''); setMusicNotice(''); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', padding: '4px' }}>
+                <X size={24} />
+              </button>
+            </div>
+
+            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.95rem', marginBottom: '24px', fontFamily: 'Outfit, sans-serif', lineHeight: '1.5' }}>
+              Submit your music track for admin approval. Once approved, players can enjoy it during matches!
+            </p>
+
+            {musicNotice && (
+              <div style={{ background: musicNotice.startsWith('✅') ? 'rgba(57,255,20,0.1)' : 'rgba(255,51,102,0.1)', border: `1px solid ${musicNotice.startsWith('✅') ? '#39ff14' : '#ff88aa'}`, color: musicNotice.startsWith('✅') ? '#39ff14' : '#ff88aa', padding: '12px 16px', borderRadius: '10px', marginBottom: '20px', fontSize: '0.9rem', fontWeight: 'bold', fontFamily: 'Rajdhani, sans-serif' }}>
+                {musicNotice}
+              </div>
+            )}
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', color: '#c084fc', fontSize: '0.9rem', marginBottom: '8px', fontWeight: 'bold', letterSpacing: '0.5px', fontFamily: 'Rajdhani, sans-serif' }}>
+                TRACK TITLE *
+              </label>
+              <input
+                type="text"
+                value={musicTitle}
+                onChange={(e) => setMusicTitle(e.target.value)}
+                placeholder="Epic Battle Theme"
+                maxLength={100}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '12px 16px', background: 'rgba(5, 10, 24, 0.8)', border: '1.5px solid rgba(168,85,247,0.3)', borderRadius: '10px', color: '#fff', fontSize: '1rem', fontFamily: 'Outfit, sans-serif' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', color: '#c084fc', fontSize: '0.9rem', marginBottom: '8px', fontWeight: 'bold', letterSpacing: '0.5px', fontFamily: 'Rajdhani, sans-serif' }}>
+                MUSIC URL *
+              </label>
+              <input
+                type="url"
+                value={musicUrl}
+                onChange={(e) => setMusicUrl(e.target.value)}
+                placeholder="https://example.com/music.mp3"
+                style={{ width: '100%', boxSizing: 'border-box', padding: '12px 16px', background: 'rgba(5, 10, 24, 0.8)', border: '1.5px solid rgba(168,85,247,0.3)', borderRadius: '10px', color: '#fff', fontSize: '1rem', fontFamily: 'Outfit, sans-serif' }}
+              />
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', marginTop: '6px', fontFamily: 'Outfit, sans-serif' }}>
+                Direct link to audio file (MP3, OGG, WAV). Must be publicly accessible and CORS-enabled.
+              </div>
+            </div>
+
+            <button
+              onClick={async () => {
+                if (!musicTitle.trim() || !musicUrl.trim()) {
+                  setMusicNotice('⚠️ Please fill in both fields.');
+                  setTimeout(() => setMusicNotice(''), 3000);
+                  return;
+                }
+                setMusicSubmitting(true);
+                try {
+                  const result = await musicService.submitMusic(currentUser.id, userProfile.username, musicTitle.trim(), musicUrl.trim());
+                  if (result.success) {
+                    setMusicNotice('✅ Track submitted for approval!');
+                    setTimeout(() => {
+                      setIsMusicModalOpen(false);
+                      setMusicTitle('');
+                      setMusicUrl('');
+                      setMusicNotice('');
+                    }, 2000);
+                  } else {
+                    setMusicNotice(`❌ ${result.message || 'Failed to submit.'}`);
+                    setTimeout(() => setMusicNotice(''), 4000);
+                  }
+                } catch (e) {
+                  console.error('Music submission error:', e);
+                  setMusicNotice('❌ Error submitting track.');
+                  setTimeout(() => setMusicNotice(''), 4000);
+                } finally {
+                  setMusicSubmitting(false);
+                }
+              }}
+              disabled={musicSubmitting}
+              style={{ width: '100%', padding: '14px', background: musicSubmitting ? 'rgba(168,85,247,0.3)' : 'linear-gradient(90deg, #c084fc 0%, #a855f7 100%)', border: 'none', borderRadius: '12px', color: '#000', fontSize: '1.1rem', fontWeight: 'bold', cursor: musicSubmitting ? 'not-allowed' : 'pointer', fontFamily: 'Rajdhani, sans-serif', letterSpacing: '1px', boxShadow: '0 0 20px rgba(168,85,247,0.4)' }}
+            >
+              {musicSubmitting ? 'SUBMITTING...' : 'SUBMIT FOR APPROVAL'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Player Auth Modal */}
       <AuthModal
