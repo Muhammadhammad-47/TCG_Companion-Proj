@@ -913,10 +913,16 @@ export default function KontrolaArena() {
     isProcessingQueueRef.current = false;
   };
 
-  const executeActionResolution = (payload, precalculatedRolls = null) => {
+  const executeActionResolution = (payload, precalculatedRollsParam = null) => {
     setGameState((currentState) => {
       if (!currentState) return currentState;
       if (!['ROLL_OFF', 'CHARACTER_SELECT', 'RESOLVE_COMBAT'].includes(payload.actionType) && !currentState.characterStates) return currentState;
+
+      // For RESOLVE_COMBAT, use rolls from payload.precalculatedRolls (set by dice screen)
+      // or fallback to the parameter
+      const precalculatedRolls = payload.actionType === 'RESOLVE_COMBAT' 
+        ? (payload.precalculatedRolls || precalculatedRollsParam)
+        : precalculatedRollsParam;
 
       // RESOLVE_COMBAT: falls through to the generic resolution block at the bottom of this function.
       // The payload already carries actorId, actionCard, targetId, attackSelectionName, and precalculatedRolls
