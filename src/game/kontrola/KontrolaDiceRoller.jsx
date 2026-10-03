@@ -235,15 +235,15 @@ export default function KontrolaDiceRoller({
   const selectedAttackInfo = atkChar?.attacks?.[attackSelectionName];
   const hasMultiplierDie = selectedAttackInfo && selectedAttackInfo.dice > 0;
 
-  const handleReRoll = () => {
+  function handleReRoll() {
     if (isAttackerRolling || isDefenderRolling) return;
     if (onTriggerRoll) {
       onTriggerRoll(null, true); // Signal reroll reset
     }
-  };
+  }
 
   // Attacker rolls their 2 authentic dice
-  const handleRollAttacker = () => {
+  function handleRollAttacker() {
     if (isAttackerRolling || hasAttackerRolled) return;
     const atkRolls = [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
     setClashAtkDice(atkRolls);
@@ -267,10 +267,10 @@ export default function KontrolaDiceRoller({
         }, 900);
       }
     }, 900);
-  };
+  }
 
   // Defender rolls their 2 authentic dice
-  const handleRollDefender = () => {
+  function handleRollDefender() {
     if (isDefenderRolling || hasDefenderRolled) return;
     const defRolls = [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
     setClashDefDice(defRolls);
@@ -287,10 +287,10 @@ export default function KontrolaDiceRoller({
         });
       }
     }, 900);
-  };
+  }
 
   // Interactive 2nd-stage multiplier die roll for "PER" character moves
-  const handleRollMultiplierDie = () => {
+  function handleRollMultiplierDie() {
     if (isRollingMultiplier || hasRolledMultiplier) return;
     setIsRollingMultiplier(true);
     if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
@@ -305,7 +305,7 @@ export default function KontrolaDiceRoller({
         });
       }
     }, 850);
-  };
+  }
 
   // 15-Second safety auto-roll countdown to prevent combat stalling
   const autoRollRef = useRef({});
