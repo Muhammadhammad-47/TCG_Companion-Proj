@@ -599,6 +599,7 @@ export function Chat({ onBack, isOverlay = false }) {
       setChatHistory(prev => [...prev, { q: query, a: finalAns }]);
       setUserFeedback(null);
       setSuggestedAnswer('');
+      setStatus(''); // Clear the "Processing message..." status
 
       // Background question logging to Supabase (fire-and-forget)
       knowledgeService.logUserQuestion({
@@ -1038,9 +1039,56 @@ export function Chat({ onBack, isOverlay = false }) {
             )}
           </div>
 
-          {answer && (
+          {chatHistory.length > 0 && (
+            <div style={{ marginBottom: '20px' }}>
+              {chatHistory.map((item, idx) => (
+                <div key={idx} style={{ marginBottom: '16px' }}>
+                  {/* User's Question */}
+                  <div className="chat-bubble user" style={{ margin: '0 0 8px 0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                      <User size={16} style={{ color: '#00f0ff' }} />
+                      <span style={{ fontSize: '0.85rem', color: '#00f0ff', fontWeight: 'bold' }}>You</span>
+                    </div>
+                    <div style={{ whiteSpace: 'pre-wrap', color: '#fff' }}>{item.q}</div>
+                  </div>
+
+                  {/* Bot's Answer */}
+                  <div className="chat-bubble bot" style={{ margin: '0' }}>
+                    <div className="bot-avatar-icon" style={{ overflow: 'hidden' }}>
+                      <img
+                        src={encodeURI(`${(import.meta.env.BASE_URL || '/').endsWith('/') ? (import.meta.env.BASE_URL || '/') : (import.meta.env.BASE_URL + '/')}${CHAT_AVATARS[selectedAvatarId]?.idlePath || CHAT_AVATARS.chyna?.idlePath || 'Chatbot Characters/Chyna/Idle/SILENCE.png'}`)}
+                        alt="avatar"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          transform: `scale(${CHAT_AVATARS[selectedAvatarId]?.scale ? CHAT_AVATARS[selectedAvatarId].scale * 1.5 : 1})`,
+                          transformOrigin: 'center center'
+                        }}
+                      />
+                    </div>
+                    <div style={{ whiteSpace: 'pre-wrap' }}>{item.a}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {answer && !chatHistory.some((item) => item.a === answer) && (
             <div className="chat-response-container">
-              <div className="chat-bubble bot" style={{ margin: 0, position: 'relative' }}>
+              {/* Current User Question (while typing/processing) */}
+              {question && (
+                <div className="chat-bubble user" style={{ margin: '0 0 8px 0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <User size={16} style={{ color: '#00f0ff' }} />
+                    <span style={{ fontSize: '0.85rem', color: '#00f0ff', fontWeight: 'bold' }}>You</span>
+                  </div>
+                  <div style={{ whiteSpace: 'pre-wrap', color: '#fff' }}>{question}</div>
+                </div>
+              )}
+
+              {/* Bot's Answer */}
+              <div className="chat-bubble bot" style={{ margin: 0 }}>
                 <div className="bot-avatar-icon" style={{ overflow: 'hidden' }}>
                   <img
                     src={encodeURI(`${(import.meta.env.BASE_URL || '/').endsWith('/') ? (import.meta.env.BASE_URL || '/') : (import.meta.env.BASE_URL + '/')}${CHAT_AVATARS[selectedAvatarId]?.idlePath || CHAT_AVATARS.chyna?.idlePath || 'Chatbot Characters/Chyna/Idle/SILENCE.png'}`)}
@@ -1058,62 +1106,65 @@ export function Chat({ onBack, isOverlay = false }) {
                   {isSpeaking ? displayedAnswer : answer}
                   {isSpeaking && <span className="cursor-blink">|</span>}
                 </div>
-
-                {/* Question Feedback Controls */}
-                {answer && !isSpeaking && (
-                  <div style={{
-                    marginTop: '12px',
-                    paddingTop: '8px',
-                    borderTop: '1px solid rgba(255,255,255,0.12)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    flexWrap: 'wrap',
-                    gap: '8px'
-                  }}>
-                    <span style={{ fontSize: '0.74rem', color: feedbackSuccessMsg ? '#39ff14' : 'rgba(255,255,255,0.5)', fontWeight: feedbackSuccessMsg ? 'bold' : 'normal' }}>
-                      {feedbackSuccessMsg || 'Was this rule accurate?'}
-                    </span>
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <button
-                        onClick={() => handleRateAnswer('helpful')}
-                        disabled={userFeedback === 'helpful'}
-                        style={{
-                          background: userFeedback === 'helpful' ? 'rgba(57, 255, 20, 0.25)' : 'rgba(255, 255, 255, 0.06)',
-                          border: userFeedback === 'helpful' ? '1px solid #39ff14' : '1px solid rgba(255, 255, 255, 0.15)',
-                          color: userFeedback === 'helpful' ? '#39ff14' : 'rgba(255, 255, 255, 0.7)',
-                          padding: '3px 8px',
-                          borderRadius: '6px',
-                          fontSize: '0.75rem',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px'
-                        }}
-                      >
-                        <ThumbsUp size={12} /> {userFeedback === 'helpful' ? 'Helpful ✓' : 'Yes'}
-                      </button>
-                      <button
-                        onClick={() => setShowCorrectionModal(true)}
-                        style={{
-                          background: userFeedback === 'unhelpful' ? 'rgba(255, 51, 102, 0.25)' : 'rgba(255, 255, 255, 0.06)',
-                          border: userFeedback === 'unhelpful' ? '1px solid var(--neon-crimson)' : '1px solid rgba(255, 255, 255, 0.15)',
-                          color: userFeedback === 'unhelpful' ? '#ff6688' : 'rgba(255, 255, 255, 0.7)',
-                          padding: '3px 8px',
-                          borderRadius: '6px',
-                          fontSize: '0.75rem',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px'
-                        }}
-                      >
-                        <ThumbsDown size={12} /> Suggest Fix
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
+
+              {/* Question Feedback Controls - OUTSIDE the message box */}
+              {answer && !isSpeaking && (
+                <div style={{
+                  marginTop: '12px',
+                  paddingTop: '12px',
+                  paddingLeft: '0px',
+                  paddingRight: '0px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '12px'
+                }}>
+                  <span style={{ fontSize: '0.78rem', color: feedbackSuccessMsg ? '#39ff14' : 'rgba(255,255,255,0.6)', fontWeight: feedbackSuccessMsg ? 'bold' : 'normal' }}>
+                    {feedbackSuccessMsg || 'Was this rule accurate?'}
+                  </span>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      onClick={() => handleRateAnswer('helpful')}
+                      disabled={userFeedback === 'helpful'}
+                      style={{
+                        background: userFeedback === 'helpful' ? 'rgba(57, 255, 20, 0.25)' : 'rgba(255, 255, 255, 0.06)',
+                        border: userFeedback === 'helpful' ? '1px solid #39ff14' : '1px solid rgba(255, 255, 255, 0.15)',
+                        color: userFeedback === 'helpful' ? '#39ff14' : 'rgba(255, 255, 255, 0.7)',
+                        padding: '4px 12px',
+                        borderRadius: '6px',
+                        fontSize: '0.78rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontWeight: '600'
+                      }}
+                    >
+                      <ThumbsUp size={14} /> {userFeedback === 'helpful' ? 'Helpful ✓' : 'Helpful'}
+                    </button>
+                    <button
+                      onClick={() => setShowCorrectionModal(true)}
+                      style={{
+                        background: userFeedback === 'unhelpful' ? 'rgba(255, 51, 102, 0.25)' : 'rgba(255, 255, 255, 0.06)',
+                        border: userFeedback === 'unhelpful' ? '1px solid var(--neon-crimson)' : '1px solid rgba(255, 255, 255, 0.15)',
+                        color: userFeedback === 'unhelpful' ? '#ff6688' : 'rgba(255, 255, 255, 0.7)',
+                        padding: '4px 12px',
+                        borderRadius: '6px',
+                        fontSize: '0.78rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontWeight: '600'
+                      }}
+                    >
+                      <ThumbsDown size={14} /> Suggest Fix
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
