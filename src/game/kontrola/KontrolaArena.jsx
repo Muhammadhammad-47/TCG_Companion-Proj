@@ -4190,9 +4190,9 @@ export default function KontrolaArena() {
             <KontrolaDiceRoller
               combatData={activeCombat}
               precalculatedRolls={activeCombat.precalculatedRolls}
-              isAttacker={activeCombat.attackerId === playerId || (isHost && !activeCombat.attackerId)}
-              isDefender={activeCombat.targetId === playerId || (activeCombat.targetId === 'ALL' && activeCombat.attackerId !== playerId) || (!activeCombat.targetId && activeCombat.attackerId !== playerId)}
-              isSpectator={isSpectator || (activeCombat.attackerId !== playerId && activeCombat.targetId !== playerId && activeCombat.targetId !== 'ALL' && Boolean(activeCombat.targetId))}
+              isAttacker={activeCombat.actorId === playerId || (isHost && !activeCombat.actorId)}
+              isDefender={activeCombat.targetId === playerId || (activeCombat.targetId === 'ALL' && activeCombat.actorId !== playerId) || (!activeCombat.targetId && activeCombat.actorId !== playerId)}
+              isSpectator={isSpectator || (activeCombat.actorId !== playerId && activeCombat.targetId !== playerId && activeCombat.targetId !== 'ALL' && Boolean(activeCombat.targetId))}
               isHost={isHost}
               isExternallyRolling={isDiceRollingSync}
               onTriggerRoll={handleTriggerDiceRoll}

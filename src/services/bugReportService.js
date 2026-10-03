@@ -28,6 +28,15 @@ export const bugReportService = {
     matchId = null,
     screenshot = null
   }) {
+    console.log('[bugReportService] Attempting to submit bug report:', {
+      userId,
+      username,
+      errorType,
+      errorMessage: errorMessage?.substring(0, 100) + '...',
+      hasStack: !!errorStack,
+      hasScreenshot: !!screenshot
+    });
+
     if (!supabase) {
       console.error('[bugReportService] Supabase not configured');
       return null;
@@ -80,6 +89,12 @@ export const bugReportService = {
 
       if (error) {
         console.error('[bugReportService] Failed to insert bug report:', error);
+        
+        // Check if it's a table doesn't exist error
+        if (error.message?.includes('relation "bug_reports" does not exist')) {
+          console.error('[bugReportService] DATABASE SETUP REQUIRED: Run supabase/schema.sql to create bug_reports table');
+        }
+        
         return null;
       }
 
@@ -217,9 +232,17 @@ export const bugReportService = {
  * Call setupGlobalErrorHandlers() in your main App component
  */
 export function setupGlobalErrorHandlers(userId, username) {
+  console.log('[bugReportService] Setting up global error handlers for:', { userId, username });
+  
   // Capture unhandled errors
   window.addEventListener('error', (event) => {
-    console.error('[Global Error Handler]', event.error);
+    console.error('[Global Error Handler] Caught error:', event.error);
+    console.log('[Global Error Handler] Event details:', {
+      message: event.message,
+      filename: event.filename,
+      lineno: event.lineno,
+      colno: event.colno
+    });
 
     bugReportService.submitBugReport({
       userId,
@@ -229,12 +252,17 @@ export function setupGlobalErrorHandlers(userId, username) {
       errorStack: event.error?.stack,
       pageUrl: window.location.href,
       userAgent: navigator.userAgent
+    }).then((result) => {
+      console.log('[bugReportService] Error report submitted:', result?.id || 'failed');
+    }).catch((err) => {
+      console.error('[bugReportService] Failed to submit error report:', err);
     });
   });
 
   // Capture unhandled promise rejections
   window.addEventListener('unhandledrejection', (event) => {
     console.error('[Global Promise Rejection]', event.reason);
+    console.log('[Global Promise Rejection] Event details:', { reason: event.reason });
 
     bugReportService.submitBugReport({
       userId,
@@ -244,8 +272,34 @@ export function setupGlobalErrorHandlers(userId, username) {
       errorStack: event.reason?.stack,
       pageUrl: window.location.href,
       userAgent: navigator.userAgent
+    }).then((result) => {
+      console.log('[bugReportService] Promise rejection report submitted:', result?.id || 'failed');
+    }).catch((err) => {
+      console.error('[bugReportService] Failed to submit promise rejection report:', err);
     });
   });
 
-  console.log('[bugReportService] Global error handlers initialized');
+  console.log('[bugReportService] Global error handlers initialized successfully');
+
+  // Test function - can be called from console
+  window.testBugReporting = () => {
+    console.log('[bugReportService] Testing bug reporting system...');
+    
+    // Test 1: Manual error submission
+    bugReportService.submitBugReport({
+      userId,
+      username,
+      errorType: 'manual',
+      errorMessage: 'Test error from manual trigger',
+      pageUrl: window.location.href,
+      userAgent: navigator.userAgent
+    }).then((result) => {
+      console.log('[bugReportService] Manual test report result:', result);
+    });
+    
+    // Test 2: Throw an error to test global handler
+    setTimeout(() => {
+      throw new Error('Test error to verify global error handler');
+    }, 1000);
+  };
 }
