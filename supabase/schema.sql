@@ -434,3 +434,66 @@ create policy "Admins can manage all music"
   on public.user_music for all using (
     exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
   );
+
+
+-- 6. BUG REPORTS TABLE (Automatic crash reports and manual user submissions)
+create table if not exists public.bug_reports (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users(id) on delete set null,
+  username text not null,
+  error_type text not null check (error_type in ('crash', 'freeze', 'blackout', 'manual', 'error')),
+  error_message text not null,
+  error_stack text,
+  page_url text not null,
+  user_agent text not null,
+  game_state jsonb,
+  match_id text,
+  screenshot_url text,
+  status text default 'new' check (status in ('new', 'investigating', 'resolved', 'dismissed')),
+  admin_notes text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Create index for faster queries
+create index if not exists idx_bug_reports_status on public.bug_reports(status);
+create index if not exists idx_bug_reports_created_at on public.bug_reports(created_at desc);
+create index if not exists idx_bug_reports_user_id on public.bug_reports(user_id);
+
+-- Enable RLS for bug_reports
+alter table public.bug_reports enable row level security;
+
+drop policy if exists "Anyone can submit bug reports" on public.bug_reports;
+create policy "Anyone can submit bug reports" 
+  on public.bug_reports for insert with check (true);
+
+drop policy if exists "Users can view own bug reports" on public.bug_reports;
+create policy "Users can view own bug reports" 
+  on public.bug_reports for select using (auth.uid() = user_id or user_id is null);
+
+drop policy if exists "Admins can view all bug reports" on public.bug_reports;
+create policy "Admins can view all bug reports" 
+  on public.bug_reports for select using (
+    exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
+  );
+
+drop policy if exists "Admins can update bug reports" on public.bug_reports;
+create policy "Admins can update bug reports" 
+  on public.bug_reports for update using (
+    exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
+  );
+
+drop policy if exists "Admins can delete bug reports" on public.bug_reports;
+create policy "Admins can delete bug reports" 
+  on public.bug_reports for delete using (
+    exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
+  );
+
+-- Storage bucket for bug screenshots (create via Supabase dashboard or run these commands)
+-- Note: Run these in Supabase SQL editor if bucket doesn't exist
+-- insert into storage.buckets (id, name, public) values ('bug-screenshots', 'bug-screenshots', true);
+
+-- Storage RLS policies
+-- create policy "Anyone can upload bug screenshots" on storage.objects for insert with check (bucket_id = 'bug-screenshots');
+-- create policy "Anyone can view bug screenshots" on storage.objects for select using (bucket_id = 'bug-screenshots');
+-- create policy "Admins can delete bug screenshots" on storage.objects for delete using (bucket_id = 'bug-screenshots' and exists (select 1 from public.profiles where id = auth.uid() and is_admin = true));

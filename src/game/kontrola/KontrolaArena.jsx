@@ -24,6 +24,7 @@ import KontrolaDiceRoller, { CanvasPipDie } from './KontrolaDiceRoller';
 import KontrolaChatModal from './KontrolaChatModal';
 import KontrolaTauntModal from './KontrolaTauntModal';
 import { LeaderboardModal } from '../../components/LeaderboardModal';
+import BugReportButton from '../../components/BugReportButton';
 import '../../pages/GamePage.css';
 
 // Collision-proof unique player ID — sourced from DB or generated fresh.
@@ -4376,6 +4377,22 @@ export default function KontrolaArena() {
               />
             </div>
           )}
+
+          {/* Floating Bug Report Button */}
+          <div style={{
+            position: 'fixed',
+            bottom: '20px',
+            left: '20px',
+            zIndex: 9998
+          }}>
+            <BugReportButton 
+              userId={currentUser?.id || null}
+              username={playerName || 'Player'}
+              gameState={gameState}
+              matchId={matchId}
+              size="normal"
+            />
+          </div>
         </div>
       </DynamicScaleWrapper>
     </div>

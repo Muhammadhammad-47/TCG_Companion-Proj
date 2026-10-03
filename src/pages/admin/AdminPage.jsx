@@ -7,12 +7,14 @@ import {
   TrendingUp, Award, Layers, Users, Swords, UserX, UserCheck, Flame,
   Crown, Lock, Ban, Sparkles, Gem, Clock, Zap, LogOut, ChevronRight,
   Server, Globe, LayoutGrid, List, FileCode, Cpu, FileText, Download,
-  PlusCircle, FilePlus, Code, AlertCircle, Coins, ShoppingCart, Music, Play, Pause
+  PlusCircle, FilePlus, Code, AlertCircle, Coins, ShoppingCart, Music, Play, Pause,
+  Bug, MonitorX, ZapOff, MessageSquare
 } from 'lucide-react';
 import { authService } from '../../services/authService';
 import { knowledgeService, calculateGroqMetrics, GROQ_LIMITS } from '../../services/knowledgeService';
 import { economyService } from '../../services/economyService';
 import { musicService } from '../../services/musicService';
+import { bugReportService } from '../../services/bugReportService';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
@@ -118,6 +120,13 @@ export default function AdminPage() {
   const [musicLoading, setMusicLoading] = useState(false);
   const [musicFilter, setMusicFilter] = useState('pending'); // 'all' | 'pending' | 'approved' | 'rejected'
 
+  // Bug Reports State
+  const [bugReports, setBugReports] = useState([]);
+  const [bugReportsLoading, setBugReportsLoading] = useState(false);
+  const [bugReportFilter, setBugReportFilter] = useState('new'); // 'new' | 'investigating' | 'resolved' | 'dismissed' | 'all'
+  const [expandedBugId, setExpandedBugId] = useState(null);
+  const [bugAdminNotes, setBugAdminNotes] = useState({});
+
   // Quick Copy
   const [copiedKey, setCopiedKey] = useState('');
 
@@ -188,8 +197,21 @@ export default function AdminPage() {
       loadQuestions();
       loadEconomyData();
       loadMusic();
+      loadBugReports();
     }
   }, [isAdmin]);
+
+  const loadBugReports = async (statusFilter = null) => {
+    setBugReportsLoading(true);
+    try {
+      const reports = await bugReportService.fetchBugReports({ status: statusFilter, limit: 150 });
+      setBugReports(reports || []);
+    } catch (e) {
+      console.warn('Failed to load bug reports:', e);
+    } finally {
+      setBugReportsLoading(false);
+    }
+  };
 
   const loadEconomyData = async () => {
     setIsEconomyLoading(true);
@@ -759,6 +781,7 @@ export default function AdminPage() {
     { id: 'questions', label: 'Questions Inbox', icon: HelpCircle, badge: questions.length },
     { id: 'monetization', label: 'Monetization', icon: Coins, badge: 'Eco' },
     { id: 'music', label: 'Music Library', icon: Music, badge: musicTracks.filter(m => m.status === 'pending').length || 0 },
+    { id: 'bug_reports', label: 'Bug Reports', icon: Bug, badge: bugReports.filter(r => r.status === 'new').length || 0 },
     { id: 'tcg_apis', label: 'TCG APIs', icon: Server, badge: 'Live' }
   ];
 
@@ -2532,6 +2555,242 @@ export default function AdminPage() {
                       )}
                     </div>
                   </div>
+                </div>
+              )}
+              {/* =========================================================================
+                  PAGE 8: BUG REPORTS
+              ========================================================================= */}
+              {activeTab === 'bug_reports' && (
+                <div>
+                  {/* KPI Bar */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', marginBottom: '16px' }}>
+                    {[
+                      { label: 'NEW', value: bugReports.filter(r => r.status === 'new').length, color: '#ff2a55' },
+                      { label: 'INVESTIGATING', value: bugReports.filter(r => r.status === 'investigating').length, color: '#ffe600' },
+                      { label: 'RESOLVED', value: bugReports.filter(r => r.status === 'resolved').length, color: '#39ff14' },
+                      { label: 'DISMISSED', value: bugReports.filter(r => r.status === 'dismissed').length, color: 'rgba(255,255,255,0.35)' },
+                      { label: 'TOTAL', value: bugReports.length, color: '#00f0ff' }
+                    ].map(stat => (
+                      <div key={stat.label} className="kpi-card" style={{ background: 'rgba(14,22,42,0.4)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '12px 14px' }}>
+                        <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>{stat.label}</div>
+                        <div style={{ fontSize: '1.5rem', fontWeight: '700', color: stat.color }}>{stat.value}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Header + Filter + Refresh */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
+                    <div>
+                      <h2 style={{ fontSize: '1.3rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'Rajdhani, sans-serif', letterSpacing: '1px' }}>
+                        🐛 BUG REPORTS
+                      </h2>
+                      <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>
+                        Automatic crash captures and player-submitted issues
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {['new', 'investigating', 'resolved', 'dismissed', 'all'].map(f => (
+                        <button
+                          key={f}
+                          onClick={() => {
+                            setBugReportFilter(f);
+                            loadBugReports(f === 'all' ? null : f);
+                          }}
+                          style={{
+                            background: bugReportFilter === f ? 'rgba(0,240,255,0.15)' : 'rgba(255,255,255,0.05)',
+                            border: bugReportFilter === f ? '1px solid rgba(0,240,255,0.6)' : '1px solid rgba(255,255,255,0.1)',
+                            color: bugReportFilter === f ? '#00f0ff' : 'rgba(255,255,255,0.6)',
+                            padding: '5px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 'bold', textTransform: 'uppercase'
+                          }}
+                        >
+                          {f}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => loadBugReports(bugReportFilter === 'all' ? null : bugReportFilter)}
+                        style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.78rem' }}
+                      >
+                        <RefreshCw size={13} /> Refresh
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Reports List */}
+                  {bugReportsLoading ? (
+                    <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.4)', padding: '40px', fontSize: '0.9rem' }}>Loading bug reports...</div>
+                  ) : bugReports.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '60px 20px', color: 'rgba(255,255,255,0.3)' }}>
+                      <Bug size={40} style={{ marginBottom: '12px', opacity: 0.4 }} />
+                      <div style={{ fontSize: '1rem', fontWeight: 'bold' }}>No bug reports found</div>
+                      <div style={{ fontSize: '0.8rem', marginTop: '6px' }}>Reports appear here automatically when players encounter errors</div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {bugReports.map(report => {
+                        const isExpanded = expandedBugId === report.id;
+                        const statusColors = { new: '#ff2a55', investigating: '#ffe600', resolved: '#39ff14', dismissed: 'rgba(255,255,255,0.35)' };
+                        const typeIcons = { crash: '💥', freeze: '🧊', blackout: '⬛', manual: '✍️', error: '⚠️' };
+                        const statusColor = statusColors[report.status] || '#00f0ff';
+
+                        return (
+                          <div
+                            key={report.id}
+                            style={{
+                              background: 'rgba(14,22,42,0.5)',
+                              border: `1px solid ${report.status === 'new' ? 'rgba(255,42,85,0.4)' : 'rgba(255,255,255,0.1)'}`,
+                              borderRadius: '10px',
+                              overflow: 'hidden'
+                            }}
+                          >
+                            {/* Row Header */}
+                            <div
+                              style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', cursor: 'pointer', flexWrap: 'wrap' }}
+                              onClick={() => setExpandedBugId(isExpanded ? null : report.id)}
+                            >
+                              <span style={{ fontSize: '1.1rem' }}>{typeIcons[report.error_type] || '🐛'}</span>
+
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontWeight: 'bold', color: '#fff', fontSize: '0.88rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {report.error_message}
+                                </div>
+                                <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)', marginTop: '2px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                                  <span>👤 {report.username}</span>
+                                  {report.match_id && <span>🎮 Match: {report.match_id}</span>}
+                                  <span>🕐 {new Date(report.created_at).toLocaleString()}</span>
+                                  <span style={{ textTransform: 'uppercase', color: 'rgba(0,240,255,0.7)' }}>{report.error_type}</span>
+                                </div>
+                              </div>
+
+                              {/* Status badge */}
+                              <span style={{ background: `${statusColor}22`, color: statusColor, border: `1px solid ${statusColor}55`, padding: '3px 10px', borderRadius: '5px', fontSize: '0.72rem', fontWeight: 'bold', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                                {report.status}
+                              </span>
+
+                              {/* Expand chevron */}
+                              <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem' }}>{isExpanded ? '▲' : '▼'}</span>
+                            </div>
+
+                            {/* Expanded Detail Panel */}
+                            {isExpanded && (
+                              <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', padding: '14px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+                                {/* Screenshot */}
+                                {report.screenshot_url && (
+                                  <div>
+                                    <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)', marginBottom: '6px', fontWeight: 'bold', textTransform: 'uppercase' }}>Screenshot</div>
+                                    <img
+                                      src={report.screenshot_url}
+                                      alt="Bug screenshot"
+                                      style={{ maxWidth: '100%', maxHeight: '300px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)', objectFit: 'contain', background: '#000' }}
+                                    />
+                                  </div>
+                                )}
+
+                                {/* Error Details Grid */}
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '8px' }}>
+                                  {[
+                                    { label: 'Error Type', value: report.error_type },
+                                    { label: 'Page URL', value: report.page_url },
+                                    { label: 'Match ID', value: report.match_id || '—' },
+                                    { label: 'User Agent', value: report.user_agent?.substring(0, 60) + '...' }
+                                  ].map(field => (
+                                    <div key={field.label} style={{ background: 'rgba(0,0,0,0.3)', padding: '8px 10px', borderRadius: '6px' }}>
+                                      <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '3px' }}>{field.label}</div>
+                                      <div style={{ fontSize: '0.78rem', color: '#fff', wordBreak: 'break-all' }}>{field.value}</div>
+                                    </div>
+                                  ))}
+                                </div>
+
+                                {/* Stack Trace */}
+                                {report.error_stack && (
+                                  <div>
+                                    <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)', marginBottom: '4px', fontWeight: 'bold', textTransform: 'uppercase' }}>Stack Trace</div>
+                                    <pre style={{ background: 'rgba(0,0,0,0.5)', padding: '10px', borderRadius: '6px', fontSize: '0.7rem', color: '#ff8099', overflowX: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all', maxHeight: '180px', margin: 0 }}>
+                                      {report.error_stack}
+                                    </pre>
+                                  </div>
+                                )}
+
+                                {/* Game State Snapshot */}
+                                {report.game_state && (
+                                  <div>
+                                    <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)', marginBottom: '4px', fontWeight: 'bold', textTransform: 'uppercase' }}>Game State Snapshot</div>
+                                    <pre style={{ background: 'rgba(0,0,0,0.5)', padding: '10px', borderRadius: '6px', fontSize: '0.7rem', color: '#94a3b8', overflowX: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all', maxHeight: '180px', margin: 0 }}>
+                                      {JSON.stringify(report.game_state, null, 2)}
+                                    </pre>
+                                  </div>
+                                )}
+
+                                {/* Admin Notes */}
+                                <div>
+                                  <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)', marginBottom: '4px', fontWeight: 'bold', textTransform: 'uppercase' }}>Admin Notes</div>
+                                  <textarea
+                                    value={bugAdminNotes[report.id] !== undefined ? bugAdminNotes[report.id] : (report.admin_notes || '')}
+                                    onChange={e => setBugAdminNotes(prev => ({ ...prev, [report.id]: e.target.value }))}
+                                    placeholder="Add investigation notes..."
+                                    rows={2}
+                                    style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(5,10,24,0.8)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: '#fff', padding: '8px', fontSize: '0.82rem', resize: 'vertical' }}
+                                  />
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                  {['investigating', 'resolved', 'dismissed'].map(newStatus => (
+                                    <button
+                                      key={newStatus}
+                                      onClick={async () => {
+                                        const notes = bugAdminNotes[report.id] !== undefined ? bugAdminNotes[report.id] : (report.admin_notes || null);
+                                        const ok = await bugReportService.updateBugReportStatus(report.id, newStatus, notes);
+                                        if (ok) {
+                                          setModNotice(`✅ Report marked as ${newStatus}`);
+                                          setTimeout(() => setModNotice(''), 3000);
+                                          loadBugReports(bugReportFilter === 'all' ? null : bugReportFilter);
+                                          setExpandedBugId(null);
+                                        } else {
+                                          showError('Failed to update report status.');
+                                        }
+                                      }}
+                                      style={{
+                                        background: newStatus === 'resolved' ? 'rgba(57,255,20,0.12)' : newStatus === 'investigating' ? 'rgba(255,230,0,0.12)' : 'rgba(255,255,255,0.06)',
+                                        border: newStatus === 'resolved' ? '1px solid rgba(57,255,20,0.4)' : newStatus === 'investigating' ? '1px solid rgba(255,230,0,0.4)' : '1px solid rgba(255,255,255,0.15)',
+                                        color: newStatus === 'resolved' ? '#39ff14' : newStatus === 'investigating' ? '#ffe600' : 'rgba(255,255,255,0.6)',
+                                        padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase'
+                                      }}
+                                    >
+                                      {newStatus === 'investigating' ? '🔍 Investigate' : newStatus === 'resolved' ? '✅ Resolve' : '🚫 Dismiss'}
+                                    </button>
+                                  ))}
+                                  <button
+                                    onClick={() => {
+                                      showConfirm(
+                                        'Delete Bug Report',
+                                        'Permanently delete this bug report?',
+                                        async () => {
+                                          const ok = await bugReportService.deleteBugReport(report.id);
+                                          if (ok) {
+                                            setModNotice('🗑️ Bug report deleted');
+                                            setTimeout(() => setModNotice(''), 3000);
+                                            loadBugReports(bugReportFilter === 'all' ? null : bugReportFilter);
+                                            setExpandedBugId(null);
+                                          } else {
+                                            showError('Failed to delete bug report.');
+                                          }
+                                        },
+                                        { confirmLabel: 'Delete', isDanger: true }
+                                      );
+                                    }}
+                                    style={{ background: 'rgba(255,42,85,0.1)', border: '1px solid rgba(255,42,85,0.35)', color: '#ff2a55', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px' }}
+                                  >
+                                    <Trash2 size={13} /> Delete
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
               {/* =========================================================================

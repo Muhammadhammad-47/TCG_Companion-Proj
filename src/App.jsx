@@ -20,6 +20,8 @@ import { authService } from './services/authService.js';
 import { knowledgeService } from './services/knowledgeService.js';
 import { economyService } from './services/economyService.js';
 import { musicService } from './services/musicService.js';
+import { setupGlobalErrorHandlers } from './services/bugReportService.js';
+import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { StoreModal } from './components/StoreModal.jsx';
 import { LeaderboardModal } from './components/LeaderboardModal.jsx';
 
@@ -1801,6 +1803,12 @@ function App() {
         if (u) {
           const prof = await authService.getProfile(u.id);
           setUserProfile(prof);
+          
+          // Set up global error handlers for authenticated users
+          setupGlobalErrorHandlers(u.id, prof?.username || prof?.display_name || 'Player');
+        } else {
+          // Set up global error handlers for guest users
+          setupGlobalErrorHandlers(null, 'Guest Player');
         }
         setAuthLoading(false);
       }
@@ -1809,10 +1817,21 @@ function App() {
     const { data: { subscription } } = authService.onAuthStateChange(async (event, session, profile) => {
       setCurrentUser(session?.user || null);
       setUserProfile(profile);
+      
+      // Update global error handlers when auth state changes
+      if (session?.user && profile) {
+        setupGlobalErrorHandlers(session.user.id, profile?.username || profile?.display_name || 'Player');
+      } else {
+        setupGlobalErrorHandlers(null, 'Guest Player');
+      }
+      
       setAuthLoading(false);
     });
 
-    return () => subscription?.unsubscribe();
+    return () => { 
+      if (isMounted) isMounted = false; 
+      subscription?.unsubscribe(); 
+    };
   }, []);
 
   // Full App Guard: requires authenticated player to access companion features
@@ -1865,16 +1884,23 @@ function App() {
   };
 
   return (
-    <Routes>
-      <Route path="/" element={<ProtectedRoute><Hub /></ProtectedRoute>} />
-      <Route path="/chat" element={<ProtectedRoute><Chat onBack={() => navigate('/')} /></ProtectedRoute>} />
-      <Route path="/game" element={<ProtectedRoute><GamePage /></ProtectedRoute>} />
-      <Route path="/kontrola" element={<ProtectedRoute><KontrolaArena /></ProtectedRoute>} />
-      <Route path="/admin" element={<AdminPage />} />
-      <Route path="/admin/*" element={<AdminPage />} />
-      <Route path="/docs" element={<DocsPage />} />
-      <Route path="/docs/*" element={<DocsPage />} />
-    </Routes>
+    <ErrorBoundary 
+      userId={currentUser?.id || null}
+      username={userProfile?.username || userProfile?.display_name || 'Player'}
+      gameState={null}
+      matchId={null}
+    >
+      <Routes>
+        <Route path="/" element={<ProtectedRoute><Hub /></ProtectedRoute>} />
+        <Route path="/chat" element={<ProtectedRoute><Chat onBack={() => navigate('/')} /></ProtectedRoute>} />
+        <Route path="/game" element={<ProtectedRoute><GamePage /></ProtectedRoute>} />
+        <Route path="/kontrola" element={<ProtectedRoute><KontrolaArena /></ProtectedRoute>} />
+        <Route path="/admin" element={<AdminPage />} />
+        <Route path="/admin/*" element={<AdminPage />} />
+        <Route path="/docs" element={<DocsPage />} />
+        <Route path="/docs/*" element={<DocsPage />} />
+      </Routes>
+    </ErrorBoundary>
   );
 }
 
