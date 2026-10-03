@@ -433,11 +433,11 @@ export default function KontrolaArena() {
   // ==========================================
   const [rollingOffPlayers, setRollingOffPlayers] = useState({});
 
-  const handleRollOff = () => {
+  const handleRollOff = async () => {
     if (isProcessingAction || rollingOffPlayers[playerId]) return;
     
     // Broadcast animation to everyone!
-    broadcastUIEvent(matchIdRef.current, 'roll_off_animation', { actorId: playerId });
+    await broadcastUIEvent(matchIdRef.current, 'roll_off_animation', { actorId: playerId });
     
     // Trigger local animation (it will clear naturally when state sync arrives and hasRolled becomes true)
     setRollingOffPlayers(prev => ({ ...prev, [playerId]: true }));
@@ -1227,9 +1227,9 @@ export default function KontrolaArena() {
         };
 
         // Notify all clients to open dice screen (delay slightly to ensure state is clear)
-        setTimeout(() => {
+        setTimeout(async () => {
           console.log('[DEFENSE_SELECTED] Broadcasting dice_screen_open event');
-          broadcastUIEvent(matchIdRef.current, 'dice_screen_open', broadcastData);
+          await broadcastUIEvent(matchIdRef.current, 'dice_screen_open', broadcastData);
         }, 100);
 
         const nextState = {
@@ -1806,7 +1806,7 @@ export default function KontrolaArena() {
   // ==========================================
   // PLAY ACTION & SYNCHRONIZED COMBAT CLASH
   // ==========================================
-  const playTurn = () => {
+  const playTurn = async () => {
     console.log('[playTurn] Starting with state:', {
       isProcessingAction,
       isMyTurn,
@@ -1898,7 +1898,7 @@ export default function KontrolaArena() {
           precalculatedRolls
         };
         console.log('[playTurn] AoE Attack - Opening dice screen immediately');
-        broadcastUIEvent(matchId, 'dice_screen_open', clashData);
+        await broadcastUIEvent(matchId, 'dice_screen_open', clashData);
         setActiveCombat(clashData);
         setIsDiceRollingSync(false);
       } else {
@@ -1953,26 +1953,26 @@ export default function KontrolaArena() {
   };
 
   // Triggered when attacker rolls the authentic pip dice (or re-rolls on tie)
-  const handleTriggerDiceRoll = (newRolls = null, isReroll = false) => {
+  const handleTriggerDiceRoll = async (newRolls = null, isReroll = false) => {
     if (newRolls) {
       setActiveCombat((prev) => prev ? { ...prev, precalculatedRolls: { ...(prev.precalculatedRolls || {}), ...newRolls } } : prev);
-      broadcastUIEvent(matchId, 'dice_screen_rolled', { timestamp: Date.now(), precalculatedRolls: newRolls });
+      await broadcastUIEvent(matchId, 'dice_screen_rolled', { timestamp: Date.now(), precalculatedRolls: newRolls });
     } else if (isReroll) {
       // Preserve defenseCard when re-rolling on a tie — only reset the dice rolls
       setActiveCombat((prev) => {
         const kept = { defenseCard: prev?.precalculatedRolls?.defenseCard ?? null };
         return prev ? { ...prev, precalculatedRolls: kept } : prev;
       });
-      broadcastUIEvent(matchId, 'dice_screen_rolled', { timestamp: Date.now(), isReroll: true });
+      await broadcastUIEvent(matchId, 'dice_screen_rolled', { timestamp: Date.now(), isReroll: true });
     } else {
-      broadcastUIEvent(matchId, 'dice_screen_rolled', { timestamp: Date.now() });
+      await broadcastUIEvent(matchId, 'dice_screen_rolled', { timestamp: Date.now() });
     }
     setIsDiceRollingSync(true);
   };
 
   // Triggered when dice screen is closed or finished
-  const handleCloseDiceScreen = (resolved = false) => {
-    broadcastUIEvent(matchId, 'dice_screen_close', {
+  const handleCloseDiceScreen = async (resolved = false) => {
+    await broadcastUIEvent(matchId, 'dice_screen_close', {
       resolved,
       combatData: activeCombat,
       precalculatedRolls: activeCombat?.precalculatedRolls
@@ -4196,9 +4196,9 @@ export default function KontrolaArena() {
               isHost={isHost}
               isExternallyRolling={isDiceRollingSync}
               onTriggerRoll={handleTriggerDiceRoll}
-              onClose={() => handleCloseDiceScreen(false)}
-              onForceClose={() => handleCloseDiceScreen(false)}
-              onCombatComplete={() => handleCloseDiceScreen(true)}
+              onClose={async () => await handleCloseDiceScreen(false)}
+              onForceClose={async () => await handleCloseDiceScreen(false)}
+              onCombatComplete={async () => await handleCloseDiceScreen(true)}
             />
           )}
 
