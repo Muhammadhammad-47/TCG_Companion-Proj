@@ -657,12 +657,27 @@ export default function KontrolaArena() {
         // 6. Synchronized Dice Screen Open
         else if (event.type === 'DICE_SCREEN_OPEN') {
           console.log('[DICE_SCREEN_OPEN] Received event with payload:', {
-            hasAttacker: !!event.payload?.attacker,
-            hasDefender: !!event.payload?.defender,
+            actorId: event.payload?.actorId,
+            targetId: event.payload?.targetId,
             actionCard: event.payload?.actionCard?.name,
             attackSelectionName: event.payload?.attackSelectionName
           });
-          setActiveCombat(event.payload);
+          
+          // Reconstruct character objects from current gameState
+          const combatData = {
+            ...event.payload,
+            attacker: gameStateRef.current?.characterStates?.[event.payload?.actorId],
+            defender: gameStateRef.current?.characterStates?.[event.payload?.targetId]
+          };
+          
+          console.log('[DICE_SCREEN_OPEN] Reconstructed combatData:', {
+            hasAttacker: !!combatData.attacker,
+            hasDefender: !!combatData.defender,
+            attackerName: combatData.attacker?.name,
+            defenderName: combatData.defender?.name
+          });
+          
+          setActiveCombat(combatData);
           setIsDiceRollingSync(false);
         }
         // 7. Synchronized Dice Screen Roll
@@ -1170,12 +1185,20 @@ export default function KontrolaArena() {
           });
         }
         
+        // IMPORTANT: Don't send full character objects via WebSocket - they have complex data
+        // Instead, send minimal data and let clients reconstruct from their gameState
         const activeCombat = {
-          ...activeDefense,
-          actionType: 'RESOLVE_COMBAT',   // set correct actionType so resolution works
-          actorId: activeDefense.actorId,  // ensure actorId is set
-          attacker: attackerChar,          // FIXED: Add attacker character object
-          defender: defenderChar,          // FIXED: Add defender character object
+          actorId: activeDefense.actorId,
+          targetId: activeDefense.targetId,
+          actionCard: activeDefense.actionCard,
+          attackSelectionName: activeDefense.attackSelectionName,
+          actionType: 'RESOLVE_COMBAT',
+          attackerId: activeDefense.actorId,
+          attackerPlayerName: attackerChar?.name || activeDefense.attackerPlayerName,
+          defenderPlayerName: defenderChar?.name || activeDefense.defenderPlayerName,
+          // Character objects for local use by host
+          attacker: attackerChar,
+          defender: defenderChar,
           precalculatedRolls,
           defenseCard: payload.defenseCard ?? null
         };
@@ -1188,10 +1211,24 @@ export default function KontrolaArena() {
           defenseCard: activeCombat.defenseCard?.name
         });
 
+        // Broadcast lightweight data - clients will reconstruct character objects from their gameState
+        const broadcastData = {
+          actorId: activeCombat.actorId,
+          targetId: activeCombat.targetId,
+          actionCard: activeCombat.actionCard,
+          attackSelectionName: activeCombat.attackSelectionName,
+          actionType: 'RESOLVE_COMBAT',
+          attackerId: activeCombat.attackerId,
+          attackerPlayerName: activeCombat.attackerPlayerName,
+          defenderPlayerName: activeCombat.defenderPlayerName,
+          precalculatedRolls: activeCombat.precalculatedRolls,
+          defenseCard: activeCombat.defenseCard
+        };
+
         // Notify all clients to open dice screen (delay slightly to ensure state is clear)
         setTimeout(() => {
           console.log('[DEFENSE_SELECTED] Broadcasting dice_screen_open event');
-          broadcastUIEvent(matchIdRef.current, 'dice_screen_open', activeCombat);
+          broadcastUIEvent(matchIdRef.current, 'dice_screen_open', broadcastData);
         }, 100);
 
         const nextState = {

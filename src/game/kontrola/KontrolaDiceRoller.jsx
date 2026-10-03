@@ -242,13 +242,73 @@ export default function KontrolaDiceRoller({
     }
   };
 
+  // Attacker rolls their 2 authentic dice
+  const handleRollAttacker = () => {
+    if (isAttackerRolling || hasAttackerRolled) return;
+    const atkRolls = [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
+    setClashAtkDice(atkRolls);
+    setIsAttackerRolling(true);
+    if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
+
+    setTimeout(() => {
+      setIsAttackerRolling(false);
+      setHasAttackerRolled(true);
+
+      if (onTriggerRoll) {
+        onTriggerRoll({
+          attackerRoll: { rolls: atkRolls, total: atkRolls[0] + atkRolls[1] }
+        });
+      }
+
+      // Auto-trigger defender roll if defender is Bot/AI or single-player mode
+      if (!isSpectator && !combatData?.targetId) {
+        setTimeout(() => {
+          handleRollDefender();
+        }, 900);
+      }
+    }, 900);
+  };
+
+  // Defender rolls their 2 authentic dice
+  const handleRollDefender = () => {
+    if (isDefenderRolling || hasDefenderRolled) return;
+    const defRolls = [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
+    setClashDefDice(defRolls);
+    setIsDefenderRolling(true);
+    if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
+
+    setTimeout(() => {
+      setIsDefenderRolling(false);
+      setHasDefenderRolled(true);
+
+      if (onTriggerRoll) {
+        onTriggerRoll({
+          defenderRoll: { rolls: defRolls, total: defRolls[0] + defRolls[1] }
+        });
+      }
+    }, 900);
+  };
+
+  // Interactive 2nd-stage multiplier die roll for "PER" character moves
+  const handleRollMultiplierDie = () => {
+    if (isRollingMultiplier || hasRolledMultiplier) return;
+    setIsRollingMultiplier(true);
+    if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
+    const roll = Math.floor(Math.random() * 6) + 1;
+    setTimeout(() => {
+      setMultiplierDie(roll);
+      setIsRollingMultiplier(false);
+      setHasRolledMultiplier(true);
+      if (onTriggerRoll) {
+        onTriggerRoll({
+          dRoll: { rolls: [roll], total: roll }
+        });
+      }
+    }, 850);
+  };
+
   // 15-Second safety auto-roll countdown to prevent combat stalling
-  const autoRollRef = useRef({
-    isAttacker, hasAttackerRolled, handleRollAttacker,
-    isDefender, hasDefenderRolled, handleRollDefender,
-    phase, hasRolledMultiplier, handleRollMultiplierDie, onCombatComplete,
-    isHost, isTie, handleReRoll
-  });
+  const autoRollRef = useRef({});
   
   // Keep refs up to date without triggering useEffect re-runs
   useEffect(() => {
@@ -340,75 +400,6 @@ export default function KontrolaDiceRoller({
       return () => clearTimeout(timer);
     }
   }, [hasAttackerRolled, hasDefenderRolled, phase]);
-
-  // Attacker rolls their 2 authentic dice
-  const handleRollAttacker = () => {
-    if (isAttackerRolling || hasAttackerRolled) return;
-    const atkRolls = [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
-    setClashAtkDice(atkRolls);
-    setIsAttackerRolling(true);
-    if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
-
-    setTimeout(() => {
-      setIsAttackerRolling(false);
-      setHasAttackerRolled(true);
-
-      if (onTriggerRoll) {
-        onTriggerRoll({
-          attackerRoll: { rolls: atkRolls, total: atkRolls[0] + atkRolls[1] }
-        });
-      }
-
-      // Auto-trigger defender roll if defender is Bot/AI or single-player mode
-      if (!isSpectator && !combatData?.targetId) {
-        setTimeout(() => {
-          handleRollDefender();
-        }, 900);
-      }
-    }, 900);
-  };
-
-  // Defender rolls their 2 authentic dice
-  const handleRollDefender = () => {
-    if (isDefenderRolling || hasDefenderRolled) return;
-    const defRolls = [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
-    setClashDefDice(defRolls);
-    setIsDefenderRolling(true);
-    if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
-
-    setTimeout(() => {
-      setIsDefenderRolling(false);
-      setHasDefenderRolled(true);
-
-      if (onTriggerRoll) {
-        onTriggerRoll({
-          defenderRoll: { rolls: defRolls, total: defRolls[0] + defRolls[1] }
-        });
-      }
-    }, 900);
-  };
-
-
-
-  // Interactive 2nd-stage multiplier die roll for "PER" character moves
-  const handleRollMultiplierDie = () => {
-    if (isRollingMultiplier || hasRolledMultiplier) return;
-    setIsRollingMultiplier(true);
-    if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
-    const roll = Math.floor(Math.random() * 6) + 1;
-    setTimeout(() => {
-      setMultiplierDie(roll);
-      setIsRollingMultiplier(false);
-      setHasRolledMultiplier(true);
-      if (onTriggerRoll) {
-        onTriggerRoll({
-          dRoll: { rolls: [roll], total: roll }
-        });
-      }
-    }, 850);
-  };
-
-
 
   const cardImg = attackSelectionName
     ? getCharacterAttackGraphicUrl(attackSelectionName)
