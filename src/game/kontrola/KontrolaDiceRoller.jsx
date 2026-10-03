@@ -182,6 +182,19 @@ export default function KontrolaDiceRoller({
   onTriggerRoll = null,
   onForceClose = null
 }) {
+  console.log('[KontrolaDiceRoller] Component mounted with combatData:', {
+    hasAttacker: !!combatData?.attacker,
+    hasDefender: !!combatData?.defender,
+    attackerPlayerName: combatData?.attackerPlayerName,
+    defenderPlayerName: combatData?.defenderPlayerName,
+    actionCard: combatData?.actionCard?.name,
+    attackSelectionName: combatData?.attackSelectionName,
+    isAttacker,
+    isDefender,
+    isSpectator,
+    isHost
+  });
+  
   const { attacker, defender, actionCard, attackSelectionName, attackerPlayerName, defenderPlayerName } = combatData || {};
   const defChar = defender || { name: defenderPlayerName || 'Defender', hp: 100 };
   const atkChar = attacker || { name: attackerPlayerName || 'Attacker', hp: 100 };

@@ -181,6 +181,51 @@ create policy "Admins can update question status and approved answers"
   using (exists (select 1 from public.profiles where id = auth.uid() and is_admin = true));
 
 
+-- 4. KNOWLEDGE DOCUMENTS TABLE (Comprehensive AI knowledge base documents)
+create table if not exists public.knowledge_documents (
+  id text primary key,                      -- Custom IDs like 'ai-breakdowns-master', 'chynaman-level-3', etc.
+  filename text not null,                   -- Display name like 'AI_Breakdowns.txt'
+  title text not null,                      -- Human-readable title
+  category text not null default 'General', -- 'Master Rulebook', 'Tournament & Errata', 'Character Guides', etc.
+  content text not null,                    -- Full document text content
+  char_count integer default 0,             -- Character count for metrics
+  estimated_tokens integer default 0,       -- Estimated token count (chars/4)
+  is_master boolean default false,          -- Master document flag
+  is_active boolean default true,           -- Active documents are included in AI context
+  updated_by uuid references auth.users(id),
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Enable RLS for knowledge_documents
+alter table public.knowledge_documents enable row level security;
+
+drop policy if exists "Anyone can view active knowledge documents" on public.knowledge_documents;
+drop policy if exists "Admins can view all knowledge documents" on public.knowledge_documents;
+drop policy if exists "Admins can insert knowledge documents" on public.knowledge_documents;
+drop policy if exists "Admins can update knowledge documents" on public.knowledge_documents;
+drop policy if exists "Admins can delete knowledge documents" on public.knowledge_documents;
+
+create policy "Anyone can view active knowledge documents" 
+  on public.knowledge_documents for select using (is_active = true);
+
+create policy "Admins can view all knowledge documents" 
+  on public.knowledge_documents for select 
+  using (exists (select 1 from public.profiles where id = auth.uid() and is_admin = true));
+
+create policy "Admins can insert knowledge documents" 
+  on public.knowledge_documents for insert 
+  with check (exists (select 1 from public.profiles where id = auth.uid() and is_admin = true));
+
+create policy "Admins can update knowledge documents" 
+  on public.knowledge_documents for update 
+  using (exists (select 1 from public.profiles where id = auth.uid() and is_admin = true));
+
+create policy "Admins can delete knowledge documents" 
+  on public.knowledge_documents for delete 
+  using (exists (select 1 from public.profiles where id = auth.uid() and is_admin = true));
+
+
 -- ====================================================================
 -- SEED INITIAL 15 OFFICIAL RULES FROM rulesKnowledge.js INTO DATABASE
 -- ====================================================================

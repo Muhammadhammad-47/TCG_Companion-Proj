@@ -416,6 +416,9 @@ export default function KontrolaArena() {
     if (isProcessingAction) return;
     setIsProcessingAction(true);
     playClick();
+    
+    console.log('[handleDefenseSelect] Defense card selected:', card?.name || 'SKIP');
+    
     const payload = { actionType: 'DEFENSE_SELECTED', defenseCard: card };
     if (isHostRef.current) enqueueHostAction(payload);
     else takeTurn(matchIdRef.current, { type: 'PLAYER_ACTION', payload });
@@ -653,6 +656,12 @@ export default function KontrolaArena() {
         }
         // 6. Synchronized Dice Screen Open
         else if (event.type === 'DICE_SCREEN_OPEN') {
+          console.log('[DICE_SCREEN_OPEN] Received event with payload:', {
+            hasAttacker: !!event.payload?.attacker,
+            hasDefender: !!event.payload?.defender,
+            actionCard: event.payload?.actionCard?.name,
+            attackSelectionName: event.payload?.attackSelectionName
+          });
           setActiveCombat(event.payload);
           setIsDiceRollingSync(false);
         }
@@ -1116,6 +1125,15 @@ export default function KontrolaArena() {
       }
 
       if (payload.actionType === 'ATTACK_DECLARED') {
+        console.log('[ATTACK_DECLARED] Received attack declaration:', {
+          attackerPlayerName: payload.attackerPlayerName,
+          defenderPlayerName: payload.defenderPlayerName,
+          actionCard: payload.actionCard?.name,
+          attackSelectionName: payload.attackSelectionName,
+          actorId: payload.actorId,
+          targetId: payload.targetId
+        });
+        
         const nextState = {
           ...currentState,
           activeDefenseState: { ...payload, expiresAt: Date.now() + 15000 },
@@ -1127,23 +1145,52 @@ export default function KontrolaArena() {
 
       if (payload.actionType === 'DEFENSE_SELECTED') {
         const activeDefense = currentState.activeDefenseState;
-        if (!activeDefense) return currentState;
+        if (!activeDefense) {
+          console.error('[DEFENSE_SELECTED] No activeDefenseState found! Defense action ignored.');
+          return currentState;
+        }
 
         // defenseCard goes into precalculatedRolls so the engine can read it
         // via precalculatedRolls?.defenseCard (null when defender skipped)
         const precalculatedRolls = {
           defenseCard: payload.defenseCard ?? null
         };
+        
+        // CRITICAL: Retrieve the actual character objects from characterStates
+        // KontrolaDiceRoller needs these to display properly
+        const attackerChar = currentState.characterStates[activeDefense.actorId];
+        const defenderChar = currentState.characterStates[activeDefense.targetId];
+        
+        if (!attackerChar || !defenderChar) {
+          console.error('[DEFENSE_SELECTED] Missing character data!', { 
+            attackerChar, 
+            defenderChar, 
+            actorId: activeDefense.actorId, 
+            targetId: activeDefense.targetId 
+          });
+        }
+        
         const activeCombat = {
           ...activeDefense,
           actionType: 'RESOLVE_COMBAT',   // set correct actionType so resolution works
           actorId: activeDefense.actorId,  // ensure actorId is set
+          attacker: attackerChar,          // FIXED: Add attacker character object
+          defender: defenderChar,          // FIXED: Add defender character object
           precalculatedRolls,
           defenseCard: payload.defenseCard ?? null
         };
+        
+        console.log('[DEFENSE_SELECTED] Created activeCombat:', {
+          hasAttacker: !!activeCombat.attacker,
+          hasDefender: !!activeCombat.defender,
+          actionCard: activeCombat.actionCard?.name,
+          attackSelectionName: activeCombat.attackSelectionName,
+          defenseCard: activeCombat.defenseCard?.name
+        });
 
         // Notify all clients to open dice screen (delay slightly to ensure state is clear)
         setTimeout(() => {
+          console.log('[DEFENSE_SELECTED] Broadcasting dice_screen_open event');
           broadcastUIEvent(matchIdRef.current, 'dice_screen_open', activeCombat);
         }, 100);
 
@@ -1722,8 +1769,21 @@ export default function KontrolaArena() {
   // PLAY ACTION & SYNCHRONIZED COMBAT CLASH
   // ==========================================
   const playTurn = () => {
+    console.log('[playTurn] Starting with state:', {
+      isProcessingAction,
+      isMyTurn,
+      isSpectator,
+      selectedActionCard: selectedActionCard?.name,
+      selectedCharacterAttack,
+      selectedTargetId,
+      myCharacterName: myCharacter?.name
+    });
+    
     playClick();
-    if (isProcessingAction) return;
+    if (isProcessingAction) {
+      console.log('[playTurn] BLOCKED: isProcessingAction is true');
+      return;
+    }
     if (isSpectator) {
       showNotice('Spectator mode: you are observing this match.', 'info');
       return;
@@ -1742,6 +1802,15 @@ export default function KontrolaArena() {
     const isLightning = selectedActionCard.name.includes('LIGHTNING');
     const isFireFlame = selectedActionCard.name.includes('FIRE FLAME');
 
+    console.log('[playTurn] Card type analysis:', {
+      cardName: selectedActionCard.name,
+      cardType: selectedActionCard.type,
+      isAttack,
+      isAoE,
+      isLightning,
+      isFireFlame
+    });
+
     // Level check for Vitality Gain V20
     if (selectedActionCard.name.includes('VITALITY GAIN V20') && (myCharacter.level || 1) < 2) {
       showNotice('VITALITY GAIN V20 requires your character to be at least Level 2!', 'warning');
@@ -1751,6 +1820,7 @@ export default function KontrolaArena() {
 
 
     if (isAttack && !isAoE && !selectedTargetId) {
+      console.log('[playTurn] VALIDATION FAILED: Attack requires target');
       showNotice('Please select a target opponent player first!', 'warning');
       return; // Must select target
     }
@@ -1762,6 +1832,7 @@ export default function KontrolaArena() {
     }
 
     if (isAttack && !isAoE && !isLightning && !isFireFlame && !selectedCharacterAttack) {
+      console.log('[playTurn] VALIDATION FAILED: Attack requires character move selection');
       showNotice('Please select a character attack move to strike with!', 'warning');
       return;
     }
@@ -1772,6 +1843,8 @@ export default function KontrolaArena() {
       attackSelectionName: (isLightning || isFireFlame) ? null : selectedCharacterAttack,
       targetId: isAoE ? 'ALL' : selectedTargetId
     };
+
+    console.log('[playTurn] Payload created:', payload);
 
     if (isAttack) {
       if (isAoE) {
@@ -1786,11 +1859,21 @@ export default function KontrolaArena() {
           defenderPlayerName: 'ALL',
           precalculatedRolls
         };
+        console.log('[playTurn] AoE Attack - Opening dice screen immediately');
         broadcastUIEvent(matchId, 'dice_screen_open', clashData);
         setActiveCombat(clashData);
         setIsDiceRollingSync(false);
       } else {
         const targetChar = gameState.characterStates[selectedTargetId];
+        if (!targetChar) {
+          console.error('[playTurn] ERROR: Target character not found in gameState!', {
+            selectedTargetId,
+            availableCharacters: Object.keys(gameState.characterStates || {})
+          });
+          showNotice('Target player not found in game state!', 'error');
+          return;
+        }
+        
         const clashData = {
           ...payload,
           actionType: 'ATTACK_DECLARED',
@@ -1800,10 +1883,20 @@ export default function KontrolaArena() {
           attackerPlayerName: myCharacter.name,
           defenderPlayerName: targetChar?.name || 'Defender'
         };
+        
+        console.log('[playTurn] Regular Attack - Broadcasting ATTACK_DECLARED:', {
+          attackerName: clashData.attackerPlayerName,
+          defenderName: clashData.defenderPlayerName,
+          actionCard: clashData.actionCard.name,
+          attackSelectionName: clashData.attackSelectionName,
+          isHost
+        });
+        
         if (isHost) enqueueHostAction(clashData);
         else takeTurn(matchId, { type: 'PLAYER_ACTION', payload: clashData });
       }
     } else {
+      console.log('[playTurn] Non-attack card - Resolving immediately');
       if (isHost) {
         enqueueHostAction(payload);
       } else {
@@ -1817,6 +1910,8 @@ export default function KontrolaArena() {
     setSelectedActionCard(null);
     setSelectedCharacterAttack(null);
     setSelectedTargetId(null);
+    
+    console.log('[playTurn] Action sent, state cleared, processing lock set for 2.5s');
   };
 
   // Triggered when attacker rolls the authentic pip dice (or re-rolls on tie)
