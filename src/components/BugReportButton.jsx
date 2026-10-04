@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { MessageSquare, Camera, Send, X, AlertTriangle, Upload, CheckCircle } from 'lucide-react';
+import { MessageSquare, Send, X, AlertTriangle, Upload, CheckCircle } from 'lucide-react';
 import { bugReportService } from '../services/bugReportService';
 
 export default function BugReportButton({ 
@@ -17,21 +17,6 @@ export default function BugReportButton({
   const [screenshotPreview, setScreenshotPreview] = useState(null);
   const [submitStatus, setSubmitStatus] = useState(''); // 'success' | 'error'
   const fileInputRef = useRef(null);
-
-  const handleCaptureScreenshot = async () => {
-    try {
-      const blob = await bugReportService.captureScreenshot();
-      if (blob) {
-        setScreenshot(blob);
-        const url = URL.createObjectURL(blob);
-        setScreenshotPreview(url);
-      }
-    } catch (err) {
-      console.error('[ContactSupport] Screenshot capture failed:', err);
-      setSubmitStatus('error');
-      setTimeout(() => setSubmitStatus(''), 3000);
-    }
-  };
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -262,64 +247,29 @@ export default function BugReportButton({
               </label>
 
               {!screenshotPreview ? (
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                  <button
-                    onClick={handleCaptureScreenshot}
-                    disabled={isSubmitting}
-                    style={{
-                      flex: '1 1 calc(50% - 5px)',
-                      minWidth: '120px',
-                      background: 'rgba(0, 200, 255, 0.15)',
-                      border: '1.5px dashed rgba(0, 200, 255, 0.4)',
-                      borderRadius: '10px',
-                      color: '#00ccff',
-                      padding: '12px',
-                      cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                      fontSize: '0.85rem',
-                      fontWeight: 'bold',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                      transition: 'all 0.2s ease',
-                      opacity: isSubmitting ? 0.5 : 1
-                    }}
-                  >
-                    <Camera size={16} /> Capture
-                  </button>
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isSubmitting}
-                    style={{
-                      flex: '1 1 calc(50% - 5px)',
-                      minWidth: '120px',
-                      background: 'rgba(0, 200, 255, 0.15)',
-                      border: '1.5px dashed rgba(0, 200, 255, 0.4)',
-                      borderRadius: '10px',
-                      color: '#00ccff',
-                      padding: '12px',
-                      cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                      fontSize: '0.85rem',
-                      fontWeight: 'bold',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                      transition: 'all 0.2s ease',
-                      opacity: isSubmitting ? 0.5 : 1
-                    }}
-                  >
-                    <Upload size={16} /> Upload
-                  </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    style={{ display: 'none' }}
-                    disabled={isSubmitting}
-                  />
-                </div>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isSubmitting}
+                  style={{
+                    width: '100%',
+                    background: 'rgba(0, 200, 255, 0.15)',
+                    border: '1.5px dashed rgba(0, 200, 255, 0.4)',
+                    borderRadius: '10px',
+                    color: '#00ccff',
+                    padding: '14px',
+                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                    fontSize: '0.9rem',
+                    fontWeight: 'bold',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    transition: 'all 0.2s ease',
+                    opacity: isSubmitting ? 0.5 : 1
+                  }}
+                >
+                  <Upload size={18} /> Click to upload screenshot
+                </button>
               ) : (
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
                   <img
@@ -357,6 +307,14 @@ export default function BugReportButton({
                   </div>
                 </div>
               )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                style={{ display: 'none' }}
+                disabled={isSubmitting}
+              />
             </div>
 
             {/* Status Messages */}

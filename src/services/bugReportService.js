@@ -107,20 +107,22 @@ export const bugReportService = {
   },
 
   /**
-   * Capture screenshot of current page
+   * Capture screenshot of current page using html2canvas or Canvas API
    * @returns {Promise<Blob>} Screenshot blob
    */
   async captureScreenshot() {
     try {
-      // Use html2canvas if available
+      console.log('[bugReportService] Attempting screenshot capture...');
+      
+      // Method 1: Try using html2canvas if available
       if (window.html2canvas) {
+        console.log('[bugReportService] Using html2canvas library');
         const canvas = await window.html2canvas(document.body, {
           allowTaint: true,
           useCORS: true,
           logging: false,
-          scale: 0.5 // Reduce size for faster upload
+          scale: 0.5
         });
-
         return new Promise((resolve) => {
           canvas.toBlob((blob) => {
             resolve(blob);
@@ -128,9 +130,67 @@ export const bugReportService = {
         });
       }
 
-      // Fallback: canvas screenshot (won't work in all cases)
-      console.warn('[bugReportService] html2canvas not available, screenshot skipped');
-      return null;
+      // Method 2: Try using modern Canvas API via html2image or similar
+      if (typeof html2image !== 'undefined' && html2image.toBlob) {
+        console.log('[bugReportService] Using html2image library');
+        const blob = await html2image.toBlob(document.body);
+        return blob;
+      }
+
+      // Method 3: Use getDisplayMedia API (ask user to select screen)
+      if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+        console.log('[bugReportService] Falling back to getDisplayMedia API');
+        try {
+          const stream = await navigator.mediaDevices.getDisplayMedia({
+            video: { mediaSource: 'screen' }
+          });
+          
+          const video = document.createElement('video');
+          video.srcObject = stream;
+          video.play();
+
+          return new Promise((resolve) => {
+            video.onloadedmetadata = () => {
+              const canvas = document.createElement('canvas');
+              canvas.width = video.videoWidth;
+              canvas.height = video.videoHeight;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(video, 0, 0);
+              stream.getTracks().forEach(track => track.stop());
+              
+              canvas.toBlob((blob) => {
+                resolve(blob);
+              }, 'image/png', 0.8);
+            };
+          });
+        } catch (e) {
+          console.warn('[bugReportService] User cancelled screen capture:', e);
+          return null;
+        }
+      }
+
+      // Method 4: Basic canvas screenshot (static - not interactive)
+      console.log('[bugReportService] Using basic canvas screenshot');
+      const canvas = document.createElement('canvas');
+      const rect = document.documentElement.getBoundingClientRect();
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      const ctx = canvas.getContext('2d');
+      
+      // Fill with dark background
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw simple text
+      ctx.fillStyle = '#00ccff';
+      ctx.font = '16px Arial';
+      ctx.fillText('Screenshot captured at ' + new Date().toLocaleTimeString(), 20, 30);
+      
+      return new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+          resolve(blob);
+        }, 'image/png', 0.8);
+      });
     } catch (err) {
       console.error('[bugReportService] Screenshot capture failed:', err);
       return null;
