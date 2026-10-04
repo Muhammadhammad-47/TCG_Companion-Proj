@@ -1468,6 +1468,14 @@ export function Hub() {
                   <BugReportButton 
                     userId={currentUser?.id}
                     username={userProfile?.username || 'Guest'}
+                    style={{
+                      background: 'linear-gradient(135deg, #0088ff 0%, #00ccff 100%)',
+                      border: 'none',
+                      padding: '10px 20px',
+                      fontSize: '0.9rem',
+                      fontWeight: 'bold',
+                      boxShadow: '0 0 20px rgba(0, 200, 255, 0.4)'
+                    }}
                   />
 
                   {/* Avatar circle — click to open dropdown */}

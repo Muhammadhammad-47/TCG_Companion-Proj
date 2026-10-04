@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Bug, Camera, Send, X, AlertTriangle } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { MessageSquare, Camera, Send, X, AlertTriangle, Upload, CheckCircle } from 'lucide-react';
 import { bugReportService } from '../services/bugReportService';
 
 export default function BugReportButton({ 
@@ -12,12 +12,46 @@ export default function BugReportButton({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [reportText, setReportText] = useState('');
-  const [includeScreenshot, setIncludeScreenshot] = useState(true);
+  const [message, setMessage] = useState('');
+  const [screenshot, setScreenshot] = useState(null);
+  const [screenshotPreview, setScreenshotPreview] = useState(null);
   const [submitStatus, setSubmitStatus] = useState(''); // 'success' | 'error'
+  const fileInputRef = useRef(null);
+
+  const handleCaptureScreenshot = async () => {
+    try {
+      const blob = await bugReportService.captureScreenshot();
+      if (blob) {
+        setScreenshot(blob);
+        const url = URL.createObjectURL(blob);
+        setScreenshotPreview(url);
+      }
+    } catch (err) {
+      console.error('[ContactSupport] Screenshot capture failed:', err);
+      setSubmitStatus('error');
+      setTimeout(() => setSubmitStatus(''), 3000);
+    }
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setScreenshot(file);
+      const url = URL.createObjectURL(file);
+      setScreenshotPreview(url);
+    }
+  };
+
+  const removeScreenshot = () => {
+    setScreenshot(null);
+    if (screenshotPreview) {
+      URL.revokeObjectURL(screenshotPreview);
+    }
+    setScreenshotPreview(null);
+  };
 
   const handleSubmit = async () => {
-    if (!reportText.trim()) {
+    if (!message.trim()) {
       setSubmitStatus('error');
       setTimeout(() => setSubmitStatus(''), 3000);
       return;
@@ -27,16 +61,11 @@ export default function BugReportButton({
     setSubmitStatus('');
 
     try {
-      let screenshot = null;
-      if (includeScreenshot) {
-        screenshot = await bugReportService.captureScreenshot();
-      }
-
       const report = await bugReportService.submitBugReport({
         userId,
         username,
-        errorType: 'manual',
-        errorMessage: reportText.trim(),
+        errorType: 'manual_support',
+        errorMessage: message.trim(),
         pageUrl: window.location.href,
         userAgent: navigator.userAgent,
         gameState,
@@ -46,7 +75,8 @@ export default function BugReportButton({
 
       if (report) {
         setSubmitStatus('success');
-        setReportText('');
+        setMessage('');
+        removeScreenshot();
         setTimeout(() => {
           setSubmitStatus('');
           setIsOpen(false);
@@ -56,7 +86,7 @@ export default function BugReportButton({
         setTimeout(() => setSubmitStatus(''), 3000);
       }
     } catch (err) {
-      console.error('[BugReportButton] Submit failed:', err);
+      console.error('[ContactSupport] Submit failed:', err);
       setSubmitStatus('error');
       setTimeout(() => setSubmitStatus(''), 3000);
     } finally {
@@ -64,205 +94,307 @@ export default function BugReportButton({
     }
   };
 
-  const buttonSizes = {
-    small: { fontSize: '0.75rem', padding: '6px 12px', iconSize: 14 },
-    normal: { fontSize: '0.85rem', padding: '8px 16px', iconSize: 16 },
-    large: { fontSize: '1rem', padding: '12px 20px', iconSize: 18 }
-  };
-
-  const sizeConfig = buttonSizes[size] || buttonSizes.normal;
-
   return (
     <>
-      {/* Trigger Button */}
+      {/* Prominent Contact Support Button */}
       <button
         onClick={() => setIsOpen(true)}
         style={{
-          background: 'rgba(255, 42, 85, 0.1)',
-          border: '1px solid rgba(255, 42, 85, 0.3)',
-          borderRadius: '8px',
-          color: '#ff6b8b',
+          background: 'linear-gradient(135deg, #0088ff 0%, #00ccff 100%)',
+          border: 'none',
+          borderRadius: '12px',
+          color: '#fff',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
           fontWeight: 'bold',
-          transition: 'all 0.2s ease',
+          transition: 'all 0.3s ease',
           fontFamily: 'Rajdhani, sans-serif',
           letterSpacing: '0.5px',
-          ...sizeConfig,
+          boxShadow: '0 0 20px rgba(0, 200, 255, 0.4)',
+          padding: '10px 18px',
+          fontSize: '0.9rem',
           ...style
         }}
         onMouseOver={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 42, 85, 0.15)';
-          e.currentTarget.style.borderColor = 'rgba(255, 42, 85, 0.5)';
+          e.currentTarget.style.boxShadow = '0 0 30px rgba(0, 200, 255, 0.7)';
+          e.currentTarget.style.transform = 'scale(1.05)';
         }}
         onMouseOut={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 42, 85, 0.1)';
-          e.currentTarget.style.borderColor = 'rgba(255, 42, 85, 0.3)';
+          e.currentTarget.style.boxShadow = '0 0 20px rgba(0, 200, 255, 0.4)';
+          e.currentTarget.style.transform = 'scale(1)';
         }}
       >
-        <Bug size={sizeConfig.iconSize} />
-        {size !== 'small' && 'Report Bug'}
+        <MessageSquare size={18} />
+        <span>Contact Support</span>
       </button>
 
-      {/* Modal */}
+      {/* In-App Modal */}
       {isOpen && (
         <div
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0, 0, 0, 0.8)',
+            background: 'rgba(0, 0, 0, 0.85)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 10000,
-            padding: '20px'
+            padding: '20px',
+            backdropFilter: 'blur(4px)'
           }}
+          onClick={() => !isSubmitting && setIsOpen(false)}
         >
           <div
             style={{
-              background: 'rgba(14, 22, 42, 0.95)',
-              border: '2px solid rgba(255, 42, 85, 0.4)',
-              borderRadius: '16px',
-              padding: '24px',
+              background: 'linear-gradient(135deg, rgba(5, 10, 24, 0.98) 0%, rgba(10, 20, 40, 0.98) 100%)',
+              border: '2px solid rgba(0, 200, 255, 0.5)',
+              borderRadius: '20px',
+              padding: '32px',
               width: '100%',
-              maxWidth: '500px',
-              boxShadow: '0 0 40px rgba(255, 42, 85, 0.25)'
+              maxWidth: '600px',
+              boxShadow: '0 0 60px rgba(0, 200, 255, 0.3), inset 0 0 20px rgba(0, 200, 255, 0.1)',
+              position: 'relative'
             }}
+            onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                 <div
                   style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
-                    background: 'rgba(255, 42, 85, 0.1)',
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, rgba(0, 200, 255, 0.2) 0%, rgba(0, 150, 255, 0.2) 100%)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    border: '1px solid rgba(255, 42, 85, 0.3)'
+                    border: '2px solid rgba(0, 200, 255, 0.5)',
+                    boxShadow: '0 0 20px rgba(0, 200, 255, 0.3)'
                   }}
                 >
-                  <Bug size={20} style={{ color: '#ff2a55' }} />
+                  <MessageSquare size={24} style={{ color: '#00ccff' }} />
                 </div>
                 <div>
-                  <h3 style={{ color: '#fff', margin: 0, fontSize: '1.3rem', fontWeight: 'bold' }}>
-                    Report a Bug
+                  <h3 style={{ color: '#fff', margin: 0, fontSize: '1.5rem', fontWeight: 'bold', fontFamily: 'Rajdhani, sans-serif', letterSpacing: '1px' }}>
+                    CONTACT SUPPORT
                   </h3>
-                  <p style={{ color: 'rgba(255, 255, 255, 0.6)', margin: '2px 0 0 0', fontSize: '0.85rem' }}>
-                    Help us improve by describing the issue
+                  <p style={{ color: 'rgba(0, 200, 255, 0.8)', margin: '4px 0 0 0', fontSize: '0.85rem', fontFamily: 'Rajdhani, sans-serif' }}>
+                    We're here to help
                   </p>
                 </div>
               </div>
               <button
-                onClick={() => setIsOpen(false)}
+                onClick={() => !isSubmitting && setIsOpen(false)}
+                disabled={isSubmitting}
                 style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'rgba(255, 255, 255, 0.5)',
-                  cursor: 'pointer',
-                  padding: '4px'
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  color: 'rgba(255, 255, 255, 0.6)',
+                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                  padding: '6px',
+                  borderRadius: '8px',
+                  transition: 'all 0.2s ease',
+                  opacity: isSubmitting ? 0.5 : 1
                 }}
               >
                 <X size={20} />
               </button>
             </div>
 
-            {/* Form */}
+            {/* Message Input */}
             <div style={{ marginBottom: '20px' }}>
               <label
                 style={{
                   display: 'block',
-                  color: '#fff',
+                  color: '#00ccff',
                   fontSize: '0.9rem',
                   fontWeight: 'bold',
-                  marginBottom: '8px'
+                  marginBottom: '10px',
+                  fontFamily: 'Rajdhani, sans-serif',
+                  letterSpacing: '0.5px'
                 }}
               >
-                Describe the issue: *
+                YOUR MESSAGE *
               </label>
               <textarea
-                value={reportText}
-                onChange={(e) => setReportText(e.target.value)}
-                placeholder="What happened? What were you trying to do? Any error messages?"
-                rows={4}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Tell us what you need help with or what issue you're experiencing..."
+                rows={5}
+                disabled={isSubmitting}
                 style={{
                   width: '100%',
                   boxSizing: 'border-box',
                   background: 'rgba(5, 10, 24, 0.8)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '8px',
+                  border: '1.5px solid rgba(0, 200, 255, 0.3)',
+                  borderRadius: '12px',
                   color: '#fff',
-                  padding: '12px',
-                  fontSize: '0.9rem',
+                  padding: '14px 16px',
+                  fontSize: '0.95rem',
                   resize: 'vertical',
-                  fontFamily: 'inherit'
+                  fontFamily: 'Outfit, sans-serif',
+                  transition: 'all 0.2s ease',
+                  opacity: isSubmitting ? 0.6 : 1,
+                  cursor: isSubmitting ? 'not-allowed' : 'text'
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(0, 200, 255, 0.6)';
+                  e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 200, 255, 0.2)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(0, 200, 255, 0.3)';
+                  e.currentTarget.style.boxShadow = 'none';
                 }}
               />
             </div>
 
-            {/* Screenshot Option */}
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                marginBottom: '20px',
-                cursor: 'pointer',
-                color: 'rgba(255, 255, 255, 0.8)',
-                fontSize: '0.85rem'
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={includeScreenshot}
-                onChange={(e) => setIncludeScreenshot(e.target.checked)}
-                style={{ width: '16px', height: '16px' }}
-              />
-              <Camera size={16} />
-              Include screenshot (helps with debugging)
-            </label>
+            {/* Screenshot Section */}
+            <div style={{ marginBottom: '20px', padding: '16px', background: 'rgba(0, 200, 255, 0.05)', borderRadius: '12px', border: '1px solid rgba(0, 200, 255, 0.15)' }}>
+              <label style={{ display: 'block', color: '#00ccff', fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '12px', fontFamily: 'Rajdhani, sans-serif', letterSpacing: '0.5px' }}>
+                📸 SCREENSHOT (Optional)
+              </label>
+
+              {!screenshotPreview ? (
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button
+                    onClick={handleCaptureScreenshot}
+                    disabled={isSubmitting}
+                    style={{
+                      flex: 1,
+                      background: 'rgba(0, 200, 255, 0.15)',
+                      border: '1.5px dashed rgba(0, 200, 255, 0.4)',
+                      borderRadius: '10px',
+                      color: '#00ccff',
+                      padding: '12px',
+                      cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                      fontSize: '0.85rem',
+                      fontWeight: 'bold',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      transition: 'all 0.2s ease',
+                      opacity: isSubmitting ? 0.5 : 1
+                    }}
+                  >
+                    <Camera size={16} /> Capture Screen
+                  </button>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isSubmitting}
+                    style={{
+                      flex: 1,
+                      background: 'rgba(0, 200, 255, 0.15)',
+                      border: '1.5px dashed rgba(0, 200, 255, 0.4)',
+                      borderRadius: '10px',
+                      color: '#00ccff',
+                      padding: '12px',
+                      cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                      fontSize: '0.85rem',
+                      fontWeight: 'bold',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      transition: 'all 0.2s ease',
+                      opacity: isSubmitting ? 0.5 : 1
+                    }}
+                  >
+                    <Upload size={16} /> Upload Image
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    style={{ display: 'none' }}
+                    disabled={isSubmitting}
+                  />
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                  <img
+                    src={screenshotPreview}
+                    alt="preview"
+                    style={{
+                      maxWidth: '120px',
+                      maxHeight: '120px',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(0, 200, 255, 0.3)',
+                      objectFit: 'cover'
+                    }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <p style={{ color: '#00ccff', fontSize: '0.85rem', margin: '0 0 8px 0', fontWeight: 'bold' }}>
+                      ✓ Screenshot attached
+                    </p>
+                    <button
+                      onClick={removeScreenshot}
+                      disabled={isSubmitting}
+                      style={{
+                        background: 'rgba(255, 100, 100, 0.15)',
+                        border: '1px solid rgba(255, 100, 100, 0.3)',
+                        color: '#ff8888',
+                        padding: '6px 12px',
+                        borderRadius: '6px',
+                        cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                        fontSize: '0.8rem',
+                        fontWeight: 'bold',
+                        opacity: isSubmitting ? 0.5 : 1
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Status Messages */}
             {submitStatus === 'success' && (
               <div
                 style={{
                   background: 'rgba(57, 255, 20, 0.1)',
-                  border: '1px solid rgba(57, 255, 20, 0.3)',
-                  borderRadius: '8px',
-                  padding: '12px',
+                  border: '1px solid rgba(57, 255, 20, 0.4)',
+                  borderRadius: '10px',
+                  padding: '14px 16px',
                   color: '#39ff14',
-                  fontSize: '0.85rem',
-                  marginBottom: '16px',
+                  fontSize: '0.9rem',
+                  marginBottom: '20px',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px'
+                  gap: '10px',
+                  fontWeight: 'bold',
+                  fontFamily: 'Rajdhani, sans-serif'
                 }}
               >
-                ✅ Bug report submitted successfully! Thank you for helping us improve.
+                <CheckCircle size={18} />
+                Your message has been sent! Our team will respond shortly.
               </div>
             )}
 
             {submitStatus === 'error' && (
               <div
                 style={{
-                  background: 'rgba(255, 42, 85, 0.1)',
-                  border: '1px solid rgba(255, 42, 85, 0.3)',
-                  borderRadius: '8px',
-                  padding: '12px',
-                  color: '#ff6b8b',
-                  fontSize: '0.85rem',
-                  marginBottom: '16px',
+                  background: 'rgba(255, 100, 100, 0.1)',
+                  border: '1px solid rgba(255, 100, 100, 0.4)',
+                  borderRadius: '10px',
+                  padding: '14px 16px',
+                  color: '#ff8888',
+                  fontSize: '0.9rem',
+                  marginBottom: '20px',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px'
+                  gap: '10px',
+                  fontWeight: 'bold',
+                  fontFamily: 'Rajdhani, sans-serif'
                 }}
               >
-                <AlertTriangle size={16} />
-                {!reportText.trim() ? 'Please describe the issue.' : 'Failed to submit report. Please try again.'}
+                <AlertTriangle size={18} />
+                {!message.trim() ? 'Please enter your message.' : 'Failed to send. Please try again.'}
               </div>
             )}
 
@@ -272,41 +404,48 @@ export default function BugReportButton({
                 onClick={() => setIsOpen(false)}
                 disabled={isSubmitting}
                 style={{
-                  background: 'rgba(255, 255, 255, 0.1)',
+                  background: 'rgba(255, 255, 255, 0.08)',
                   border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '8px',
+                  borderRadius: '10px',
                   color: 'rgba(255, 255, 255, 0.7)',
-                  padding: '10px 20px',
+                  padding: '12px 24px',
                   fontSize: '0.9rem',
                   fontWeight: 'bold',
                   cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                  opacity: isSubmitting ? 0.5 : 1
+                  opacity: isSubmitting ? 0.5 : 1,
+                  fontFamily: 'Rajdhani, sans-serif',
+                  letterSpacing: '0.5px',
+                  transition: 'all 0.2s ease'
                 }}
               >
-                Cancel
+                Close
               </button>
               <button
                 onClick={handleSubmit}
-                disabled={isSubmitting || !reportText.trim()}
+                disabled={isSubmitting || !message.trim()}
                 style={{
-                  background: isSubmitting 
-                    ? 'rgba(255, 42, 85, 0.3)' 
-                    : 'linear-gradient(135deg, #ff2a55, #ff6b8b)',
+                  background: isSubmitting || !message.trim()
+                    ? 'rgba(0, 200, 255, 0.2)'
+                    : 'linear-gradient(135deg, #0088ff 0%, #00ccff 100%)',
                   border: 'none',
-                  borderRadius: '8px',
+                  borderRadius: '10px',
                   color: '#fff',
-                  padding: '10px 20px',
-                  fontSize: '0.9rem',
+                  padding: '12px 28px',
+                  fontSize: '0.95rem',
                   fontWeight: 'bold',
-                  cursor: (isSubmitting || !reportText.trim()) ? 'not-allowed' : 'pointer',
-                  opacity: (isSubmitting || !reportText.trim()) ? 0.5 : 1,
+                  cursor: (isSubmitting || !message.trim()) ? 'not-allowed' : 'pointer',
+                  opacity: (isSubmitting || !message.trim()) ? 0.6 : 1,
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px'
+                  gap: '8px',
+                  fontFamily: 'Rajdhani, sans-serif',
+                  letterSpacing: '0.5px',
+                  boxShadow: '0 0 20px rgba(0, 200, 255, 0.4)',
+                  transition: 'all 0.2s ease'
                 }}
               >
                 <Send size={16} />
-                {isSubmitting ? 'Submitting...' : 'Submit Report'}
+                {isSubmitting ? 'Sending...' : 'Send Message'}
               </button>
             </div>
           </div>
