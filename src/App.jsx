@@ -24,6 +24,7 @@ import { setupGlobalErrorHandlers } from './services/bugReportService.js';
 import BugReportButton from './components/BugReportButton.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { StoreModal } from './components/StoreModal.jsx';
+import MusicUploadProgress from './components/MusicUploadProgress.jsx';
 import { LeaderboardModal } from './components/LeaderboardModal.jsx';
 
 const Avatar = ({ characterId, isSpeaking, currentVisemeFile }) => {
@@ -1336,6 +1337,10 @@ export function Hub() {
   const [musicFile, setMusicFile] = useState(null);
   const [musicSubmitting, setMusicSubmitting] = useState(false);
   const [musicNotice, setMusicNotice] = useState('');
+  const [musicUploadProgress, setMusicUploadProgress] = useState(0);
+  const [musicUploadStatus, setMusicUploadStatus] = useState('uploading'); // 'uploading', 'success', 'error'
+  const [musicUploadMessage, setMusicUploadMessage] = useState('');
+  const [isMusicProgressOpen, setIsMusicProgressOpen] = useState(false);
 
   React.useLayoutEffect(() => {
     try {
@@ -1794,24 +1799,46 @@ export function Hub() {
                   return;
                 }
                 setMusicSubmitting(true);
+                setIsMusicProgressOpen(true);
+                setMusicUploadProgress(0);
+                setMusicUploadStatus('uploading');
+                setMusicUploadMessage('Starting upload...');
+                
                 try {
-                  const result = await musicService.uploadAndSubmitMusic(currentUser.id, userProfile.username, musicTitle.trim(), musicFile);
+                  const result = await musicService.uploadAndSubmitMusic(
+                    currentUser.id, 
+                    userProfile.username, 
+                    musicTitle.trim(), 
+                    musicFile,
+                    (progress) => {
+                      setMusicUploadProgress(progress);
+                      if (progress < 100) {
+                        setMusicUploadMessage(`Uploading: ${progress}%`);
+                      } else {
+                        setMusicUploadMessage('Upload complete!');
+                      }
+                    }
+                  );
+                  
                   if (result.success) {
-                    setMusicNotice('✅ Track uploaded and submitted for approval!');
+                    setMusicUploadStatus('success');
+                    setMusicUploadMessage('Track uploaded and submitted for approval!');
+                    setMusicUploadProgress(100);
                     setTimeout(() => {
+                      setIsMusicProgressOpen(false);
                       setIsMusicModalOpen(false);
                       setMusicTitle('');
                       setMusicFile(null);
                       setMusicNotice('');
                     }, 2000);
                   } else {
-                    setMusicNotice(`❌ ${result.message || 'Failed to upload.'}`);
-                    setTimeout(() => setMusicNotice(''), 4000);
+                    setMusicUploadStatus('error');
+                    setMusicUploadMessage(result.message || 'Failed to upload.');
                   }
                 } catch (e) {
                   console.error('Music upload error:', e);
-                  setMusicNotice('❌ Error uploading track.');
-                  setTimeout(() => setMusicNotice(''), 4000);
+                  setMusicUploadStatus('error');
+                  setMusicUploadMessage(e.message || 'Error uploading track.');
                 } finally {
                   setMusicSubmitting(false);
                 }
@@ -1834,6 +1861,23 @@ export function Hub() {
           if (u) {
             const prof = await authService.getProfile(u.id);
             setUserProfile(prof);
+          }
+        }}
+      />
+
+      {/* Music Upload Progress Modal */}
+      <MusicUploadProgress
+        isOpen={isMusicProgressOpen}
+        title={musicTitle || 'Uploading Music'}
+        progress={musicUploadProgress}
+        status={musicUploadStatus}
+        message={musicUploadMessage}
+        onClose={() => {
+          setIsMusicProgressOpen(false);
+          if (musicUploadStatus !== 'uploading') {
+            setMusicUploadProgress(0);
+            setMusicUploadStatus('uploading');
+            setMusicUploadMessage('');
           }
         }}
       />
