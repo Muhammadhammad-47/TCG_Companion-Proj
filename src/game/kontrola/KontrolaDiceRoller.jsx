@@ -171,8 +171,8 @@ export function CanvasPipDie({ value = 1, theme = 'red', isRolling = false, size
 
 export default function KontrolaDiceRoller({
   combatData,
-  onCombatComplete,
-  onClose,
+  onCombatComplete = () => {},
+  onClose = () => {},
   precalculatedRolls,
   isAttacker = true,
   isDefender = false,
@@ -182,22 +182,40 @@ export default function KontrolaDiceRoller({
   onTriggerRoll = null,
   onForceClose = null
 }) {
+  // SAFETY: Ensure combatData and all required properties exist before using them
+  // This prevents "Cannot access X before initialization" errors during build minification
+  if (!combatData) {
+    console.error('[KontrolaDiceRoller] ERROR: combatData is null/undefined!');
+    return null;
+  }
+  
   console.log('[KontrolaDiceRoller] Component mounted with combatData:', {
     hasAttacker: !!combatData?.attacker,
     hasDefender: !!combatData?.defender,
-    attackerPlayerName: combatData?.attackerPlayerName,
-    defenderPlayerName: combatData?.defenderPlayerName,
+    attackerPlayerName: combatData?.attacker?.name || combatData?.attackerPlayerName,
+    defenderPlayerName: combatData?.defender?.name || combatData?.defenderPlayerName,
     actionCard: combatData?.actionCard?.name,
     attackSelectionName: combatData?.attackSelectionName,
     isAttacker,
     isDefender,
     isSpectator,
-    isHost
+    isHost,
+    allPropsValid: !![combatData?.attacker, combatData?.defender, combatData?.actionCard].every(p => p)
   });
   
   const { attacker, defender, actionCard, attackSelectionName, attackerPlayerName, defenderPlayerName } = combatData || {};
-  const defChar = defender || { name: defenderPlayerName || 'Defender', hp: 100 };
-  const atkChar = attacker || { name: attackerPlayerName || 'Attacker', hp: 100 };
+  
+  // CRITICAL FIX: Ensure these NEVER become undefined to prevent minification variable errors
+  const defChar = defender || { 
+    name: defenderPlayerName || 'Defender', 
+    hp: 100,
+    energyTokens: 5
+  };
+  const atkChar = attacker || { 
+    name: attackerPlayerName || 'Attacker', 
+    hp: 100,
+    energyTokens: 5
+  };
 
   const [phase, setPhase] = useState('clash'); // 'clash' | 'clash_summary'
   const [secondsRemaining, setSecondsRemaining] = useState(60);
@@ -225,6 +243,11 @@ export default function KontrolaDiceRoller({
   const [isRollingMultiplier, setIsRollingMultiplier] = useState(false);
   const [multiplierDie, setMultiplierDie] = useState(precalculatedRolls?.dRoll?.total || 1);
 
+  // Fate Card states for doubles detection
+  const [attackerFateCard, setAttackerFateCard] = useState(false);
+  const [defenderFateCard, setDefenderFateCard] = useState(false);
+  const [showRerollOption, setShowRerollOption] = useState(false);
+
   const isRolling = isAttackerRolling || isDefenderRolling || (isExternallyRolling && phase === 'clash');
 
   const atkSum = clashAtkDice[0] + clashAtkDice[1];
@@ -242,6 +265,16 @@ export default function KontrolaDiceRoller({
     }
   }
 
+  // Detect if player rolled doubles and award Fate Card
+  function handleDoubleDetection(dice1, dice2) {
+    const hasDouble = dice1 === dice2;
+    if (hasDouble) {
+      console.log('[Dice] Double detected!', { dice1, dice2, total: dice1 + dice2 });
+      return true;
+    }
+    return false;
+  }
+
   // Attacker rolls their 2 authentic dice
   function handleRollAttacker() {
     if (isAttackerRolling || hasAttackerRolled) return;
@@ -254,9 +287,17 @@ export default function KontrolaDiceRoller({
       setIsAttackerRolling(false);
       setHasAttackerRolled(true);
 
+      // Check for doubles
+      const hasDouble = handleDoubleDetection(atkRolls[0], atkRolls[1]);
+      if (hasDouble) {
+        setAttackerFateCard(true);
+        setShowRerollOption(true);
+      }
+
       if (onTriggerRoll) {
         onTriggerRoll({
-          attackerRoll: { rolls: atkRolls, total: atkRolls[0] + atkRolls[1] }
+          attackerRoll: { rolls: atkRolls, total: atkRolls[0] + atkRolls[1] },
+          attackerDouble: hasDouble
         });
       }
 
@@ -281,9 +322,17 @@ export default function KontrolaDiceRoller({
       setIsDefenderRolling(false);
       setHasDefenderRolled(true);
 
+      // Check for doubles
+      const hasDouble = handleDoubleDetection(defRolls[0], defRolls[1]);
+      if (hasDouble) {
+        setDefenderFateCard(true);
+        setShowRerollOption(true);
+      }
+
       if (onTriggerRoll) {
         onTriggerRoll({
-          defenderRoll: { rolls: defRolls, total: defRolls[0] + defRolls[1] }
+          defenderRoll: { rolls: defRolls, total: defRolls[0] + defRolls[1] },
+          defenderDouble: hasDouble
         });
       }
     }, 900);
@@ -318,7 +367,7 @@ export default function KontrolaDiceRoller({
       phase, hasRolledMultiplier, handleRollMultiplierDie, onCombatComplete,
       isHost, isTie, handleReRoll
     };
-  });
+  }, [isAttacker, hasAttackerRolled, handleRollAttacker, isDefender, hasDefenderRolled, handleRollDefender, phase, hasRolledMultiplier, handleRollMultiplierDie, onCombatComplete, isHost, isTie, handleReRoll]);
 
   useEffect(() => {
     setSecondsRemaining(15);
@@ -335,7 +384,7 @@ export default function KontrolaDiceRoller({
             if (refs.isAttacker || refs.isHost) {
               if (refs.isTie) refs.handleReRoll();
               else if (refs.hasRolledMultiplier === false) refs.handleRollMultiplierDie();
-              else refs.onCombatComplete();
+              else if (typeof refs.onCombatComplete === 'function') refs.onCombatComplete();
             }
           }
           return 0;
@@ -929,6 +978,33 @@ export default function KontrolaDiceRoller({
                 >
                   <Shield size={16} />
                   <span>🛡️ RULE OF 6+ ACTIVATED! Defender rolled {defSum} (≥6): Innate Base Defense activated!</span>
+                </div>
+              )}
+
+              {/* Fate Card Award - Doubles Detected */}
+              {(attackerFateCard || defenderFateCard) && (
+                <div
+                  style={{
+                    margin: '0 auto 16px auto',
+                    padding: '12px 22px',
+                    borderRadius: '10px',
+                    background: 'rgba(57, 255, 20, 0.15)',
+                    border: '1px solid rgba(57, 255, 20, 0.6)',
+                    color: '#39ff14',
+                    fontWeight: 'bold',
+                    fontSize: '0.95rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    animation: 'pulseGlow 0.6s ease-in-out infinite'
+                  }}
+                >
+                  <Sparkles size={18} />
+                  <span>
+                    {attackerFateCard && `${atkChar.name} ROLLED DOUBLES! 🎲 FATE CARD AWARDED!`}
+                    {defenderFateCard && !attackerFateCard && `${defChar.name} ROLLED DOUBLES! 🎲 FATE CARD AWARDED!`}
+                    {defenderFateCard && attackerFateCard && `BOTH PLAYERS ROLLED DOUBLES! 🎲🎲 FATE CARDS AWARDED!`}
+                  </span>
                 </div>
               )}
 

@@ -661,21 +661,85 @@ export default function KontrolaArena() {
             actorId: event.payload?.actorId,
             targetId: event.payload?.targetId,
             actionCard: event.payload?.actionCard?.name,
-            attackSelectionName: event.payload?.attackSelectionName
+            attackSelectionName: event.payload?.attackSelectionName,
+            attackerPlayerId: event.payload?.attackerPlayerId,
+            defenderPlayerId: event.payload?.defenderPlayerId,
+            currentPlayerId: playerId,
+            hasGameState: !!gameStateRef.current?.characterStates,
+            characterCount: Object.keys(gameStateRef.current?.characterStates || {}).length
           });
           
+          // CRITICAL FIX: Ensure all required fields exist with safe defaults BEFORE creating combatData
+          // This prevents "Cannot access 'fe' before initialization" errors
+          
+          const actorId = event.payload?.actorId || null;
+          const targetId = event.payload?.targetId || null;
+          const attackerPlayerId = event.payload?.attackerPlayerId || actorId;
+          const defenderPlayerId = event.payload?.defenderPlayerId || targetId;
+          
           // Reconstruct character objects from current gameState
+          const attacker = gameStateRef.current?.characterStates?.[actorId];
+          const defender = gameStateRef.current?.characterStates?.[targetId];
+          
+          // Fallback: if character data is missing, use the names from broadcast
+          // IMPORTANT: These must NEVER be undefined
+          const attackerFallback = attacker || {
+            name: event.payload?.attackerPlayerName || 'Attacker',
+            hp: 100,
+            energyTokens: 5,
+            id: actorId,
+            shield: 0,
+            poisonCards: 0
+          };
+          const defenderFallback = defender || {
+            name: event.payload?.defenderPlayerName || 'Defender',
+            hp: 100,
+            energyTokens: 5,
+            id: targetId,
+            shield: 0,
+            poisonCards: 0
+          };
+          
+          // Ensure actionCard exists
+          const actionCard = event.payload?.actionCard || { name: 'ATTACK', ap: 5 };
+          const attackSelectionName = event.payload?.attackSelectionName || null;
+          
           const combatData = {
-            ...event.payload,
-            attacker: gameStateRef.current?.characterStates?.[event.payload?.actorId],
-            defender: gameStateRef.current?.characterStates?.[event.payload?.targetId]
+            // Core IDs - NEVER null
+            actorId: actorId || 'unknown-attacker',
+            targetId: targetId || 'unknown-defender',
+            attackerPlayerId: attackerPlayerId || 'unknown-attacker',
+            defenderPlayerId: defenderPlayerId || 'unknown-defender',
+            
+            // Character data - NEVER null
+            attacker: attackerFallback,
+            defender: defenderFallback,
+            attackerPlayerName: attackerFallback.name,
+            defenderPlayerName: defenderFallback.name,
+            
+            // Card/Action data
+            actionCard: actionCard,
+            attackSelectionName: attackSelectionName,
+            actionType: event.payload?.actionType || 'RESOLVE_COMBAT',
+            defenseCard: event.payload?.defenseCard || null,
+            
+            // Rolls
+            precalculatedRolls: event.payload?.precalculatedRolls || {}
           };
           
           console.log('[DICE_SCREEN_OPEN] Reconstructed combatData:', {
             hasAttacker: !!combatData.attacker,
             hasDefender: !!combatData.defender,
             attackerName: combatData.attacker?.name,
-            defenderName: combatData.defender?.name
+            defenderName: combatData.defender?.name,
+            iAmAttacker: combatData.attackerPlayerId === playerId,
+            iAmDefender: combatData.defenderPlayerId === playerId,
+            allFieldsFilled: !![
+              combatData.actorId,
+              combatData.targetId,
+              combatData.attacker?.name,
+              combatData.defender?.name
+            ].every(f => f)
           });
           
           setActiveCombat(combatData);
@@ -1191,6 +1255,8 @@ export default function KontrolaArena() {
         const activeCombat = {
           actorId: activeDefense.actorId,
           targetId: activeDefense.targetId,
+          attackerPlayerId: activeDefense.actorId,
+          defenderPlayerId: activeDefense.targetId,
           actionCard: activeDefense.actionCard,
           attackSelectionName: activeDefense.attackSelectionName,
           actionType: 'RESOLVE_COMBAT',
@@ -1223,14 +1289,24 @@ export default function KontrolaArena() {
           attackerPlayerName: activeCombat.attackerPlayerName,
           defenderPlayerName: activeCombat.defenderPlayerName,
           precalculatedRolls: activeCombat.precalculatedRolls,
-          defenseCard: activeCombat.defenseCard
+          defenseCard: activeCombat.defenseCard,
+          // FIX: Add explicit role assignments so defenders know immediately
+          attackerPlayerId: activeCombat.actorId,
+          defenderPlayerId: activeCombat.targetId
         };
 
-        // Notify all clients to open dice screen (delay slightly to ensure state is clear)
-        setTimeout(async () => {
-          console.log('[DEFENSE_SELECTED] Broadcasting dice_screen_open event');
-          await broadcastUIEvent(matchIdRef.current, 'dice_screen_open', broadcastData);
-        }, 100);
+        // FIX: Set local state IMMEDIATELY and broadcast simultaneously to prevent freeze
+        setActiveCombat(activeCombat);
+        
+        console.log('[DEFENSE_SELECTED] Local state updated, broadcasting dice_screen_open event', {
+          attackerPlayerId: activeCombat.actorId,
+          defenderPlayerId: activeCombat.targetId,
+          currentPlayerId: playerId,
+          willBeDefender: activeCombat.targetId === playerId
+        });
+        
+        // Broadcast to other clients (no delay - state already set locally)
+        broadcastUIEvent(matchIdRef.current, 'dice_screen_open', broadcastData);
 
         const nextState = {
           ...currentState,
@@ -1895,7 +1971,10 @@ export default function KontrolaArena() {
           attackerId: playerId,
           attackerPlayerName: myCharacter.name,
           defenderPlayerName: 'ALL',
-          precalculatedRolls
+          precalculatedRolls,
+          // FIX: Add explicit role assignments for AoE attacks
+          attackerPlayerId: playerId,
+          defenderPlayerId: 'ALL'
         };
         console.log('[playTurn] AoE Attack - Opening dice screen immediately');
         await broadcastUIEvent(matchId, 'dice_screen_open', clashData);
@@ -1955,6 +2034,14 @@ export default function KontrolaArena() {
   // Triggered when attacker rolls the authentic pip dice (or re-rolls on tie)
   const handleTriggerDiceRoll = async (newRolls = null, isReroll = false) => {
     if (newRolls) {
+      // Log doubles detection if present
+      if (newRolls.attackerDouble) {
+        console.log('[Fate Card] Attacker rolled doubles!', { rolls: newRolls.attackerRoll });
+      }
+      if (newRolls.defenderDouble) {
+        console.log('[Fate Card] Defender rolled doubles!', { rolls: newRolls.defenderRoll });
+      }
+      
       setActiveCombat((prev) => prev ? { ...prev, precalculatedRolls: { ...(prev.precalculatedRolls || {}), ...newRolls } } : prev);
       await broadcastUIEvent(matchId, 'dice_screen_rolled', { timestamp: Date.now(), precalculatedRolls: newRolls });
     } else if (isReroll) {
@@ -4190,9 +4277,12 @@ export default function KontrolaArena() {
             <KontrolaDiceRoller
               combatData={activeCombat}
               precalculatedRolls={activeCombat.precalculatedRolls}
-              isAttacker={activeCombat.actorId === playerId || (isHost && !activeCombat.actorId)}
-              isDefender={activeCombat.targetId === playerId || (activeCombat.targetId === 'ALL' && activeCombat.actorId !== playerId) || (!activeCombat.targetId && activeCombat.actorId !== playerId)}
-              isSpectator={isSpectator || (activeCombat.actorId !== playerId && activeCombat.targetId !== playerId && activeCombat.targetId !== 'ALL' && Boolean(activeCombat.targetId))}
+              isAttacker={activeCombat.attackerPlayerId === playerId}
+              isDefender={
+                activeCombat.defenderPlayerId === playerId || 
+                (activeCombat.defenderPlayerId === 'ALL' && activeCombat.attackerPlayerId !== playerId)
+              }
+              isSpectator={activeCombat.attackerPlayerId !== playerId && activeCombat.defenderPlayerId !== playerId && activeCombat.defenderPlayerId !== 'ALL'}
               isHost={isHost}
               isExternallyRolling={isDiceRollingSync}
               onTriggerRoll={handleTriggerDiceRoll}

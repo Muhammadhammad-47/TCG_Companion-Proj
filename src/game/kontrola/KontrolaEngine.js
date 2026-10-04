@@ -239,6 +239,23 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   if (!actionCard) {
     return { log: 'Combat error: no action card provided.', newAttackerState: attackerState, newDefenderState: defenderState };
   }
+  
+  // Helper function to calculate shield damage absorption
+  const calculateShieldDamage = (incomingDamage, shieldHP) => {
+    // Shield reduces damage by its remaining HP, then breaks if depleted
+    const damageToShield = Math.min(incomingDamage, shieldHP);
+    const remainingDamage = Math.max(0, incomingDamage - damageToShield);
+    const shieldHPAfter = Math.max(0, shieldHP - damageToShield);
+    const shieldBroken = shieldHPAfter === 0;
+    
+    return {
+      damageToShield,
+      remainingDamage,
+      shieldHPAfter,
+      shieldBroken
+    };
+  };
+  
   let log = `${attackerState.name} played ${actionCard.name}.`;
   let damage = 0;
   let heal = 0;
@@ -388,6 +405,14 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           log += ` DRAIN successful! Stole ${stolen} Energy Tokens from ${newDefenderState.name}.`;
         }
         finalDamage = 0; // Handled directly above
+      } else if (cardName === 'BACK STAB') {
+        // BACK STAB bypasses shields and basic defenses
+        if (newDefenderState) {
+          newDefenderState.shield = 0; // Bypass shield
+          newDefenderState.hasDefendBasic = false; // Bypass basic defense
+          finalDamage = 25; // High damage attack (2.5x normal attack)
+          log += ` ⚔️ BACK STAB hit! Bypassed all defenses for ${finalDamage} AP damage!`;
+        }
       } else if (cardName === 'VAMPIRE LIFE STEAL') {
         if (newDefenderState) {
           const stolenHp = Math.min(10, newDefenderState.hp);
@@ -557,10 +582,35 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           return { newAttackerState, newDefenderState, log };
         }
         vitAmount = 20;
+      } else if (cardName.includes('V30')) {
+        if ((newAttackerState.level || 1) < 3) {
+          log += ` VITALITY GAIN V30 requires Character Level 3! (Current Level: ${newAttackerState.level || 1}).`;
+          return { newAttackerState, newDefenderState, log };
+        }
+        vitAmount = 30;
+      } else if (cardName.includes('V40')) {
+        if ((newAttackerState.level || 1) < 4) {
+          log += ` VITALITY GAIN V40 requires Character Level 4! (Current Level: ${newAttackerState.level || 1}).`;
+          return { newAttackerState, newDefenderState, log };
+        }
+        vitAmount = 40;
       }
       newAttackerState.maxHp = (newAttackerState.maxHp || 100) + vitAmount;
       newAttackerState.hp += vitAmount;
       log += ` Vitality expanded Max HP by +${vitAmount}! (Current HP: ${newAttackerState.hp}/${newAttackerState.maxHp})`;
+    }
+  }
+  // 6c. REVIVE CARD (Bring defeated player back into game)
+  else if (cardName.includes('REVIVE')) {
+    // Check if attacker is defeated
+    if (newAttackerState.hp <= 0 || newAttackerState.isDefeated) {
+      // Restore attacker to 25% of max HP
+      const reviveHP = Math.floor((newAttackerState.maxHp || 100) * 0.25);
+      newAttackerState.hp = Math.max(1, reviveHP);
+      newAttackerState.isDefeated = false;
+      log += ` ${newAttackerState.name} was REVIVED! Restored to ${reviveHP} HP (25% of max).`;
+    } else {
+      log += ` REVIVE card failed! ${newAttackerState.name} is not defeated. Card wasted.`;
     }
   }
   // 7. SHIELD CARDS

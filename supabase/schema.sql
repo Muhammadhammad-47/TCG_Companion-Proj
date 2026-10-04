@@ -497,3 +497,56 @@ create policy "Admins can delete bug reports"
 -- create policy "Anyone can upload bug screenshots" on storage.objects for insert with check (bucket_id = 'bug-screenshots');
 -- create policy "Anyone can view bug screenshots" on storage.objects for select using (bucket_id = 'bug-screenshots');
 -- create policy "Admins can delete bug screenshots" on storage.objects for delete using (bucket_id = 'bug-screenshots' and exists (select 1 from public.profiles where id = auth.uid() and is_admin = true));
+
+
+-- ====================================================================
+-- FATE CARDS TABLE (Doubles roll reward tracking)
+-- ====================================================================
+
+create table if not exists public.fate_cards (
+  id uuid default gen_random_uuid() primary key,
+  player_id uuid references auth.users(id) on delete cascade not null,
+  match_id text not null,
+  earned_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  used_for_reroll boolean default false,
+  reroll_turn_number integer,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+create index if not exists idx_fate_cards_match_id on public.fate_cards(match_id);
+create index if not exists idx_fate_cards_player_id on public.fate_cards(player_id);
+
+alter table public.fate_cards enable row level security;
+
+create policy "Users can view their own fate cards" 
+  on public.fate_cards for select using (auth.uid() = player_id);
+
+create policy "Anyone can insert fate cards (match tracking)"
+  on public.fate_cards for insert with check (true);
+
+
+-- ====================================================================
+-- ACTIVE SHIELDS TABLE (Shield HP state during matches)
+-- ====================================================================
+
+create table if not exists public.active_shields (
+  id uuid default gen_random_uuid() primary key,
+  match_id text not null,
+  player_id uuid references auth.users(id) on delete cascade not null,
+  shield_type text not null check (shield_type in ('basic', 'full', 'energy')),
+  shield_hp integer not null default 10,
+  activated_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  deactivated_at timestamp with time zone,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+create index if not exists idx_active_shields_match on public.active_shields(match_id);
+create index if not exists idx_active_shields_player_id on public.active_shields(player_id);
+
+alter table public.active_shields enable row level security;
+
+create policy "Players can view shields in their match"
+  on public.active_shields for select using (true);
+
+create policy "Match system can manage shields"
+  on public.active_shields for all with check (true);
