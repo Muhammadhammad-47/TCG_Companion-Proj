@@ -309,24 +309,10 @@ body {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   color: var(--text-main);
-  padding-left: 60px;
-  position: relative;
 }
 
 .bot-avatar-icon {
-  position: absolute;
-  left: -50px;
-  top: 0;
-  font-size: 1.5rem;
-  background: #000;
-  border: 1.5px solid var(--accent-gold);
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  display: none;
 }
 
 /* Bottom Input Area */
@@ -557,9 +543,10 @@ body {
 
 .chat-response-container .chat-bubble.user {
   align-self: flex-end;
-  max-width: 70%;
+  max-width: 55%;
   margin-left: auto;
-  margin-right: 0;
+  margin-right: 60px;
+  margin-bottom: 30px;
 }
 
 .chat-response-container .chat-bubble.bot {
@@ -568,25 +555,14 @@ body {
   backdrop-filter: blur(8px);
   border: 1px solid var(--neon-cyan);
   box-shadow: 0 0 30px rgba(0, 240, 255, 0.15);
-  padding: 30px;
-  max-width: 70%;
-  margin-left: 0;
+  padding: 20px 30px;
+  max-width: 55%;
+  margin-left: 60px;
   margin-right: auto;
-  padding-left: 80px;
 }
 
 .chat-response-container .bot-avatar-icon {
-  position: absolute;
-  left: -70px;
-  top: 15px;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background: #000;
-  border: 1.5px solid var(--accent-gold);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: none;
 }
 
 .chat-bubble.bot::before {
