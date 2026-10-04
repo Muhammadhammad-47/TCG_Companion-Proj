@@ -415,6 +415,10 @@ create table if not exists public.user_music (
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- Ensure file_path column exists (for existing tables)
+alter table if exists public.user_music add column if not exists file_path text;
+alter table if exists public.user_music add column if not exists admin_notes text;
+
 alter table public.user_music enable row level security;
 
 drop policy if exists "Anyone can view approved music" on public.user_music;
