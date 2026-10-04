@@ -606,6 +606,36 @@ create policy "Admins can update music"
 
 
 -- ====================================================================
+-- STORAGE BUCKET: BUG SCREENSHOTS (for bug report screenshots)
+-- ====================================================================
+
+-- Create bug-screenshots bucket (public)
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('bug-screenshots', 'bug-screenshots', true) 
+ON CONFLICT (id) DO NOTHING;
+
+-- RLS Policies for bug-screenshots bucket
+DROP POLICY IF EXISTS "Anyone can upload bug screenshots" ON storage.objects;
+DROP POLICY IF EXISTS "Anyone can view bug screenshots" ON storage.objects;
+DROP POLICY IF EXISTS "Admins can delete bug screenshots" ON storage.objects;
+
+CREATE POLICY "Anyone can upload bug screenshots" 
+ON storage.objects FOR INSERT 
+WITH CHECK (bucket_id = 'bug-screenshots');
+
+CREATE POLICY "Anyone can view bug screenshots" 
+ON storage.objects FOR SELECT 
+USING (bucket_id = 'bug-screenshots');
+
+CREATE POLICY "Admins can delete bug screenshots" 
+ON storage.objects FOR DELETE 
+USING (
+  bucket_id = 'bug-screenshots' AND 
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true)
+);
+
+
+-- ====================================================================
 -- STORAGE BUCKET: MUSIC (for audio file uploads)
 -- ====================================================================
 

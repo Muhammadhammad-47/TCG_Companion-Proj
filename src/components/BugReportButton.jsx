@@ -49,13 +49,13 @@ export default function BugReportButton({
       const report = await bugReportService.submitBugReport({
         userId,
         username,
-        errorType: 'manual_support',
+        errorType: 'manual',
         errorMessage: message.trim(),
         pageUrl: window.location.href,
         userAgent: navigator.userAgent,
         gameState,
         matchId,
-        screenshot
+        screenshot: screenshot || null
       });
 
       if (report) {

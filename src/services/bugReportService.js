@@ -48,22 +48,29 @@ export const bugReportService = {
       // Upload screenshot if provided
       if (screenshot) {
         const timestamp = Date.now();
-        const filename = `bug-${timestamp}-${userId || 'guest'}.png`;
+        // Determine file extension from screenshot type
+        const extension = screenshot.type.includes('png') ? 'png' : 
+                         screenshot.type.includes('jpeg') || screenshot.type.includes('jpg') ? 'jpg' : 'png';
+        const filename = `bug-${timestamp}-${userId || 'guest'}.${extension}`;
+        
+        console.log('[bugReportService] Uploading screenshot:', { filename, type: screenshot.type, size: screenshot.size });
         
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('bug-screenshots')
           .upload(filename, screenshot, {
-            contentType: 'image/png',
+            contentType: screenshot.type || 'image/png',
             cacheControl: '3600'
           });
 
         if (uploadError) {
           console.error('[bugReportService] Screenshot upload failed:', uploadError);
+          console.log('[bugReportService] Will continue without screenshot');
         } else {
           const { data: urlData } = supabase.storage
             .from('bug-screenshots')
             .getPublicUrl(filename);
-          screenshotUrl = urlData.publicUrl;
+          screenshotUrl = urlData?.publicUrl || null;
+          console.log('[bugReportService] Screenshot uploaded:', screenshotUrl);
         }
       }
 
