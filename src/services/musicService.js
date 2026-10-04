@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { autoReportError } from './bugReportService';
 
 export const musicService = {
   // Upload music file to Supabase Storage and create database entry
@@ -62,6 +63,15 @@ export const musicService = {
       return { success: true, message: 'Music uploaded and submitted for approval!', data };
     } catch (e) {
       console.error('Music: Failed to upload', e);
+      
+      // Auto-report error to admin
+      autoReportError(e, {
+        userId,
+        username,
+        errorType: 'storage_error',
+        section: 'music_upload'
+      });
+      
       return { success: false, message: e.message || 'Failed to upload music.' };
     }
   },

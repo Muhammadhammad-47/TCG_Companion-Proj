@@ -303,3 +303,45 @@ export function setupGlobalErrorHandlers(userId, username) {
     }, 1000);
   };
 }
+
+
+/**
+ * Auto-report caught errors (for try-catch blocks and API errors)
+ * Call this when catching errors to auto-submit to admin
+ * @param {Error|string} error - The error object or error message
+ * @param {Object} context - Additional context
+ * @param {string} context.userId - User ID
+ * @param {string} context.username - Username
+ * @param {string} context.errorType - Error type (e.g., 'api_error', 'storage_error', 'network_error')
+ * @param {string} context.section - Section/feature where error occurred
+ */
+export const autoReportError = (error, context = {}) => {
+  const {
+    userId = null,
+    username = 'Guest',
+    errorType = 'caught_error',
+    section = 'unknown'
+  } = context;
+
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  const errorStack = error instanceof Error ? error.stack : null;
+
+  console.log('[autoReportError] Reporting caught error:', {
+    section,
+    errorType,
+    message: errorMessage
+  });
+
+  // Submit to admin (fire and forget)
+  bugReportService.submitBugReport({
+    userId,
+    username,
+    errorType: `caught_${errorType}`,
+    errorMessage: `[${section}] ${errorMessage}`,
+    errorStack,
+    pageUrl: window.location.href,
+    userAgent: navigator.userAgent
+  }).catch((err) => {
+    console.error('[autoReportError] Failed to report error:', err);
+  });
+};
