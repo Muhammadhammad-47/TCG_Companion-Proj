@@ -32,7 +32,10 @@ export const musicService = {
           upsert: false
         });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Music upload error details:', uploadError);
+        throw uploadError;
+      }
 
       // 4. Get public URL
       const { data: { publicUrl } } = supabase.storage

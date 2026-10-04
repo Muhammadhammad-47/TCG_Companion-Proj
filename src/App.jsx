@@ -1464,20 +1464,6 @@ export function Hub() {
                     </button>
                   )}
 
-                  {/* Bug Report Button */}
-                  <BugReportButton 
-                    userId={currentUser?.id}
-                    username={userProfile?.username || 'Guest'}
-                    style={{
-                      background: 'linear-gradient(135deg, #0088ff 0%, #00ccff 100%)',
-                      border: 'none',
-                      padding: '10px 20px',
-                      fontSize: '0.9rem',
-                      fontWeight: 'bold',
-                      boxShadow: '0 0 20px rgba(0, 200, 255, 0.4)'
-                    }}
-                  />
-
                   {/* Avatar circle — click to open dropdown */}
                   <div style={{ position: 'relative' }}>
                     <button
@@ -1851,6 +1837,34 @@ export function Hub() {
           }
         }}
       />
+
+      {/* Fixed Position: Contact Support Button (Bottom Right) */}
+      {currentUser && (
+        <div style={{
+          position: 'fixed',
+          bottom: '30px',
+          right: '30px',
+          zIndex: 99,
+          animation: 'pulse 2s infinite'
+        }}>
+          <BugReportButton 
+            userId={currentUser?.id}
+            username={userProfile?.username || 'Guest'}
+            style={{
+              background: 'linear-gradient(135deg, #00ff88 0%, #00ffcc 100%)',
+              border: 'none',
+              padding: '14px 26px',
+              fontSize: '0.95rem',
+              fontWeight: 'bold',
+              boxShadow: '0 0 30px rgba(0, 255, 136, 0.6)',
+              borderRadius: '14px',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              whiteSpace: 'nowrap'
+            }}
+          />
+        </div>
+      )}
     </>
   );
 }

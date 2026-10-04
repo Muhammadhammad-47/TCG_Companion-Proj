@@ -441,7 +441,7 @@ create table if not exists public.bug_reports (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references auth.users(id) on delete set null,
   username text not null,
-  error_type text not null check (error_type in ('crash', 'freeze', 'blackout', 'manual', 'error')),
+  error_type text not null check (error_type in ('crash', 'freeze', 'blackout', 'manual', 'error', 'caught_error', 'caught_storage_error', 'caught_api_error', 'caught_network_error')),
   error_message text not null,
   error_stack text,
   page_url text not null,
@@ -550,3 +550,141 @@ create policy "Players can view shields in their match"
 
 create policy "Match system can manage shields"
   on public.active_shields for all with check (true);
+
+
+-- ====================================================================
+-- MUSIC SUBMISSION TABLE (User-submitted music for in-game playlist)
+-- ====================================================================
+
+create table if not exists public.user_music (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  username text not null,
+  title text not null,
+  music_url text not null,
+  file_path text,
+  status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
+  admin_notes text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Indexes for fast queries
+create index if not exists idx_user_music_status on public.user_music(status);
+create index if not exists idx_user_music_user_id on public.user_music(user_id);
+create index if not exists idx_user_music_created_at on public.user_music(created_at desc);
+
+-- Enable RLS for user_music
+alter table public.user_music enable row level security;
+
+-- Drop existing policies
+drop policy if exists "Users can view own music" on public.user_music;
+drop policy if exists "Users can insert own music" on public.user_music;
+drop policy if exists "All can view approved music" on public.user_music;
+drop policy if exists "Admins can view all music" on public.user_music;
+drop policy if exists "Admins can update music" on public.user_music;
+
+-- RLS Policies
+create policy "Users can view own music" 
+  on public.user_music for select using (auth.uid() = user_id);
+
+create policy "Users can insert own music" 
+  on public.user_music for insert with check (auth.uid() = user_id);
+
+create policy "All can view approved music" 
+  on public.user_music for select using (status = 'approved');
+
+create policy "Admins can view all music" 
+  on public.user_music for select using (
+    exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
+  );
+
+create policy "Admins can update music" 
+  on public.user_music for update using (
+    exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
+  );
+
+
+-- ====================================================================
+-- STORAGE BUCKET: MUSIC (for audio file uploads)
+-- ====================================================================
+
+-- Create music bucket (run this in Supabase dashboard if needed)
+-- INSERT INTO storage.buckets (id, name, public) VALUES ('music', 'music', true) ON CONFLICT DO NOTHING;
+
+-- Storage RLS Policies for music bucket
+drop policy if exists "Users can upload music" on storage.objects;
+drop policy if exists "Music files are publicly readable" on storage.objects;
+drop policy if exists "Admins can delete music files" on storage.objects;
+
+create policy "Users can upload music" 
+  on storage.objects for insert with check (bucket_id = 'music');
+
+create policy "Music files are publicly readable" 
+  on storage.objects for select using (bucket_id = 'music');
+
+create policy "Admins can delete music files" 
+  on storage.objects for delete using (
+    bucket_id = 'music' and exists (
+      select 1 from public.profiles where id = auth.uid() and is_admin = true
+    )
+  );
+
+
+-- ====================================================================
+-- UPDATE BUG_REPORTS TABLE: Add more error types
+-- ====================================================================
+
+-- Drop old constraint if it exists
+alter table if exists public.bug_reports drop constraint if exists bug_reports_error_type_check;
+
+-- Add new constraint with all error types
+alter table if exists public.bug_reports 
+  add constraint bug_reports_error_type_check 
+  check (error_type in (
+    'crash', 'freeze', 'blackout', 'manual', 'error',
+    'caught_error', 'caught_storage_error', 'caught_api_error', 'caught_network_error',
+    'music_upload', 'auth_error', 'connection_error'
+  ));
+
+-- Ensure bug_reports has necessary columns
+alter table if exists public.bug_reports add column if not exists admin_notes text;
+alter table if exists public.bug_reports add column if not exists resolved_at timestamp with time zone;
+
+-- ====================================================================
+-- CRITICAL: CREATE MUSIC STORAGE BUCKET (If not exists)
+-- ====================================================================
+-- NOTE: This may not work in SQL editor. If bucket creation fails:
+-- 1. Go to Supabase Dashboard > Storage > Buckets
+-- 2. Click "New Bucket" 
+-- 3. Name it "music"
+-- 4. Make it PUBLIC
+-- 5. Click Create
+
+-- Attempt to create via SQL (may fail silently if already exists)
+insert into storage.buckets (id, name, public) 
+values ('music', 'music', true) 
+on conflict (id) do nothing;
+
+-- ====================================================================
+-- STORAGE RLS POLICIES FOR MUSIC BUCKET
+-- ====================================================================
+
+-- Drop existing policies for music bucket if they exist
+drop policy if exists "Users can upload music files" on storage.objects;
+drop policy if exists "Anyone can read music files" on storage.objects;
+drop policy if exists "Admins can delete music files" on storage.objects;
+
+-- Create new policies for music bucket
+create policy "Users can upload music files" 
+  on storage.objects for insert with check (bucket_id = 'music' and auth.role() = 'authenticated');
+
+create policy "Anyone can read music files" 
+  on storage.objects for select using (bucket_id = 'music');
+
+create policy "Admins can delete music files" 
+  on storage.objects for delete using (
+    bucket_id = 'music' and exists (
+      select 1 from public.profiles where id = auth.uid() and is_admin = true
+    )
+  );

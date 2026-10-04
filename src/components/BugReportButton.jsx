@@ -130,7 +130,7 @@ export default function BugReportButton({
         <span>Contact Support</span>
       </button>
 
-      {/* In-App Modal */}
+      {/* In-App Modal - Fixed to viewport */}
       {isOpen && (
         <div
           style={{
@@ -141,8 +141,9 @@ export default function BugReportButton({
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 10000,
-            padding: '20px',
-            backdropFilter: 'blur(4px)'
+            padding: '16px',
+            backdropFilter: 'blur(4px)',
+            overflow: 'auto'
           }}
           onClick={() => !isSubmitting && setIsOpen(false)}
         >
@@ -151,11 +152,14 @@ export default function BugReportButton({
               background: 'linear-gradient(135deg, rgba(5, 10, 24, 0.98) 0%, rgba(10, 20, 40, 0.98) 100%)',
               border: '2px solid rgba(0, 200, 255, 0.5)',
               borderRadius: '20px',
-              padding: '32px',
+              padding: '28px',
               width: '100%',
-              maxWidth: '600px',
+              maxWidth: '550px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
               boxShadow: '0 0 60px rgba(0, 200, 255, 0.3), inset 0 0 20px rgba(0, 200, 255, 0.1)',
-              position: 'relative'
+              position: 'relative',
+              margin: 'auto'
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -258,12 +262,13 @@ export default function BugReportButton({
               </label>
 
               {!screenshotPreview ? (
-                <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                   <button
                     onClick={handleCaptureScreenshot}
                     disabled={isSubmitting}
                     style={{
-                      flex: 1,
+                      flex: '1 1 calc(50% - 5px)',
+                      minWidth: '120px',
                       background: 'rgba(0, 200, 255, 0.15)',
                       border: '1.5px dashed rgba(0, 200, 255, 0.4)',
                       borderRadius: '10px',
@@ -280,13 +285,14 @@ export default function BugReportButton({
                       opacity: isSubmitting ? 0.5 : 1
                     }}
                   >
-                    <Camera size={16} /> Capture Screen
+                    <Camera size={16} /> Capture
                   </button>
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isSubmitting}
                     style={{
-                      flex: 1,
+                      flex: '1 1 calc(50% - 5px)',
+                      minWidth: '120px',
                       background: 'rgba(0, 200, 255, 0.15)',
                       border: '1.5px dashed rgba(0, 200, 255, 0.4)',
                       borderRadius: '10px',
@@ -303,7 +309,7 @@ export default function BugReportButton({
                       opacity: isSubmitting ? 0.5 : 1
                     }}
                   >
-                    <Upload size={16} /> Upload Image
+                    <Upload size={16} /> Upload
                   </button>
                   <input
                     ref={fileInputRef}
@@ -315,19 +321,19 @@ export default function BugReportButton({
                   />
                 </div>
               ) : (
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
                   <img
                     src={screenshotPreview}
                     alt="preview"
                     style={{
-                      maxWidth: '120px',
-                      maxHeight: '120px',
+                      maxWidth: '100px',
+                      maxHeight: '100px',
                       borderRadius: '8px',
                       border: '1px solid rgba(0, 200, 255, 0.3)',
                       objectFit: 'cover'
                     }}
                   />
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, minWidth: '150px' }}>
                     <p style={{ color: '#00ccff', fontSize: '0.85rem', margin: '0 0 8px 0', fontWeight: 'bold' }}>
                       ✓ Screenshot attached
                     </p>
