@@ -1791,12 +1791,9 @@ export function Hub() {
               <button
                 className="btn-enter-game-cta"
                 onClick={() => {
-                  if (!userProfile?.is_premium) {
-                    setIsStoreOpen(true);
-                    return;
-                  }
                   setIsMusicModalOpen(true);
                 }}
+                disabled={!userProfile?.is_premium}
                 style={{ 
                   width: '100%', 
                   padding: '25px 40px', 
@@ -1807,11 +1804,11 @@ export function Hub() {
                   border: userProfile?.is_premium 
                     ? '2px solid rgba(168, 85, 247, 0.5)' 
                     : '2px solid rgba(168, 85, 247, 0.2)', 
-                  color: userProfile?.is_premium ? '#c084fc' : 'rgba(192, 132, 252, 0.4)', 
-                  position: 'relative',
-                  cursor: userProfile?.is_premium ? 'pointer' : 'pointer',
+                  color: userProfile?.is_premium ? '#c084fc' : 'rgba(192, 132, 252, 0.4)',
+                  cursor: userProfile?.is_premium ? 'pointer' : 'not-allowed',
                   opacity: userProfile?.is_premium ? 1 : 0.6,
-                  transition: 'all 0.3s ease'
+                  transition: 'all 0.3s ease',
+                  position: 'relative',
                 }}
               >
                 <div style={{
