@@ -531,6 +531,7 @@ body {
   justify-content: flex-end;
   align-items: center;
   padding: 40px;
+  overflow-y: auto;
 }
 
 .chat-avatar-container {
@@ -546,15 +547,19 @@ body {
 .chat-response-container {
   position: relative;
   z-index: 10;
-  width: 95%;
+  width: 100%;
+  max-width: 1000px;
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  margin-bottom: 20px;
+  gap: 20px;
+  margin-bottom: 40px;
 }
 
 .chat-response-container .chat-bubble.user {
   align-self: flex-end;
+  max-width: 70%;
+  margin-left: auto;
+  margin-right: 0;
 }
 
 .chat-response-container .chat-bubble.bot {
@@ -564,13 +569,24 @@ body {
   border: 1px solid var(--neon-cyan);
   box-shadow: 0 0 30px rgba(0, 240, 255, 0.15);
   padding: 30px;
-  max-width: 90%;
+  max-width: 70%;
+  margin-left: 0;
+  margin-right: auto;
+  padding-left: 80px;
 }
 
 .chat-response-container .bot-avatar-icon {
-  left: -60px;
+  position: absolute;
+  left: -70px;
+  top: 15px;
   width: 50px;
   height: 50px;
+  border-radius: 50%;
+  background: #000;
+  border: 1.5px solid var(--accent-gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .chat-bubble.bot::before {

@@ -1113,56 +1113,65 @@ export function Chat({ onBack, isOverlay = false }) {
               {/* Question Feedback Controls - OUTSIDE the message box */}
               {answer && !isSpeaking && (
                 <div style={{
-                  marginTop: '12px',
-                  paddingTop: '12px',
-                  paddingLeft: '0px',
+                  marginTop: '20px',
+                  paddingTop: '16px',
+                  paddingLeft: '80px',
                   paddingRight: '0px',
+                  paddingBottom: '12px',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'space-between',
+                  justifyContent: 'flex-start',
                   flexWrap: 'wrap',
-                  gap: '12px'
+                  gap: '16px',
+                  borderTop: '1px solid rgba(0, 240, 255, 0.2)'
                 }}>
-                  <span style={{ fontSize: '0.78rem', color: feedbackSuccessMsg ? '#39ff14' : 'rgba(255,255,255,0.6)', fontWeight: feedbackSuccessMsg ? 'bold' : 'normal' }}>
-                    {feedbackSuccessMsg || 'Was this rule accurate?'}
+                  <span style={{ fontSize: '0.85rem', color: feedbackSuccessMsg ? '#39ff14' : 'rgba(255,255,255,0.7)', fontWeight: feedbackSuccessMsg ? 'bold' : 'normal', minWidth: '200px' }}>
+                    {feedbackSuccessMsg || '👍 Was this rule accurate?'}
                   </span>
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                     <button
                       onClick={() => handleRateAnswer('helpful')}
                       disabled={userFeedback === 'helpful'}
                       style={{
-                        background: userFeedback === 'helpful' ? 'rgba(57, 255, 20, 0.25)' : 'rgba(255, 255, 255, 0.06)',
-                        border: userFeedback === 'helpful' ? '1px solid #39ff14' : '1px solid rgba(255, 255, 255, 0.15)',
-                        color: userFeedback === 'helpful' ? '#39ff14' : 'rgba(255, 255, 255, 0.7)',
-                        padding: '4px 12px',
+                        background: userFeedback === 'helpful' ? 'rgba(57, 255, 20, 0.3)' : 'rgba(0, 240, 255, 0.1)',
+                        border: userFeedback === 'helpful' ? '1px solid #39ff14' : '1px solid rgba(0, 240, 255, 0.3)',
+                        color: userFeedback === 'helpful' ? '#39ff14' : 'rgba(0, 240, 255, 0.8)',
+                        padding: '6px 14px',
                         borderRadius: '6px',
-                        fontSize: '0.78rem',
-                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                        cursor: userFeedback === 'helpful' ? 'default' : 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '4px',
-                        fontWeight: '600'
+                        gap: '6px',
+                        fontWeight: '600',
+                        transition: 'all 0.2s ease'
                       }}
+                      onMouseOver={(e) => !userFeedback === 'helpful' && (e.currentTarget.style.background = 'rgba(0, 240, 255, 0.2)')}
+                      onMouseOut={(e) => !userFeedback === 'helpful' && (e.currentTarget.style.background = 'rgba(0, 240, 255, 0.1)')}
                     >
-                      <ThumbsUp size={14} /> {userFeedback === 'helpful' ? 'Helpful ✓' : 'Helpful'}
+                      <ThumbsUp size={16} /> Helpful
                     </button>
                     <button
                       onClick={() => setShowCorrectionModal(true)}
+                      disabled={userFeedback === 'unhelpful'}
                       style={{
-                        background: userFeedback === 'unhelpful' ? 'rgba(255, 51, 102, 0.25)' : 'rgba(255, 255, 255, 0.06)',
-                        border: userFeedback === 'unhelpful' ? '1px solid var(--neon-crimson)' : '1px solid rgba(255, 255, 255, 0.15)',
-                        color: userFeedback === 'unhelpful' ? '#ff6688' : 'rgba(255, 255, 255, 0.7)',
-                        padding: '4px 12px',
+                        background: userFeedback === 'unhelpful' ? 'rgba(255, 51, 102, 0.3)' : 'rgba(255, 100, 100, 0.1)',
+                        border: userFeedback === 'unhelpful' ? '1px solid #ff6688' : '1px solid rgba(255, 100, 100, 0.3)',
+                        color: userFeedback === 'unhelpful' ? '#ff6688' : 'rgba(255, 100, 100, 0.8)',
+                        padding: '6px 14px',
                         borderRadius: '6px',
-                        fontSize: '0.78rem',
-                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                        cursor: userFeedback === 'unhelpful' ? 'default' : 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '4px',
-                        fontWeight: '600'
+                        gap: '6px',
+                        fontWeight: '600',
+                        transition: 'all 0.2s ease'
                       }}
+                      onMouseOver={(e) => !userFeedback === 'unhelpful' && (e.currentTarget.style.background = 'rgba(255, 100, 100, 0.2)')}
+                      onMouseOut={(e) => !userFeedback === 'unhelpful' && (e.currentTarget.style.background = 'rgba(255, 100, 100, 0.1)')}
                     >
-                      <ThumbsDown size={14} /> Suggest Fix
+                      <ThumbsDown size={16} /> Suggest Fix
                     </button>
                   </div>
                 </div>
