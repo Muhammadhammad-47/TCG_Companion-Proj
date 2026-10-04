@@ -32,41 +32,41 @@ import { LeaderboardModal } from './components/LeaderboardModal.jsx';
 // These are defined at module level so both Hub and App can use them
 // ============================================================================
 
-// Determine if user can access a module based on premium status and crystals
+// Determine if user can access a module based on pro status and crystals
 const canAccessModule = (moduleName, moduleSettings, userProfile) => {
-  const isPremium = moduleSettings?.premium_modules?.includes(moduleName);
+  const isProModule = moduleSettings?.premium_modules?.includes(moduleName);
   const hasCost = moduleSettings?.module_costs?.[moduleName];
-  const userIsPremium = userProfile?.is_premium === true;
+  const userIsPro = userProfile?.is_premium === true;
   const userCrystals = userProfile?.crystals_collected || 0;
   const cost = moduleSettings?.module_costs?.[moduleName] ?? 0;
 
   // User can access if:
-  // 1. Not premium module AND (no cost OR has enough crystals), OR
-  // 2. Is premium module AND (user has PRO status OR has enough crystals)
-  if (!isPremium) {
+  // 1. Not pro module AND (no cost OR has enough crystals), OR
+  // 2. Is pro module AND (user has PRO status OR has enough crystals)
+  if (!isProModule) {
     // Free module - only check crystal cost if it exists
     if (hasCost) return userCrystals >= cost;
     return true; // Free, no cost
   } else {
-    // Premium module - needs PRO or crystals
-    if (userIsPremium) return true;
+    // Pro module - needs PRO or crystals
+    if (userIsPro) return true;
     if (hasCost) return userCrystals >= cost;
-    return false; // Premium but user is not PRO and no crystals to bypass
+    return false; // Pro module but user is not PRO and no crystals to bypass
   }
 };
 
-// Render module access badge (premium icon, cost, lock icon)
+// Render module access badge (pro icon, cost, lock icon)
 const renderModuleBadge = (moduleName, moduleSettings, userProfile) => {
-  const isPremium = moduleSettings?.premium_modules?.includes(moduleName);
+  const isProModule = moduleSettings?.premium_modules?.includes(moduleName);
   const hasCost = moduleSettings?.module_costs?.[moduleName];
   const cost = hasCost ?? 0;
   const canAccess = canAccessModule(moduleName, moduleSettings, userProfile);
-  const nonPremiumUser = !userProfile?.is_premium;
+  const userIsPro = userProfile?.is_premium === true;
 
   return (
     <>
-      {/* Premium Badge (👑) - Only if module is premium */}
-      {isPremium && (
+      {/* Pro Badge (👑) - Only if module is pro-exclusive */}
+      {isProModule && (
         <div style={{
           position: 'absolute', top: '-14px', right: '24px',
           background: 'linear-gradient(135deg, #1a0a00, #2d1500)',
@@ -83,14 +83,14 @@ const renderModuleBadge = (moduleName, moduleSettings, userProfile) => {
           pointerEvents: 'none'
         }}>
           <span style={{ fontSize: '0.95rem' }}>👑</span>
-          <span>PREMIUM</span>
+          <span>PRO</span>
         </div>
       )}
 
       {/* Cost Badge (💎) - Only if module has cost */}
       {hasCost && (
         <div style={{
-          position: 'absolute', top: isPremium ? '-14px' : '-14px', right: isPremium ? 'calc(24px + 120px)' : '24px',
+          position: 'absolute', top: isProModule ? '-14px' : '-14px', right: isProModule ? 'calc(24px + 80px)' : '24px',
           background: 'linear-gradient(135deg, #1a0a00, #2d1500)',
           padding: '5px 14px',
           borderRadius: '20px',
@@ -110,8 +110,8 @@ const renderModuleBadge = (moduleName, moduleSettings, userProfile) => {
         </div>
       )}
 
-      {/* Lock Icon - for non-premium users who can't access */}
-      {nonPremiumUser && !canAccess && (
+      {/* Lock Icon - for non-pro users who can't access */}
+      {!userIsPro && !canAccess && (
         <div style={{
           position: 'absolute',
           top: '50%',
@@ -1717,7 +1717,25 @@ export function Hub() {
                   } catch (e) { }
                   navigate('/game');
                 }}
-                style={{ width: '100%', padding: '30px 40px', borderRadius: '24px', background: 'linear-gradient(90deg, #0d1a38 0%, #050a18 100%)', border: '2px solid var(--neon-cyan)', color: 'var(--neon-cyan)', position: 'relative' }}
+                disabled={!canAccessModule('game', appSettings, userProfile)}
+                style={{ 
+                  width: '100%', 
+                  padding: '30px 40px', 
+                  borderRadius: '24px', 
+                  background: canAccessModule('game', appSettings, userProfile) 
+                    ? 'linear-gradient(90deg, #0d1a38 0%, #050a18 100%)' 
+                    : 'linear-gradient(90deg, rgba(13, 26, 56, 0.3) 0%, rgba(5, 10, 24, 0.3) 100%)',
+                  border: canAccessModule('game', appSettings, userProfile)
+                    ? '2px solid var(--neon-cyan)'
+                    : '2px solid rgba(0, 240, 255, 0.2)',
+                  color: canAccessModule('game', appSettings, userProfile)
+                    ? 'var(--neon-cyan)'
+                    : 'rgba(0, 240, 255, 0.4)',
+                  position: 'relative',
+                  cursor: canAccessModule('game', appSettings, userProfile) ? 'pointer' : 'not-allowed',
+                  opacity: canAccessModule('game', appSettings, userProfile) ? 1 : 0.6,
+                  transition: 'all 0.3s ease'
+                }}
               >
                 {renderModuleBadge('game', appSettings, userProfile)}
                 <div style={{ marginRight: '20px', display: 'flex', alignItems: 'center' }}><Swords size={48} /></div>
@@ -1741,7 +1759,25 @@ export function Hub() {
                   } catch (e) { }
                   navigate('/kontrola');
                 }}
-                style={{ width: '100%', padding: '30px 40px', borderRadius: '24px', background: 'linear-gradient(90deg, #2a0845 0%, #6441A5 100%)', border: '2px solid #e0b0ff', color: '#e0b0ff', position: 'relative' }}
+                disabled={!canAccessModule('kontrola', appSettings, userProfile)}
+                style={{ 
+                  width: '100%', 
+                  padding: '30px 40px', 
+                  borderRadius: '24px', 
+                  background: canAccessModule('kontrola', appSettings, userProfile)
+                    ? 'linear-gradient(90deg, #2a0845 0%, #6441A5 100%)'
+                    : 'linear-gradient(90deg, rgba(42, 8, 69, 0.3) 0%, rgba(100, 65, 165, 0.3) 100%)',
+                  border: canAccessModule('kontrola', appSettings, userProfile)
+                    ? '2px solid #e0b0ff'
+                    : '2px solid rgba(224, 176, 255, 0.2)',
+                  color: canAccessModule('kontrola', appSettings, userProfile)
+                    ? '#e0b0ff'
+                    : 'rgba(224, 176, 255, 0.4)',
+                  position: 'relative',
+                  cursor: canAccessModule('kontrola', appSettings, userProfile) ? 'pointer' : 'not-allowed',
+                  opacity: canAccessModule('kontrola', appSettings, userProfile) ? 1 : 0.6,
+                  transition: 'all 0.3s ease'
+                }}
               >
                 {renderModuleBadge('kontrola', appSettings, userProfile)}
                 <div style={{ marginRight: '20px', display: 'flex', alignItems: 'center' }}><Swords size={48} /></div>

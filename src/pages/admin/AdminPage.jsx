@@ -2431,136 +2431,222 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  {/* Tracks list */}
-                  <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', overflow: 'hidden' }}>
-                    <div style={{ background: 'rgba(6, 12, 28, 0.95)', borderBottom: '1px solid rgba(0, 240, 255, 0.15)', padding: '12px 16px', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 0.8fr auto', gap: '12px', fontSize: '0.7rem', fontWeight: 'bold', color: 'rgba(255,255,255,0.6)', letterSpacing: '1px' }}>
-                      <div>TRACK & UPLOADER</div>
-                      <div>URL</div>
-                      <div>SUBMITTED</div>
-                      <div>STATUS</div>
-                      <div style={{ textAlign: 'center' }}>ACTIONS</div>
-                    </div>
+                  {/* Tracks Feed - Instagram Style Cards */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '16px' }}>
+                    {musicLoading ? (
+                      <div style={{ gridColumn: '1 / -1', padding: '60px 40px', textAlign: 'center', color: 'rgba(255,255,255,0.4)' }}>
+                        <RefreshCw size={28} className="spin" style={{ marginBottom: '12px' }} />
+                        <div style={{ fontSize: '1rem' }}>Loading music tracks...</div>
+                      </div>
+                    ) : musicTracks.filter(m => musicFilter === 'all' || m.status === musicFilter).length === 0 ? (
+                      <div style={{ gridColumn: '1 / -1', padding: '60px 40px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '1rem' }}>
+                        No {musicFilter !== 'all' ? musicFilter : ''} tracks found.
+                      </div>
+                    ) : (
+                      musicTracks.filter(m => musicFilter === 'all' || m.status === musicFilter).map((track) => {
+                        const statusColors = {
+                          pending: { bg: 'rgba(255,215,0,0.15)', color: 'var(--neon-gold)', border: 'rgba(255,215,0,0.4)', label: '⏳ PENDING' },
+                          approved: { bg: 'rgba(57,255,20,0.15)', color: '#39ff14', border: 'rgba(57,255,20,0.4)', label: '✓ APPROVED' },
+                          rejected: { bg: 'rgba(255,51,102,0.15)', color: '#ff88aa', border: 'rgba(255,51,102,0.4)', label: '✕ REJECTED' }
+                        };
+                        const statusStyle = statusColors[track.status] || statusColors.pending;
+                        const submittedDate = new Date(track.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-                    <div style={{ maxHeight: '480px', overflowY: 'auto' }}>
-                      {musicLoading ? (
-                        <div style={{ padding: '40px', textAlign: 'center', color: 'rgba(255,255,255,0.4)' }}>
-                          <RefreshCw size={24} className="spin" style={{ marginBottom: '8px' }} />
-                          <div>Loading music tracks...</div>
-                        </div>
-                      ) : musicTracks.filter(m => musicFilter === 'all' || m.status === musicFilter).length === 0 ? (
-                        <div style={{ padding: '40px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '0.9rem' }}>
-                          No {musicFilter !== 'all' ? musicFilter : ''} tracks found.
-                        </div>
-                      ) : (
-                        musicTracks.filter(m => musicFilter === 'all' || m.status === musicFilter).map((track, idx, arr) => {
-                          const statusColors = {
-                            pending: { bg: 'rgba(255,215,0,0.1)', color: 'var(--neon-gold)', border: 'rgba(255,215,0,0.3)' },
-                            approved: { bg: 'rgba(57,255,20,0.1)', color: '#39ff14', border: 'rgba(57,255,20,0.3)' },
-                            rejected: { bg: 'rgba(255,51,102,0.1)', color: '#ff88aa', border: 'rgba(255,51,102,0.3)' }
-                          };
-                          const statusStyle = statusColors[track.status] || statusColors.pending;
-                          const submittedDate = new Date(track.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-
-                          return (
-                            <div key={track.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: idx % 2 === 0 ? 'rgba(0,0,0,0.1)' : 'transparent' }}>
-                              {/* Header Row: Track Info + Player + Date + Status + Actions */}
-                              <div className="data-row" style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', padding: '12px 16px', fontSize: '0.85rem' }}>
-                                {/* Track Info (Left) */}
-                                <div style={{ flex: '0 0 auto', minWidth: '180px' }}>
-                                  <div style={{ color: '#fff', fontWeight: 'bold', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <Music size={13} style={{ color: 'var(--neon-cyan)', flexShrink: 0 }} />
+                        return (
+                          <div 
+                            key={track.id}
+                            style={{
+                              background: 'linear-gradient(135deg, rgba(13, 26, 56, 0.8) 0%, rgba(5, 10, 24, 0.8) 100%)',
+                              border: '1px solid rgba(0, 240, 255, 0.15)',
+                              borderRadius: '16px',
+                              padding: '0',
+                              overflow: 'hidden',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              transition: 'all 0.3s ease',
+                              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+                              backdropFilter: 'blur(10px)'
+                            }}
+                            onMouseOver={e => {
+                              e.currentTarget.style.borderColor = 'rgba(0, 240, 255, 0.4)';
+                              e.currentTarget.style.boxShadow = '0 12px 48px rgba(0, 240, 255, 0.15)';
+                            }}
+                            onMouseOut={e => {
+                              e.currentTarget.style.borderColor = 'rgba(0, 240, 255, 0.15)';
+                              e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.3)';
+                            }}
+                          >
+                            {/* Card Header - Track Title & Artist */}
+                            <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0, 0, 0, 0.2)' }}>
+                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                                <Music size={18} style={{ color: 'var(--neon-cyan)', flexShrink: 0, marginTop: '2px' }} />
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ color: '#fff', fontWeight: '600', fontSize: '0.95rem', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                     {track.title}
                                   </div>
-                                  <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)' }}>
+                                  <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>
                                     by <strong style={{ color: 'var(--neon-cyan)' }}>{track.username}</strong>
                                   </div>
                                 </div>
-
-                                {/* Music Player (Center/Main) */}
-                                <div style={{ flex: 1, minWidth: '400px' }}>
-                                  <MusicPlayer track={track} />
-                                </div>
-
-                                {/* Date (Right) */}
-                                <div style={{ flex: '0 0 auto', minWidth: '90px', color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem' }}>
+                                <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', whiteSpace: 'nowrap' }}>
                                   {submittedDate}
-                                </div>
-
-                                {/* Status Badge (Right) */}
-                                <div style={{ flex: '0 0 auto', minWidth: '80px' }}>
-                                  <span style={{ fontSize: '0.65rem', fontWeight: 'bold', background: statusStyle.bg, color: statusStyle.color, border: `1px solid ${statusStyle.border}`, padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', textAlign: 'center' }}>
-                                    {track.status}
-                                  </span>
-                                </div>
-
-                                {/* Actions (Far Right) */}
-                                <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flex: '0 0 auto', minWidth: '120px' }}>
-                                  {track.status === 'pending' && (
-                                    <>
-                                      <button
-                                        onClick={async () => {
-                                          const success = await musicService.updateMusicStatus(track.id, 'approved');
-                                          if (success) {
-                                            setModNotice(`✅ Approved "${track.title}"!`);
-                                            setTimeout(() => setModNotice(''), 3000);
-                                            loadMusic();
-                                          } else {
-                                            showError('Failed to approve track.');
-                                          }
-                                        }}
-                                        title="Approve"
-                                        style={{ background: 'rgba(57,255,20,0.1)', border: '1px solid rgba(57,255,20,0.3)', color: '#39ff14', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 'bold', whiteSpace: 'nowrap' }}
-                                      >
-                                        <CheckCircle2 size={12} /> Approve
-                                      </button>
-                                      <button
-                                        onClick={async () => {
-                                          const success = await musicService.updateMusicStatus(track.id, 'rejected');
-                                          if (success) {
-                                            setModNotice(`❌ Rejected "${track.title}"`);
-                                            setTimeout(() => setModNotice(''), 3000);
-                                            loadMusic();
-                                          } else {
-                                            showError('Failed to reject track.');
-                                          }
-                                        }}
-                                        title="Reject"
-                                        style={{ background: 'rgba(255,51,102,0.1)', border: '1px solid rgba(255,51,102,0.3)', color: '#ff88aa', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 'bold', whiteSpace: 'nowrap' }}
-                                      >
-                                        <XCircle size={12} /> Reject
-                                      </button>
-                                    </>
-                                  )}
-                                  <button
-                                    onClick={async () => {
-                                      showConfirm(
-                                        'Delete Track',
-                                        `Permanently delete "${track.title}" by ${track.username}? This cannot be undone.`,
-                                        async () => {
-                                          const success = await musicService.deleteMusic(track.id);
-                                          if (success) {
-                                            setModNotice(`🗑️ Deleted "${track.title}"`);
-                                            setTimeout(() => setModNotice(''), 3000);
-                                            loadMusic();
-                                          } else {
-                                            showError('Failed to delete track.');
-                                          }
-                                        },
-                                        { confirmLabel: 'Delete', isDanger: true }
-                                      );
-                                    }}
-                                    title="Delete"
-                                    style={{ background: 'transparent', border: '1px solid rgba(255,51,102,0.3)', color: '#ff88aa', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
-                                  >
-                                    <Trash2 size={11} />
-                                  </button>
                                 </div>
                               </div>
                             </div>
-                          );
-                        })
-                      )}
-                    </div>
+
+                            {/* Music Player */}
+                            <div style={{ padding: '14px 16px', background: 'rgba(0, 0, 0, 0.3)' }}>
+                              <MusicPlayer track={track} />
+                            </div>
+
+                            {/* Status Badge & Actions Footer */}
+                            <div style={{ padding: '12px 16px', background: 'rgba(0, 0, 0, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                              {/* Status Badge */}
+                              <span style={{
+                                fontSize: '0.65rem',
+                                fontWeight: 'bold',
+                                background: statusStyle.bg,
+                                color: statusStyle.color,
+                                border: `1.5px solid ${statusStyle.border}`,
+                                padding: '5px 10px',
+                                borderRadius: '6px',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.5px',
+                                flex: '0 0 auto'
+                              }}>
+                                {statusStyle.label}
+                              </span>
+
+                              {/* Action Buttons */}
+                              <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                                {track.status === 'pending' && (
+                                  <>
+                                    <button
+                                      onClick={async () => {
+                                        const success = await musicService.updateMusicStatus(track.id, 'approved');
+                                        if (success) {
+                                          setModNotice(`✅ Approved "${track.title}"!`);
+                                          setTimeout(() => setModNotice(''), 3000);
+                                          loadMusic();
+                                        } else {
+                                          showError('Failed to approve track.');
+                                        }
+                                      }}
+                                      title="Approve Track"
+                                      style={{
+                                        background: 'rgba(57,255,20,0.12)',
+                                        border: '1px solid rgba(57,255,20,0.4)',
+                                        color: '#39ff14',
+                                        padding: '5px 10px',
+                                        borderRadius: '6px',
+                                        cursor: 'pointer',
+                                        fontSize: '0.65rem',
+                                        fontWeight: 'bold',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '3px',
+                                        transition: 'all 0.2s ease'
+                                      }}
+                                      onMouseOver={e => {
+                                        e.currentTarget.style.background = 'rgba(57,255,20,0.25)';
+                                        e.currentTarget.style.boxShadow = '0 0 10px rgba(57,255,20,0.3)';
+                                      }}
+                                      onMouseOut={e => {
+                                        e.currentTarget.style.background = 'rgba(57,255,20,0.12)';
+                                        e.currentTarget.style.boxShadow = 'none';
+                                      }}
+                                    >
+                                      <CheckCircle2 size={13} />
+                                    </button>
+                                    <button
+                                      onClick={async () => {
+                                        const success = await musicService.updateMusicStatus(track.id, 'rejected');
+                                        if (success) {
+                                          setModNotice(`❌ Rejected "${track.title}"`);
+                                          setTimeout(() => setModNotice(''), 3000);
+                                          loadMusic();
+                                        } else {
+                                          showError('Failed to reject track.');
+                                        }
+                                      }}
+                                      title="Reject Track"
+                                      style={{
+                                        background: 'rgba(255,51,102,0.12)',
+                                        border: '1px solid rgba(255,51,102,0.4)',
+                                        color: '#ff88aa',
+                                        padding: '5px 10px',
+                                        borderRadius: '6px',
+                                        cursor: 'pointer',
+                                        fontSize: '0.65rem',
+                                        fontWeight: 'bold',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '3px',
+                                        transition: 'all 0.2s ease'
+                                      }}
+                                      onMouseOver={e => {
+                                        e.currentTarget.style.background = 'rgba(255,51,102,0.25)';
+                                        e.currentTarget.style.boxShadow = '0 0 10px rgba(255,51,102,0.3)';
+                                      }}
+                                      onMouseOut={e => {
+                                        e.currentTarget.style.background = 'rgba(255,51,102,0.12)';
+                                        e.currentTarget.style.boxShadow = 'none';
+                                      }}
+                                    >
+                                      <XCircle size={13} />
+                                    </button>
+                                  </>
+                                )}
+                                <button
+                                  onClick={async () => {
+                                    showConfirm(
+                                      'Delete Track',
+                                      `Permanently delete "${track.title}" by ${track.username}?`,
+                                      async () => {
+                                        const success = await musicService.deleteMusic(track.id);
+                                        if (success) {
+                                          setModNotice(`🗑️ Deleted "${track.title}"`);
+                                          setTimeout(() => setModNotice(''), 3000);
+                                          loadMusic();
+                                        } else {
+                                          showError('Failed to delete track.');
+                                        }
+                                      },
+                                      { confirmLabel: 'Delete', isDanger: true }
+                                    );
+                                  }}
+                                  title="Delete Track"
+                                  style={{
+                                    background: 'rgba(255,51,102,0.12)',
+                                    border: '1px solid rgba(255,51,102,0.4)',
+                                    color: '#ff88aa',
+                                    padding: '5px 10px',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    fontSize: '0.65rem',
+                                    fontWeight: 'bold',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '3px',
+                                    transition: 'all 0.2s ease'
+                                  }}
+                                  onMouseOver={e => {
+                                    e.currentTarget.style.background = 'rgba(255,51,102,0.25)';
+                                    e.currentTarget.style.boxShadow = '0 0 10px rgba(255,51,102,0.3)';
+                                  }}
+                                  onMouseOut={e => {
+                                    e.currentTarget.style.background = 'rgba(255,51,102,0.12)';
+                                    e.currentTarget.style.boxShadow = 'none';
+                                  }}
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
               )}
@@ -2633,11 +2719,7 @@ export default function AdminPage() {
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {bugReports.filter(report => {
-                        // Only show actual bug reports, not contact support messages
-                        // Contact support = errorType 'manual' with no error_stack
-                        return report.error_type !== 'manual' || report.error_stack;
-                      }).map(report => {
+                      {bugReports.map(report => {
                         const isExpanded = expandedBugId === report.id;
                         const statusColors = { new: '#ff2a55', investigating: '#ffe600', resolved: '#39ff14', dismissed: 'rgba(255,255,255,0.35)' };
                         const typeIcons = { crash: '💥', freeze: '🧊', blackout: '⬛', manual: '✍️', error: '⚠️' };

@@ -81,11 +81,12 @@ export default function MusicPlayer({ track, onPlayStatusChange = null }) {
       background: 'linear-gradient(135deg, rgba(0, 150, 255, 0.1) 0%, rgba(0, 100, 200, 0.05) 100%)',
       border: '1px solid rgba(0, 200, 255, 0.2)',
       borderRadius: '12px',
-      padding: '12px 16px',
+      padding: '14px 18px',
       display: 'flex',
       alignItems: 'center',
-      gap: '12px',
-      marginTop: '8px'
+      gap: '14px',
+      width: '100%',
+      boxSizing: 'border-box'
     }}>
       {/* Play/Pause Button */}
       <button
