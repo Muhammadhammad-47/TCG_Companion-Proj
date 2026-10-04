@@ -22,27 +22,35 @@ export const musicService = {
       // 2. Generate unique filename
       const fileExt = audioFile.name.split('.').pop();
       const fileName = `${userId}_${Date.now()}.${fileExt}`;
-      const filePath = fileName;  // Upload directly to bucket root, not in subfolder
 
       // 3. Upload to Supabase Storage
+      console.log('[musicService] Uploading to music bucket:', { fileName, size: audioFile.size, type: audioFile.type });
+      
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('music')
-        .upload(filePath, audioFile, {
+        .upload(fileName, audioFile, {
           cacheControl: '3600',
           upsert: false
         });
 
       if (uploadError) {
-        console.error('Music upload error details:', uploadError);
-        throw uploadError;
+        const errorMsg = uploadError.message || JSON.stringify(uploadError);
+        console.error('[musicService] Storage upload error:', errorMsg);
+        throw new Error(`Storage upload failed: ${errorMsg}`);
       }
+
+      console.log('[musicService] Upload successful');
 
       // 4. Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('music')
-        .getPublicUrl(filePath);
+        .getPublicUrl(fileName);
 
-      // 5. Create database entry
+      console.log('[musicService] Public URL:', publicUrl);
+
+      // 5. Create database entry - WITHOUT file_path
+      console.log('[musicService] Creating database entry for user_music table');
+      
       const { data, error } = await supabase
         .from('user_music')
         .insert({
@@ -50,21 +58,29 @@ export const musicService = {
           username,
           title,
           music_url: publicUrl,
-          status: 'pending',
-          created_at: new Date().toISOString()
+          status: 'pending'
         })
         .select()
         .single();
 
       if (error) {
+        const errorMsg = error.message || JSON.stringify(error);
+        console.error('[musicService] Database error:', errorMsg);
         // Rollback - delete uploaded file
-        await supabase.storage.from('music').remove([filePath]);
-        throw error;
+        try {
+          await supabase.storage.from('music').remove([fileName]);
+        } catch (e) {
+          console.error('[musicService] Failed to rollback storage:', e);
+        }
+        throw new Error(`Database insert failed: ${errorMsg}`);
       }
 
+      console.log('[musicService] Music submitted successfully:', data.id);
       return { success: true, message: 'Music uploaded and submitted for approval!', data };
     } catch (e) {
-      console.error('Music: Failed to upload', e);
+      const errorMsg = e instanceof Error ? e.message : String(e);
+      console.error('[musicService] Failed to upload:', errorMsg);
+      console.error('[musicService] Full error:', e);
       
       // Auto-report error to admin
       autoReportError(e, {
@@ -74,7 +90,7 @@ export const musicService = {
         section: 'music_upload'
       });
       
-      return { success: false, message: e.message || 'Failed to upload music.' };
+      return { success: false, message: errorMsg || 'Failed to upload music.' };
     }
   },
 

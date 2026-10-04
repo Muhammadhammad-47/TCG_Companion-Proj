@@ -34,7 +34,8 @@ export const bugReportService = {
       errorType,
       errorMessage: errorMessage?.substring(0, 100) + '...',
       hasStack: !!errorStack,
-      hasScreenshot: !!screenshot
+      hasScreenshot: !!screenshot,
+      stackPreview: errorStack?.substring(0, 200)
     });
 
     if (!supabase) {
@@ -390,8 +391,19 @@ export const autoReportError = (error, context = {}) => {
     section = 'unknown'
   } = context;
 
-  const errorMessage = error instanceof Error ? error.message : String(error);
-  const errorStack = error instanceof Error ? error.stack : null;
+  // Convert error to string properly
+  let errorMessage = '';
+  let errorStack = '';
+  
+  if (error instanceof Error) {
+    errorMessage = error.message;
+    errorStack = error.stack;
+  } else if (typeof error === 'object' && error !== null) {
+    errorMessage = error.message || error.details || JSON.stringify(error);
+    errorStack = error.stack || JSON.stringify(error);
+  } else {
+    errorMessage = String(error);
+  }
 
   console.log('[autoReportError] Reporting caught error:', {
     section,
