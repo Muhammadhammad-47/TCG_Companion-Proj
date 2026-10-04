@@ -50,7 +50,6 @@ export const musicService = {
           username,
           title,
           music_url: publicUrl,
-          file_path: filePath,
           status: 'pending',
           created_at: new Date().toISOString()
         })
@@ -197,13 +196,6 @@ export const musicService = {
   async deleteMusic(musicId) {
     if (!supabase) return false;
     try {
-      // First get the file_path
-      const { data: music } = await supabase
-        .from('user_music')
-        .select('file_path')
-        .eq('id', musicId)
-        .single();
-
       // Delete from database
       const { error } = await supabase
         .from('user_music')
@@ -211,13 +203,6 @@ export const musicService = {
         .eq('id', musicId);
 
       if (error) throw error;
-
-      // Delete from storage if file_path exists
-      if (music?.file_path) {
-        await supabase.storage
-          .from('music')
-          .remove([music.file_path]);
-      }
 
       return true;
     } catch (e) {
