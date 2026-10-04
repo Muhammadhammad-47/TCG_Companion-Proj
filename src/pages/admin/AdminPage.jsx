@@ -134,6 +134,13 @@ export default function AdminPage() {
   const [expandedBugId, setExpandedBugId] = useState(null);
   const [bugAdminNotes, setBugAdminNotes] = useState({});
 
+  // Support Messages State (Contact Support)
+  const [supportMessages, setSupportMessages] = useState([]);
+  const [supportMessagesLoading, setSupportMessagesLoading] = useState(false);
+  const [supportFilter, setSupportFilter] = useState('new'); // 'new' | 'responded' | 'resolved' | 'all'
+  const [expandedSupportId, setExpandedSupportId] = useState(null);
+  const [supportAdminNotes, setSupportAdminNotes] = useState({});
+
   // Quick Copy
   const [copiedKey, setCopiedKey] = useState('');
 
@@ -205,6 +212,7 @@ export default function AdminPage() {
       loadEconomyData();
       loadMusic();
       loadBugReports();
+      loadSupportMessages();
     }
   }, [isAdmin]);
 
@@ -212,11 +220,27 @@ export default function AdminPage() {
     setBugReportsLoading(true);
     try {
       const reports = await bugReportService.fetchBugReports({ status: statusFilter, limit: 150 });
-      setBugReports(reports || []);
+      // Filter out contact support messages (keep only actual bugs)
+      const bugOnly = (reports || []).filter(r => r.error_type !== 'manual' || r.error_stack);
+      setBugReports(bugOnly);
     } catch (e) {
       console.warn('Failed to load bug reports:', e);
     } finally {
       setBugReportsLoading(false);
+    }
+  };
+
+  const loadSupportMessages = async (statusFilter = null) => {
+    setSupportMessagesLoading(true);
+    try {
+      const reports = await bugReportService.fetchBugReports({ status: statusFilter, limit: 150 });
+      // Filter to only contact support messages (error_type='manual' with no error_stack)
+      const supportOnly = (reports || []).filter(r => r.error_type === 'manual' && !r.error_stack);
+      setSupportMessages(supportOnly);
+    } catch (e) {
+      console.warn('Failed to load support messages:', e);
+    } finally {
+      setSupportMessagesLoading(false);
     }
   };
 
@@ -788,7 +812,8 @@ export default function AdminPage() {
     { id: 'questions', label: 'Questions Inbox', icon: HelpCircle, badge: questions.length },
     { id: 'monetization', label: 'Monetization', icon: Coins, badge: 'Eco' },
     { id: 'music', label: 'Music Library', icon: Music, badge: musicTracks.filter(m => m.status === 'pending').length || 0 },
-    { id: 'bug_reports', label: 'Bug Reports', icon: Bug, badge: bugReports.filter(r => r.status === 'new').length || 0 },
+    { id: 'bug_reports', label: 'Bug Reports', icon: Bug, badge: bugReports.filter(r => r.status === 'new' && r.error_type !== 'manual').length || 0 },
+    { id: 'support_messages', label: 'Support Messages', icon: MessageSquare, badge: supportMessages.filter(s => s.status === 'new').length || 0 },
     { id: 'tcg_apis', label: 'TCG APIs', icon: Server, badge: 'Live' }
   ];
 
@@ -2887,7 +2912,254 @@ export default function AdminPage() {
                 </div>
               )}
               {/* =========================================================================
-                  PAGE 5: TCG APIS (CLEAN DEDICATED VIEW)
+                  PAGE 9: SUPPORT MESSAGES
+              ========================================================================= */}
+              {activeTab === 'support_messages' && (
+                <div>
+                  {/* KPI Bar */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', marginBottom: '16px' }}>
+                    {[
+                      { label: 'NEW', value: supportMessages.filter(s => s.status === 'new').length, color: '#00f0ff' },
+                      { label: 'RESPONDED', value: supportMessages.filter(s => s.status === 'responded').length, color: '#ffe600' },
+                      { label: 'RESOLVED', value: supportMessages.filter(s => s.status === 'resolved').length, color: '#39ff14' },
+                      { label: 'TOTAL', value: supportMessages.length, color: '#00f0ff' }
+                    ].map(stat => (
+                      <div key={stat.label} style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                        <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>{stat.label}</div>
+                        <div style={{ fontSize: '1.4rem', fontWeight: '900', color: stat.color, fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>{stat.value}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Header with Filters */}
+                  <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <div>
+                        <h2 style={{ fontSize: '1.3rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'Rajdhani, sans-serif', letterSpacing: '1px' }}>
+                          💬 SUPPORT MESSAGES
+                        </h2>
+                        <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>
+                          Player support requests & feedback
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Filter Buttons */}
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {['new', 'responded', 'resolved', 'all'].map((f) => (
+                        <button
+                          key={f}
+                          onClick={() => {
+                            setSupportFilter(f);
+                            loadSupportMessages(f === 'all' ? null : f);
+                          }}
+                          style={{
+                            background: supportFilter === f ? 'rgba(0,240,255,0.15)' : 'rgba(255,255,255,0.05)',
+                            border: supportFilter === f ? '1px solid rgba(0,240,255,0.6)' : '1px solid rgba(255,255,255,0.1)',
+                            color: supportFilter === f ? '#00f0ff' : 'rgba(255,255,255,0.6)',
+                            padding: '5px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 'bold', textTransform: 'uppercase'
+                          }}
+                        >
+                          {f}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => loadSupportMessages(supportFilter === 'all' ? null : supportFilter)}
+                        title="Refresh"
+                        style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.78rem' }}
+                      >
+                        <RefreshCw size={13} /> Refresh
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Messages List */}
+                  {supportMessagesLoading ? (
+                    <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.4)', padding: '40px', fontSize: '0.9rem' }}>Loading support messages...</div>
+                  ) : supportMessages.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '60px 20px', color: 'rgba(255,255,255,0.3)' }}>
+                      <MessageSquare size={40} style={{ marginBottom: '12px', opacity: 0.4 }} />
+                      <div style={{ fontSize: '1rem', fontWeight: 'bold' }}>No support messages found</div>
+                      <div style={{ fontSize: '0.8rem', marginTop: '6px' }}>Players can submit support requests via the Contact Support button</div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {supportMessages.map((msg) => {
+                        const statusColors = {
+                          new: { bg: 'rgba(0,200,255,0.1)', color: '#00f0ff', border: 'rgba(0,200,255,0.3)' },
+                          responded: { bg: 'rgba(255,215,0,0.1)', color: 'var(--neon-gold)', border: 'rgba(255,215,0,0.3)' },
+                          resolved: { bg: 'rgba(57,255,20,0.1)', color: '#39ff14', border: 'rgba(57,255,20,0.3)' }
+                        };
+                        const statusStyle = statusColors[msg.status] || statusColors.new;
+                        const createdDate = new Date(msg.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+                        return (
+                          <div
+                            key={msg.id}
+                            style={{
+                              background: 'linear-gradient(135deg, rgba(13, 26, 56, 0.8) 0%, rgba(5, 10, 24, 0.8) 100%)',
+                              border: '1px solid rgba(0, 200, 255, 0.2)',
+                              borderRadius: '12px',
+                              padding: '16px',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease',
+                              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)'
+                            }}
+                            onClick={() => setExpandedSupportId(expandedSupportId === msg.id ? null : msg.id)}
+                            onMouseOver={e => e.currentTarget.style.borderColor = 'rgba(0, 240, 255, 0.4)'}
+                            onMouseOut={e => e.currentTarget.style.borderColor = 'rgba(0, 200, 255, 0.2)'}
+                          >
+                            {/* Header */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                              <div>
+                                <div style={{ color: '#fff', fontWeight: 'bold', fontSize: '0.95rem' }}>
+                                  From: <span style={{ color: 'var(--neon-cyan)' }}>{msg.username || 'Guest'}</span>
+                                </div>
+                                <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginTop: '2px' }}>
+                                  {createdDate}
+                                </div>
+                              </div>
+                              <span style={{
+                                fontSize: '0.65rem',
+                                fontWeight: 'bold',
+                                background: statusStyle.bg,
+                                color: statusStyle.color,
+                                border: `1px solid ${statusStyle.border}`,
+                                padding: '4px 10px',
+                                borderRadius: '4px',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.5px'
+                              }}>
+                                {msg.status}
+                              </span>
+                            </div>
+
+                            {/* Message Preview */}
+                            <div style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.8)', lineHeight: '1.4', marginBottom: '10px' }}>
+                              {msg.error_message?.substring(0, expandedSupportId === msg.id ? undefined : 150)}
+                              {!expandedSupportId && msg.error_message?.length > 150 && '...'}
+                            </div>
+
+                            {/* Screenshot if available */}
+                            {msg.screenshot_url && (
+                              <div style={{ marginBottom: '10px' }}>
+                                <img
+                                  src={msg.screenshot_url}
+                                  alt="screenshot"
+                                  style={{
+                                    maxWidth: '100%',
+                                    maxHeight: '200px',
+                                    borderRadius: '8px',
+                                    border: '1px solid rgba(0,200,255,0.2)',
+                                    cursor: 'pointer'
+                                  }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    window.open(msg.screenshot_url, '_blank');
+                                  }}
+                                />
+                              </div>
+                            )}
+
+                            {/* Expanded: Admin Notes & Actions */}
+                            {expandedSupportId === msg.id && (
+                              <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(0,200,255,0.15)' }}>
+                                {/* Admin Notes */}
+                                <textarea
+                                  value={supportAdminNotes[msg.id] || ''}
+                                  onChange={(e) => setSupportAdminNotes(prev => ({ ...prev, [msg.id]: e.target.value }))}
+                                  placeholder="Add admin notes..."
+                                  style={{
+                                    width: '100%',
+                                    boxSizing: 'border-box',
+                                    background: 'rgba(0,0,0,0.3)',
+                                    border: '1px solid rgba(0,200,255,0.2)',
+                                    color: '#fff',
+                                    padding: '8px',
+                                    borderRadius: '6px',
+                                    fontSize: '0.85rem',
+                                    marginBottom: '10px',
+                                    fontFamily: 'monospace',
+                                    minHeight: '60px'
+                                  }}
+                                />
+
+                                {/* Action Buttons */}
+                                <div style={{ display: 'flex', gap: '6px' }}>
+                                  {msg.status !== 'responded' && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        bugReportService.updateBugReportStatus(msg.id, 'responded', supportAdminNotes[msg.id] || null).then((ok) => {
+                                          if (ok) {
+                                            setModNotice('✅ Marked as responded');
+                                            setTimeout(() => setModNotice(''), 3000);
+                                            loadSupportMessages(supportFilter === 'all' ? null : supportFilter);
+                                          } else {
+                                            showError('Failed to update status.');
+                                          }
+                                        });
+                                      }}
+                                      style={{ background: 'rgba(255,215,0,0.1)', border: '1px solid rgba(255,215,0,0.3)', color: 'var(--neon-gold)', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 'bold' }}
+                                    >
+                                      Mark Responded
+                                    </button>
+                                  )}
+                                  {msg.status !== 'resolved' && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        bugReportService.updateBugReportStatus(msg.id, 'resolved', supportAdminNotes[msg.id] || null).then((ok) => {
+                                          if (ok) {
+                                            setModNotice('✅ Marked as resolved');
+                                            setTimeout(() => setModNotice(''), 3000);
+                                            loadSupportMessages(supportFilter === 'all' ? null : supportFilter);
+                                          } else {
+                                            showError('Failed to update status.');
+                                          }
+                                        });
+                                      }}
+                                      style={{ background: 'rgba(57,255,20,0.1)', border: '1px solid rgba(57,255,20,0.3)', color: '#39ff14', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 'bold' }}
+                                    >
+                                      Mark Resolved
+                                    </button>
+                                  )}
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      showConfirm(
+                                        'Delete Support Message',
+                                        'Permanently delete this support message?',
+                                        async () => {
+                                          const ok = await bugReportService.deleteBugReport(msg.id);
+                                          if (ok) {
+                                            setModNotice('🗑️ Support message deleted');
+                                            setTimeout(() => setModNotice(''), 3000);
+                                            loadSupportMessages(supportFilter === 'all' ? null : supportFilter);
+                                            setExpandedSupportId(null);
+                                          } else {
+                                            showError('Failed to delete support message.');
+                                          }
+                                        },
+                                        { confirmLabel: 'Delete', isDanger: true }
+                                      );
+                                    }}
+                                    style={{ background: 'rgba(255,42,85,0.1)', border: '1px solid rgba(255,42,85,0.35)', color: '#ff2a55', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 'bold' }}
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+              {/* =========================================================================
+                  PAGE 10: TCG APIS (CLEAN DEDICATED VIEW)
               ========================================================================= */}
               {activeTab === 'tcg_apis' && (
                 <div>
