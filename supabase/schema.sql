@@ -640,20 +640,8 @@ alter table if exists public.bug_reports add column if not exists resolved_at ti
 -- ====================================================================
 -- CRITICAL: CREATE MUSIC STORAGE BUCKET (If not exists)
 -- ====================================================================
--- NOTE: This may not work in SQL editor. If bucket creation fails:
--- 1. Go to Supabase Dashboard > Storage > Buckets
--- 2. Click "New Bucket" 
--- 3. Name it "music"
--- 4. Make it PUBLIC
--- 5. Click Create
-
--- Attempt to create via SQL (may fail silently if already exists)
-insert into storage.buckets (id, name, public) 
-values ('music', 'music', true) 
-on conflict (id) do nothing;
-
 -- ====================================================================
--- STORAGE RLS POLICIES FOR MUSIC BUCKET
+-- STORAGE RLS POLICIES FOR MUSIC BUCKET (music bucket already exists)
 -- ====================================================================
 
 -- Drop existing policies for music bucket if they exist

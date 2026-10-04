@@ -22,7 +22,7 @@ export const musicService = {
       // 2. Generate unique filename
       const fileExt = audioFile.name.split('.').pop();
       const fileName = `${userId}_${Date.now()}.${fileExt}`;
-      const filePath = `user-music/${fileName}`;
+      const filePath = fileName;  // Upload directly to bucket root, not in subfolder
 
       // 3. Upload to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
