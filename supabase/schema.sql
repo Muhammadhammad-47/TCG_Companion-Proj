@@ -518,9 +518,11 @@ create index if not exists idx_fate_cards_player_id on public.fate_cards(player_
 
 alter table public.fate_cards enable row level security;
 
+drop policy if exists "Users can view their own fate cards" on public.fate_cards;
 create policy "Users can view their own fate cards" 
   on public.fate_cards for select using (auth.uid() = player_id);
 
+drop policy if exists "Anyone can insert fate cards (match tracking)" on public.fate_cards;
 create policy "Anyone can insert fate cards (match tracking)"
   on public.fate_cards for insert with check (true);
 
@@ -545,64 +547,14 @@ create index if not exists idx_active_shields_player_id on public.active_shields
 
 alter table public.active_shields enable row level security;
 
+drop policy if exists "Players can view shields in their match" on public.active_shields;
 create policy "Players can view shields in their match"
   on public.active_shields for select using (true);
 
+drop policy if exists "Match system can manage shields" on public.active_shields;
 create policy "Match system can manage shields"
   on public.active_shields for all with check (true);
 
-
--- ====================================================================
--- MUSIC SUBMISSION TABLE (User-submitted music for in-game playlist)
--- ====================================================================
-
-create table if not exists public.user_music (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references auth.users(id) on delete cascade not null,
-  username text not null,
-  title text not null,
-  music_url text not null,
-  file_path text,
-  status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
-  admin_notes text,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
--- Indexes for fast queries
-create index if not exists idx_user_music_status on public.user_music(status);
-create index if not exists idx_user_music_user_id on public.user_music(user_id);
-create index if not exists idx_user_music_created_at on public.user_music(created_at desc);
-
--- Enable RLS for user_music
-alter table public.user_music enable row level security;
-
--- Drop existing policies
-drop policy if exists "Users can view own music" on public.user_music;
-drop policy if exists "Users can insert own music" on public.user_music;
-drop policy if exists "All can view approved music" on public.user_music;
-drop policy if exists "Admins can view all music" on public.user_music;
-drop policy if exists "Admins can update music" on public.user_music;
-
--- RLS Policies
-create policy "Users can view own music" 
-  on public.user_music for select using (auth.uid() = user_id);
-
-create policy "Users can insert own music" 
-  on public.user_music for insert with check (auth.uid() = user_id);
-
-create policy "All can view approved music" 
-  on public.user_music for select using (status = 'approved');
-
-create policy "Admins can view all music" 
-  on public.user_music for select using (
-    exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
-  );
-
-create policy "Admins can update music" 
-  on public.user_music for update using (
-    exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
-  );
 
 
 -- ====================================================================
