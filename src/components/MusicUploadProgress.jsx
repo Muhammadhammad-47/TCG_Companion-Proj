@@ -1,0 +1,163 @@
+import React, { useState, useEffect } from 'react';
+import { Upload, CheckCircle, AlertCircle } from 'lucide-react';
+
+export default function MusicUploadProgress({ isOpen, title, progress, status, message, onClose }) {
+  if (!isOpen) return null;
+
+  const statusColors = {
+    uploading: '#00ccff',
+    success: '#39ff14',
+    error: '#ff8888'
+  };
+
+  const statusIcons = {
+    uploading: <Upload size={24} />,
+    success: <CheckCircle size={24} />,
+    error: <AlertCircle size={24} />
+  };
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0, 0, 0, 0.7)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 10001,
+        backdropFilter: 'blur(4px)'
+      }}
+    >
+      <div
+        style={{
+          background: 'linear-gradient(135deg, rgba(5, 10, 24, 0.98) 0%, rgba(10, 20, 40, 0.98) 100%)',
+          border: '2px solid rgba(0, 200, 255, 0.5)',
+          borderRadius: '16px',
+          padding: '32px',
+          width: '90%',
+          maxWidth: '400px',
+          boxShadow: '0 0 60px rgba(0, 200, 255, 0.3), inset 0 0 20px rgba(0, 200, 255, 0.1)',
+          textAlign: 'center'
+        }}
+      >
+        {/* Icon */}
+        <div
+          style={{
+            color: statusColors[status],
+            marginBottom: '16px',
+            display: 'flex',
+            justifyContent: 'center',
+            animation: status === 'uploading' ? 'pulse 1.5s infinite' : 'none'
+          }}
+        >
+          {statusIcons[status]}
+        </div>
+
+        {/* Title */}
+        <h3
+          style={{
+            fontSize: '1.2rem',
+            fontWeight: 'bold',
+            color: '#fff',
+            margin: '0 0 12px 0',
+            fontFamily: 'Rajdhani, sans-serif',
+            letterSpacing: '1px'
+          }}
+        >
+          {title}
+        </h3>
+
+        {/* Progress Bar */}
+        {status === 'uploading' && (
+          <div
+            style={{
+              background: 'rgba(0, 200, 255, 0.1)',
+              borderRadius: '8px',
+              overflow: 'hidden',
+              marginBottom: '16px',
+              border: '1px solid rgba(0, 200, 255, 0.2)',
+              height: '8px'
+            }}
+          >
+            <div
+              style={{
+                height: '100%',
+                background: 'linear-gradient(90deg, #0088ff 0%, #00ccff 100%)',
+                width: `${progress}%`,
+                transition: 'width 0.3s ease',
+                boxShadow: '0 0 10px rgba(0, 200, 255, 0.6)'
+              }}
+            />
+          </div>
+        )}
+
+        {/* Progress Text */}
+        <div
+          style={{
+            fontSize: '0.9rem',
+            color: statusColors[status],
+            fontWeight: 'bold',
+            marginBottom: '12px',
+            fontFamily: 'Rajdhani, sans-serif'
+          }}
+        >
+          {status === 'uploading' ? `${progress}%` : status === 'success' ? '✓ Complete' : '✗ Failed'}
+        </div>
+
+        {/* Message */}
+        {message && (
+          <p
+            style={{
+              fontSize: '0.85rem',
+              color: 'rgba(255,255,255,0.7)',
+              margin: '0 0 20px 0',
+              lineHeight: '1.4'
+            }}
+          >
+            {message}
+          </p>
+        )}
+
+        {/* Close Button */}
+        {status !== 'uploading' && (
+          <button
+            onClick={onClose}
+            style={{
+              background: 'linear-gradient(135deg, #0088ff 0%, #00ccff 100%)',
+              border: 'none',
+              borderRadius: '10px',
+              color: '#fff',
+              padding: '10px 24px',
+              fontSize: '0.9rem',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              fontFamily: 'Rajdhani, sans-serif',
+              letterSpacing: '0.5px',
+              boxShadow: '0 0 20px rgba(0, 200, 255, 0.4)',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.boxShadow = '0 0 30px rgba(0, 200, 255, 0.6)';
+              e.currentTarget.style.transform = 'scale(1.02)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.boxShadow = '0 0 20px rgba(0, 200, 255, 0.4)';
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+          >
+            {status === 'success' ? 'Done' : 'Close'}
+          </button>
+        )}
+
+        {/* Inline Styles for Animation */}
+        <style>{`
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+          }
+        `}</style>
+      </div>
+    </div>
+  );
+}

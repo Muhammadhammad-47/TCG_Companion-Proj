@@ -2,8 +2,8 @@ import { supabase } from './supabaseClient';
 import { autoReportError } from './bugReportService';
 
 export const musicService = {
-  // Upload music file to Supabase Storage and create database entry
-  async uploadAndSubmitMusic(userId, username, title, audioFile) {
+  // Upload music file to Supabase Storage and create database entry with progress tracking
+  async uploadAndSubmitMusic(userId, username, title, audioFile, onProgress = null) {
     if (!supabase) return { success: false, message: 'DB not connected' };
     
     try {
@@ -23,9 +23,12 @@ export const musicService = {
       const fileExt = audioFile.name.split('.').pop();
       const fileName = `${userId}_${Date.now()}.${fileExt}`;
 
-      // 3. Upload to Supabase Storage
+      // 3. Upload to Supabase Storage with progress
       console.log('[musicService] Uploading to music bucket:', { fileName, size: audioFile.size, type: audioFile.type });
       
+      // Simulate progress for storage upload (0% to 70%)
+      if (onProgress) onProgress(10);
+
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('music')
         .upload(fileName, audioFile, {
@@ -36,10 +39,12 @@ export const musicService = {
       if (uploadError) {
         const errorMsg = uploadError.message || JSON.stringify(uploadError);
         console.error('[musicService] Storage upload error:', errorMsg);
+        if (onProgress) onProgress(0);
         throw new Error(`Storage upload failed: ${errorMsg}`);
       }
 
       console.log('[musicService] Upload successful');
+      if (onProgress) onProgress(70);
 
       // 4. Get public URL
       const { data: { publicUrl } } = supabase.storage
@@ -47,6 +52,7 @@ export const musicService = {
         .getPublicUrl(fileName);
 
       console.log('[musicService] Public URL:', publicUrl);
+      if (onProgress) onProgress(85);
 
       // 5. Create database entry - WITHOUT file_path
       console.log('[musicService] Creating database entry for user_music table');
@@ -66,6 +72,7 @@ export const musicService = {
       if (error) {
         const errorMsg = error.message || JSON.stringify(error);
         console.error('[musicService] Database error:', errorMsg);
+        if (onProgress) onProgress(0);
         // Rollback - delete uploaded file
         try {
           await supabase.storage.from('music').remove([fileName]);
@@ -76,6 +83,7 @@ export const musicService = {
       }
 
       console.log('[musicService] Music submitted successfully:', data.id);
+      if (onProgress) onProgress(100);
       return { success: true, message: 'Music uploaded and submitted for approval!', data };
     } catch (e) {
       const errorMsg = e instanceof Error ? e.message : String(e);
@@ -90,6 +98,7 @@ export const musicService = {
         section: 'music_upload'
       });
       
+      if (onProgress) onProgress(0);
       return { success: false, message: errorMsg || 'Failed to upload music.' };
     }
   },

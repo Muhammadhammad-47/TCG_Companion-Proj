@@ -15,6 +15,8 @@ import { knowledgeService, calculateGroqMetrics, GROQ_LIMITS } from '../../servi
 import { economyService } from '../../services/economyService';
 import { musicService } from '../../services/musicService';
 import { bugReportService } from '../../services/bugReportService';
+import MusicPlayer from '../../components/MusicPlayer';
+import MusicUploadProgress from '../../components/MusicUploadProgress';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
@@ -119,6 +121,12 @@ export default function AdminPage() {
   const [musicTracks, setMusicTracks] = useState([]);
   const [musicLoading, setMusicLoading] = useState(false);
   const [musicFilter, setMusicFilter] = useState('pending'); // 'all' | 'pending' | 'approved' | 'rejected'
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState(null); // 'uploading' | 'success' | 'error'
+  const [uploadMessage, setUploadMessage] = useState('');
+  const [isUploadProgressOpen, setIsUploadProgressOpen] = useState(false);
+  const [playingTrackId, setPlayingTrackId] = useState(null);
+  const [expandedMusicTrackId, setExpandedMusicTrackId] = useState(null);
 
   // Bug Reports State
   const [bugReports, setBugReports] = useState([]);
