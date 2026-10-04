@@ -126,7 +126,6 @@ export default function AdminPage() {
   const [uploadMessage, setUploadMessage] = useState('');
   const [isUploadProgressOpen, setIsUploadProgressOpen] = useState(false);
   const [playingTrackId, setPlayingTrackId] = useState(null);
-  const [expandedMusicTrackId, setExpandedMusicTrackId] = useState(null);
 
   // Bug Reports State
   const [bugReports, setBugReports] = useState([]);
@@ -2461,18 +2460,14 @@ export default function AdminPage() {
                           };
                           const statusStyle = statusColors[track.status] || statusColors.pending;
                           const submittedDate = new Date(track.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                          const isExpanded = expandedMusicTrackId === track.id;
 
                           return (
-                            <div key={track.id}>
-                              {/* Main Row */}
-                              <div className="data-row" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 0.8fr auto', alignItems: 'center', gap: '12px', padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: '0.85rem', background: idx % 2 === 0 ? 'rgba(0,0,0,0.1)' : 'transparent', border: '1px solid transparent', cursor: 'pointer' }}>
-                                {/* Track & Uploader */}
-                                <div onClick={() => setExpandedMusicTrackId(isExpanded ? null : track.id)}>
-                                  <div style={{ color: '#fff', fontWeight: 'bold', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <span style={{ color: 'var(--neon-cyan)', cursor: 'pointer', fontSize: '1rem' }}>
-                                      {isExpanded ? '▼' : '▶'}
-                                    </span>
+                            <div key={track.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: idx % 2 === 0 ? 'rgba(0,0,0,0.1)' : 'transparent' }}>
+                              {/* Header Row: Track Info + Player + Date + Status + Actions */}
+                              <div className="data-row" style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', padding: '12px 16px', fontSize: '0.85rem' }}>
+                                {/* Track Info (Left) */}
+                                <div style={{ flex: '0 0 auto', minWidth: '180px' }}>
+                                  <div style={{ color: '#fff', fontWeight: 'bold', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                     <Music size={13} style={{ color: 'var(--neon-cyan)', flexShrink: 0 }} />
                                     {track.title}
                                   </div>
@@ -2481,28 +2476,25 @@ export default function AdminPage() {
                                   </div>
                                 </div>
 
-                                {/* URL */}
-                                <div>
-                                  <a href={track.music_url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--neon-cyan)', fontSize: '0.75rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px', wordBreak: 'break-all' }}>
-                                    <ExternalLink size={11} />
-                                    {track.music_url.length > 30 ? track.music_url.substring(0, 30) + '...' : track.music_url}
-                                  </a>
+                                {/* Music Player (Center/Main) */}
+                                <div style={{ flex: 1, minWidth: '400px' }}>
+                                  <MusicPlayer track={track} />
                                 </div>
 
-                                {/* Date */}
-                                <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem' }}>
+                                {/* Date (Right) */}
+                                <div style={{ flex: '0 0 auto', minWidth: '90px', color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem' }}>
                                   {submittedDate}
                                 </div>
 
-                                {/* Status Badge */}
-                                <div>
-                                  <span style={{ fontSize: '0.65rem', fontWeight: 'bold', background: statusStyle.bg, color: statusStyle.color, border: `1px solid ${statusStyle.border}`, padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                {/* Status Badge (Right) */}
+                                <div style={{ flex: '0 0 auto', minWidth: '80px' }}>
+                                  <span style={{ fontSize: '0.65rem', fontWeight: 'bold', background: statusStyle.bg, color: statusStyle.color, border: `1px solid ${statusStyle.border}`, padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', textAlign: 'center' }}>
                                     {track.status}
                                   </span>
                                 </div>
 
-                                {/* Actions */}
-                                <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                                {/* Actions (Far Right) */}
+                                <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flex: '0 0 auto', minWidth: '120px' }}>
                                   {track.status === 'pending' && (
                                     <>
                                       <button
@@ -2517,7 +2509,7 @@ export default function AdminPage() {
                                           }
                                         }}
                                         title="Approve"
-                                        style={{ background: 'rgba(57,255,20,0.1)', border: '1px solid rgba(57,255,20,0.3)', color: '#39ff14', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 'bold' }}
+                                        style={{ background: 'rgba(57,255,20,0.1)', border: '1px solid rgba(57,255,20,0.3)', color: '#39ff14', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 'bold', whiteSpace: 'nowrap' }}
                                       >
                                         <CheckCircle2 size={12} /> Approve
                                       </button>
@@ -2533,7 +2525,7 @@ export default function AdminPage() {
                                           }
                                         }}
                                         title="Reject"
-                                        style={{ background: 'rgba(255,51,102,0.1)', border: '1px solid rgba(255,51,102,0.3)', color: '#ff88aa', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 'bold' }}
+                                        style={{ background: 'rgba(255,51,102,0.1)', border: '1px solid rgba(255,51,102,0.3)', color: '#ff88aa', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 'bold', whiteSpace: 'nowrap' }}
                                       >
                                         <XCircle size={12} /> Reject
                                       </button>
@@ -2558,19 +2550,12 @@ export default function AdminPage() {
                                       );
                                     }}
                                     title="Delete"
-                                    style={{ background: 'transparent', border: '1px solid rgba(255,51,102,0.3)', color: '#ff88aa', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                    style={{ background: 'transparent', border: '1px solid rgba(255,51,102,0.3)', color: '#ff88aa', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
                                   >
                                     <Trash2 size={11} />
                                   </button>
                                 </div>
                               </div>
-
-                              {/* Expandable Player Row */}
-                              {isExpanded && (
-                                <div style={{ padding: '12px 16px', background: 'rgba(0, 150, 255, 0.05)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                                  <MusicPlayer track={track} />
-                                </div>
-                              )}
                             </div>
                           );
                         })

@@ -1800,9 +1800,8 @@ export function Hub() {
                 }
                 setMusicSubmitting(true);
                 setIsMusicProgressOpen(true);
-                setMusicUploadProgress(0);
                 setMusicUploadStatus('uploading');
-                setMusicUploadMessage('Starting upload...');
+                setMusicUploadMessage('');
                 
                 try {
                   const result = await musicService.uploadAndSubmitMusic(
@@ -1810,20 +1809,15 @@ export function Hub() {
                     userProfile.username, 
                     musicTitle.trim(), 
                     musicFile,
-                    (progress) => {
-                      setMusicUploadProgress(progress);
-                      if (progress < 100) {
-                        setMusicUploadMessage(`Uploading: ${progress}%`);
-                      } else {
-                        setMusicUploadMessage('Upload complete!');
-                      }
+                    () => {
+                      // Don't update progress - just keep uploading state
+                      // Progress bar was removed, so no need to track it
                     }
                   );
                   
                   if (result.success) {
                     setMusicUploadStatus('success');
                     setMusicUploadMessage('Track uploaded and submitted for approval!');
-                    setMusicUploadProgress(100);
                     setTimeout(() => {
                       setIsMusicProgressOpen(false);
                       setIsMusicModalOpen(false);

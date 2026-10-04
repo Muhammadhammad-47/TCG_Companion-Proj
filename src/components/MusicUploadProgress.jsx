@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, CheckCircle, AlertCircle } from 'lucide-react';
+import { CheckCircle, AlertCircle } from 'lucide-react';
 
 export default function MusicUploadProgress({ isOpen, title, progress, status, message, onClose }) {
   if (!isOpen) return null;
@@ -11,9 +11,9 @@ export default function MusicUploadProgress({ isOpen, title, progress, status, m
   };
 
   const statusIcons = {
-    uploading: <Upload size={24} />,
-    success: <CheckCircle size={24} />,
-    error: <AlertCircle size={24} />
+    uploading: null, // Will use spinner instead
+    success: <CheckCircle size={48} />,
+    error: <AlertCircle size={48} />
   };
 
   return (
@@ -41,17 +41,57 @@ export default function MusicUploadProgress({ isOpen, title, progress, status, m
           textAlign: 'center'
         }}
       >
-        {/* Icon */}
+        {/* Icon or Spinner */}
         <div
           style={{
             color: statusColors[status],
-            marginBottom: '16px',
+            marginBottom: '24px',
             display: 'flex',
             justifyContent: 'center',
-            animation: status === 'uploading' ? 'pulse 1.5s infinite' : 'none'
+            height: '64px',
+            alignItems: 'center'
           }}
         >
-          {statusIcons[status]}
+          {status === 'uploading' ? (
+            <div style={{ position: 'relative', width: '64px', height: '64px' }}>
+              <svg
+                viewBox="0 0 64 64"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  animation: 'spin 2s linear infinite'
+                }}
+              >
+                <circle
+                  cx="32"
+                  cy="32"
+                  r="28"
+                  fill="none"
+                  stroke="rgba(0, 200, 255, 0.2)"
+                  strokeWidth="4"
+                />
+                <circle
+                  cx="32"
+                  cy="32"
+                  r="28"
+                  fill="none"
+                  stroke="url(#spinGradient)"
+                  strokeWidth="4"
+                  strokeDasharray="87.96"
+                  strokeDashoffset="0"
+                  strokeLinecap="round"
+                />
+                <defs>
+                  <linearGradient id="spinGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#0088ff" />
+                    <stop offset="100%" stopColor="#00ccff" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+          ) : (
+            statusIcons[status]
+          )}
         </div>
 
         {/* Title */}
@@ -60,7 +100,7 @@ export default function MusicUploadProgress({ isOpen, title, progress, status, m
             fontSize: '1.2rem',
             fontWeight: 'bold',
             color: '#fff',
-            margin: '0 0 12px 0',
+            margin: '0 0 16px 0',
             fontFamily: 'Rajdhani, sans-serif',
             letterSpacing: '1px'
           }}
@@ -68,31 +108,7 @@ export default function MusicUploadProgress({ isOpen, title, progress, status, m
           {title}
         </h3>
 
-        {/* Progress Bar */}
-        {status === 'uploading' && (
-          <div
-            style={{
-              background: 'rgba(0, 200, 255, 0.1)',
-              borderRadius: '8px',
-              overflow: 'hidden',
-              marginBottom: '16px',
-              border: '1px solid rgba(0, 200, 255, 0.2)',
-              height: '8px'
-            }}
-          >
-            <div
-              style={{
-                height: '100%',
-                background: 'linear-gradient(90deg, #0088ff 0%, #00ccff 100%)',
-                width: `${progress}%`,
-                transition: 'width 0.3s ease',
-                boxShadow: '0 0 10px rgba(0, 200, 255, 0.6)'
-              }}
-            />
-          </div>
-        )}
-
-        {/* Progress Text */}
+        {/* Status Text */}
         <div
           style={{
             fontSize: '0.9rem',
@@ -102,7 +118,7 @@ export default function MusicUploadProgress({ isOpen, title, progress, status, m
             fontFamily: 'Rajdhani, sans-serif'
           }}
         >
-          {status === 'uploading' ? `${progress}%` : status === 'success' ? '✓ Complete' : '✗ Failed'}
+          {status === 'uploading' ? 'Uploading...' : status === 'success' ? '✓ Complete' : '✗ Failed'}
         </div>
 
         {/* Message */}
@@ -152,9 +168,9 @@ export default function MusicUploadProgress({ isOpen, title, progress, status, m
 
         {/* Inline Styles for Animation */}
         <style>{`
-          @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
           }
         `}</style>
       </div>
