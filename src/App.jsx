@@ -27,6 +27,114 @@ import { StoreModal } from './components/StoreModal.jsx';
 import MusicUploadProgress from './components/MusicUploadProgress.jsx';
 import { LeaderboardModal } from './components/LeaderboardModal.jsx';
 
+// ============================================================================
+// HELPER FUNCTIONS FOR MODULE ACCESS & BADGES
+// These are defined at module level so both Hub and App can use them
+// ============================================================================
+
+// Determine if user can access a module based on premium status and crystals
+const canAccessModule = (moduleName, moduleSettings, userProfile) => {
+  const isPremium = moduleSettings?.premium_modules?.includes(moduleName);
+  const hasCost = moduleSettings?.module_costs?.[moduleName];
+  const userIsPremium = userProfile?.is_premium === true;
+  const userCrystals = userProfile?.crystals_collected || 0;
+  const cost = moduleSettings?.module_costs?.[moduleName] ?? 0;
+
+  // User can access if:
+  // 1. Not premium module AND (no cost OR has enough crystals), OR
+  // 2. Is premium module AND (user has PRO status OR has enough crystals)
+  if (!isPremium) {
+    // Free module - only check crystal cost if it exists
+    if (hasCost) return userCrystals >= cost;
+    return true; // Free, no cost
+  } else {
+    // Premium module - needs PRO or crystals
+    if (userIsPremium) return true;
+    if (hasCost) return userCrystals >= cost;
+    return false; // Premium but user is not PRO and no crystals to bypass
+  }
+};
+
+// Render module access badge (premium icon, cost, lock icon)
+const renderModuleBadge = (moduleName, moduleSettings, userProfile) => {
+  const isPremium = moduleSettings?.premium_modules?.includes(moduleName);
+  const hasCost = moduleSettings?.module_costs?.[moduleName];
+  const cost = hasCost ?? 0;
+  const canAccess = canAccessModule(moduleName, moduleSettings, userProfile);
+  const nonPremiumUser = !userProfile?.is_premium;
+
+  return (
+    <>
+      {/* Premium Badge (👑) - Only if module is premium */}
+      {isPremium && (
+        <div style={{
+          position: 'absolute', top: '-14px', right: '24px',
+          background: 'linear-gradient(135deg, #1a0a00, #2d1500)',
+          padding: '5px 14px',
+          borderRadius: '20px',
+          border: '2px solid var(--neon-gold)',
+          color: 'var(--neon-gold)',
+          fontWeight: 'bold',
+          display: 'flex', alignItems: 'center', gap: '5px',
+          fontSize: '0.82rem',
+          fontFamily: 'Rajdhani, sans-serif',
+          letterSpacing: '0.5px',
+          boxShadow: '0 0 12px rgba(255,215,0,0.25)',
+          pointerEvents: 'none'
+        }}>
+          <span style={{ fontSize: '0.95rem' }}>👑</span>
+          <span>PREMIUM</span>
+        </div>
+      )}
+
+      {/* Cost Badge (💎) - Only if module has cost */}
+      {hasCost && (
+        <div style={{
+          position: 'absolute', top: isPremium ? '-14px' : '-14px', right: isPremium ? 'calc(24px + 120px)' : '24px',
+          background: 'linear-gradient(135deg, #1a0a00, #2d1500)',
+          padding: '5px 14px',
+          borderRadius: '20px',
+          border: '2px solid var(--neon-gold)',
+          color: 'var(--neon-gold)',
+          fontWeight: 'bold',
+          display: 'flex', alignItems: 'center', gap: '5px',
+          fontSize: '0.82rem',
+          fontFamily: 'Rajdhani, sans-serif',
+          letterSpacing: '0.5px',
+          boxShadow: '0 0 12px rgba(255,215,0,0.25)',
+          pointerEvents: 'none'
+        }}>
+          <span style={{ fontSize: '0.95rem' }}>💎</span>
+          <span>{cost}</span>
+          <span style={{ opacity: 0.7, fontSize: '0.72rem' }}>/ MATCH</span>
+        </div>
+      )}
+
+      {/* Lock Icon - for non-premium users who can't access */}
+      {nonPremiumUser && !canAccess && (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          right: '30px',
+          transform: 'translateY(-50%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '48px',
+          height: '48px',
+          borderRadius: '50%',
+          background: 'rgba(0,0,0,0.5)',
+          border: '2px solid var(--neon-gold)',
+          boxShadow: '0 0 16px rgba(255,215,0,0.3)',
+          pointerEvents: 'none'
+        }}>
+          <Lock size={24} style={{ color: 'var(--neon-gold)' }} />
+        </div>
+      )}
+    </>
+  );
+};
+
 const Avatar = ({ characterId, isSpeaking, currentVisemeFile }) => {
   const avatarConfig = CHAT_AVATARS[characterId] || CHAT_AVATARS.chyna;
   const [isBlinking, setIsBlinking] = useState(false);
@@ -1077,45 +1185,38 @@ export function Chat({ onBack, isOverlay = false }) {
           )}
 
           {answer && !chatHistory.some((item) => item.a === answer) && (
-            <div className="chat-response-container">
-              {/* Current User Question (while typing/processing) */}
+            <>
+              {/* User Message - Separate Container */}
               {question && (
-                <div className="chat-bubble user" style={{ margin: '0 0 8px 0' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                    <User size={16} style={{ color: '#00f0ff' }} />
-                    <span style={{ fontSize: '0.85rem', color: '#00f0ff', fontWeight: 'bold' }}>You</span>
+                <div style={{ width: '100%', maxWidth: '1000px', display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
+                  <div className="chat-bubble user" style={{ margin: 0, maxWidth: '55%', marginRight: '60px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                      <User size={16} style={{ color: '#00f0ff' }} />
+                      <span style={{ fontSize: '0.85rem', color: '#00f0ff', fontWeight: 'bold' }}>You</span>
+                    </div>
+                    <div style={{ whiteSpace: 'pre-wrap', color: '#fff' }}>{question}</div>
                   </div>
-                  <div style={{ whiteSpace: 'pre-wrap', color: '#fff' }}>{question}</div>
                 </div>
               )}
 
-              {/* Bot's Answer */}
-              <div className="chat-bubble bot" style={{ margin: 0 }}>
-                <div className="bot-avatar-icon" style={{ overflow: 'hidden' }}>
-                  <img
-                    src={encodeURI(`${(import.meta.env.BASE_URL || '/').endsWith('/') ? (import.meta.env.BASE_URL || '/') : (import.meta.env.BASE_URL + '/')}${CHAT_AVATARS[selectedAvatarId]?.idlePath || CHAT_AVATARS.chyna?.idlePath || 'Chatbot Characters/Chyna/Idle/SILENCE.png'}`)}
-                    alt="avatar"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      transform: `scale(${CHAT_AVATARS[selectedAvatarId]?.scale ? CHAT_AVATARS[selectedAvatarId].scale * 1.5 : 1})`,
-                      transformOrigin: 'center center'
-                    }}
-                  />
-                </div>
-                <div style={{ whiteSpace: 'pre-wrap' }}>
-                  {isSpeaking ? displayedAnswer : answer}
-                  {isSpeaking && <span className="cursor-blink">|</span>}
+              {/* Bot Response - Separate Container */}
+              <div style={{ width: '100%', maxWidth: '1000px', display: 'flex', justifyContent: 'flex-start', marginBottom: '20px' }}>
+                <div className="chat-bubble bot" style={{ margin: 0, maxWidth: '55%', marginLeft: '60px' }}>
+                  <div style={{ whiteSpace: 'pre-wrap' }}>
+                    {isSpeaking ? displayedAnswer : answer}
+                    {isSpeaking && <span className="cursor-blink">|</span>}
+                  </div>
                 </div>
               </div>
 
-              {/* Question Feedback Controls - OUTSIDE the message box */}
+              {/* Question Feedback Controls */}
               {answer && !isSpeaking && (
                 <div style={{
+                  width: '100%',
+                  maxWidth: '1000px',
                   marginTop: '20px',
                   paddingTop: '16px',
-                  paddingLeft: '80px',
+                  paddingLeft: '60px',
                   paddingRight: '0px',
                   paddingBottom: '12px',
                   display: 'flex',
@@ -1176,7 +1277,7 @@ export function Chat({ onBack, isOverlay = false }) {
                   </div>
                 </div>
               )}
-            </div>
+            </>
           )}
 
           {/* User Rule Correction Modal */}
@@ -1605,7 +1706,7 @@ export function Hub() {
               <button
                 className="btn-enter-game-cta"
                 onClick={() => {
-                  if (!canAccessModule('game', appSettings)) {
+                  if (!canAccessModule('game', appSettings, userProfile)) {
                     setIsStoreOpen(true);
                     return;
                   }
@@ -1618,7 +1719,7 @@ export function Hub() {
                 }}
                 style={{ width: '100%', padding: '30px 40px', borderRadius: '24px', background: 'linear-gradient(90deg, #0d1a38 0%, #050a18 100%)', border: '2px solid var(--neon-cyan)', color: 'var(--neon-cyan)', position: 'relative' }}
               >
-                {renderModuleBadge('game', appSettings, !userProfile?.is_premium)}
+                {renderModuleBadge('game', appSettings, userProfile)}
                 <div style={{ marginRight: '20px', display: 'flex', alignItems: 'center' }}><Swords size={48} /></div>
                 <div style={{ textAlign: 'left' }}>
                   <div style={{ fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '8px' }}>Score Calculator</div>
@@ -1629,7 +1730,7 @@ export function Hub() {
               <button
                 className="btn-enter-game-cta"
                 onClick={() => {
-                  if (!canAccessModule('kontrola', appSettings)) {
+                  if (!canAccessModule('kontrola', appSettings, userProfile)) {
                     setIsStoreOpen(true);
                     return;
                   }
@@ -1642,7 +1743,7 @@ export function Hub() {
                 }}
                 style={{ width: '100%', padding: '30px 40px', borderRadius: '24px', background: 'linear-gradient(90deg, #2a0845 0%, #6441A5 100%)', border: '2px solid #e0b0ff', color: '#e0b0ff', position: 'relative' }}
               >
-                {renderModuleBadge('kontrola', appSettings, !userProfile?.is_premium)}
+                {renderModuleBadge('kontrola', appSettings, userProfile)}
                 <div style={{ marginRight: '20px', display: 'flex', alignItems: 'center' }}><Swords size={48} /></div>
                 <div style={{ textAlign: 'left' }}>
                   <div style={{ fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '8px' }}>Kontrola Game</div>
@@ -1903,107 +2004,6 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
-
-  // Helper function to determine if user can access a module
-  const canAccessModule = (moduleName, moduleSettings) => {
-    const isPremium = moduleSettings?.premium_modules?.includes(moduleName);
-    const hasCost = moduleSettings?.module_costs?.[moduleName];
-    const userIsPremium = userProfile?.is_premium === true;
-    const userCrystals = userProfile?.crystals_collected || 0;
-    const cost = moduleSettings?.module_costs?.[moduleName] ?? 0;
-
-    // User can access if:
-    // 1. Not premium module AND (no cost OR has enough crystals), OR
-    // 2. Is premium module AND (user has PRO status OR has enough crystals)
-    if (!isPremium) {
-      // Free module - only check crystal cost if it exists
-      if (hasCost) return userCrystals >= cost;
-      return true; // Free, no cost
-    } else {
-      // Premium module - needs PRO or crystals
-      if (userIsPremium) return true;
-      if (hasCost) return userCrystals >= cost;
-      return false; // Premium but user is not PRO and no crystals to bypass
-    }
-  };
-
-  // Helper function to render module access badge
-  const renderModuleBadge = (moduleName, moduleSettings, nonPremiumUser = false) => {
-    const isPremium = moduleSettings?.premium_modules?.includes(moduleName);
-    const hasCost = moduleSettings?.module_costs?.[moduleName];
-    const cost = hasCost ?? 0;
-
-    return (
-      <>
-        {/* Premium Badge (👑) - Only if module is premium */}
-        {isPremium && (
-          <div style={{
-            position: 'absolute', top: '-14px', right: '24px',
-            background: 'linear-gradient(135deg, #1a0a00, #2d1500)',
-            padding: '5px 14px',
-            borderRadius: '20px',
-            border: '2px solid var(--neon-gold)',
-            color: 'var(--neon-gold)',
-            fontWeight: 'bold',
-            display: 'flex', alignItems: 'center', gap: '5px',
-            fontSize: '0.82rem',
-            fontFamily: 'Rajdhani, sans-serif',
-            letterSpacing: '0.5px',
-            boxShadow: '0 0 12px rgba(255,215,0,0.25)',
-            pointerEvents: 'none'
-          }}>
-            <span style={{ fontSize: '0.95rem' }}>👑</span>
-            <span>PREMIUM</span>
-          </div>
-        )}
-
-        {/* Cost Badge (💎) - Only if module has cost */}
-        {hasCost && (
-          <div style={{
-            position: 'absolute', top: isPremium ? '-14px' : '-14px', right: isPremium ? 'calc(24px + 120px)' : '24px',
-            background: 'linear-gradient(135deg, #1a0a00, #2d1500)',
-            padding: '5px 14px',
-            borderRadius: '20px',
-            border: '2px solid var(--neon-gold)',
-            color: 'var(--neon-gold)',
-            fontWeight: 'bold',
-            display: 'flex', alignItems: 'center', gap: '5px',
-            fontSize: '0.82rem',
-            fontFamily: 'Rajdhani, sans-serif',
-            letterSpacing: '0.5px',
-            boxShadow: '0 0 12px rgba(255,215,0,0.25)',
-            pointerEvents: 'none'
-          }}>
-            <span style={{ fontSize: '0.95rem' }}>💎</span>
-            <span>{cost}</span>
-            <span style={{ opacity: 0.7, fontSize: '0.72rem' }}>/ MATCH</span>
-          </div>
-        )}
-
-        {/* Lock Icon - for non-premium users who can't access */}
-        {nonPremiumUser && !canAccessModule(moduleName, moduleSettings) && (
-          <div style={{
-            position: 'absolute',
-            top: '50%',
-            right: '30px',
-            transform: 'translateY(-50%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '48px',
-            height: '48px',
-            borderRadius: '50%',
-            background: 'rgba(0,0,0,0.5)',
-            border: '2px solid var(--neon-gold)',
-            boxShadow: '0 0 16px rgba(255,215,0,0.3)',
-            pointerEvents: 'none'
-          }}>
-            <Lock size={24} style={{ color: 'var(--neon-gold)' }} />
-          </div>
-        )}
-      </>
-    );
-  };
 
   useEffect(() => {
     let isMounted = true;
