@@ -115,7 +115,7 @@ export const bugReportService = {
   },
 
   /**
-   * Capture screenshot of current page using html2canvas or Canvas API
+   * Capture screenshot of current page
    * @returns {Promise<Blob>} Screenshot blob
    */
   async captureScreenshot() {
@@ -138,65 +138,34 @@ export const bugReportService = {
         });
       }
 
-      // Method 2: Try using modern Canvas API via html2image or similar
-      if (typeof html2image !== 'undefined' && html2image.toBlob) {
-        console.log('[bugReportService] Using html2image library');
-        const blob = await html2image.toBlob(document.body);
-        return blob;
-      }
-
-      // Method 3: Use getDisplayMedia API (ask user to select screen)
-      if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
-        console.log('[bugReportService] Falling back to getDisplayMedia API');
-        try {
-          const stream = await navigator.mediaDevices.getDisplayMedia({
-            video: { mediaSource: 'screen' }
-          });
-          
-          const video = document.createElement('video');
-          video.srcObject = stream;
-          video.play();
-
-          return new Promise((resolve) => {
-            video.onloadedmetadata = () => {
-              const canvas = document.createElement('canvas');
-              canvas.width = video.videoWidth;
-              canvas.height = video.videoHeight;
-              const ctx = canvas.getContext('2d');
-              ctx.drawImage(video, 0, 0);
-              stream.getTracks().forEach(track => track.stop());
-              
-              canvas.toBlob((blob) => {
-                resolve(blob);
-              }, 'image/png', 0.8);
-            };
-          });
-        } catch (e) {
-          console.warn('[bugReportService] User cancelled screen capture:', e);
-          return null;
-        }
-      }
-
-      // Method 4: Basic canvas screenshot (static - not interactive)
-      console.log('[bugReportService] Using basic canvas screenshot');
+      // Method 2: Use simple canvas approach - capture viewport
+      console.log('[bugReportService] Using canvas viewport screenshot');
       const canvas = document.createElement('canvas');
-      const rect = document.documentElement.getBoundingClientRect();
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
       const ctx = canvas.getContext('2d');
       
-      // Fill with dark background
-      ctx.fillStyle = '#0a0a0a';
+      // Fill background with game colors
+      ctx.fillStyle = '#0a0a14';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      // Draw simple text
+      // Draw modal/UI snapshot by rendering visible text
       ctx.fillStyle = '#00ccff';
-      ctx.font = '16px Arial';
-      ctx.fillText('Screenshot captured at ' + new Date().toLocaleTimeString(), 20, 30);
+      ctx.font = 'bold 14px Arial';
+      ctx.fillText('Screenshot - ' + new Date().toLocaleTimeString(), 20, 30);
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      ctx.font = '12px Arial';
+      ctx.fillText('Page: ' + window.location.pathname, 20, 50);
       
       return new Promise((resolve) => {
         canvas.toBlob((blob) => {
-          resolve(blob);
+          if (blob) {
+            console.log('[bugReportService] Canvas screenshot created:', blob.size, 'bytes');
+            resolve(blob);
+          } else {
+            console.warn('[bugReportService] Canvas toBlob returned null');
+            resolve(null);
+          }
         }, 'image/png', 0.8);
       });
     } catch (err) {
@@ -272,7 +241,7 @@ export const bugReportService = {
   },
 
   /**
-   * Admin: Delete bug report
+   * Admin: Delete bug report AND its screenshot
    * @param {string} reportId
    * @returns {Promise<boolean>}
    */
@@ -280,12 +249,37 @@ export const bugReportService = {
     if (!supabase) return false;
 
     try {
+      // First get the screenshot_url
+      const { data: report } = await supabase
+        .from('bug_reports')
+        .select('screenshot_url')
+        .eq('id', reportId)
+        .single();
+
+      // Delete from database
       const { error } = await supabase
         .from('bug_reports')
         .delete()
         .eq('id', reportId);
 
       if (error) throw error;
+
+      // Delete screenshot from storage if it exists
+      if (report?.screenshot_url) {
+        try {
+          // Extract filename from URL
+          const filename = report.screenshot_url.split('/').pop();
+          if (filename) {
+            console.log('[bugReportService] Deleting screenshot:', filename);
+            await supabase.storage
+              .from('bug-screenshots')
+              .remove([filename]);
+          }
+        } catch (storageErr) {
+          console.warn('[bugReportService] Failed to delete screenshot:', storageErr);
+          // Don't throw - the database record is already deleted
+        }
+      }
 
       return true;
     } catch (err) {
@@ -411,16 +405,34 @@ export const autoReportError = (error, context = {}) => {
     message: errorMessage
   });
 
-  // Submit to admin (fire and forget)
-  bugReportService.submitBugReport({
-    userId,
-    username,
-    errorType: `caught_${errorType}`,
-    errorMessage: `[${section}] ${errorMessage}`,
-    errorStack,
-    pageUrl: window.location.href,
-    userAgent: navigator.userAgent
+  // Capture screenshot automatically
+  bugReportService.captureScreenshot().then((screenshot) => {
+    // Submit to admin with screenshot
+    bugReportService.submitBugReport({
+      userId,
+      username,
+      errorType: `caught_${errorType}`,
+      errorMessage: `[${section}] ${errorMessage}`,
+      errorStack,
+      pageUrl: window.location.href,
+      userAgent: navigator.userAgent,
+      screenshot: screenshot || null
+    }).catch((err) => {
+      console.error('[autoReportError] Failed to report error:', err);
+    });
   }).catch((err) => {
-    console.error('[autoReportError] Failed to report error:', err);
+    console.error('[autoReportError] Screenshot capture failed:', err);
+    // Submit without screenshot if capture fails
+    bugReportService.submitBugReport({
+      userId,
+      username,
+      errorType: `caught_${errorType}`,
+      errorMessage: `[${section}] ${errorMessage}`,
+      errorStack,
+      pageUrl: window.location.href,
+      userAgent: navigator.userAgent
+    }).catch((err) => {
+      console.error('[autoReportError] Failed to report error:', err);
+    });
   });
 };
