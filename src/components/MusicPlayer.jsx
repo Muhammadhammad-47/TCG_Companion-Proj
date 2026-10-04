@@ -5,7 +5,6 @@ export default function MusicPlayer({ track, onPlayStatusChange = null }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(1);
   const audioRef = useRef(null);
 
   useEffect(() => {
@@ -61,14 +60,6 @@ export default function MusicPlayer({ track, onPlayStatusChange = null }) {
     }
   };
 
-  const handleVolumeChange = (e) => {
-    const vol = parseFloat(e.target.value);
-    setVolume(vol);
-    if (audioRef.current) {
-      audioRef.current.volume = vol;
-    }
-  };
-
   const formatTime = (time) => {
     if (isNaN(time)) return '0:00';
     const minutes = Math.floor(time / 60);
@@ -81,10 +72,10 @@ export default function MusicPlayer({ track, onPlayStatusChange = null }) {
       background: 'linear-gradient(135deg, rgba(0, 150, 255, 0.1) 0%, rgba(0, 100, 200, 0.05) 100%)',
       border: '1px solid rgba(0, 200, 255, 0.2)',
       borderRadius: '12px',
-      padding: '14px 18px',
+      padding: '12px 14px',
       display: 'flex',
       alignItems: 'center',
-      gap: '14px',
+      gap: '12px',
       width: '100%',
       boxSizing: 'border-box'
     }}>
@@ -102,7 +93,9 @@ export default function MusicPlayer({ track, onPlayStatusChange = null }) {
           alignItems: 'center',
           justifyContent: 'center',
           transition: 'all 0.2s ease',
-          flexShrink: 0
+          flexShrink: 0,
+          minWidth: '32px',
+          height: '32px'
         }}
         onMouseOver={(e) => {
           e.currentTarget.style.background = 'rgba(0, 200, 255, 0.25)';
@@ -117,13 +110,12 @@ export default function MusicPlayer({ track, onPlayStatusChange = null }) {
       </button>
 
       {/* Time */}
-      <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', minWidth: '30px' }}>
+      <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', minWidth: '28px', flexShrink: 0 }}>
         {formatTime(currentTime)}
       </span>
 
       {/* Progress Slider */}
       <input
-        ref={audioRef}
         type="range"
         min="0"
         max={duration || 0}
@@ -131,6 +123,7 @@ export default function MusicPlayer({ track, onPlayStatusChange = null }) {
         onChange={handleProgressChange}
         style={{
           flex: 1,
+          minWidth: 0,
           height: '4px',
           background: 'rgba(0, 200, 255, 0.2)',
           borderRadius: '2px',
@@ -162,32 +155,9 @@ export default function MusicPlayer({ track, onPlayStatusChange = null }) {
       `}</style>
 
       {/* Duration */}
-      <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', minWidth: '30px', textAlign: 'right' }}>
+      <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', minWidth: '28px', textAlign: 'right', flexShrink: 0 }}>
         {formatTime(duration)}
       </span>
-
-      {/* Volume Control */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: '80px' }}>
-        <Volume2 size={14} style={{ color: 'rgba(255,255,255,0.5)' }} />
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.1"
-          value={volume}
-          onChange={handleVolumeChange}
-          style={{
-            flex: 1,
-            height: '3px',
-            background: 'rgba(0, 200, 255, 0.15)',
-            borderRadius: '2px',
-            outline: 'none',
-            cursor: 'pointer',
-            WebkitAppearance: 'none',
-            appearance: 'none'
-          }}
-        />
-      </div>
 
       {/* Hidden Audio Element */}
       <audio
