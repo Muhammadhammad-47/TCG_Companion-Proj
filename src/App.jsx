@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Send, X, Bot, Swords, ArrowLeft, ThumbsUp, ThumbsDown, User, Shield, LogOut, Check, Trophy, Settings, Music, Lock } from 'lucide-react';
 import axios from 'axios';
 import { Groq } from 'groq-sdk';
@@ -1596,6 +1596,10 @@ export function Hub() {
               <button
                 className="btn-enter-game-cta"
                 onClick={() => {
+                  if (!canAccessModule('game', appSettings)) {
+                    setIsStoreOpen(true);
+                    return;
+                  }
                   try {
                     if (screen.orientation && screen.orientation.lock) {
                       screen.orientation.lock('landscape').catch(() => { });
@@ -1603,8 +1607,9 @@ export function Hub() {
                   } catch (e) { }
                   navigate('/game');
                 }}
-                style={{ width: '100%', padding: '30px 40px', borderRadius: '24px', background: 'linear-gradient(90deg, #0d1a38 0%, #050a18 100%)', border: '2px solid var(--neon-cyan)', color: 'var(--neon-cyan)' }}
+                style={{ width: '100%', padding: '30px 40px', borderRadius: '24px', background: 'linear-gradient(90deg, #0d1a38 0%, #050a18 100%)', border: '2px solid var(--neon-cyan)', color: 'var(--neon-cyan)', position: 'relative' }}
               >
+                {renderModuleBadge('game', appSettings, !userProfile?.is_premium)}
                 <div style={{ marginRight: '20px', display: 'flex', alignItems: 'center' }}><Swords size={48} /></div>
                 <div style={{ textAlign: 'left' }}>
                   <div style={{ fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '8px' }}>Score Calculator</div>
@@ -1615,16 +1620,10 @@ export function Hub() {
               <button
                 className="btn-enter-game-cta"
                 onClick={() => {
-                  const isPremiumModule = appSettings?.premium_modules?.includes('kontrola');
-                  const moduleCost = appSettings?.module_costs?.kontrola ?? appSettings?.match_cost ?? 1;
-                  const userHasPRO = userProfile?.is_premium === true;
-                  
-                  // If module is premium AND user doesn't have PRO bypass AND (not logged in OR insufficient crystals)
-                  if (isPremiumModule && !userHasPRO && (!currentUser || (userProfile?.crystals_collected || 0) < moduleCost)) {
+                  if (!canAccessModule('kontrola', appSettings)) {
                     setIsStoreOpen(true);
                     return;
                   }
-
                   try {
                     if (screen.orientation && screen.orientation.lock) {
                       screen.orientation.lock('landscape').catch(() => { });
@@ -1634,27 +1633,7 @@ export function Hub() {
                 }}
                 style={{ width: '100%', padding: '30px 40px', borderRadius: '24px', background: 'linear-gradient(90deg, #2a0845 0%, #6441A5 100%)', border: '2px solid #e0b0ff', color: '#e0b0ff', position: 'relative' }}
               >
-                {appSettings?.premium_modules?.includes('kontrola') && (
-                  <div style={{
-                    position: 'absolute', top: '-14px', right: '24px',
-                    background: 'linear-gradient(135deg, #1a0a00, #2d1500)',
-                    padding: '5px 14px',
-                    borderRadius: '20px',
-                    border: '2px solid var(--neon-gold)',
-                    color: 'var(--neon-gold)',
-                    fontWeight: 'bold',
-                    display: 'flex', alignItems: 'center', gap: '5px',
-                    fontSize: '0.82rem',
-                    fontFamily: 'Rajdhani, sans-serif',
-                    letterSpacing: '0.5px',
-                    boxShadow: '0 0 12px rgba(255,215,0,0.25)',
-                    pointerEvents: 'none'
-                  }}>
-                    <span style={{ fontSize: '0.95rem' }}>💎</span>
-                    <span>{appSettings.module_costs?.kontrola ?? appSettings.match_cost}</span>
-                    <span style={{ opacity: 0.7, fontSize: '0.72rem' }}>/ MATCH</span>
-                  </div>
-                )}
+                {renderModuleBadge('kontrola', appSettings, !userProfile?.is_premium)}
                 <div style={{ marginRight: '20px', display: 'flex', alignItems: 'center' }}><Swords size={48} /></div>
                 <div style={{ textAlign: 'left' }}>
                   <div style={{ fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '8px' }}>Kontrola Game</div>
@@ -1876,8 +1855,8 @@ export function Hub() {
         }}
       />
 
-      {/* Fixed Position: Contact Support Button (Bottom Right) */}
-      {currentUser && (
+      {/* Fixed Position: Contact Support Button (Bottom Right) - NOT on admin pages */}
+      {currentUser && location.pathname !== '/admin' && (
         <div style={{
           position: 'fixed',
           bottom: '30px',
@@ -1898,7 +1877,9 @@ export function Hub() {
               borderRadius: '14px',
               cursor: 'pointer',
               transition: 'all 0.3s ease',
-              whiteSpace: 'nowrap'
+              whiteSpace: 'nowrap',
+              color: '#001a33',
+              textShadow: '0 1px 3px rgba(0,0,0,0.3)'
             }}
           />
         </div>
@@ -1909,9 +1890,111 @@ export function Hub() {
 
 function App() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+
+  // Helper function to determine if user can access a module
+  const canAccessModule = (moduleName, moduleSettings) => {
+    const isPremium = moduleSettings?.premium_modules?.includes(moduleName);
+    const hasCost = moduleSettings?.module_costs?.[moduleName];
+    const userIsPremium = userProfile?.is_premium === true;
+    const userCrystals = userProfile?.crystals_collected || 0;
+    const cost = moduleSettings?.module_costs?.[moduleName] ?? 0;
+
+    // User can access if:
+    // 1. Not premium module AND (no cost OR has enough crystals), OR
+    // 2. Is premium module AND (user has PRO status OR has enough crystals)
+    if (!isPremium) {
+      // Free module - only check crystal cost if it exists
+      if (hasCost) return userCrystals >= cost;
+      return true; // Free, no cost
+    } else {
+      // Premium module - needs PRO or crystals
+      if (userIsPremium) return true;
+      if (hasCost) return userCrystals >= cost;
+      return false; // Premium but user is not PRO and no crystals to bypass
+    }
+  };
+
+  // Helper function to render module access badge
+  const renderModuleBadge = (moduleName, moduleSettings, nonPremiumUser = false) => {
+    const isPremium = moduleSettings?.premium_modules?.includes(moduleName);
+    const hasCost = moduleSettings?.module_costs?.[moduleName];
+    const cost = hasCost ?? 0;
+
+    return (
+      <>
+        {/* Premium Badge (👑) - Only if module is premium */}
+        {isPremium && (
+          <div style={{
+            position: 'absolute', top: '-14px', right: '24px',
+            background: 'linear-gradient(135deg, #1a0a00, #2d1500)',
+            padding: '5px 14px',
+            borderRadius: '20px',
+            border: '2px solid var(--neon-gold)',
+            color: 'var(--neon-gold)',
+            fontWeight: 'bold',
+            display: 'flex', alignItems: 'center', gap: '5px',
+            fontSize: '0.82rem',
+            fontFamily: 'Rajdhani, sans-serif',
+            letterSpacing: '0.5px',
+            boxShadow: '0 0 12px rgba(255,215,0,0.25)',
+            pointerEvents: 'none'
+          }}>
+            <span style={{ fontSize: '0.95rem' }}>👑</span>
+            <span>PREMIUM</span>
+          </div>
+        )}
+
+        {/* Cost Badge (💎) - Only if module has cost */}
+        {hasCost && (
+          <div style={{
+            position: 'absolute', top: isPremium ? '-14px' : '-14px', right: isPremium ? 'calc(24px + 120px)' : '24px',
+            background: 'linear-gradient(135deg, #1a0a00, #2d1500)',
+            padding: '5px 14px',
+            borderRadius: '20px',
+            border: '2px solid var(--neon-gold)',
+            color: 'var(--neon-gold)',
+            fontWeight: 'bold',
+            display: 'flex', alignItems: 'center', gap: '5px',
+            fontSize: '0.82rem',
+            fontFamily: 'Rajdhani, sans-serif',
+            letterSpacing: '0.5px',
+            boxShadow: '0 0 12px rgba(255,215,0,0.25)',
+            pointerEvents: 'none'
+          }}>
+            <span style={{ fontSize: '0.95rem' }}>💎</span>
+            <span>{cost}</span>
+            <span style={{ opacity: 0.7, fontSize: '0.72rem' }}>/ MATCH</span>
+          </div>
+        )}
+
+        {/* Lock Icon - for non-premium users who can't access */}
+        {nonPremiumUser && !canAccessModule(moduleName, moduleSettings) && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            right: '30px',
+            transform: 'translateY(-50%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '48px',
+            height: '48px',
+            borderRadius: '50%',
+            background: 'rgba(0,0,0,0.5)',
+            border: '2px solid var(--neon-gold)',
+            boxShadow: '0 0 16px rgba(255,215,0,0.3)',
+            pointerEvents: 'none'
+          }}>
+            <Lock size={24} style={{ color: 'var(--neon-gold)' }} />
+          </div>
+        )}
+      </>
+    );
+  };
 
   useEffect(() => {
     let isMounted = true;

@@ -2633,7 +2633,11 @@ export default function AdminPage() {
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {bugReports.map(report => {
+                      {bugReports.filter(report => {
+                        // Only show actual bug reports, not contact support messages
+                        // Contact support = errorType 'manual' with no error_stack
+                        return report.error_type !== 'manual' || report.error_stack;
+                      }).map(report => {
                         const isExpanded = expandedBugId === report.id;
                         const statusColors = { new: '#ff2a55', investigating: '#ffe600', resolved: '#39ff14', dismissed: 'rgba(255,255,255,0.35)' };
                         const typeIcons = { crash: '💥', freeze: '🧊', blackout: '⬛', manual: '✍️', error: '⚠️' };
