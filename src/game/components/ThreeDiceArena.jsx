@@ -174,7 +174,7 @@ export default function ThreeDiceArena({
     const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
     scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0x00f0ff, 2.5);
+    const dirLight = new THREE.DirectionalLight(0xFBC80D, 2.5);
     dirLight.position.set(6, 12, 8);
     dirLight.castShadow = true;
     scene.add(dirLight);
@@ -202,7 +202,7 @@ export default function ThreeDiceArena({
 
     // Center divider neon ring
     const ringGeo = new THREE.RingGeometry(1.2, 1.28, 48);
-    const ringMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, side: THREE.DoubleSide });
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0xFBC80D, side: THREE.DoubleSide });
     const ring = new THREE.Mesh(ringGeo, ringMat);
     ring.rotation.x = -Math.PI / 2;
     ring.position.set(0, -1.28, 0);
@@ -399,10 +399,11 @@ export default function ThreeDiceArena({
         overflow: 'hidden',
         borderRadius: '16px',
         background: 'radial-gradient(ellipse at center, rgba(12, 30, 68, 0.98) 0%, rgba(2, 6, 18, 0.99) 100%)',
-        border: '1.5px solid rgba(0, 240, 255, 0.4)',
-        boxShadow: 'inset 0 0 45px rgba(0,0,0,0.9), 0 0 30px rgba(0, 240, 255, 0.3)',
+        border: '1.5px solid rgba(251, 200, 13, 0.4)',
+        boxShadow: 'inset 0 0 45px rgba(0,0,0,0.9), 0 0 30px rgba(251, 200, 13, 0.3)',
         margin: '12px 0'
       }}
     />
   );
 }
+

@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { CHARACTERS } from '../data/characters';
 import { soundFX } from '../utils/audio';
 import { Wind, X, Dices, Check } from 'lucide-react';
@@ -66,9 +66,9 @@ export default function RetreatModal({ player, onClose, onCompleteRetreat }) {
       <div
         style={{
           background: 'linear-gradient(180deg, #092440 0%, #041020 100%)',
-          border: '1.5px solid #00f0ff',
+          border: '1.5px solid #FBC80D',
           borderRadius: '16px',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.9), 0 0 35px rgba(0, 240, 255, 0.3)',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.9), 0 0 35px rgba(251, 200, 13, 0.3)',
           width: '100%',
           maxWidth: '480px',
           padding: '20px',
@@ -77,10 +77,10 @@ export default function RetreatModal({ player, onClose, onCompleteRetreat }) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '1px solid rgba(0, 240, 255, 0.2)', paddingBottom: '12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '1px solid rgba(251, 200, 13, 0.2)', paddingBottom: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '0.75rem', background: 'rgba(0, 240, 255, 0.15)', border: '1px solid #00f0ff', color: '#00f0ff', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
-              💨 0 ET · TACTICAL
+            <span style={{ fontSize: '0.75rem', background: 'rgba(251, 200, 13, 0.15)', border: '1px solid #FBC80D', color: '#FBC80D', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
+              ?? 0 ET � TACTICAL
             </span>
             <h2 style={{ fontSize: '1.25rem', margin: 0, fontFamily: 'Orbitron, sans-serif' }}>RETREAT ROLL</h2>
           </div>
@@ -97,7 +97,7 @@ export default function RetreatModal({ player, onClose, onCompleteRetreat }) {
               style={{
                 width: '56px',
                 height: '56px',
-                background: 'linear-gradient(135deg, #00f0ff, #0077cc)',
+                background: 'linear-gradient(135deg, #FBC80D, #0077cc)',
                 color: '#000',
                 fontSize: '1.8rem',
                 fontWeight: 'bold',
@@ -106,7 +106,7 @@ export default function RetreatModal({ player, onClose, onCompleteRetreat }) {
                 justifyContent: 'center',
                 borderRadius: '10px',
                 border: '2px solid #fff',
-                boxShadow: '0 0 15px rgba(0, 240, 255, 0.5)'
+                boxShadow: '0 0 15px rgba(251, 200, 13, 0.5)'
               }}
             >
               {dieRoll}
@@ -121,7 +121,7 @@ export default function RetreatModal({ player, onClose, onCompleteRetreat }) {
               style={{
                 width: '100%',
                 padding: '12px',
-                background: 'linear-gradient(90deg, #00f0ff, #0088ff)',
+                background: 'linear-gradient(90deg, #FBC80D, #0088ff)',
                 color: '#000',
                 border: 'none',
                 borderRadius: '8px',
@@ -135,12 +135,12 @@ export default function RetreatModal({ player, onClose, onCompleteRetreat }) {
               }}
             >
               <Dices size={20} />
-              <span>{isRolling ? 'ROLLING DIE…' : `ROLL 1 DIE (NEEDS ${targetRoll}+)`}</span>
+              <span>{isRolling ? 'ROLLING DIE�' : `ROLL 1 DIE (NEEDS ${targetRoll}+)`}</span>
             </button>
           ) : (
             <div>
               <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: success ? '#39ff14' : '#ED1E24', marginBottom: '12px' }}>
-                {success ? '💨 RETREAT SUCCESSFUL (ESCAPED)' : '🛑 RETREAT FAILED (MUST STAY & FIGHT)'}
+                {success ? '?? RETREAT SUCCESSFUL (ESCAPED)' : '?? RETREAT FAILED (MUST STAY & FIGHT)'}
               </div>
 
               <button
@@ -148,7 +148,7 @@ export default function RetreatModal({ player, onClose, onCompleteRetreat }) {
                 style={{
                   width: '100%',
                   padding: '10px',
-                  background: 'linear-gradient(90deg, #00f0ff, #0088ff)',
+                  background: 'linear-gradient(90deg, #FBC80D, #0088ff)',
                   color: '#000',
                   border: 'none',
                   borderRadius: '8px',
@@ -165,4 +165,5 @@ export default function RetreatModal({ player, onClose, onCompleteRetreat }) {
     </div>
   );
 }
+
 

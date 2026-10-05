@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { authService } from '../services/authService';
 import { X, User, Mail, Lock, Sparkles, AlertCircle, CheckCircle, ArrowLeft, KeyRound } from 'lucide-react';
 
@@ -91,10 +91,10 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
           width: '100%',
           maxWidth: '460px',
           background: 'linear-gradient(135deg, var(--bg-card) 0%, var(--bg-card) 100%)',
-          border: '2px solid rgba(0, 240, 255, 0.4)',
+          border: '2px solid rgba(251, 200, 13, 0.4)',
           borderRadius: '24px',
           padding: '36px 30px',
-          boxShadow: '0 0 50px rgba(0, 240, 255, 0.25), 0 20px 50px rgba(0, 0, 0, 0.8)',
+          boxShadow: '0 0 50px rgba(251, 200, 13, 0.25), 0 20px 50px rgba(0, 0, 0, 0.8)',
           position: 'relative',
           boxSizing: 'border-box',
           fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)',
@@ -129,8 +129,8 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
 
         {/* Modal Header */}
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <div className="brand-pill-badge" style={{ margin: '0 auto 10px auto', fontSize: '0.85rem', padding: '2px 12px' }}>注意!</div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--neon-cyan, #00f0ff)', marginBottom: '4px' }}>
+          <div className="brand-pill-badge" style={{ margin: '0 auto 10px auto', fontSize: '0.85rem', padding: '2px 12px' }}>??!</div>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--neon-cyan, #FBC80D)', marginBottom: '4px' }}>
             <Sparkles size={20} />
             <span style={{ fontSize: '0.9rem', letterSpacing: '3px', fontWeight: 'bold' }}>ATTENTION TCG AUTH GATE</span>
           </div>
@@ -166,8 +166,8 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
                 padding: '10px',
                 borderRadius: '10px',
                 border: 'none',
-                background: authMode === 'signin' ? 'rgba(0, 240, 255, 0.22)' : 'transparent',
-                color: authMode === 'signin' ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.6)',
+                background: authMode === 'signin' ? 'rgba(251, 200, 13, 0.22)' : 'transparent',
+                color: authMode === 'signin' ? 'var(--neon-cyan, #FBC80D)' : 'rgba(255,255,255,0.6)',
                 fontWeight: 'bold',
                 cursor: 'pointer',
                 fontSize: '1rem',
@@ -186,8 +186,8 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
                 padding: '10px',
                 borderRadius: '10px',
                 border: 'none',
-                background: authMode === 'signup' ? 'rgba(0, 240, 255, 0.22)' : 'transparent',
-                color: authMode === 'signup' ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.6)',
+                background: authMode === 'signup' ? 'rgba(251, 200, 13, 0.22)' : 'transparent',
+                color: authMode === 'signup' ? 'var(--neon-cyan, #FBC80D)' : 'rgba(255,255,255,0.6)',
                 fontWeight: 'bold',
                 cursor: 'pointer',
                 fontSize: '1rem',
@@ -207,7 +207,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
               style={{
                 background: 'none',
                 border: 'none',
-                color: 'var(--neon-cyan, #00f0ff)',
+                color: 'var(--neon-cyan, #FBC80D)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
@@ -273,7 +273,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
                 USERNAME
               </label>
               <div style={{ position: 'relative' }}>
-                <User size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--neon-cyan, #00f0ff)' }} />
+                <User size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--neon-cyan, #FBC80D)' }} />
                 <input
                   type="text"
                   value={username}
@@ -286,7 +286,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
                     boxSizing: 'border-box',
                     padding: '12px 14px 12px 40px',
                     background: 'var(--bg-card)',
-                    border: '1.5px solid rgba(0, 240, 255, 0.3)',
+                    border: '1.5px solid rgba(251, 200, 13, 0.3)',
                     borderRadius: '12px',
                     color: '#fff',
                     fontSize: '1rem',
@@ -303,7 +303,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
               EMAIL ADDRESS
             </label>
             <div style={{ position: 'relative' }}>
-              <Mail size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--neon-cyan, #00f0ff)' }} />
+              <Mail size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--neon-cyan, #FBC80D)' }} />
               <input
                 type="email"
                 value={email}
@@ -316,7 +316,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
                   boxSizing: 'border-box',
                   padding: '12px 14px 12px 40px',
                   background: 'var(--bg-card)',
-                  border: '1.5px solid rgba(0, 240, 255, 0.3)',
+                  border: '1.5px solid rgba(251, 200, 13, 0.3)',
                   borderRadius: '12px',
                   color: '#fff',
                   fontSize: '1rem',
@@ -352,12 +352,12 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
                 )}
               </div>
               <div style={{ position: 'relative' }}>
-                <Lock size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--neon-cyan, #00f0ff)' }} />
+                <Lock size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--neon-cyan, #FBC80D)' }} />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="��������"
                   autoComplete={authMode === 'signup' ? 'new-password' : 'current-password'}
                   required
                   style={{
@@ -365,7 +365,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
                     boxSizing: 'border-box',
                     padding: '12px 14px 12px 40px',
                     background: 'var(--bg-card)',
-                    border: '1.5px solid rgba(0, 240, 255, 0.3)',
+                    border: '1.5px solid rgba(251, 200, 13, 0.3)',
                     borderRadius: '12px',
                     color: '#fff',
                     fontSize: '1rem',
@@ -385,14 +385,14 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
               padding: '14px',
               borderRadius: '12px',
               border: 'none',
-              background: 'linear-gradient(90deg, #00f0ff 0%, #0088ff 100%)',
-              color: '#050a18',
+              background: 'linear-gradient(135deg, #FBC80D 0%, #FFD700 100%)',
+              color: '#000000',
               fontWeight: '900',
               fontSize: '1.15rem',
               letterSpacing: '1.5px',
               cursor: loading ? 'not-allowed' : 'pointer',
               opacity: loading ? 0.7 : 1,
-              boxShadow: '0 0 25px rgba(0, 240, 255, 0.4)',
+              boxShadow: '0 0 25px rgba(251, 200, 13, 0.5)',
               transition: 'all 0.2s',
               fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)'
             }}
@@ -409,5 +409,6 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
     </div>
   );
 }
+
 
 

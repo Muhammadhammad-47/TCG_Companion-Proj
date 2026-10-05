@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Swords, HelpCircle, UserPlus, Cast, Send, Crown, Sparkles, ChevronRight,
   RotateCw, Bot, Volume2, VolumeX, Maximize2, Minimize2,
@@ -88,9 +88,9 @@ export default function MainMenu({
           {/* Left Column: Brand Logo */}
           <div className="menu-left-col">
             <div className="game-brand-block">
-              <div className="brand-pill-badge">注意!</div>
+              <div className="brand-pill-badge">??!</div>
               <h1 className="game-main-title">
-                <span className="title-dance">注意 TCG</span>
+                <span className="title-dance">?? TCG</span>
               </h1>
               <div className="brand-sub-row">
                 <span className="brand-tcg-text">COMPANION APP</span>
@@ -181,14 +181,14 @@ export default function MainMenu({
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <div style={{ background: 'var(--neon-crimson)', color: '#fff', fontWeight: 'bold', width: '22px', height: '22px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem' }}>
-                      ★
+                      ?
                     </div>
                     <strong style={{ fontSize: '0.92rem', color: '#fff', letterSpacing: '0.5px' }}>
                       {activeChar.name}
                     </strong>
                   </div>
                   <div style={{ fontSize: '1.2rem', color: 'var(--neon-gold)' }}>
-                    ❖
+                    ?
                   </div>
                 </div>
 
@@ -225,8 +225,8 @@ export default function MainMenu({
 
                     <div
                       style={{
-                        background: 'rgba(0, 240, 255, 0.2)',
-                        border: '1px solid rgba(0, 240, 255, 0.5)',
+                        background: 'rgba(251, 200, 13, 0.2)',
+                        border: '1px solid rgba(251, 200, 13, 0.5)',
                         borderRadius: '8px',
                         padding: '5px 8px',
                         display: 'flex',
@@ -258,9 +258,9 @@ export default function MainMenu({
                           backdropFilter: 'blur(4px)'
                         }}
                       >
-                        <span style={{ fontWeight: 'bold' }}>⚔️ {move.name}</span>
+                        <span style={{ fontWeight: 'bold' }}>?? {move.name}</span>
                         <span style={{ color: '#FBC80D', fontWeight: 'bold' }}>
-                          {move.type === 'dice_mult' ? `🎲 × ${move.multiplier}` : `${move.baseAP} AP`} ({move.costET} ET)
+                          {move.type === 'dice_mult' ? `?? � ${move.multiplier}` : `${move.baseAP} AP`} ({move.costET} ET)
                         </span>
                       </div>
                     ))}
@@ -289,7 +289,7 @@ export default function MainMenu({
                 <div className="dial-center-content">
                   <span className="dial-turn-lbl">ROUND</span>
                   <span className="dial-turn-num">1</span>
-                  <span className="dial-turn-infinity">/ 3 💎</span>
+                  <span className="dial-turn-infinity">/ 3 ??</span>
                 </div>
               </div>
 
@@ -332,7 +332,7 @@ export default function MainMenu({
                       </div>
 
                       <div className="score-row-lp">
-                        <span className="score-lp-val" style={{ color: '#00f0ff', fontWeight: 'bold' }}>100</span>
+                        <span className="score-lp-val" style={{ color: '#FBC80D', fontWeight: 'bold' }}>100</span>
                         <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.6)', marginLeft: '2px' }}>HP</span>
                       </div>
 
@@ -398,4 +398,5 @@ export default function MainMenu({
     </div>
   );
 }
+
 

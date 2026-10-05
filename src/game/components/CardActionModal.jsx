@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { ACTION_CARDS } from '../data/cards';
 import { CHARACTERS, ZOMBIE_PROFILE, getAssetUrl } from '../data/characters';
 import { soundFX } from '../utils/audio';
@@ -84,7 +84,7 @@ export default function CardActionModal({
     if (!currentAction) return;
 
     if (activePlayer.energyTokens < totalETCost) {
-      setErrorMsg(`Need ${totalETCost} ET — you have ${activePlayer.energyTokens} ET.`);
+      setErrorMsg(`Need ${totalETCost} ET � you have ${activePlayer.energyTokens} ET.`);
       return;
     }
 
@@ -202,7 +202,7 @@ export default function CardActionModal({
       }}
       onClick={onClose}
     >
-      {/* Floating BACK button — fixed to top-left of the screen overlay */}
+      {/* Floating BACK button � fixed to top-left of the screen overlay */}
       <button
         onClick={onClose}
         style={{
@@ -219,7 +219,7 @@ export default function CardActionModal({
           color: '#fff',
           cursor: 'pointer',
           zIndex: 10,
-          boxShadow: '0 8px 28px rgba(0,0,0,0.9), 0 0 28px rgba(0, 240, 255, 0.5)',
+          boxShadow: '0 8px 28px rgba(0,0,0,0.9), 0 0 28px rgba(251, 200, 13, 0.5)',
           fontWeight: 'bold',
           fontFamily: 'Orbitron, sans-serif',
           fontSize: '1.2rem',
@@ -237,9 +237,9 @@ export default function CardActionModal({
         <div
           style={{
             background: 'linear-gradient(180deg, #0d1b38 0%, #060e20 100%)',
-            border: '1.5px solid rgba(0, 240, 255, 0.5)',
+            border: '1.5px solid rgba(251, 200, 13, 0.5)',
             borderRadius: '16px',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.9), 0 0 35px rgba(0, 240, 255, 0.25)',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.9), 0 0 35px rgba(251, 200, 13, 0.25)',
             width: '100%',
             maxHeight: '90vh',
             display: 'flex',
@@ -273,7 +273,7 @@ export default function CardActionModal({
                   TACTICAL COMBAT PLAY
                 </span>
                 <h2 style={{ fontSize: '1.25rem', margin: '2px 0 0 0', fontFamily: 'Orbitron, sans-serif' }}>
-                  {activePlayer.name} · PLAY ACTION CARD
+                  {activePlayer.name} � PLAY ACTION CARD
                 </h2>
               </div>
             </div>
@@ -284,7 +284,7 @@ export default function CardActionModal({
           {awaitingPhysicalPlacement ? (
             <div style={{ padding: '60px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, textAlign: 'center' }}>
               <div style={{ fontSize: '4rem', marginBottom: '20px', animation: 'pulse 1.5s infinite' }}>
-                🎴
+                ??
               </div>
               <h2 style={{ fontSize: '1.8rem', color: '#fff', margin: '0 0 16px', fontFamily: 'Orbitron, sans-serif' }}>
                 PHYSICAL PLACEMENT REQUIRED
@@ -364,14 +364,14 @@ export default function CardActionModal({
                         key={card.instanceId}
                         onClick={() => !disabledForZombie && handleActionClick(card)}
                         style={{
-                          background: isSelected ? 'rgba(0, 240, 255, 0.18)' : 'rgba(255, 255, 255, 0.04)',
+                          background: isSelected ? 'rgba(251, 200, 13, 0.18)' : 'rgba(255, 255, 255, 0.04)',
                           border: isSelected ? `2px solid ${card.color || 'var(--neon-cyan)'}` : '1px solid rgba(255, 255, 255, 0.12)',
                           borderRadius: '10px',
                           padding: '12px',
                           cursor: disabledForZombie ? 'not-allowed' : 'pointer',
                           opacity: disabledForZombie ? 0.4 : 1,
                           transition: 'all 0.2s ease',
-                          boxShadow: isSelected ? `0 0 15px rgba(0, 240, 255, 0.3)` : 'none',
+                          boxShadow: isSelected ? `0 0 15px rgba(251, 200, 13, 0.3)` : 'none',
                           display: 'flex',
                           flexDirection: 'column',
                           gap: '4px'
@@ -419,9 +419,9 @@ export default function CardActionModal({
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
                       {[
-                        { id: 'hp', label: '💖 +20 HP', sub: 'Heal' },
-                        { id: 'ap', label: '⚔️ +20 AP', sub: 'Attack' },
-                        { id: 'dp', label: '🛡️ +10 DP', sub: 'Armor' }
+                        { id: 'hp', label: '?? +20 HP', sub: 'Heal' },
+                        { id: 'ap', label: '?? +20 AP', sub: 'Attack' },
+                        { id: 'dp', label: '??? +10 DP', sub: 'Armor' }
                       ].map(amp => (
                         <button
                           key={amp.id}
@@ -483,7 +483,7 @@ export default function CardActionModal({
                             </div>
                             <div style={{ textAlign: 'right' }}>
                               <span style={{ fontSize: '0.82rem', color: '#ED1E24', fontWeight: 'bold' }}>
-                                {isMult ? `🎲 × ${move.multiplier} AP` : `${move.baseAP} AP`}
+                                {isMult ? `?? � ${move.multiplier} AP` : `${move.baseAP} AP`}
                               </span>
                               <div style={{ fontSize: '0.7rem', color: '#FBC80D' }}>Cost: {move.costET || 0} ET</div>
                             </div>
@@ -544,7 +544,7 @@ export default function CardActionModal({
                 {/* Error message */}
                 {errorMsg && (
                   <div style={{ color: '#ED1E24', background: 'rgba(237, 30, 36, 0.1)', border: '1px solid #ED1E24', padding: '8px 12px', borderRadius: '8px', fontSize: '0.85rem', textAlign: 'center', fontWeight: 'bold' }}>
-                    ⚠️ {errorMsg}
+                    ?? {errorMsg}
                   </div>
                 )}
 
@@ -553,7 +553,7 @@ export default function CardActionModal({
                   style={{
                     marginTop: 'auto',
                     background: 'rgba(0, 0, 0, 0.4)',
-                    border: '1px solid rgba(0, 240, 255, 0.3)',
+                    border: '1px solid rgba(251, 200, 13, 0.3)',
                     borderRadius: '10px',
                     padding: '12px 16px',
                     display: 'flex',
@@ -574,7 +574,7 @@ export default function CardActionModal({
                   <button
                     onClick={handleConfirmAction}
                     style={{
-                      background: 'linear-gradient(90deg, #00f0ff, #0077ff)',
+                      background: 'linear-gradient(90deg, #FBC80D, #0077ff)',
                       color: '#000',
                       border: 'none',
                       borderRadius: '8px',
@@ -585,7 +585,7 @@ export default function CardActionModal({
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px',
-                      boxShadow: '0 0 15px rgba(0, 240, 255, 0.4)'
+                      boxShadow: '0 0 15px rgba(251, 200, 13, 0.4)'
                     }}
                   >
                     <Play size={16} fill="#000" />
@@ -600,4 +600,5 @@ export default function CardActionModal({
     </div>
   );
 }
+
 

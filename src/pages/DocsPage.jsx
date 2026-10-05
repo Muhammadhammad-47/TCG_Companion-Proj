@@ -116,7 +116,7 @@ export default function DocsPage() {
 
   const getMethodColor = (method, alpha = 1) => {
     switch (method) {
-      case 'GET': return `rgba(0, 240, 255, ${alpha})`;
+      case 'GET': return `rgba(251, 200, 13, ${alpha})`;
       case 'POST': return `rgba(57, 255, 20, ${alpha})`;
       case 'PATCH': return `rgba(251, 200, 13, ${alpha})`;
       case 'DELETE': return `rgba(237, 30, 36, ${alpha})`;
@@ -295,10 +295,10 @@ export default function DocsPage() {
           <style>{`
             ::-webkit-scrollbar { width: 6px; height: 6px; }
             ::-webkit-scrollbar-track { background: rgba(3, 7, 18, 0.95); }
-            ::-webkit-scrollbar-thumb { background: rgba(0, 240, 255, 0.3); border-radius: 4px; }
-            ::-webkit-scrollbar-thumb:hover { background: rgba(0, 240, 255, 0.6); }
+            ::-webkit-scrollbar-thumb { background: rgba(251, 200, 13, 0.3); border-radius: 4px; }
+            ::-webkit-scrollbar-thumb:hover { background: rgba(251, 200, 13, 0.6); }
             .sidebar-page-btn { transition: all 0.2s ease; }
-            .sidebar-page-btn:hover { background: rgba(0, 240, 255, 0.1) !important; color: var(--neon-cyan, #00f0ff) !important; }
+            .sidebar-page-btn:hover { background: rgba(251, 200, 13, 0.1) !important; color: var(--neon-cyan, #FBC80D) !important; }
           `}</style>
 
           <header
@@ -309,7 +309,7 @@ export default function DocsPage() {
               alignItems: 'center',
               padding: '0 24px',
               background: 'rgba(10, 20, 45, 0.92)',
-              borderBottom: '1.5px solid rgba(0, 240, 255, 0.28)',
+              borderBottom: '1.5px solid rgba(251, 200, 13, 0.28)',
               backdropFilter: 'blur(14px)',
               zIndex: 100,
               flexShrink: 0
@@ -319,10 +319,10 @@ export default function DocsPage() {
               <button
                 onClick={() => navigate('/')}
                 style={{
-                  background: 'rgba(10, 25, 50, 0.85)',
-                  border: '1.5px solid rgba(0, 240, 255, 0.4)',
+                  background: 'rgba(0, 0, 0, 0.85)',
+                  border: '1.5px solid rgba(251, 200, 13, 0.4)',
                   borderRadius: '8px',
-                  color: 'var(--neon-cyan, #00f0ff)',
+                  color: 'var(--neon-cyan, #FBC80D)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
@@ -337,7 +337,7 @@ export default function DocsPage() {
               </button>
               <div className="brand-pill-badge" style={{ fontSize: '0.8rem', padding: '2px 8px' }}>注意!</div>
               <div style={{ fontSize: '1.25rem', fontWeight: '900', letterSpacing: '1.5px', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', color: '#fff' }}>
-                OPENAPI PORTAL <span style={{ color: 'var(--neon-cyan, #00f0ff)', fontSize: '0.85rem', fontWeight: 'normal', letterSpacing: '1px' }}>// TCG APIS</span>
+                OPENAPI PORTAL <span style={{ color: 'var(--neon-cyan, #FBC80D)', fontSize: '0.85rem', fontWeight: 'normal', letterSpacing: '1px' }}>// TCG APIS</span>
               </div>
             </div>
 
@@ -345,8 +345,8 @@ export default function DocsPage() {
               <button
                 onClick={() => handleCopy(supabaseUrl, 'header_url')}
                 style={{
-                  background: 'rgba(0, 240, 255, 0.08)',
-                  border: '1px solid rgba(0, 240, 255, 0.3)',
+                  background: 'rgba(251, 200, 13, 0.08)',
+                  border: '1px solid rgba(251, 200, 13, 0.3)',
                   color: 'var(--neon-cyan)',
                   padding: '6px 14px',
                   borderRadius: '8px',
@@ -370,7 +370,7 @@ export default function DocsPage() {
               style={{
                 width: '280px',
                 background: 'rgba(8, 14, 30, 0.95)',
-                borderRight: '1px solid rgba(0, 240, 255, 0.18)',
+                borderRight: '1px solid rgba(251, 200, 13, 0.18)',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
@@ -392,7 +392,7 @@ export default function DocsPage() {
                       boxSizing: 'border-box',
                       padding: '7px 10px 7px 30px',
                       background: 'var(--bg-card)',
-                      border: '1px solid rgba(0, 240, 255, 0.25)',
+                      border: '1px solid rgba(251, 200, 13, 0.25)',
                       borderRadius: '8px',
                       color: 'var(--text-main)',
                       fontSize: '0.82rem',
@@ -461,7 +461,7 @@ export default function DocsPage() {
                               padding: '10px 12px',
                               borderRadius: '10px',
                               border: isSel ? '1px solid var(--neon-cyan)' : '1px solid transparent',
-                              background: isSel ? 'rgba(0, 240, 255, 0.15)' : 'transparent',
+                              background: isSel ? 'rgba(251, 200, 13, 0.15)' : 'transparent',
                               color: isSel ? 'var(--neon-cyan)' : 'rgba(255, 255, 255, 0.75)',
                               cursor: 'pointer',
                               fontWeight: isSel ? 'bold' : 'normal',
@@ -506,24 +506,24 @@ export default function DocsPage() {
               {activePage === 'overview' && (
                 <div>
                   <h1 style={{ fontSize: '2.2rem', fontWeight: '900', color: '#fff', margin: '0 0 8px 0', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', letterSpacing: '1px' }}>
-                    API REFERENCE <span style={{ color: 'var(--neon-cyan, #00f0ff)' }}>OVERVIEW</span>
+                    API REFERENCE <span style={{ color: 'var(--neon-cyan, #FBC80D)' }}>OVERVIEW</span>
                   </h1>
                   <p style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.6)', margin: '0 0 32px 0', maxWidth: '850px', lineHeight: '1.6' }}>
                     Welcome to the Attention TCG Swagger/OpenAPI portal. Explore all interactive endpoints, view parameter schemas, and access full JSON payloads for testing and implementation.
                   </p>
 
                   <div style={{ marginBottom: '24px' }}>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--neon-cyan, #00f0ff)', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--neon-cyan, #FBC80D)', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>
                       GLOBAL SERVER CONFIGURATION
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
-                      <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '16px' }}>
+                      <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(251, 200, 13, 0.2)', borderRadius: '10px', padding: '16px' }}>
                         <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', marginBottom: '8px' }}>BASE REST URL</div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <code style={{ color: '#fff', fontSize: '0.9rem' }}>{supabaseUrl}</code>
                         </div>
                       </div>
-                      <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '16px' }}>
+                      <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(251, 200, 13, 0.2)', borderRadius: '10px', padding: '16px' }}>
                         <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', marginBottom: '8px' }}>API KEY (ANON)</div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <code style={{ color: 'var(--neon-gold, #FBC80D)', fontSize: '0.84rem' }}>{anonKey.substring(0, 24)}...</code>
@@ -568,9 +568,9 @@ export default function DocsPage() {
                       {['js', 'unity', 'swift', 'flutter', 'curl'].map(s => (
                          <button key={s} onClick={() => setActiveSdk(s)} style={{
                            padding: '8px 16px', borderRadius: '8px', 
-                           border: activeSdk === s ? '1px solid var(--neon-cyan, #00f0ff)' : '1px solid transparent',
-                           background: activeSdk === s ? 'rgba(0, 240, 255, 0.15)' : 'rgba(255,255,255,0.05)',
-                           color: activeSdk === s ? 'var(--neon-cyan, #00f0ff)' : '#fff', cursor: 'pointer', fontWeight: 'bold'
+                           border: activeSdk === s ? '1px solid var(--neon-cyan, #FBC80D)' : '1px solid transparent',
+                           background: activeSdk === s ? 'rgba(251, 200, 13, 0.15)' : 'rgba(255,255,255,0.05)',
+                           color: activeSdk === s ? 'var(--neon-cyan, #FBC80D)' : '#fff', cursor: 'pointer', fontWeight: 'bold'
                          }}>
                            {s.toUpperCase()}
                          </button>
@@ -586,4 +586,6 @@ export default function DocsPage() {
     </>
   );
 }
+
+
 

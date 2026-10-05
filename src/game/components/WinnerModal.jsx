@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { CHARACTERS, getAssetUrl } from '../data/characters';
 import { soundFX } from '../utils/audio';
@@ -22,7 +22,7 @@ export default function WinnerModal({ winner, players, turnNumber, gameStats = {
 
     // Confetti celebration (Stability Crystals)
     const end = Date.now() + 3.5 * 1000;
-    const colors = ['#00f0ff', '#39ff14', '#ffffff'];
+    const colors = ['#FBC80D', '#39ff14', '#ffffff'];
 
     (function frame() {
       confetti({
@@ -69,9 +69,9 @@ export default function WinnerModal({ winner, players, turnNumber, gameStats = {
         <header className="winner-top-header">
           <h1 className="winner-title-text">WINNER</h1>
           <div className="winner-sub-victory">
-            <span className="gold-diamond">✦</span>
+            <span className="gold-diamond">?</span>
             <span>VICTORY IS YOURS</span>
-            <span className="gold-diamond">✦</span>
+            <span className="gold-diamond">?</span>
           </div>
         </header>
 
@@ -84,9 +84,9 @@ export default function WinnerModal({ winner, players, turnNumber, gameStats = {
                 <Crown size={22} color="#FBC80D" fill="#FBC80D" />
               </div>
               <div className="wreath-circle">
-                <span className="wreath-leaf leaf-left">🌿</span>
+                <span className="wreath-leaf leaf-left">??</span>
                 <span className="wreath-number">1</span>
-                <span className="wreath-leaf leaf-right">🌿</span>
+                <span className="wreath-leaf leaf-right">??</span>
               </div>
             </div>
 
@@ -142,7 +142,7 @@ export default function WinnerModal({ winner, players, turnNumber, gameStats = {
 
             {/* Champion Quote */}
             <div className="champ-quote-box">
-              <p>“{winnerChar.quote || 'You have to believe in your own strength.'}”</p>
+              <p>�{winnerChar.quote || 'You have to believe in your own strength.'}�</p>
             </div>
 
             {/* Champion Art Frame */}
@@ -280,7 +280,7 @@ export default function WinnerModal({ winner, players, turnNumber, gameStats = {
             <div className="arena-modal-card" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header-row">
                 <h3>MATCH SUMMARY LOG</h3>
-                <button className="btn-close-modal" onClick={() => setShowHistoryModal(false)}>✕</button>
+                <button className="btn-close-modal" onClick={() => setShowHistoryModal(false)}>?</button>
               </div>
               <div className="full-history-list">
                 <div className="full-history-item"><span>Turn 7</span><strong>{winner.name}</strong><span>Executed Shadow Strike</span></div>
@@ -294,4 +294,5 @@ export default function WinnerModal({ winner, players, turnNumber, gameStats = {
     </div>
   );
 }
+
 

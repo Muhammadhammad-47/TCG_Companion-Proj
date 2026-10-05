@@ -55,7 +55,7 @@ export const KONTROLA_CHARACTERS = {
     weaknessBonus: 10,
     innateDP: 10,
     retreatSpeed: 1,
-    themeColor: '#00f0ff',
+    themeColor: '#FBC80D',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/KIKO WILD CARD GOLD.png',
     attacks: {
       'TAIL WHIP PER WHIP': { ap: 4, dice: 1, element: 'Physical', desc: 'Roll 1 Die × 4 AP Tail strikes.' },
@@ -923,4 +923,5 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     aoeSplitDamage: aoeSplitDamage || false // Flag for 1vAll damage splitting
   };
 };
+
 

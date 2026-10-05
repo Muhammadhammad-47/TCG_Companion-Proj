@@ -136,7 +136,7 @@ class ErrorBoundary extends React.Component {
             >
               The TCG Companion encountered an unexpected error and needs to restart.
               <br />
-              <strong style={{ color: '#00f0ff' }}>Bug report automatically submitted.</strong>
+              <strong style={{ color: '#FBC80D' }}>Bug report automatically submitted.</strong>
             </p>
 
             {/* Error Details (Collapsible) */}
@@ -180,7 +180,7 @@ class ErrorBoundary extends React.Component {
               <button
                 onClick={this.handleReload}
                 style={{
-                  background: 'linear-gradient(135deg, #00f0ff, #0099cc)',
+                  background: 'linear-gradient(135deg, #FBC80D, #0099cc)',
                   border: 'none',
                   color: '#fff',
                   padding: '12px 24px',
@@ -229,3 +229,4 @@ class ErrorBoundary extends React.Component {
 }
 
 export default ErrorBoundary;
+

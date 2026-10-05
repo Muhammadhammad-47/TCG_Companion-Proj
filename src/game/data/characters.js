@@ -1,4 +1,4 @@
-﻿// TCG Card Game — Official Character Database & Statistics from GDD
+// TCG Card Game � Official Character Database & Statistics from GDD
 
 export const getAssetUrl = (path) => {
   if (!path) return '';
@@ -14,7 +14,7 @@ export const CHARACTERS = {
     name: 'Chynaman',
     title: 'The Blazing Duelist',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/CHYNA WILD CARD REG.png',
-    avatar: '🔥🥋',
+    avatar: '????',
     themeColor: '#ED1E24',
     bgGradient: 'linear-gradient(135deg, #431418 0%, #1f080a 100%)',
     baseHP: 100,
@@ -22,7 +22,7 @@ export const CHARACTERS = {
     mindStrength: 4,
     defaultDP: 15, // Innate defense reduction if roll >= 6
     retreatTarget: 4,
-    weakness: { type: 'Magic / Poison', bonusAP: 10, icon: '🧪' },
+    weakness: { type: 'Magic / Poison', bonusAP: 10, icon: '??' },
     traits: ['High DP Defender (-15)', 'Fire Martial Arts'],
     signatureMove: 'Fire Tiger Soul Punch',
     signatureDesc: '25 AP Fire martial arts technique.',
@@ -35,7 +35,7 @@ export const CHARACTERS = {
         multiplier: 5,
         element: 'Fire',
         costET: 1,
-        desc: 'Roll 1 Die × 5 AP Fire combat strikes.'
+        desc: 'Roll 1 Die � 5 AP Fire combat strikes.'
       },
       {
         id: 'c_tiger',
@@ -96,18 +96,18 @@ export const CHARACTERS = {
   },
   bee: {
     id: 'bee',
-    name: 'Zabina "Bee" Solé',
+    name: 'Zabina "Bee" Sol�',
     title: 'Queen of the Hive',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/BEE WILD CARD GOLD.png',
-    avatar: '🐝👑',
-    themeColor: '#00f0ff',
+    avatar: '????',
+    themeColor: '#FBC80D',
     bgGradient: 'linear-gradient(135deg, #093436 0%, #031517 100%)',
     baseHP: 100,
     maxHP: 200,
     mindStrength: 5, // Highest mind resistance
     defaultDP: 10,
     retreatTarget: 3,
-    weakness: { type: 'Magic / Poison', bonusAP: 10, icon: '🧪' },
+    weakness: { type: 'Magic / Poison', bonusAP: 10, icon: '??' },
     traits: ['High Mind Strength (5)', 'Stun & Drone Specialist', 'Fast Retreat (3+)'],
     signatureMove: 'Paparazzi Stun',
     signatureDesc: '25 AP strike that forces target to skip their next turn.',
@@ -120,7 +120,7 @@ export const CHARACTERS = {
         multiplier: 3,
         element: 'Physical',
         costET: 1,
-        desc: 'Roll 1 Die × 3 AP rapid piercing stings.'
+        desc: 'Roll 1 Die � 3 AP rapid piercing stings.'
       },
       {
         id: 'b_stun',
@@ -165,7 +165,7 @@ export const CHARACTERS = {
     name: 'Katsumi',
     title: 'Shadow Fox of Fate',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/KAT WILD CARD GOLD.png',
-    avatar: '🦊🗡️',
+    avatar: '?????',
     themeColor: '#a855f7',
     bgGradient: 'linear-gradient(135deg, #2b134d 0%, #0d0617 100%)',
     baseHP: 100,
@@ -173,7 +173,7 @@ export const CHARACTERS = {
     mindStrength: 3,
     defaultDP: 15,
     retreatTarget: 1, // Ultra fast retreat (roll 1+)
-    weakness: { type: 'Poison', bonusAP: 15, icon: '☠️' },
+    weakness: { type: 'Poison', bonusAP: 15, icon: '??' },
     traits: ['Ultra Fast Retreat (1+)', 'High DP Defender (-15)', 'Lethal Criticals'],
     signatureMove: 'Claw of Fate',
     signatureDesc: '45 AP fatal precision slash.',
@@ -186,7 +186,7 @@ export const CHARACTERS = {
         multiplier: 5,
         element: 'Physical',
         costET: 1,
-        desc: 'Roll 1 Die × 5 AP razor claws.'
+        desc: 'Roll 1 Die � 5 AP razor claws.'
       },
       {
         id: 'k_purr',
@@ -251,7 +251,7 @@ export const CHARACTERS = {
     name: 'Kiko the Monkey',
     title: 'Mystic Primate Illusionist',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/KIKO WILD CARD GOLD.png',
-    avatar: '🐵🎧',
+    avatar: '????',
     themeColor: '#39ff14',
     bgGradient: 'linear-gradient(135deg, #173d09 0%, #061403 100%)',
     baseHP: 100,
@@ -260,7 +260,7 @@ export const CHARACTERS = {
     mindDefBonus: 1, // Magical creature +1 to mind defense
     defaultDP: 10,
     retreatTarget: 4,
-    weakness: { type: 'Fire', bonusAP: 10, icon: '🔥' },
+    weakness: { type: 'Fire', bonusAP: 10, icon: '??' },
     traits: ['Magical Mind Shield (+1)', 'Multiplicity Clones', 'Sonic Beats'],
     signatureMove: 'Soul Blast 3000',
     signatureDesc: '40 AP mystical sonic blast.',
@@ -273,7 +273,7 @@ export const CHARACTERS = {
         multiplier: 4,
         element: 'Physical',
         costET: 1,
-        desc: 'Roll 1 Die × 4 AP sweeping tail strikes.'
+        desc: 'Roll 1 Die � 4 AP sweeping tail strikes.'
       },
       {
         id: 'm_multi',
@@ -337,7 +337,7 @@ export const CHARACTERS = {
     name: 'Shroomy',
     title: 'Spore Alchemist',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/SHROOMY WILD CARD GOLD.png',
-    avatar: '🍄💥',
+    avatar: '????',
     themeColor: '#39ff14',
     bgGradient: 'linear-gradient(135deg, #173d09 0%, #061402 100%)',
     baseHP: 100,
@@ -346,7 +346,7 @@ export const CHARACTERS = {
     mindDefBonus: 1, // Magical creature +1
     defaultDP: 10,
     retreatTarget: 1, // Ultra fast escape (roll 1+)
-    weakness: { type: 'Fire', bonusAP: 10, icon: '🔥' },
+    weakness: { type: 'Fire', bonusAP: 10, icon: '??' },
     traits: ['Ultra Fast Retreat (1+)', 'Magical Mind Shield (+1)', 'Explosive Spores'],
     signatureMove: 'Soul Snatcher',
     signatureDesc: '50 AP dense fungal extraction.',
@@ -359,7 +359,7 @@ export const CHARACTERS = {
         multiplier: 4,
         element: 'Nature',
         costET: 1,
-        desc: 'Roll 1 Die × 4 AP rapid popping spores.'
+        desc: 'Roll 1 Die � 4 AP rapid popping spores.'
       },
       {
         id: 's_bomba',
@@ -395,7 +395,7 @@ export const CHARACTERS = {
     name: 'Poochi',
     title: 'Glitter Guardian',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/POOCHI WILD CARD GOLD.png',
-    avatar: '🐶💖',
+    avatar: '????',
     themeColor: '#ff1a9d',
     bgGradient: 'linear-gradient(135deg, #4a0d2e 0%, #17040e 100%)',
     baseHP: 100,
@@ -404,7 +404,7 @@ export const CHARACTERS = {
     mindDefBonus: 1, // Magical creature +1
     defaultDP: 10,
     retreatTarget: 4,
-    weakness: { type: 'Magic / Poison', bonusAP: 10, icon: '🧪' },
+    weakness: { type: 'Magic / Poison', bonusAP: 10, icon: '??' },
     traits: ['Magical Mind Shield (+1)', 'Lasso of Truth Hand Reveal', 'Radiant Glitter'],
     signatureMove: 'Glitter Burst',
     signatureDesc: '35 AP blinding sparkle assault.',
@@ -417,7 +417,7 @@ export const CHARACTERS = {
         multiplier: 4,
         element: 'Magic',
         costET: 1,
-        desc: 'Roll 1 Die × 4 AP shimmering sparks.'
+        desc: 'Roll 1 Die � 4 AP shimmering sparks.'
       },
       {
         id: 'p_lasso',
@@ -454,7 +454,7 @@ export const CHARACTERS = {
     name: 'Queeny',
     title: 'Psychic Empress',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/QUEENY WILD CARD GOLD.png',
-    avatar: '👑🔮',
+    avatar: '????',
     themeColor: '#ff9d2d',
     bgGradient: 'linear-gradient(135deg, #452107 0%, #170a02 100%)',
     baseHP: 100,
@@ -463,7 +463,7 @@ export const CHARACTERS = {
     mindAtkBonus: 2, // Psychic master: +2 to Kontrol attack roll!
     defaultDP: 10,
     retreatTarget: 4,
-    weakness: { type: 'Fire / Glitch', bonusAP: 10, icon: '🔥' },
+    weakness: { type: 'Fire / Glitch', bonusAP: 10, icon: '??' },
     traits: ['Psychic Kontrol Specialist (+2 Roll)', 'Siren Wave Attacks'],
     signatureMove: 'Rainbow Fan Blast',
     signatureDesc: '40 AP prism storm assault.',
@@ -476,7 +476,7 @@ export const CHARACTERS = {
         multiplier: 4,
         element: 'Physical',
         costET: 1,
-        desc: 'Roll 1 Die × 4 AP psychic hair slashes.'
+        desc: 'Roll 1 Die � 4 AP psychic hair slashes.'
       },
       {
         id: 'q_siren',
@@ -513,7 +513,7 @@ export const CHARACTERS = {
 export const ZOMBIE_PROFILE = {
   name: 'ZOMBIE INFECTED',
   title: 'Undead Plagued Husk',
-  avatar: '🧟‍♂️☣️',
+  avatar: '???????',
   themeColor: '#39ff14',
   bgGradient: 'linear-gradient(135deg, #133806 0%, #061402 100%)',
   baseHP: 40,
@@ -526,7 +526,7 @@ export const ZOMBIE_PROFILE = {
     type: 'Fire & Lightning',
     bonusAP: 10,
     desc: 'Fire & Lightning attacks deal normal damage AND strip 1 Poison card!',
-    icon: '⚡🔥'
+    icon: '???'
   },
   moves: [
     {
@@ -541,4 +541,5 @@ export const ZOMBIE_PROFILE = {
     }
   ]
 };
+
 

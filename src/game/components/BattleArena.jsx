@@ -774,7 +774,7 @@ export default function BattleArena({
                       </div>
 
                       <div className="arena-score-val-block">
-                        <span className="arena-lp-number" style={{ color: p.hp < 30 ? '#ED1E24' : '#00f0ff' }}>
+                        <span className="arena-lp-number" style={{ color: p.hp < 30 ? '#ED1E24' : '#FBC80D' }}>
                           {p.hp}
                         </span>
                         <span className="arena-lp-tag">HP</span>
@@ -817,7 +817,7 @@ export default function BattleArena({
                   className="effect-chip effect-shield"
                   onClick={() => setSelectedEffectInfo({ name: 'Shield Barrier', desc: 'Absorbs incoming attack damage before your HP is reduced.', count: `+${activePlayer.shield || 0}` })}
                 >
-                  <Shield size={15} color="#00f0ff" />
+                  <Shield size={15} color="#FBC80D" />
                   <span className="effect-name">Shield</span>
                   <span className="effect-count">+{activePlayer.shield || 0}</span>
                 </button>
@@ -864,8 +864,8 @@ export default function BattleArena({
               >
                 {/* True Circular Orbit Rings SVG */}
                 <svg viewBox="0 0 320 320" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}>
-                  <circle cx="160" cy="160" r="125" fill="rgba(0, 240, 255, 0.02)" stroke="rgba(0, 240, 255, 0.35)" strokeWidth="1.5" strokeDasharray="5 4" />
-                  <circle cx="160" cy="160" r="55" fill="none" stroke="rgba(0, 240, 255, 0.12)" strokeWidth="1" />
+                  <circle cx="160" cy="160" r="125" fill="rgba(251, 200, 13, 0.02)" stroke="rgba(251, 200, 13, 0.35)" strokeWidth="1.5" strokeDasharray="5 4" />
+                  <circle cx="160" cy="160" r="55" fill="none" stroke="rgba(251, 200, 13, 0.12)" strokeWidth="1" />
                 </svg>
 
                 {/* Seated Players around the Perfect Circle */}
@@ -950,8 +950,8 @@ export default function BattleArena({
                       <div
                         className={`fighter-avatar-frame ${p.isZombie ? 'ring-green' : 'ring-blue'}`}
                         style={{
-                          borderColor: p.isZombie ? '#39ff14' : (isActive ? '#00f0ff' : realChar.themeColor),
-                          boxShadow: isActive ? '0 0 18px #00f0ff, 0 0 28px rgba(0,240,255,0.45)' : (p.isZombie ? '0 0 14px #39ff14' : 'none'),
+                          borderColor: p.isZombie ? '#39ff14' : (isActive ? '#FBC80D' : realChar.themeColor),
+                          boxShadow: isActive ? '0 0 18px #FBC80D, 0 0 28px rgba(0,240,255,0.45)' : (p.isZombie ? '0 0 14px #39ff14' : 'none'),
                           overflow: 'hidden',
                           width: '58px',
                           height: '58px',
@@ -978,7 +978,7 @@ export default function BattleArena({
                           left: '50%',
                           transform: 'translateX(-50%)',
                           backgroundColor: '#071226',
-                          border: isActive ? '1px solid #00f0ff' : '1px solid rgba(255, 255, 255, 0.22)',
+                          border: isActive ? '1px solid #FBC80D' : '1px solid rgba(255, 255, 255, 0.22)',
                           borderRadius: '8px',
                           padding: '2px 7px',
                           fontSize: '0.68rem',
@@ -991,7 +991,7 @@ export default function BattleArena({
                         }}
                       >
                         <span style={{ color: '#FBC80D', fontWeight: 'bold' }}>⚡{p.energyTokens}</span>
-                        <span style={{ color: '#00f0ff', fontWeight: 'bold' }}>💎{p.crystals}</span>
+                        <span style={{ color: '#FBC80D', fontWeight: 'bold' }}>💎{p.crystals}</span>
                         {p.poisonCards > 0 && (
                           <span style={{ color: '#39ff14', fontWeight: 'bold' }}>☠️{p.poisonCards}</span>
                         )}
@@ -1017,7 +1017,7 @@ export default function BattleArena({
                   isolation: 'isolate',
                   WebkitMaskImage: '-webkit-radial-gradient(white, black)',
                   border: isZombie ? '2.5px solid #39ff14' : `2.5px solid ${activeChar.themeColor || 'var(--neon-cyan)'}`,
-                  boxShadow: isZombie ? '0 0 35px rgba(57, 255, 20, 0.45)' : '0 20px 50px rgba(0,0,0,0.9), 0 0 35px rgba(0, 240, 255, 0.35)',
+                  boxShadow: isZombie ? '0 0 35px rgba(57, 255, 20, 0.45)' : '0 20px 50px rgba(0,0,0,0.9), 0 0 35px rgba(251, 200, 13, 0.35)',
                   background: isZombie ? 'linear-gradient(180deg, #091a04 0%, #030a01 100%)' : 'linear-gradient(180deg, #0f2248 0%, #050b18 100%)',
                   display: 'flex',
                   flexDirection: 'column',
@@ -1085,7 +1085,7 @@ export default function BattleArena({
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div className="hero-card-num-pill" style={{ background: '#00f0ff', color: '#000', fontWeight: 'bold', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem' }}>
+                    <div className="hero-card-num-pill" style={{ background: '#FBC80D', color: '#000', fontWeight: 'bold', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem' }}>
                       {activeIdx + 1}
                     </div>
                     <strong style={{ fontSize: '1.02rem', color: '#fff', letterSpacing: '0.5px' }}>
@@ -1133,8 +1133,8 @@ export default function BattleArena({
 
                     <div
                       style={{
-                        background: 'rgba(0, 240, 255, 0.2)',
-                        border: '1px solid rgba(0, 240, 255, 0.5)',
+                        background: 'rgba(251, 200, 13, 0.2)',
+                        border: '1px solid rgba(251, 200, 13, 0.5)',
                         borderRadius: '8px',
                         padding: '6px 10px',
                         display: 'flex',
@@ -1222,7 +1222,7 @@ export default function BattleArena({
                   className="btn-play-card-cta"
                   disabled={activePlayer.turnActionCompleted}
                   onClick={() => setShowCardActionModal(true)}
-                  style={{ opacity: activePlayer.turnActionCompleted ? 0.4 : 1, cursor: activePlayer.turnActionCompleted ? 'not-allowed' : 'pointer', padding: '12px 10px', fontSize: '0.82rem', background: 'linear-gradient(90deg, #00f0ff, #0077ff)', color: '#000', fontWeight: 'bold', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', whiteSpace: 'nowrap' }}
+                  style={{ opacity: activePlayer.turnActionCompleted ? 0.4 : 1, cursor: activePlayer.turnActionCompleted ? 'not-allowed' : 'pointer', padding: '12px 10px', fontSize: '0.82rem', background: 'linear-gradient(90deg, #FBC80D, #0077ff)', color: '#000', fontWeight: 'bold', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', whiteSpace: 'nowrap' }}
                 >
                   <Swords size={16} />
                   <span>PLAY ACTION CARD</span>
@@ -1345,10 +1345,10 @@ export default function BattleArena({
               className="btn-arena-chat"
               onClick={() => setShowLocalChat(true)}
               style={{
-                background: 'rgba(0, 240, 255, 0.12)',
-                border: '1.5px solid #00f0ff',
-                color: '#00f0ff',
-                boxShadow: '0 0 12px rgba(0, 240, 255, 0.25)',
+                background: 'rgba(251, 200, 13, 0.12)',
+                border: '1.5px solid #FBC80D',
+                color: '#FBC80D',
+                boxShadow: '0 0 12px rgba(251, 200, 13, 0.25)',
                 fontWeight: 'bold',
                 padding: '8px 14px',
                 borderRadius: '8px',
@@ -1667,5 +1667,6 @@ export default function BattleArena({
     </div>
   );
 }
+
 
 

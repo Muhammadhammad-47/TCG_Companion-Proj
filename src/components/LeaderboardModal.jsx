@@ -156,7 +156,7 @@ export const LeaderboardModal = ({ isOpen, onClose }) => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', fontWeight: 'bold' }}>Crystals</div>
-                        <div style={{ fontSize: '1.1rem', color: 'var(--neon-cyan, #00f0ff)', fontWeight: 'bold' }}>{p.crystals_collected || 0}</div>
+                        <div style={{ fontSize: '1.1rem', color: 'var(--neon-cyan, #FBC80D)', fontWeight: 'bold' }}>{p.crystals_collected || 0}</div>
                       </div>
                       <div style={{ textAlign: 'right', borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '16px' }}>
                         <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', fontWeight: 'bold' }}>Wins</div>
@@ -173,4 +173,5 @@ export const LeaderboardModal = ({ isOpen, onClose }) => {
     </div>
   );
 };
+
 

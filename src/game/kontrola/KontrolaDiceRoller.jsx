@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { soundFX } from '../utils/audio';
 import { Dices, Shield, Swords, Check, Zap, X, Sparkles, AlertCircle, Clock, Eye, RotateCcw } from 'lucide-react';
 import { getCardGraphicUrl, getCharacterAttackGraphicUrl } from './kontrolaAssets';
@@ -158,7 +158,7 @@ export function CanvasPipDie({ value = 1, theme = 'red', isRolling = false, size
           borderRadius: '14px',
           display: 'block',
           boxShadow: isRolling
-            ? '0 0 25px #00f0ff'
+            ? '0 0 25px #FBC80D'
             : isRed
             ? '0 0 16px rgba(255, 42, 85, 0.3)'
             : '0 0 16px rgba(255, 224, 102, 0.3)',
@@ -492,7 +492,7 @@ export default function KontrolaDiceRoller({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          borderBottom: '1px solid rgba(0, 240, 255, 0.25)',
+          borderBottom: '1px solid rgba(251, 200, 13, 0.25)',
           paddingBottom: '12px'
         }}
       >
@@ -537,7 +537,7 @@ export default function KontrolaDiceRoller({
               }}
             >
               <span>ATTACKER 2 RED PIP DICE</span>
-              <span>·</span>
+              <span>�</span>
               <span>DEFENDER 2 GOLD PIP DICE</span>
             </div>
           </div>
@@ -550,8 +550,8 @@ export default function KontrolaDiceRoller({
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              background: secondsRemaining <= 10 ? 'rgba(255, 42, 85, 0.2)' : 'rgba(0, 240, 255, 0.1)',
-              border: secondsRemaining <= 10 ? '1px solid rgba(255, 42, 85, 0.5)' : '1px solid rgba(0, 240, 255, 0.3)',
+              background: secondsRemaining <= 10 ? 'rgba(255, 42, 85, 0.2)' : 'rgba(251, 200, 13, 0.1)',
+              border: secondsRemaining <= 10 ? '1px solid rgba(255, 42, 85, 0.5)' : '1px solid rgba(251, 200, 13, 0.3)',
               borderRadius: '8px',
               padding: '6px 12px',
               color: secondsRemaining <= 10 ? 'var(--neon-crimson)' : 'var(--neon-cyan)',
@@ -611,7 +611,7 @@ export default function KontrolaDiceRoller({
             background: 'rgba(0, 0, 0, 0.45)',
             borderRadius: '16px',
             padding: '16px',
-            border: '1px solid rgba(0, 240, 255, 0.25)',
+            border: '1px solid rgba(251, 200, 13, 0.25)',
             boxShadow: '0 8px 32px rgba(0,0,0,0.5)'
           }}
         >
@@ -626,7 +626,7 @@ export default function KontrolaDiceRoller({
               textAlign: 'center'
             }}
           >
-            ⚔️ {attackSelectionName || actionCard?.name || 'ATTACK CLASH'}
+            ?? {attackSelectionName || actionCard?.name || 'ATTACK CLASH'}
           </div>
           <div
             style={{
@@ -634,8 +634,8 @@ export default function KontrolaDiceRoller({
               height: '280px',
               borderRadius: '14px',
               overflow: 'hidden',
-              border: '2px solid rgba(0, 240, 255, 0.4)',
-              boxShadow: '0 0 25px rgba(0, 240, 255, 0.25)',
+              border: '2px solid rgba(251, 200, 13, 0.4)',
+              boxShadow: '0 0 25px rgba(251, 200, 13, 0.25)',
               background: '#0a0f1d'
             }}
           >
@@ -833,7 +833,7 @@ export default function KontrolaDiceRoller({
                     }}
                   >
                     <Dices size={26} />
-                    <span>{isAttackerRolling ? 'ROLLING ATTACK DICE...' : '🎲 ROLL ATTACK DICE'}</span>
+                    <span>{isAttackerRolling ? 'ROLLING ATTACK DICE...' : '?? ROLL ATTACK DICE'}</span>
                   </button>
                 ) : (
                   <div
@@ -852,7 +852,7 @@ export default function KontrolaDiceRoller({
                     }}
                   >
                     <Swords size={22} />
-                    <span>⏳ WAITING FOR {atkChar.name.toUpperCase()} TO ROLL ATTACK DICE...</span>
+                    <span>? WAITING FOR {atkChar.name.toUpperCase()} TO ROLL ATTACK DICE...</span>
                   </div>
                 )
               )}
@@ -882,7 +882,7 @@ export default function KontrolaDiceRoller({
                     }}
                   >
                     <Shield size={26} />
-                    <span>{isDefenderRolling ? 'ROLLING DEFENSE DICE...' : '🛡️ ROLL DEFENSE DICE'}</span>
+                    <span>{isDefenderRolling ? 'ROLLING DEFENSE DICE...' : '??? ROLL DEFENSE DICE'}</span>
                   </button>
                 ) : (
                   <div
@@ -901,7 +901,7 @@ export default function KontrolaDiceRoller({
                     }}
                   >
                     <Shield size={22} />
-                    <span>✅ Attacker rolled {atkSum}! Waiting for {defChar.name} to roll defense...</span>
+                    <span>? Attacker rolled {atkSum}! Waiting for {defChar.name} to roll defense...</span>
                   </div>
                 )
               )}
@@ -914,7 +914,7 @@ export default function KontrolaDiceRoller({
                 background: isTie
                   ? 'rgba(251, 200, 13, 0.12)'
                   : atkWon
-                  ? 'rgba(0, 240, 255, 0.12)'
+                  ? 'rgba(251, 200, 13, 0.12)'
                   : 'rgba(255, 42, 85, 0.12)',
                 border: isTie
                   ? '2px solid var(--neon-gold)'
@@ -927,7 +927,7 @@ export default function KontrolaDiceRoller({
                 boxShadow: isTie
                   ? '0 0 30px rgba(251, 200, 13, 0.25)'
                   : atkWon
-                  ? '0 0 30px rgba(0, 240, 255, 0.25)'
+                  ? '0 0 30px rgba(251, 200, 13, 0.25)'
                   : '0 0 30px rgba(255, 42, 85, 0.25)'
               }}
             >
@@ -941,7 +941,7 @@ export default function KontrolaDiceRoller({
                   letterSpacing: '1px'
                 }}
               >
-                {isTie ? '⚔️ CLASH TIED! (STALEMATE)' : atkWon ? '⚔️ ATTACK SUCCESSFUL!' : '🛡️ DEFENDER RESISTED / BLOCKED!'}
+                {isTie ? '?? CLASH TIED! (STALEMATE)' : atkWon ? '?? ATTACK SUCCESSFUL!' : '??? DEFENDER RESISTED / BLOCKED!'}
               </h3>
               <p
                 style={{
@@ -977,7 +977,7 @@ export default function KontrolaDiceRoller({
                   }}
                 >
                   <Shield size={16} />
-                  <span>🛡️ RULE OF 6+ ACTIVATED! Defender rolled {defSum} (≥6): Innate Base Defense activated!</span>
+                  <span>??? RULE OF 6+ ACTIVATED! Defender rolled {defSum} (=6): Innate Base Defense activated!</span>
                 </div>
               )}
 
@@ -1001,9 +1001,9 @@ export default function KontrolaDiceRoller({
                 >
                   <Sparkles size={18} />
                   <span>
-                    {attackerFateCard && `${atkChar.name} ROLLED DOUBLES! 🎲 FATE CARD AWARDED!`}
-                    {defenderFateCard && !attackerFateCard && `${defChar.name} ROLLED DOUBLES! 🎲 FATE CARD AWARDED!`}
-                    {defenderFateCard && attackerFateCard && `BOTH PLAYERS ROLLED DOUBLES! 🎲🎲 FATE CARDS AWARDED!`}
+                    {attackerFateCard && `${atkChar.name} ROLLED DOUBLES! ?? FATE CARD AWARDED!`}
+                    {defenderFateCard && !attackerFateCard && `${defChar.name} ROLLED DOUBLES! ?? FATE CARD AWARDED!`}
+                    {defenderFateCard && attackerFateCard && `BOTH PLAYERS ROLLED DOUBLES! ???? FATE CARDS AWARDED!`}
                   </span>
                 </div>
               )}
@@ -1016,7 +1016,7 @@ export default function KontrolaDiceRoller({
                     padding: '14px 22px',
                     background: 'rgba(0,0,0,0.6)',
                     borderRadius: '14px',
-                    border: '1.5px solid rgba(0, 240, 255, 0.5)',
+                    border: '1.5px solid rgba(251, 200, 13, 0.5)',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
@@ -1024,13 +1024,13 @@ export default function KontrolaDiceRoller({
                   }}
                 >
                   <div style={{ fontSize: '0.95rem', color: 'var(--neon-cyan)', fontWeight: 'bold' }}>
-                    🎲 2ND STAGE: ROLL 1 DIE FOR "{attackSelectionName}" (PER ATTACK)
+                    ?? 2ND STAGE: ROLL 1 DIE FOR "{attackSelectionName}" (PER ATTACK)
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <CanvasPipDie value={multiplierDie} theme="red" isRolling={isRollingMultiplier} size={54} />
                     <div style={{ textAlign: 'left' }}>
                       <div style={{ fontSize: '1rem', color: '#fff' }}>
-                        Roll: <strong>{multiplierDie}</strong> × {selectedAttackInfo.ap} AP = <strong style={{ color: '#39ff14' }}>{multiplierDie * selectedAttackInfo.ap} Total AP</strong>
+                        Roll: <strong>{multiplierDie}</strong> � {selectedAttackInfo.ap} AP = <strong style={{ color: '#39ff14' }}>{multiplierDie * selectedAttackInfo.ap} Total AP</strong>
                       </div>
                     </div>
                   </div>
@@ -1039,7 +1039,7 @@ export default function KontrolaDiceRoller({
                       onClick={handleRollMultiplierDie}
                       disabled={isRollingMultiplier}
                       style={{
-                        background: 'linear-gradient(90deg, #00f0ff, #0088ff)',
+                        background: 'linear-gradient(90deg, #FBC80D, #0088ff)',
                         border: 'none',
                         color: '#000',
                         fontWeight: 'bold',
@@ -1050,7 +1050,7 @@ export default function KontrolaDiceRoller({
                         fontSize: '0.95rem'
                       }}
                     >
-                      {isRollingMultiplier ? 'Rolling 1 Die...' : '🎲 ROLL 1 MULTIPLIER DIE'}
+                      {isRollingMultiplier ? 'Rolling 1 Die...' : '?? ROLL 1 MULTIPLIER DIE'}
                     </button>
                   )}
                 </div>
@@ -1081,7 +1081,7 @@ export default function KontrolaDiceRoller({
                       }}
                     >
                       <RotateCcw size={22} />
-                      <span>🎲 RE-ROLL CLASH</span>
+                      <span>?? RE-ROLL CLASH</span>
                     </button>
                   ) : (
                     <div
@@ -1096,7 +1096,7 @@ export default function KontrolaDiceRoller({
                       }}
                     >
                       <RotateCcw size={18} />
-                      <span>⏳ Stalemate! Waiting for Attacker to re-roll...</span>
+                      <span>? Stalemate! Waiting for Attacker to re-roll...</span>
                     </div>
                   )
                 ) : (
@@ -1132,5 +1132,6 @@ export default function KontrolaDiceRoller({
     </div>
   );
 }
+
 
 

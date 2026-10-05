@@ -54,8 +54,8 @@ export function AvatarDropdown({ selectedAvatarId, onSelectAvatar, disabled }) {
           alignItems: 'center',
           gap: '8px',
           background: 'rgba(5, 12, 28, 0.85)',
-          border: `1.5px solid ${isOpen ? (currentAvatar.themeColor || 'var(--neon-cyan)') : 'rgba(0, 240, 255, 0.4)'}`,
-          boxShadow: isOpen ? `0 0 14px ${currentAvatar.themeColor || '#00f0ff'}66` : '0 2px 8px rgba(0, 0, 0, 0.5)',
+          border: `1.5px solid ${isOpen ? (currentAvatar.themeColor || 'var(--neon-cyan)') : 'rgba(251, 200, 13, 0.4)'}`,
+          boxShadow: isOpen ? `0 0 14px ${currentAvatar.themeColor || '#FBC80D'}66` : '0 2px 8px rgba(0, 0, 0, 0.5)',
           borderRadius: '20px',
           padding: '4px 10px 4px 6px',
           color: 'var(--text-light, #ffffff)',
@@ -77,7 +77,7 @@ export function AvatarDropdown({ selectedAvatarId, onSelectAvatar, disabled }) {
             height: '26px',
             borderRadius: '50%',
             overflow: 'hidden',
-            border: `1.5px solid ${currentAvatar.themeColor || '#00f0ff'}`,
+            border: `1.5px solid ${currentAvatar.themeColor || '#FBC80D'}`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -106,7 +106,7 @@ export function AvatarDropdown({ selectedAvatarId, onSelectAvatar, disabled }) {
         <ChevronDown 
           size={14} 
           style={{ 
-            color: currentAvatar.themeColor || 'var(--neon-cyan, #00f0ff)',
+            color: currentAvatar.themeColor || 'var(--neon-cyan, #FBC80D)',
             transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
             transition: 'transform 0.2s ease',
           }} 
@@ -126,10 +126,10 @@ export function AvatarDropdown({ selectedAvatarId, onSelectAvatar, disabled }) {
             maxHeight: '360px',
             overflowY: 'auto',
             background: 'rgba(8, 14, 30, 0.96)',
-            border: '1px solid rgba(0, 240, 255, 0.4)',
+            border: '1px solid rgba(251, 200, 13, 0.4)',
             borderRadius: '12px',
             padding: '8px',
-            boxShadow: '0 12px 30px rgba(0, 0, 0, 0.8), 0 0 25px rgba(0, 240, 255, 0.2)',
+            boxShadow: '0 12px 30px rgba(0, 0, 0, 0.8), 0 0 25px rgba(251, 200, 13, 0.2)',
             backdropFilter: 'blur(20px)',
             zIndex: 9999,
             display: 'flex',
@@ -172,7 +172,7 @@ export function AvatarDropdown({ selectedAvatarId, onSelectAvatar, disabled }) {
                   padding: '8px 10px',
                   borderRadius: '8px',
                   background: isSelected 
-                    ? `linear-gradient(90deg, ${avatar.themeColor}28, rgba(0, 240, 255, 0.12))` 
+                    ? `linear-gradient(90deg, ${avatar.themeColor}28, rgba(251, 200, 13, 0.12))` 
                     : 'transparent',
                   border: isSelected 
                     ? `1px solid ${avatar.themeColor}aa` 
@@ -186,7 +186,7 @@ export function AvatarDropdown({ selectedAvatarId, onSelectAvatar, disabled }) {
                 onMouseEnter={(e) => {
                   if (!isSelected) {
                     e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
-                    e.currentTarget.style.borderColor = 'rgba(0, 240, 255, 0.3)';
+                    e.currentTarget.style.borderColor = 'rgba(251, 200, 13, 0.3)';
                   }
                 }}
                 onMouseLeave={(e) => {
@@ -231,7 +231,7 @@ export function AvatarDropdown({ selectedAvatarId, onSelectAvatar, disabled }) {
                       fontFamily: 'Orbitron, sans-serif',
                       fontSize: '0.8rem',
                       fontWeight: 700,
-                      color: isSelected ? (avatar.themeColor || '#00f0ff') : '#ffffff',
+                      color: isSelected ? (avatar.themeColor || '#FBC80D') : '#ffffff',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -264,3 +264,4 @@ export function AvatarDropdown({ selectedAvatarId, onSelectAvatar, disabled }) {
     </div>
   );
 }
+

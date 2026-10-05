@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Wifi, Swords, Shield, Skull, Zap, ScrollText, MessageSquare,
@@ -27,7 +27,7 @@ import { LeaderboardModal } from '../../components/LeaderboardModal';
 
 import '../../pages/GamePage.css';
 
-// Collision-proof unique player ID — sourced from DB or generated fresh.
+// Collision-proof unique player ID � sourced from DB or generated fresh.
 // generateUniquePlayerId is kept synchronous for useState initializer;
 // sessionService.getPlayerId() is called after auth loads to upgrade to DB-sourced ID.
 const generateUniquePlayerId = () => {
@@ -142,7 +142,7 @@ export default function KontrolaArena() {
     if (userProfile) {
       const isProUser = userProfile.is_premium === true;
       setIsPremium(isProUser);
-      console.log(`🎮 Deck Mode: ${isProUser ? '👑 PRO (157 cards - Basic + Premium + FLYER)' : '📦 BASIC (100 cards)'} for ${userProfile.username}`);
+      console.log(`?? Deck Mode: ${isProUser ? '?? PRO (157 cards - Basic + Premium + FLYER)' : '?? BASIC (100 cards)'} for ${userProfile.username}`);
     }
   }, [userProfile]);
 
@@ -199,7 +199,7 @@ export default function KontrolaArena() {
     }, 1700);
   };
 
-  // Record match victory and award crystals — single guarded effect, DB only
+  // Record match victory and award crystals � single guarded effect, DB only
   useEffect(() => {
     if (winner && !hasLoggedMatchRef.current) {
       hasLoggedMatchRef.current = true;
@@ -223,7 +223,7 @@ export default function KontrolaArena() {
             });
           }
 
-          // Winner gets 3 crystals, loser gets 1 — only for authenticated users
+          // Winner gets 3 crystals, loser gets 1 � only for authenticated users
           if (currentUser?.id) {
             const isWinner = winner.playerId === playerId;
             await authService.savePlayerMatchResult(currentUser.id, {
@@ -589,7 +589,7 @@ export default function KontrolaArena() {
                     [joinedId]: joinedName || 'Spectator'
                   },
                   logs: [
-                    `👁️ ${joinedName || 'A player'} entered as a Spectator!`,
+                    `??? ${joinedName || 'A player'} entered as a Spectator!`,
                     ...(currentGS.logs || [])
                   ]
                 };
@@ -756,7 +756,7 @@ export default function KontrolaArena() {
         // 7. Synchronized Dice Screen Roll
         else if (event.type === 'DICE_SCREEN_ROLLED') {
           if (event.payload?.isReroll) {
-            // Preserve defenseCard when re-rolling on a tie — only reset the dice rolls
+            // Preserve defenseCard when re-rolling on a tie � only reset the dice rolls
             setActiveCombat((prev) => {
               const kept = { defenseCard: prev?.precalculatedRolls?.defenseCard ?? null };
               return prev ? { ...prev, precalculatedRolls: kept } : prev;
@@ -771,7 +771,7 @@ export default function KontrolaArena() {
           setActiveCombat(null);
           setIsDiceRollingSync(false);
           // NOTE: The host handles RESOLVE_COMBAT directly in handleCloseDiceScreen().
-          // Do NOT call enqueueHostAction here — that would double-execute combat resolution.
+          // Do NOT call enqueueHostAction here � that would double-execute combat resolution.
         }
         // 9. Client Action received by Host
         else if (event.type === 'PLAYER_ACTION') {
@@ -791,7 +791,7 @@ export default function KontrolaArena() {
           }
         } else if (event.type === 'PLAYER_TAUNT') {
           setActiveTauntBubble(event.payload);
-          setChatMessages((prev) => [...prev, { ...event.payload, text: `🗯️ [TAUNT]: "${event.payload.text}"` }]);
+          setChatMessages((prev) => [...prev, { ...event.payload, text: `??? [TAUNT]: "${event.payload.text}"` }]);
           setTimeout(() => setActiveTauntBubble(null), 4500);
           
           if (!showChatRef.current) {
@@ -829,7 +829,7 @@ export default function KontrolaArena() {
             } else if (actionName && actionName.includes('LIGHTNING')) {
               soundFX.playPowerUp();
             } else if (actionName && actionName.includes('BOOMERANG')) {
-              // Boomerang — no hit, just a trap set
+              // Boomerang � no hit, just a trap set
             } else {
               soundFX.playHit();
             }
@@ -855,7 +855,7 @@ export default function KontrolaArena() {
           
           setGameState(prev => prev ? {
             ...prev,
-            logs: [`⚠️ ${prev.playerNames?.[dId] || 'A player'} disconnected! Waiting 3 mins for reconnection...`, ...(prev.logs || [])]
+            logs: [`?? ${prev.playerNames?.[dId] || 'A player'} disconnected! Waiting 3 mins for reconnection...`, ...(prev.logs || [])]
           } : prev);
 
           // Start a 3-minute timeout to forfeit them
@@ -870,7 +870,7 @@ export default function KontrolaArena() {
 
           setGameState(prev => prev ? {
             ...prev,
-            logs: [`✅ ${prev.playerNames?.[rId] || 'A player'} reconnected!`, ...(prev.logs || [])]
+            logs: [`? ${prev.playerNames?.[rId] || 'A player'} reconnected!`, ...(prev.logs || [])]
           } : prev);
 
           if (isHostRef.current && disconnectTimeoutsRef.current[rId]) {
@@ -972,7 +972,7 @@ export default function KontrolaArena() {
         players: remainingPlayers,
         turn: updatedTurn,
         logs: [
-          `⚠️ ${leaverName} has left the match.${
+          `?? ${leaverName} has left the match.${
             isLeaverHost ? ` New host is ${currentGS.playerNames?.[remainingPlayers[0]] || 'Player'}.` : ''
           }`,
           ...(currentGS.logs || [])
@@ -1023,10 +1023,10 @@ export default function KontrolaArena() {
 
       // RESOLVE_COMBAT: falls through to the generic resolution block at the bottom of this function.
       // The payload already carries actorId, actionCard, targetId, attackSelectionName, and precalculatedRolls
-      // from the original ATTACK_DECLARED spread — no special handling needed here.
+      // from the original ATTACK_DECLARED spread � no special handling needed here.
       // IMPORTANT: do NOT add an early return inside this block or combat resolution will be skipped.
       if (payload.actionType === 'RESOLVE_COMBAT') {
-        payload = { ...payload }; // safe copy — avoid mutating the caller's object
+        payload = { ...payload }; // safe copy � avoid mutating the caller's object
       }
 
       if (payload.actionType === 'ROLL_OFF') {
@@ -1048,7 +1048,7 @@ export default function KontrolaArena() {
           const tiedPlayers = activePlayers.filter(pId => updatedRollOffs[pId] === maxTotal);
 
           if (tiedPlayers.length > 1) {
-            // TIE — reset only the tied players and keep everyone else's rolls
+            // TIE � reset only the tied players and keep everyone else's rolls
             const resetRollOffs = { ...updatedRollOffs };
             const resetRollOffDice = { ...updatedRollOffDice };
             tiedPlayers.forEach(pId => {
@@ -1061,7 +1061,7 @@ export default function KontrolaArena() {
             nextState.rollOffs = resetRollOffs;
             nextState.rollOffDice = resetRollOffDice;
             nextState.logs = [
-              `⚔️ TIE BREAKER! ${tiedNames} both rolled ${maxTotal}! Re-roll to determine who goes first!`,
+              `?? TIE BREAKER! ${tiedNames} both rolled ${maxTotal}! Re-roll to determine who goes first!`,
               ...(currentState.logs || [])
             ];
           } else {
@@ -1070,7 +1070,7 @@ export default function KontrolaArena() {
             nextState.status = 'roll_off_complete';
             nextState.tiebreakPool = null;
             nextState.rollOffWinner = winnerId;
-            nextState.logs = [`🎲 Roll-off complete! ${currentState.playerNames?.[winnerId] || 'Player'} won with a ${maxTotal} and gets first pick! Transitioning in 3s...`, ...(currentState.logs || [])];
+            nextState.logs = [`?? Roll-off complete! ${currentState.playerNames?.[winnerId] || 'Player'} won with a ${maxTotal} and gets first pick! Transitioning in 3s...`, ...(currentState.logs || [])];
 
             if (isHostRef.current) {
               setTimeout(() => {
@@ -1079,7 +1079,7 @@ export default function KontrolaArena() {
             }
           }
         } else {
-          nextState.logs = [`🎲 ${currentState.playerNames?.[payload.actorId] || 'Player'} rolled a ${payload.total}.`, ...(currentState.logs || [])];
+          nextState.logs = [`?? ${currentState.playerNames?.[payload.actorId] || 'Player'} rolled a ${payload.total}.`, ...(currentState.logs || [])];
         }
         broadcastState(matchIdRef.current, nextState);
         return nextState;
@@ -1117,7 +1117,7 @@ export default function KontrolaArena() {
         const { actorId, characterId } = payload;
         
         const newSelections = { ...(currentState.characterSelections || {}), [actorId]: characterId };
-        const turnLogs = [`✨ ${currentState.playerNames?.[actorId] || 'Player'} selected ${KONTROLA_CHARACTERS[characterId]?.name || 'a character'}!`, ...(currentState.logs || [])];
+        const turnLogs = [`? ${currentState.playerNames?.[actorId] || 'Player'} selected ${KONTROLA_CHARACTERS[characterId]?.name || 'a character'}!`, ...(currentState.logs || [])];
 
         let nextState = { ...currentState, characterSelections: newSelections, logs: turnLogs };
 
@@ -1170,7 +1170,7 @@ export default function KontrolaArena() {
               }
             }
             nextState.turn = winnerId;
-            nextState.logs.unshift(`🎮 All characters selected! The match begins!`);
+            nextState.logs.unshift(`?? All characters selected! The match begins!`);
         } else {
             // Advance turn to next player for character selection
             const currentIdx = currentState.players.indexOf(actorId);
@@ -1225,7 +1225,7 @@ export default function KontrolaArena() {
         const nextState = {
           ...currentState,
           activeDefenseState: { ...payload, expiresAt: Date.now() + 15000 },
-          logs: [`⚠️ ${payload.attackerPlayerName} is attacking ${payload.defenderPlayerName}! Waiting for defender to prepare...`, ...(currentState.logs || [])]
+          logs: [`?? ${payload.attackerPlayerName} is attacking ${payload.defenderPlayerName}! Waiting for defender to prepare...`, ...(currentState.logs || [])]
         };
         broadcastState(matchIdRef.current, nextState);
         return nextState;
@@ -1355,12 +1355,12 @@ export default function KontrolaArena() {
           precalculatedRolls
         );
 
-        // If the engine signals a tie, do NOT commit the result — the DiceRoller
+        // If the engine signals a tie, do NOT commit the result � the DiceRoller
         // will surface the re-roll button and the host will be called again with new rolls.
         // We also restore the ET cost so the attacker is not penalised for a re-roll.
         if (resolved.isTie) {
           const tieLogs = [resolved.log, ...(currentState.logs || [])];
-          // Restore the ET that was deducted — tie should not cost ET
+          // Restore the ET that was deducted � tie should not cost ET
           const restoredAttackerState = {
             ...currentState.characterStates[actorId],
             energyTokens: (currentState.characterStates[actorId]?.energyTokens || 0)  // keep original, cost not yet written
@@ -1368,13 +1368,13 @@ export default function KontrolaArena() {
           const tieState = {
             ...currentState,
             logs: tieLogs,
-            // keep characterStates untouched — ET cost not applied on tie
+            // keep characterStates untouched � ET cost not applied on tie
           };
           broadcastState(matchIdRef.current, tieState);
           return tieState;
         }
 
-        // Not a tie — now commit the ET cost
+        // Not a tie � now commit the ET cost
         const cost = actionCard?.costET || (actionCard?.type === 'ATTACK' ? 1 : 0);
         newAttackerState.energyTokens = Math.max(0, (newAttackerState.energyTokens || 5) - cost);
 
@@ -1476,7 +1476,7 @@ export default function KontrolaArena() {
         newDefenderState.isDefeated = true;
         newAttackerState.crystals = (newAttackerState.crystals || 1) + (newDefenderState.crystals || 1);
         newDefenderState.crystals = 0;
-        log += ` 💀 ${newDefenderState.name} was defeated! ${newAttackerState.name} claimed their Stability Crystals (Total: ${newAttackerState.crystals}).`;
+        log += ` ?? ${newDefenderState.name} was defeated! ${newAttackerState.name} claimed their Stability Crystals (Total: ${newAttackerState.crystals}).`;
         if (newAttackerState.crystals >= 3) {
           matchWinner = { ...newAttackerState, playerId: actorId };
         }
@@ -1497,7 +1497,7 @@ export default function KontrolaArena() {
               char.isDefeated = true;
               newAttackerState.crystals = (newAttackerState.crystals || 1) + (char.crystals || 1);
               char.crystals = 0;
-              log += ` 💀 ${char.name} was defeated by AoE! ${newAttackerState.name} claimed their Crystals.`;
+              log += ` ?? ${char.name} was defeated by AoE! ${newAttackerState.name} claimed their Crystals.`;
               if (newAttackerState.crystals >= 3) {
                 matchWinner = { ...newAttackerState, playerId: actorId };
               }
@@ -1514,7 +1514,7 @@ export default function KontrolaArena() {
       );
 
       // Cards that should NEVER grant an extra turn regardless of resolved flags.
-      // TIME MACHINE is type 'OTHERS' but is the sole exception — it explicitly grants an extra turn.
+      // TIME MACHINE is type 'OTHERS' but is the sole exception � it explicitly grants an extra turn.
       // ATTACK X2 is type 'ATTACK' and handles its second-hit via triggerAttackX2SecondHit.
       const isStatusOrHealCard = actionCard &&
         ['STATUS', 'HEAL', 'OTHERS', 'TACTICAL', 'DEFENSE', 'SPECIAL'].includes(actionCard.type) &&
@@ -1524,7 +1524,7 @@ export default function KontrolaArena() {
         matchWinner = updatedStates[livingPlayers[0]] ? { ...updatedStates[livingPlayers[0]], playerId: livingPlayers[0] } : matchWinner;
         nextTurnPlayerId = livingPlayers[0] || actorId;
       } else {
-        // STATUS/HEAL/OTHERS/TACTICAL/DEFENSE cards must ALWAYS advance the turn — never stay on same player
+        // STATUS/HEAL/OTHERS/TACTICAL/DEFENSE cards must ALWAYS advance the turn � never stay on same player
         // Exception: TIME MACHINE (OTHERS) is explicitly allowed to grant an extra turn
         const grantExtraTurn = !isStatusOrHealCard && (resolved.extraTurnGranted || resolved.triggerAttackX2SecondHit);
 
@@ -1546,7 +1546,7 @@ export default function KontrolaArena() {
         while (updatedStates[nextTurnPlayerId]?.sleepTurns > 0 && checkedSleepCount < livingPlayers.length) {
           const sleepingChar = updatedStates[nextTurnPlayerId];
           sleepingChar.sleepTurns = Math.max(0, sleepingChar.sleepTurns - 1);
-          turnLogs.unshift(`💤 ${sleepingChar.name} is asleep and skips their turn! (${sleepingChar.sleepTurns} turn(s) remaining)`);
+          turnLogs.unshift(`?? ${sleepingChar.name} is asleep and skips their turn! (${sleepingChar.sleepTurns} turn(s) remaining)`);
           
           // Advance to next player for sleeping turn check
           const sIdx = livingPlayers.indexOf(nextTurnPlayerId);
@@ -1567,10 +1567,10 @@ export default function KontrolaArena() {
         if (incomingChar && incomingChar.poisonCount > 0 && !incomingChar.isDefeated) {
           const poisonDmg = incomingChar.poisonCount * 10;
           incomingChar.hp = Math.max(0, incomingChar.hp - poisonDmg);
-          turnLogs.unshift(`☠️ ${incomingChar.name} suffered ${poisonDmg} Poison damage (${incomingChar.poisonCount} stack${incomingChar.poisonCount > 1 ? 's' : ''})! HP: ${incomingChar.hp}`);
+          turnLogs.unshift(`?? ${incomingChar.name} suffered ${poisonDmg} Poison damage (${incomingChar.poisonCount} stack${incomingChar.poisonCount > 1 ? 's' : ''})! HP: ${incomingChar.hp}`);
           if (incomingChar.hp <= 0) {
             incomingChar.isDefeated = true;
-            turnLogs.unshift(`💀 ${incomingChar.name} succumbed to Poison and was eliminated!`);
+            turnLogs.unshift(`?? ${incomingChar.name} succumbed to Poison and was eliminated!`);
             const remainingLiving = currentState.players.filter((pId) => !updatedStates[pId]?.isDefeated);
             if (remainingLiving.length === 1) {
               matchWinner = updatedStates[remainingLiving[0]] ? { ...updatedStates[remainingLiving[0]], playerId: remainingLiving[0] } : null;
@@ -1584,10 +1584,10 @@ export default function KontrolaArena() {
         if (incomingChar && typeof incomingChar.burnCount === 'number' && incomingChar.burnCount > 0 && !incomingChar.isDefeated) {
           const burnDmg = incomingChar.burnCount * 10;
           incomingChar.hp = Math.max(0, incomingChar.hp - burnDmg);
-          turnLogs.unshift(`🔥 ${incomingChar.name} suffered ${burnDmg} Burn damage (${incomingChar.burnCount} stack${incomingChar.burnCount > 1 ? 's' : ''})! HP: ${incomingChar.hp}`);
+          turnLogs.unshift(`?? ${incomingChar.name} suffered ${burnDmg} Burn damage (${incomingChar.burnCount} stack${incomingChar.burnCount > 1 ? 's' : ''})! HP: ${incomingChar.hp}`);
           if (incomingChar.hp <= 0) {
             incomingChar.isDefeated = true;
-            turnLogs.unshift(`💀 ${incomingChar.name} was incinerated by Burn damage and eliminated!`);
+            turnLogs.unshift(`?? ${incomingChar.name} was incinerated by Burn damage and eliminated!`);
             const remainingLiving = currentState.players.filter((pId) => !updatedStates[pId]?.isDefeated);
             if (remainingLiving.length === 1) {
               matchWinner = updatedStates[remainingLiving[0]] ? { ...updatedStates[remainingLiving[0]], playerId: remainingLiving[0] } : null;
@@ -1602,10 +1602,10 @@ export default function KontrolaArena() {
           const vampireETDrain = 1;
           incomingChar.hp = Math.max(0, incomingChar.hp - vampireDrain);
           incomingChar.energyTokens = Math.max(0, (incomingChar.energyTokens || 0) - vampireETDrain);
-          turnLogs.unshift(`🧛 ${incomingChar.name} suffered ${vampireDrain} HP and ${vampireETDrain} ET drain from Vampire curse! (${incomingChar.vampireStealTurnsLeft} turn${incomingChar.vampireStealTurnsLeft > 1 ? 's' : ''} remaining)`);
+          turnLogs.unshift(`?? ${incomingChar.name} suffered ${vampireDrain} HP and ${vampireETDrain} ET drain from Vampire curse! (${incomingChar.vampireStealTurnsLeft} turn${incomingChar.vampireStealTurnsLeft > 1 ? 's' : ''} remaining)`);
           if (incomingChar.hp <= 0) {
             incomingChar.isDefeated = true;
-            turnLogs.unshift(`💀 ${incomingChar.name} was drained to death by Vampire curse and eliminated!`);
+            turnLogs.unshift(`?? ${incomingChar.name} was drained to death by Vampire curse and eliminated!`);
             const remainingLiving = currentState.players.filter((pId) => !updatedStates[pId]?.isDefeated);
             if (remainingLiving.length === 1) {
               matchWinner = updatedStates[remainingLiving[0]] ? { ...updatedStates[remainingLiving[0]], playerId: remainingLiving[0] } : null;
@@ -1649,9 +1649,9 @@ export default function KontrolaArena() {
            const drawnCard = updatedDeck.shift();
            currentHand.push(drawnCard);
            updatedHands[actorId] = currentHand;
-           turnLogs.unshift(`🔀 ${newAttackerState.name} used X-CHANGE! Discarded 1 card and drew a new one.`);
+           turnLogs.unshift(`?? ${newAttackerState.name} used X-CHANGE! Discarded 1 card and drew a new one.`);
         } else {
-           turnLogs.unshift(`⚠️ The X-CHANGE fizzled! Deck is empty or hand is empty.`);
+           turnLogs.unshift(`?? The X-CHANGE fizzled! Deck is empty or hand is empty.`);
         }
       }
 
@@ -1728,7 +1728,7 @@ export default function KontrolaArena() {
     if (playerName !== finalName) setPlayerName(finalName);
 
     try {
-      // Premium match cost — only charge authenticated premium users (PRO bypass honored)
+      // Premium match cost � only charge authenticated premium users (PRO bypass honored)
       if (isPremium && !userProfile?.is_premium && currentUser?.id) {
         const moduleCost = appSettings.module_costs?.kontrola ?? appSettings.match_cost;
         const success = await authService.savePlayerMatchResult(currentUser.id, {
@@ -1784,7 +1784,7 @@ export default function KontrolaArena() {
       // Check last known match from session (DB or localStorage)
       const lastMatch = await sessionService.getLastMatchId(currentUser?.id ?? null, playerId);
 
-      // Premium match cost — only charge authenticated premium users for NEW rooms (PRO bypass honored)
+      // Premium match cost � only charge authenticated premium users for NEW rooms (PRO bypass honored)
       if (isPremium && !userProfile?.is_premium && currentUser?.id && cleanId !== lastMatch) {
         const moduleCost = appSettings.module_costs?.kontrola ?? appSettings.match_cost;
         const success = await authService.savePlayerMatchResult(currentUser.id, {
@@ -1838,7 +1838,7 @@ export default function KontrolaArena() {
       rollOffs: {},
       characterSelections: {}, // Reset selections
       logs: [
-        `🎲 MATCH STARTED! All players must roll 2 dice to determine who strikes first.`
+        `?? MATCH STARTED! All players must roll 2 dice to determine who strikes first.`
       ]
     };
 
@@ -2078,7 +2078,7 @@ export default function KontrolaArena() {
       setActiveCombat((prev) => prev ? { ...prev, precalculatedRolls: { ...(prev.precalculatedRolls || {}), ...newRolls } } : prev);
       await broadcastUIEvent(matchId, 'dice_screen_rolled', { timestamp: Date.now(), precalculatedRolls: newRolls });
     } else if (isReroll) {
-      // Preserve defenseCard when re-rolling on a tie — only reset the dice rolls
+      // Preserve defenseCard when re-rolling on a tie � only reset the dice rolls
       setActiveCombat((prev) => {
         const kept = { defenseCard: prev?.precalculatedRolls?.defenseCard ?? null };
         return prev ? { ...prev, precalculatedRolls: kept } : prev;
@@ -2149,7 +2149,7 @@ export default function KontrolaArena() {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
     setActiveTauntBubble(msg);
-    setChatMessages((prev) => [...prev, { ...msg, text: `🗯️ [TAUNT]: "${msg.text}"` }]);
+    setChatMessages((prev) => [...prev, { ...msg, text: `??? [TAUNT]: "${msg.text}"` }]);
     setTimeout(() => setActiveTauntBubble(null), 4500);
     broadcastUIEvent(matchIdRef.current, 'player_taunt', msg);
     
@@ -2183,8 +2183,8 @@ export default function KontrolaArena() {
               <button
                 onClick={() => navigate('/')}
                 style={{
-                  background: 'rgba(10, 25, 50, 0.75)',
-                  border: '1px solid rgba(0, 240, 255, 0.3)',
+                  background: 'rgba(0, 0, 0, 0.75)',
+                  border: '1px solid rgba(251, 200, 13, 0.3)',
                   borderRadius: '10px',
                   padding: '8px 18px',
                   color: 'var(--text-main)',
@@ -2212,7 +2212,7 @@ export default function KontrolaArena() {
               </h1>
               <div className="brand-sub-row" style={{ justifyContent: 'center' }}>
                 <span className="brand-tcg-text" style={{ fontSize: '1rem', letterSpacing: '3px' }}>
-                  2–7 PLAYERS · REALTIME EPHEMERAL ARENA
+                  2�7 PLAYERS � REALTIME EPHEMERAL ARENA
                 </span>
               </div>
             </div>
@@ -2241,7 +2241,7 @@ export default function KontrolaArena() {
                 <div
                   style={{
                     background: 'var(--bg-card) 0.88)',
-                    border: '1.5px solid rgba(0, 240, 255, 0.3)',
+                    border: '1.5px solid rgba(251, 200, 13, 0.3)',
                     borderRadius: '16px',
                     padding: '18px 24px',
                     display: 'flex',
@@ -2347,7 +2347,7 @@ export default function KontrolaArena() {
                 </div>
 
                 {/* 4. Three-Tab Lobby Navigation */}
-                <div style={{ display: 'flex', gap: '10px', borderBottom: '1px solid rgba(0, 240, 255, 0.2)', paddingBottom: '8px' }}>
+                <div style={{ display: 'flex', gap: '10px', borderBottom: '1px solid rgba(251, 200, 13, 0.2)', paddingBottom: '8px' }}>
                   <button
                     onClick={() => { playClick(); setLobbyTab('browse'); }}
                     style={{
@@ -2355,7 +2355,7 @@ export default function KontrolaArena() {
                       padding: '12px',
                       borderRadius: '10px',
                       border: lobbyTab === 'browse' ? '1.5px solid var(--neon-cyan)' : '1px solid rgba(255,255,255,0.1)',
-                      background: lobbyTab === 'browse' ? 'rgba(0, 240, 255, 0.15)' : 'rgba(0,0,0,0.4)',
+                      background: lobbyTab === 'browse' ? 'rgba(251, 200, 13, 0.15)' : 'rgba(0,0,0,0.4)',
                       color: lobbyTab === 'browse' ? 'var(--neon-cyan)' : '#fff',
                       fontWeight: 'bold',
                       fontFamily: 'Bebas Neue, sans-serif',
@@ -2379,7 +2379,7 @@ export default function KontrolaArena() {
                       padding: '12px',
                       borderRadius: '10px',
                       border: lobbyTab === 'create' ? '1.5px solid var(--neon-cyan)' : '1px solid rgba(255,255,255,0.1)',
-                      background: lobbyTab === 'create' ? 'rgba(0, 240, 255, 0.15)' : 'rgba(0,0,0,0.4)',
+                      background: lobbyTab === 'create' ? 'rgba(251, 200, 13, 0.15)' : 'rgba(0,0,0,0.4)',
                       color: lobbyTab === 'create' ? 'var(--neon-cyan)' : '#fff',
                       fontWeight: 'bold',
                       fontFamily: 'Bebas Neue, sans-serif',
@@ -2426,7 +2426,7 @@ export default function KontrolaArena() {
                   <div
                     style={{
                       background: 'var(--bg-card) 0.88)',
-                      border: '1px solid rgba(0, 240, 255, 0.25)',
+                      border: '1px solid rgba(251, 200, 13, 0.25)',
                       borderRadius: '16px',
                       padding: '20px'
                     }}
@@ -2490,7 +2490,7 @@ export default function KontrolaArena() {
                               alignItems: 'center',
                               justifyContent: 'space-between',
                               background: 'rgba(0, 0, 0, 0.5)',
-                              border: '1px solid rgba(0, 240, 255, 0.2)',
+                              border: '1px solid rgba(251, 200, 13, 0.2)',
                               borderRadius: '12px',
                               padding: '14px 18px'
                             }}
@@ -2498,7 +2498,7 @@ export default function KontrolaArena() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                               <div
                                 style={{
-                                  background: 'rgba(0, 240, 255, 0.1)',
+                                  background: 'rgba(251, 200, 13, 0.1)',
                                   border: '1px solid var(--neon-cyan)',
                                   borderRadius: '8px',
                                   padding: '6px 12px',
@@ -2539,7 +2539,7 @@ export default function KontrolaArena() {
                               <button
                                 onClick={() => handleJoinByCode(room.roomCode)}
                                 style={{
-                                  background: 'linear-gradient(90deg, #00f0ff 0%, #0077ff 100%)',
+                                  background: 'linear-gradient(90deg, #FBC80D 0%, #0077ff 100%)',
                                   border: 'none',
                                   color: '#000',
                                   padding: '8px 20px',
@@ -2547,7 +2547,7 @@ export default function KontrolaArena() {
                                   fontWeight: 'bold',
                                   fontSize: '0.9rem',
                                   cursor: 'pointer',
-                                  boxShadow: '0 0 15px rgba(0, 240, 255, 0.4)'
+                                  boxShadow: '0 0 15px rgba(251, 200, 13, 0.4)'
                                 }}
                               >
                                 Join Match
@@ -2565,7 +2565,7 @@ export default function KontrolaArena() {
                   <div
                     style={{
                       background: 'var(--bg-card) 0.88)',
-                      border: '1px solid rgba(0, 240, 255, 0.25)',
+                      border: '1px solid rgba(251, 200, 13, 0.25)',
                       borderRadius: '16px',
                       padding: '24px'
                     }}
@@ -2684,7 +2684,7 @@ export default function KontrolaArena() {
                   borderRadius: '20px',
                   padding: '28px 32px',
                   textAlign: 'center',
-                  boxShadow: '0 0 35px rgba(0, 240, 255, 0.25)'
+                  boxShadow: '0 0 35px rgba(251, 200, 13, 0.25)'
                 }}
               >
                 <div style={{ fontSize: '0.85rem', color: 'var(--neon-cyan)', letterSpacing: '2px', fontWeight: 'bold', marginBottom: '6px' }}>
@@ -2697,7 +2697,7 @@ export default function KontrolaArena() {
                     color: 'var(--neon-cyan)',
                     letterSpacing: '8px',
                     fontFamily: 'Bebas Neue, sans-serif',
-                    textShadow: '0 0 20px rgba(0, 240, 255, 0.6)',
+                    textShadow: '0 0 20px rgba(251, 200, 13, 0.6)',
                     marginBottom: '20px'
                   }}
                 >
@@ -2710,7 +2710,7 @@ export default function KontrolaArena() {
                     style={{
                       display: 'flex',
                       justifyContent: 'space-between',
-                      borderBottom: '1px solid rgba(0, 240, 255, 0.2)',
+                      borderBottom: '1px solid rgba(251, 200, 13, 0.2)',
                       paddingBottom: '8px',
                       marginBottom: '12px'
                     }}
@@ -2737,7 +2737,7 @@ export default function KontrolaArena() {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
-                            background: isMe ? 'rgba(0, 240, 255, 0.12)' : 'rgba(0, 0, 0, 0.45)',
+                            background: isMe ? 'rgba(251, 200, 13, 0.12)' : 'rgba(0, 0, 0, 0.45)',
                             border: isMe ? '1.5px solid var(--neon-cyan)' : '1px solid rgba(255,255,255,0.1)',
                             borderRadius: '10px',
                             padding: '10px 14px'
@@ -2764,7 +2764,7 @@ export default function KontrolaArena() {
                                 {gameState.playerNames?.[pId] || charData.name} {isMe ? '(You)' : ''}
                               </div>
                               <div style={{ fontSize: '0.75rem', opacity: 0.65 }}>
-                                Character: {charData.name} · {charData.element}
+                                Character: {charData.name} � {charData.element}
                               </div>
                             </div>
                           </div>
@@ -2850,7 +2850,7 @@ export default function KontrolaArena() {
                       border: '1px solid rgba(251, 200, 13, 0.2)'
                     }}
                   >
-                    ⏳ Waiting for Room Host to commence battle...
+                    ? Waiting for Room Host to commence battle...
                   </div>
                 )}
               </div>
@@ -2900,14 +2900,14 @@ export default function KontrolaArena() {
                 background: inAppNotice.type === 'error'
                   ? 'linear-gradient(90deg, #ff2a55 0%, #c00028 100%)'
                   : inAppNotice.type === 'info'
-                  ? 'linear-gradient(90deg, #00f0ff 0%, #0077ff 100%)'
+                  ? 'linear-gradient(90deg, #FBC80D 0%, #0077ff 100%)'
                   : 'linear-gradient(90deg, #FBC80D 0%, #ff9900 100%)',
                 color: '#000',
                 fontWeight: '900',
                 fontFamily: 'Bebas Neue, sans-serif',
                 fontSize: '1.05rem',
                 letterSpacing: '0.5px',
-                boxShadow: '0 8px 30px rgba(0,0,0,0.8), 0 0 20px rgba(0, 240, 255, 0.4)',
+                boxShadow: '0 8px 30px rgba(0,0,0,0.8), 0 0 20px rgba(251, 200, 13, 0.4)',
                 border: '1.5px solid rgba(255, 255, 255, 0.6)'
               }}
             >
@@ -2944,7 +2944,7 @@ export default function KontrolaArena() {
             {chatToasts.map(toast => (
                <div key={toast.toastId} style={{
                  background: toast.type === 'TAUNT' ? 'linear-gradient(90deg, #ff2a55 0%, #880022 100%)' : 'rgba(10, 20, 35, 0.9)',
-                 border: toast.type === 'TAUNT' ? '2px solid #ff8899' : '1px solid rgba(0, 240, 255, 0.4)',
+                 border: toast.type === 'TAUNT' ? '2px solid #ff8899' : '1px solid rgba(251, 200, 13, 0.4)',
                  borderRadius: '12px',
                  padding: '10px 15px',
                  color: '#fff',
@@ -2954,11 +2954,11 @@ export default function KontrolaArena() {
                  boxShadow: '0 5px 15px rgba(0,0,0,0.6)',
                  animation: 'slideInLeft 0.3s ease-out, fadeOut 0.3s ease-in 4.2s forwards'
                }}>
-                 <span style={{ fontSize: '0.75rem', color: toast.type === 'TAUNT' ? '#FBC80D' : '#00f0ff', fontWeight: 'bold' }}>
-                   {toast.type === 'TAUNT' ? '🗯️ TAUNT' : '💬 MSG'} • {toast.senderName}
+                 <span style={{ fontSize: '0.75rem', color: toast.type === 'TAUNT' ? '#FBC80D' : '#FBC80D', fontWeight: 'bold' }}>
+                   {toast.type === 'TAUNT' ? '??? TAUNT' : '?? MSG'} � {toast.senderName}
                  </span>
                  <span style={{ fontSize: '0.9rem', fontWeight: '500' }}>
-                   {toast.text.replace('🗯️ [TAUNT]: "', '').replace('"', '')}
+                   {toast.text.replace('??? [TAUNT]: "', '').replace('"', '')}
                  </span>
                </div>
             ))}
@@ -3060,9 +3060,9 @@ export default function KontrolaArena() {
                           </div>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px' }}>
-                          <span>⚔️ DMG: <strong style={{color: '#fff'}}>{dmg}</strong></span>
-                          <span>🃏 Cards: <strong style={{color: '#fff'}}>{cards}</strong></span>
-                          <span>⏳ Turns: <strong style={{color: '#fff'}}>{turns}</strong></span>
+                          <span>?? DMG: <strong style={{color: '#fff'}}>{dmg}</strong></span>
+                          <span>?? Cards: <strong style={{color: '#fff'}}>{cards}</strong></span>
+                          <span>? Turns: <strong style={{color: '#fff'}}>{turns}</strong></span>
                         </div>
                       </div>
                     );
@@ -3088,9 +3088,9 @@ export default function KontrolaArena() {
           {/* TOP HUD BAR WITH PROMINENT TURN STATUS */}
           <header className="arena-top-hud">
             <div className="hud-title-group">
-              <span className="hud-sparkle">✦</span>
+              <span className="hud-sparkle">?</span>
               <div className="hud-brand-title">
-                <strong>ATTENTION 注意 TCG</strong>
+                <strong>ATTENTION ?? TCG</strong>
                 <span className="hud-format-tag">
                   {isSpectator ? 'SPECTATOR MODE' : 'KONTROLA MULTIPLAYER'}
                 </span>
@@ -3106,7 +3106,7 @@ export default function KontrolaArena() {
                 padding: '6px 16px',
                 borderRadius: '10px',
                 background: isSpectator
-                  ? 'rgba(0, 240, 255, 0.12)'
+                  ? 'rgba(251, 200, 13, 0.12)'
                   : isMyTurn
                   ? 'rgba(57, 255, 20, 0.15)'
                   : 'rgba(237, 30, 36, 0.12)',
@@ -3121,12 +3121,12 @@ export default function KontrolaArena() {
               {isSpectator ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--neon-cyan)', fontWeight: 'bold' }}>
                   <Eye size={18} />
-                  <span>SPECTATING · {activeTurnPlayerName}'S TURN</span>
+                  <span>SPECTATING � {activeTurnPlayerName}'S TURN</span>
                 </div>
               ) : isMyTurn ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#39ff14', fontWeight: 'bold' }}>
                   <Zap size={18} fill="#39ff14" />
-                  <span style={{ fontSize: '0.95rem', letterSpacing: '1px' }}>⚡ YOUR TURN TO STRIKE!</span>
+                  <span style={{ fontSize: '0.95rem', letterSpacing: '1px' }}>? YOUR TURN TO STRIKE!</span>
                 </div>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ff6b8f', fontWeight: 'bold' }}>
@@ -3137,7 +3137,7 @@ export default function KontrolaArena() {
 
               {/* Turn & Round Details */}
               <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', borderLeft: '1px solid rgba(255,255,255,0.2)', paddingLeft: '8px' }}>
-                T{turnNum} · R{roundNum}
+                T{turnNum} � R{roundNum}
               </span>
 
               {/* Room Code */}
@@ -3247,19 +3247,19 @@ export default function KontrolaArena() {
                 transform: 'translateX(-50%)',
                 zIndex: 99999,
                 background: 'linear-gradient(135deg, rgba(30, 27, 75, 0.98), rgba(15, 23, 42, 0.98))',
-                border: '3px solid #00f0ff',
+                border: '3px solid #FBC80D',
                 borderRadius: '40px',
                 padding: '16px 36px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '16px',
-                boxShadow: '0 10px 40px rgba(0, 240, 255, 0.6)',
+                boxShadow: '0 10px 40px rgba(251, 200, 13, 0.6)',
                 pointerEvents: 'none',
                 animation: 'tauntPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'
               }}
             >
-              <span style={{ fontSize: '2.2rem', animation: 'wiggle 2s ease-in-out infinite' }}>🗯️</span>
-              <span style={{ color: '#00f0ff', fontWeight: 'bold', fontSize: '1.4rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
+              <span style={{ fontSize: '2.2rem', animation: 'wiggle 2s ease-in-out infinite' }}>???</span>
+              <span style={{ color: '#FBC80D', fontWeight: 'bold', fontSize: '1.4rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
                 {activeTauntBubble.senderName}:
               </span>
               <span style={{ color: '#fff', fontSize: '1.5rem', fontStyle: 'italic', fontWeight: '900', textShadow: '0 0 10px rgba(255,255,255,0.4)' }}>
@@ -3311,7 +3311,7 @@ export default function KontrolaArena() {
                               border: '2px solid rgba(255,200,0,0.6)'
                             }}
                           >
-                            🗣️ {activeTauntBubble.text}
+                            ??? {activeTauntBubble.text}
                             <div
                               style={{
                                 position: 'absolute',
@@ -3355,10 +3355,10 @@ export default function KontrolaArena() {
                             {pChar.name} {isMe ? '(You)' : ''}
                           </strong>
                           <div style={{ display: 'flex', gap: '6px', fontSize: '0.7rem', color: 'rgba(255,255,255,0.7)' }}>
-                            <span>⚡ {pChar.energyTokens || 0} ET</span>
-                            <span>💎 {pChar.crystals || 0}/3</span>
-                            {pChar.poisonCount > 0 && <span style={{ color: 'var(--neon-green)' }}>☠️ {pChar.poisonCount}</span>}
-                            {typeof pChar.burnCount === 'number' && pChar.burnCount > 0 && <span style={{ color: '#ff4d00' }}>🔥 {pChar.burnCount}</span>}
+                            <span>? {pChar.energyTokens || 0} ET</span>
+                            <span>?? {pChar.crystals || 0}/3</span>
+                            {pChar.poisonCount > 0 && <span style={{ color: 'var(--neon-green)' }}>?? {pChar.poisonCount}</span>}
+                            {typeof pChar.burnCount === 'number' && pChar.burnCount > 0 && <span style={{ color: '#ff4d00' }}>?? {pChar.burnCount}</span>}
                           </div>
                         </div>
 
@@ -3398,7 +3398,7 @@ export default function KontrolaArena() {
                   )}
                   {typeof myCharacter?.burnCount === 'number' && myCharacter.burnCount > 0 && (
                     <div className="effect-chip effect-poison" style={{ borderColor: 'rgba(255, 77, 0, 0.4)', background: 'rgba(255, 77, 0, 0.08)' }}>
-                      <span style={{ fontSize: '15px' }}>🔥</span>
+                      <span style={{ fontSize: '15px' }}>??</span>
                       <span className="effect-name" style={{ color: '#ff4d00' }}>Burn</span>
                       <span className="effect-count" style={{ color: '#ff4d00' }}>{myCharacter.burnCount}</span>
                     </div>
@@ -3473,9 +3473,9 @@ export default function KontrolaArena() {
                     }}
                   >
                     {isSpectator
-                      ? `SPECTATING · ${activeTurnPlayerName.toUpperCase()}`
+                      ? `SPECTATING � ${activeTurnPlayerName.toUpperCase()}`
                       : isMyTurn
-                      ? '⚡ YOUR TURN TO STRIKE!'
+                      ? '? YOUR TURN TO STRIKE!'
                       : `${activeTurnPlayerName.toUpperCase()}'S TURN`}
                   </div>
 
@@ -3522,7 +3522,7 @@ export default function KontrolaArena() {
                           <div className="uno-card-title">{card.name}</div>
                           <div className="uno-card-meta">
                             <span>{card.type}</span>
-                            <span>⚡ {card.costET || 0}</span>
+                            <span>? {card.costET || 0}</span>
                           </div>
                         </div>
                       </div>
@@ -3543,9 +3543,9 @@ export default function KontrolaArena() {
                   <div className="phase2-profile-stats">
                     <div className="phase2-profile-name">{myCharacter.name} (You)</div>
                     <div className="phase2-profile-metrics">
-                      <span style={{ color: 'var(--neon-crimson)' }}>❤️ {myCharacter.hp}</span>
-                      <span style={{ color: 'var(--neon-gold)' }}>⚡ {myCharacter.energyTokens || 0}</span>
-                      <span style={{ color: 'var(--neon-cyan)' }}>🛡️ {myCharacter.shield || 0}</span>
+                      <span style={{ color: 'var(--neon-crimson)' }}>?? {myCharacter.hp}</span>
+                      <span style={{ color: 'var(--neon-gold)' }}>? {myCharacter.energyTokens || 0}</span>
+                      <span style={{ color: 'var(--neon-cyan)' }}>??? {myCharacter.shield || 0}</span>
                     </div>
                   </div>
                 </div>
@@ -3645,7 +3645,7 @@ export default function KontrolaArena() {
                     style={{
                       padding: '12px 24px',
                       borderRadius: '8px',
-                      background: 'rgba(0, 240, 255, 0.1)',
+                      background: 'rgba(251, 200, 13, 0.1)',
                       border: '1px solid var(--neon-cyan)',
                       color: 'var(--neon-cyan)',
                       fontWeight: 'bold',
@@ -3762,7 +3762,7 @@ export default function KontrolaArena() {
                   onClick={() => { playClick(); setShowTaunt(true); }}
                   style={{ borderColor: 'var(--neon-gold)', color: 'var(--neon-gold)' }}
                 >
-                  <span>🗣️</span>
+                  <span>???</span>
                   <span>TAUNT</span>
                 </button>
               )}
@@ -3807,18 +3807,18 @@ export default function KontrolaArena() {
                 animation: 'fadeIn 0.3s ease'
               }}
             >
-              {/* Title — changes to TIEBREAKER when applicable */}
+              {/* Title � changes to TIEBREAKER when applicable */}
               {gameState.tiebreakPool ? (
                 <>
-                  <h2 style={{ color: '#ff2a55', fontSize: '2.8rem', marginBottom: '10px', textShadow: '0 0 20px #ff2a55' }}>⚔️ TIE BREAKER ⚔️</h2>
+                  <h2 style={{ color: '#ff2a55', fontSize: '2.8rem', marginBottom: '10px', textShadow: '0 0 20px #ff2a55' }}>?? TIE BREAKER ??</h2>
                   <p style={{ fontSize: '1.1rem', marginBottom: '40px', color: '#ff8899', background: 'rgba(255, 42, 85, 0.1)', padding: '10px 20px', borderRadius: '8px', border: '1px solid rgba(255, 42, 85, 0.4)' }}>
                     {gameState.tiebreakPool.map(pId => gameState.playerNames?.[pId] || 'Player').join(' & ')} tied! Re-roll to decide who picks first.
                   </p>
                 </>
               ) : (
                 <>
-                  <h2 style={{ color: 'var(--neon-gold)', fontSize: '2.8rem', marginBottom: '10px', textShadow: '0 0 20px var(--neon-gold)' }}>🎲 ROLL-OFF 🎲</h2>
-                  <p style={{ fontSize: '1.2rem', marginBottom: '40px', color: '#00f0ff', background: 'rgba(0, 240, 255, 0.1)', padding: '10px 20px', borderRadius: '8px', border: '1px solid rgba(0, 240, 255, 0.3)' }}>
+                  <h2 style={{ color: 'var(--neon-gold)', fontSize: '2.8rem', marginBottom: '10px', textShadow: '0 0 20px var(--neon-gold)' }}>?? ROLL-OFF ??</h2>
+                  <p style={{ fontSize: '1.2rem', marginBottom: '40px', color: '#FBC80D', background: 'rgba(251, 200, 13, 0.1)', padding: '10px 20px', borderRadius: '8px', border: '1px solid rgba(251, 200, 13, 0.3)' }}>
                     All players must roll 2 dice to determine who picks their character first!
                   </p>
                 </>
@@ -3909,7 +3909,7 @@ export default function KontrolaArena() {
                   }}
                 >
                   <Dices size={28} />
-                  {rollingOffPlayers[playerId] ? 'ROLLING DICE...' : gameState.tiebreakPool ? '🎲 RE-ROLL TO BREAK TIE' : 'ROLL 2 DICE'}
+                  {rollingOffPlayers[playerId] ? 'ROLLING DICE...' : gameState.tiebreakPool ? '?? RE-ROLL TO BREAK TIE' : 'ROLL 2 DICE'}
                 </button>
               )}
               {/* Sitting-out players see a waiting message */}
@@ -3944,13 +3944,13 @@ export default function KontrolaArena() {
                 marginBottom: '14px',
                 animation: 'pulse 1s ease-in-out infinite alternate'
               }}>
-                <span style={{ fontSize: '2.2rem' }}>⚠️</span>
+                <span style={{ fontSize: '2.2rem' }}>??</span>
                 <h2 style={{
                   color: 'var(--neon-crimson)', fontSize: '2rem', margin: 0,
                   textShadow: '0 0 20px var(--neon-crimson), 0 0 40px rgba(255,30,30,0.4)',
                   letterSpacing: '0.08em'
                 }}>INCOMING ATTACK</h2>
-                <span style={{ fontSize: '2.2rem' }}>⚠️</span>
+                <span style={{ fontSize: '2.2rem' }}>??</span>
               </div>
 
               {/* Incoming card pill */}
@@ -3963,13 +3963,13 @@ export default function KontrolaArena() {
                   marginBottom: '22px',
                   display: 'flex', alignItems: 'center', gap: '12px'
                 }}>
-                  <span style={{ fontSize: '1.4rem' }}>🃏</span>
+                  <span style={{ fontSize: '1.4rem' }}>??</span>
                   <div>
                     <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#fff', letterSpacing: '0.04em' }}>
                       {gameState.activeDefenseState.actionCard.name}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: 'rgba(255,160,160,0.8)', marginTop: '2px' }}>
-                      {gameState.activeDefenseState.actionCard.type} · Cost {gameState.activeDefenseState.actionCard.costET ?? 0} ET
+                      {gameState.activeDefenseState.actionCard.type} � Cost {gameState.activeDefenseState.actionCard.costET ?? 0} ET
                     </div>
                   </div>
                 </div>
@@ -4008,7 +4008,7 @@ export default function KontrolaArena() {
                         key={card.id}
                         onClick={() => handleDefenseSelect(card)}
                         style={{
-                          background: 'rgba(10, 25, 50, 0.85)',
+                          background: 'rgba(0, 0, 0, 0.85)',
                           border: '2px solid #39ff14',
                           borderRadius: '10px',
                           padding: '12px 10px',
@@ -4026,10 +4026,10 @@ export default function KontrolaArena() {
                         onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 0 18px rgba(57,255,20,0.25)'; }}
                       >
                         <div style={{ fontSize: '1.4rem' }}>
-                          {card.name.toUpperCase().includes('BOOMERANG') ? '🪃'
-                            : card.name.toUpperCase().includes('DODGE') ? '💨'
-                            : card.name.toUpperCase().includes('COUNTER') ? '⚔️'
-                            : '🛡️'}
+                          {card.name.toUpperCase().includes('BOOMERANG') ? '??'
+                            : card.name.toUpperCase().includes('DODGE') ? '??'
+                            : card.name.toUpperCase().includes('COUNTER') ? '??'
+                            : '???'}
                         </div>
                         <div style={{ fontWeight: 'bold', fontSize: '0.75rem', textAlign: 'center', lineHeight: '1.2' }}>{card.name}</div>
                         <div style={{
@@ -4062,7 +4062,7 @@ export default function KontrolaArena() {
                     onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.5)'; e.currentTarget.style.color = '#fff'; }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; }}
                   >
-                    ⚡ SKIP — TAKE THE HIT
+                    ? SKIP � TAKE THE HIT
                   </button>
                 </>
               ) : (
@@ -4070,10 +4070,10 @@ export default function KontrolaArena() {
                   <p style={{ fontSize: '1.2rem', marginBottom: '16px' }}>
                     <strong style={{ color: 'var(--neon-gold)' }}>{gameState.activeDefenseState.attackerPlayerName}</strong>
                     {' '}is attacking{' '}
-                    <strong style={{ color: '#00f0ff' }}>{gameState.activeDefenseState.defenderPlayerName}</strong>!
+                    <strong style={{ color: '#FBC80D' }}>{gameState.activeDefenseState.defenderPlayerName}</strong>!
                   </p>
                   <p style={{ fontSize: '1.3rem', color: 'var(--neon-crimson)', fontWeight: 'bold' }}>
-                    ⏳ Waiting for {gameState.activeDefenseState.defenderPlayerName} to prepare defense...
+                    ? Waiting for {gameState.activeDefenseState.defenderPlayerName} to prepare defense...
                   </p>
                 </div>
               )}
@@ -4091,7 +4091,7 @@ export default function KontrolaArena() {
               }}
             >
               <h2 style={{ color: 'var(--neon-gold)', fontSize: '3rem', marginBottom: '30px', textShadow: '0 0 20px var(--neon-gold)' }}>
-                🏆 TURN ORDER LEADERBOARD 🏆
+                ?? TURN ORDER LEADERBOARD ??
               </h2>
               <div style={{
                 background: 'rgba(0,0,0,0.8)', border: '2px solid var(--neon-gold)', borderRadius: '16px',
@@ -4183,7 +4183,7 @@ export default function KontrolaArena() {
 
                 {/* RIGHT SIDE - CHARACTER SELECTION GRID */}
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
-                  <h2 style={{ color: 'var(--neon-cyan)', fontSize: '2.5rem', marginBottom: '20px', textShadow: '0 0 20px var(--neon-cyan)' }}>✨ CHARACTER SELECTION ✨</h2>
+                  <h2 style={{ color: 'var(--neon-cyan)', fontSize: '2.5rem', marginBottom: '20px', textShadow: '0 0 20px var(--neon-cyan)' }}>? CHARACTER SELECTION ?</h2>
                   
                   {gameState.turn === playerId ? (
                     <p style={{ fontSize: '1.2rem', marginBottom: '30px', color: '#fff' }}>
@@ -4280,7 +4280,7 @@ export default function KontrolaArena() {
                 borderRadius: '14px',
                 padding: '16px',
                 zIndex: 1500,
-                boxShadow: '0 0 30px rgba(0, 240, 255, 0.35)',
+                boxShadow: '0 0 30px rgba(251, 200, 13, 0.35)',
                 fontFamily: 'Barlow Condensed, sans-serif',
                 animation: 'fadeIn 0.2s ease'
               }}
@@ -4298,7 +4298,7 @@ export default function KontrolaArena() {
                 {revealedVision.cards.map((c, i) => (
                   <div key={i} style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '8px', fontSize: '0.78rem' }}>
                     <div style={{ fontWeight: 'bold', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--neon-cyan)', marginTop: '2px' }}>{c.type} · ⚡{c.costET || 0}</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--neon-cyan)', marginTop: '2px' }}>{c.type} � ?{c.costET || 0}</div>
                   </div>
                 ))}
               </div>
@@ -4505,6 +4505,7 @@ export default function KontrolaArena() {
     </div>
   );
 }
+
 
 
 

@@ -1,15 +1,15 @@
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&family=Caveat+Brush&display=swap');
 
 :root {
-  --bg-deep: #070b18;
-  --bg-card: rgba(14, 22, 42, 0.85);
-  --bg-card-solid: #0f182c;
-  --border-subtle: rgba(56, 189, 248, 0.2);
-  --accent-cyan: #00f0ff;
-  --accent-cyan-glow: rgba(56, 189, 248, 0.4);
+  --bg-deep: #000000;
+  --bg-card: rgba(0, 0, 0, 0.9);
+  --bg-card-solid: #000000;
+  --border-subtle: rgba(251, 200, 13, 0.2);
+  --accent-cyan: #FBC80D;
+  --accent-cyan-glow: rgba(251, 200, 13, 0.4);
   --accent-red: #e11d48;
   --accent-gold: #FBC80D;
-  --neon-cyan: #00f0ff;
+  --neon-cyan: #FBC80D;
   --neon-crimson: #ED1E24;
   --neon-gold: #FBC80D;
   --neon-green: #39ff14;
@@ -21,17 +21,17 @@
   --font-sub: 'Barlow Condensed', sans-serif;
   
   /* Additional color palette for docs and components */
-  --border-minimal: rgba(255, 255, 255, 0.09);
-  --header-bg-dark: rgba(10, 20, 45, 0.8);
-  --border-minimal-row: rgba(255, 255, 255, 0.05);
+  --border-minimal: rgba(251, 200, 13, 0.1);
+  --header-bg-dark: rgba(0, 0, 0, 0.9);
+  --border-minimal-row: rgba(251, 200, 13, 0.05);
   --icon-muted: rgba(255, 255, 255, 0.5);
-  --button-bg-dark: rgba(10, 25, 50, 0.85);
-  --button-border-cyan: rgba(0, 240, 255, 0.35);
+  --button-bg-dark: rgba(0, 0, 0, 0.85);
+  --button-border-cyan: rgba(251, 200, 13, 0.35);
   --neon-orange-alt: #ff5e00;
   --crimson-bright: #ff4d79;
-  --dial-bg: #081228;
-  --rank-badge-bg: #0d284f;
-  --rank-3-bg: #102e5c;
+  --dial-bg: #000000;
+  --rank-badge-bg: #1a1a1a;
+  --rank-3-bg: #222222;
 }
 
 * {
@@ -52,7 +52,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: radial-gradient(circle at 50% 20%, #111a36 0%, #080d1e 60%, #040710 100%);
+  background: radial-gradient(circle at 50% 20%, #000000 0%, #000000 60%, #000000 100%);
 }
 
 /* Hub Page Styles */
@@ -158,7 +158,7 @@ body {
   align-items: center;
   padding: 25px 40px;
   background: var(--bg-card-solid);
-  border-bottom: 2px solid var(--neon-cyan);
+  border-bottom: 2px solid var(--neon-gold);
   z-index: 10;
   width: 100%;
 }
@@ -172,7 +172,7 @@ body {
 .burger-button {
   background: none;
   border: none;
-  color: var(--accent-cyan);
+  color: var(--accent-gold);
   font-size: 1.8rem;
   cursor: pointer;
   padding: 0;
@@ -202,7 +202,7 @@ body {
 
 .nav-logo h2 {
   margin: 0;
-  color: var(--accent-cyan);
+  color: var(--accent-gold);
   font-family: var(--font-display);
   font-weight: 800;
   letter-spacing: 1px;
@@ -225,7 +225,7 @@ body {
   width: 850px;
   background: var(--bg-card);
   backdrop-filter: blur(15px);
-  border-right: 2px solid var(--neon-cyan);
+  border-right: 2px solid var(--neon-gold);
   padding: 60px;
   display: flex;
   flex-direction: column;
@@ -240,7 +240,7 @@ body {
 }
 
 .sidebar h3 {
-  color: var(--neon-cyan);
+  color: var(--neon-gold);
   margin-top: 0;
   font-family: var(--font-display);
   font-size: 2.5rem;
@@ -259,8 +259,8 @@ body {
 }
 
 .preset-item {
-  background: rgba(7, 11, 24, 0.8);
-  border: 1px solid rgba(0, 240, 255, 0.2);
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(251, 200, 13, 0.2);
   border-radius: 12px;
   padding: 25px;
   cursor: pointer;
@@ -271,8 +271,8 @@ body {
 }
 
 .preset-item:hover {
-  background: rgba(0, 240, 255, 0.1);
-  border-color: var(--neon-cyan);
+  background: rgba(251, 200, 13, 0.1);
+  border-color: var(--neon-gold);
   transform: translateX(10px);
 }
 
@@ -311,8 +311,8 @@ body {
 .chat-bubble.user {
   margin-left: auto;
   margin-right: 0;
-  background: rgba(56, 189, 248, 0.15);
-  border: 1px solid var(--accent-cyan);
+  background: rgba(251, 200, 13, 0.15);
+  border: 1px solid var(--accent-gold);
   color: #fff;
 }
 
@@ -350,8 +350,8 @@ body {
 }
 
 .input-container:focus-within {
-  border-color: var(--accent-cyan);
-  box-shadow: 0 0 15px var(--accent-cyan-glow);
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 15px rgba(251, 200, 13, 0.4);
 }
 
 .chat-textarea {
@@ -367,7 +367,7 @@ body {
 }
 
 .send-button {
-  background: var(--accent-cyan);
+  background: var(--accent-gold);
   color: #000;
   border: none;
   border-radius: 8px;
@@ -381,7 +381,7 @@ body {
 }
 
 .send-button:hover {
-  background: #25a9e0;
+  background: #d4a80a;
   transform: scale(1.05);
 }
 
@@ -389,7 +389,7 @@ body {
   margin-top: 10px;
   font-family: var(--font-display);
   font-size: 0.85rem;
-  color: var(--accent-cyan);
+  color: var(--accent-gold);
   font-weight: 700;
   letter-spacing: 1px;
 }
@@ -452,17 +452,17 @@ body {
 @keyframes tilt-shimmer {
   0% {
     transform: perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1);
-    box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+    box-shadow: 0 0 10px rgba(251, 200, 13, 0.2);
   }
 
   50% {
     transform: perspective(1000px) rotateX(2deg) rotateY(2deg) scale(1.02);
-    box-shadow: 0 0 25px rgba(0, 240, 255, 0.5);
+    box-shadow: 0 0 25px rgba(251, 200, 13, 0.5);
   }
 
   100% {
     transform: perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1);
-    box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+    box-shadow: 0 0 10px rgba(251, 200, 13, 0.2);
   }
 }
 
@@ -484,7 +484,7 @@ body {
   transform: translateY(-50%);
   border-width: 10px 15px 10px 0;
   border-style: solid;
-  border-color: transparent rgba(0, 240, 255, 0.15) transparent transparent;
+  border-color: transparent rgba(251, 200, 13, 0.15) transparent transparent;
   pointer-events: none;
 }
 
@@ -502,7 +502,7 @@ body {
 .webgl-canvas-frame.portrait-mode {
   width: 100%;
   height: 100%;
-  border: 1px solid rgba(0, 240, 255, 0.2);
+  border: 1px solid rgba(251, 200, 13, 0.2);
   box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
   margin: 0 auto;
 }
@@ -513,7 +513,7 @@ body {
   aspect-ratio: 16 / 9;
   max-width: calc(100vh * (16 / 9));
   max-height: calc(100vw * (9 / 16));
-  border: 1px solid rgba(0, 240, 255, 0.2);
+  border: 1px solid rgba(251, 200, 13, 0.2);
   box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
   margin: 0 auto;
 }
@@ -564,10 +564,10 @@ body {
 
 .chat-response-container .chat-bubble.bot {
   align-self: flex-start;
-  background: rgba(2, 5, 14, 0.85);
+  background: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(8px);
-  border: 1px solid var(--neon-cyan);
-  box-shadow: 0 0 30px rgba(0, 240, 255, 0.15);
+  border: 1px solid var(--neon-gold);
+  box-shadow: 0 0 30px rgba(251, 200, 13, 0.15);
   padding: 20px 30px;
   max-width: 55%;
   margin-left: 60px;
@@ -690,7 +690,7 @@ body {
 .soundwave-bar {
   width: 3.5px;
   border-radius: 3px;
-  background: var(--neon-cyan);
+  background: var(--neon-gold);
   transition: height 0.1s ease;
 }
 

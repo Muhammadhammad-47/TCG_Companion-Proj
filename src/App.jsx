@@ -1082,7 +1082,7 @@ export function Chat({ onBack, isOverlay = false }) {
             onClick={() => { stopSpeaking(); onBack(); }}
             style={{
               background: 'rgba(10, 25, 50, 0.85)',
-              border: '1.5px solid rgba(0, 240, 255, 0.4)',
+              border: '1.5px solid rgba(251, 200, 13, 0.4)',
               borderRadius: '8px',
               color: 'var(--neon-cyan)',
               display: 'flex',
@@ -1094,7 +1094,7 @@ export function Chat({ onBack, isOverlay = false }) {
               fontFamily: 'Bebas Neue, sans-serif',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
-              boxShadow: '0 0 12px rgba(0, 240, 255, 0.2)'
+              boxShadow: '0 0 12px rgba(251, 200, 13, 0.2)'
             }}
           >
             <ArrowLeft size={16} />
@@ -1140,11 +1140,11 @@ export function Chat({ onBack, isOverlay = false }) {
           <div className="chat-avatar-container">
             <Avatar characterId={selectedAvatarId} isSpeaking={isAnimatingTalk} currentVisemeFile={currentVisemeFile} />
             {status === 'Processing message...' && (
-              <div className="thinking-bubble" style={{ background: 'rgba(0,0,0,0.85)', padding: '8px 16px', borderRadius: '16px', border: '1px solid #00f0ff', position: 'absolute', top: '10px', left: '50%', transform: 'translateX(-50%)', zIndex: 50, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ color: '#00f0ff', fontWeight: 'bold', fontSize: '0.9rem', marginRight: '4px' }}>Thinking</span>
-                <span className="dot" style={{ backgroundColor: '#00f0ff', width: '6px', height: '6px', borderRadius: '50%', display: 'inline-block' }}></span>
-                <span className="dot" style={{ backgroundColor: '#00f0ff', width: '6px', height: '6px', borderRadius: '50%', display: 'inline-block' }}></span>
-                <span className="dot" style={{ backgroundColor: '#00f0ff', width: '6px', height: '6px', borderRadius: '50%', display: 'inline-block' }}></span>
+              <div className="thinking-bubble" style={{ background: 'rgba(0,0,0,0.85)', padding: '8px 16px', borderRadius: '16px', border: '1px solid #FBC80D', position: 'absolute', top: '10px', left: '50%', transform: 'translateX(-50%)', zIndex: 50, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{ color: '#FBC80D', fontWeight: 'bold', fontSize: '0.9rem', marginRight: '4px' }}>Thinking</span>
+                <span className="dot" style={{ backgroundColor: '#FBC80D', width: '6px', height: '6px', borderRadius: '50%', display: 'inline-block' }}></span>
+                <span className="dot" style={{ backgroundColor: '#FBC80D', width: '6px', height: '6px', borderRadius: '50%', display: 'inline-block' }}></span>
+                <span className="dot" style={{ backgroundColor: '#FBC80D', width: '6px', height: '6px', borderRadius: '50%', display: 'inline-block' }}></span>
               </div>
             )}
           </div>
@@ -1156,8 +1156,8 @@ export function Chat({ onBack, isOverlay = false }) {
                   {/* User's Question */}
                   <div className="chat-bubble user" style={{ margin: '0 0 8px 0' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                      <User size={16} style={{ color: '#00f0ff' }} />
-                      <span style={{ fontSize: '0.85rem', color: '#00f0ff', fontWeight: 'bold' }}>You</span>
+                      <User size={16} style={{ color: '#FBC80D' }} />
+                      <span style={{ fontSize: '0.85rem', color: '#FBC80D', fontWeight: 'bold' }}>You</span>
                     </div>
                     <div style={{ whiteSpace: 'pre-wrap', color: '#fff' }}>{item.q}</div>
                   </div>
@@ -1191,8 +1191,8 @@ export function Chat({ onBack, isOverlay = false }) {
                 <div style={{ width: '100%', maxWidth: '1000px', display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
                   <div className="chat-bubble user" style={{ margin: 0, maxWidth: '55%', marginRight: '60px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                      <User size={16} style={{ color: '#00f0ff' }} />
-                      <span style={{ fontSize: '0.85rem', color: '#00f0ff', fontWeight: 'bold' }}>You</span>
+                      <User size={16} style={{ color: '#FBC80D' }} />
+                      <span style={{ fontSize: '0.85rem', color: '#FBC80D', fontWeight: 'bold' }}>You</span>
                     </div>
                     <div style={{ whiteSpace: 'pre-wrap', color: '#fff' }}>{question}</div>
                   </div>
@@ -1224,7 +1224,7 @@ export function Chat({ onBack, isOverlay = false }) {
                   justifyContent: 'flex-start',
                   flexWrap: 'wrap',
                   gap: '16px',
-                  borderTop: '1px solid rgba(0, 240, 255, 0.2)'
+                  borderTop: '1px solid rgba(251, 200, 13, 0.2)'
                 }}>
                   <span style={{ fontSize: '0.85rem', color: feedbackSuccessMsg ? '#39ff14' : 'rgba(255,255,255,0.7)', fontWeight: feedbackSuccessMsg ? 'bold' : 'normal', minWidth: '200px' }}>
                     {feedbackSuccessMsg || '👍 Was this rule accurate?'}
@@ -1234,9 +1234,9 @@ export function Chat({ onBack, isOverlay = false }) {
                       onClick={() => handleRateAnswer('helpful')}
                       disabled={userFeedback === 'helpful'}
                       style={{
-                        background: userFeedback === 'helpful' ? 'rgba(57, 255, 20, 0.3)' : 'rgba(0, 240, 255, 0.1)',
-                        border: userFeedback === 'helpful' ? '1px solid #39ff14' : '1px solid rgba(0, 240, 255, 0.3)',
-                        color: userFeedback === 'helpful' ? '#39ff14' : 'rgba(0, 240, 255, 0.8)',
+                        background: userFeedback === 'helpful' ? 'rgba(57, 255, 20, 0.3)' : 'rgba(251, 200, 13, 0.1)',
+                        border: userFeedback === 'helpful' ? '1px solid #39ff14' : '1px solid rgba(251, 200, 13, 0.3)',
+                        color: userFeedback === 'helpful' ? '#39ff14' : 'rgba(251, 200, 13, 0.8)',
                         padding: '6px 14px',
                         borderRadius: '6px',
                         fontSize: '0.85rem',
@@ -1247,8 +1247,8 @@ export function Chat({ onBack, isOverlay = false }) {
                         fontWeight: '600',
                         transition: 'all 0.2s ease'
                       }}
-                      onMouseOver={(e) => !userFeedback === 'helpful' && (e.currentTarget.style.background = 'rgba(0, 240, 255, 0.2)')}
-                      onMouseOut={(e) => !userFeedback === 'helpful' && (e.currentTarget.style.background = 'rgba(0, 240, 255, 0.1)')}
+                      onMouseOver={(e) => !userFeedback === 'helpful' && (e.currentTarget.style.background = 'rgba(251, 200, 13, 0.2)')}
+                      onMouseOut={(e) => !userFeedback === 'helpful' && (e.currentTarget.style.background = 'rgba(251, 200, 13, 0.1)')}
                     >
                       <ThumbsUp size={16} /> Helpful
                     </button>
@@ -1514,7 +1514,7 @@ export function Hub() {
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '10px 28px',
               background: 'rgba(4, 10, 24, 0.75)',
-              borderBottom: '1px solid rgba(0, 240, 255, 0.12)',
+              borderBottom: '1px solid rgba(251, 200, 13, 0.12)',
               backdropFilter: 'blur(12px)',
               boxSizing: 'border-box'
             }}>
@@ -1537,8 +1537,8 @@ export function Hub() {
                     title="Buy more crystals"
                     style={{
                       display: 'flex', alignItems: 'center', gap: '6px',
-                      background: 'rgba(0, 240, 255, 0.08)',
-                      border: '1px solid rgba(0, 240, 255, 0.35)',
+                      background: 'rgba(251, 200, 13, 0.08)',
+                      border: '1px solid rgba(251, 200, 13, 0.35)',
                       borderRadius: '20px',
                       padding: '6px 14px',
                       cursor: 'pointer',
@@ -1727,10 +1727,10 @@ export function Hub() {
                     : 'linear-gradient(90deg, rgba(13, 26, 56, 0.3) 0%, var(--bg-card) 100%)',
                   border: canAccessModule('game', appSettings, userProfile)
                     ? '2px solid var(--neon-cyan)'
-                    : '2px solid rgba(0, 240, 255, 0.2)',
+                    : '2px solid rgba(251, 200, 13, 0.2)',
                   color: canAccessModule('game', appSettings, userProfile)
                     ? 'var(--neon-cyan)'
-                    : 'rgba(0, 240, 255, 0.4)',
+                    : 'rgba(251, 200, 13, 0.4)',
                   position: 'relative',
                   cursor: canAccessModule('game', appSettings, userProfile) ? 'pointer' : 'not-allowed',
                   opacity: canAccessModule('game', appSettings, userProfile) ? 1 : 0.6,

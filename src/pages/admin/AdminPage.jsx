@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Shield, BookOpen, HelpCircle, Plus, Search, Filter,
@@ -153,7 +153,7 @@ export default function AdminPage() {
     setConfirmDialog({ title, message, onConfirm, confirmLabel: opts.confirmLabel || 'Confirm', isDanger: opts.isDanger !== false });
   };
   const showError = (msg) => {
-    setModNotice('⚠️ ' + msg);
+    setModNotice('?? ' + msg);
     setTimeout(() => setModNotice(''), 5000);
   };
 
@@ -397,7 +397,7 @@ export default function AdminPage() {
       setUsersList((prev) =>
         prev.map((u) => (u.id === crystalModalUser.id ? { ...u, crystals_collected: parsed } : u))
       );
-      setModNotice(`Updated crystals for ${crystalModalUser.username} to ${parsed} 💎`);
+      setModNotice(`Updated crystals for ${crystalModalUser.username} to ${parsed} ??`);
       setTimeout(() => setModNotice(''), 4000);
     } catch (err) {
       showError('Failed to update crystals: ' + err.message);
@@ -775,9 +775,9 @@ export default function AdminPage() {
   // Category Badge Colors
   const getCategoryBadge = (cat) => {
     const c = (cat || 'Combat').toLowerCase();
-    let bg = 'rgba(0, 240, 255, 0.12)';
-    let color = 'var(--neon-cyan, #00f0ff)';
-    let border = 'rgba(0, 240, 255, 0.35)';
+    let bg = 'rgba(251, 200, 13, 0.12)';
+    let color = 'var(--neon-cyan, #FBC80D)';
+    let border = 'rgba(251, 200, 13, 0.35)';
 
     if (c === 'combat') {
       bg = 'rgba(255, 42, 85, 0.12)';
@@ -828,12 +828,12 @@ export default function AdminPage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: 'var(--neon-cyan, #00f0ff)',
+          color: 'var(--neon-cyan, #FBC80D)',
           fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)'
         }}
       >
         <div style={{ textAlign: 'center' }}>
-          <div className="brand-pill-badge" style={{ margin: '0 auto 12px auto', fontSize: '0.9rem', padding: '3px 12px' }}>注意!</div>
+          <div className="brand-pill-badge" style={{ margin: '0 auto 12px auto', fontSize: '0.9rem', padding: '3px 12px' }}>??!</div>
           <div style={{ fontSize: '1.4rem', letterSpacing: '2px', fontWeight: 'bold' }}>ACCESSING COMMAND DECK...</div>
         </div>
       </div>
@@ -872,17 +872,17 @@ export default function AdminPage() {
                 width: '100%',
                 maxWidth: '430px',
                 background: 'var(--bg-card)',
-                border: '1.5px solid var(--neon-cyan, #00f0ff)',
+                border: '1.5px solid var(--neon-cyan, #FBC80D)',
                 borderRadius: '20px',
                 padding: '32px',
-                boxShadow: '0 15px 45px rgba(0,0,0,0.8), 0 0 35px rgba(0, 240, 255, 0.25)',
+                boxShadow: '0 15px 45px rgba(0,0,0,0.8), 0 0 35px rgba(251, 200, 13, 0.25)',
                 position: 'relative',
                 zIndex: 10,
                 backdropFilter: 'blur(12px)'
               }}
             >
               <div style={{ textAlign: 'center', marginBottom: '22px' }}>
-                <div className="brand-pill-badge" style={{ margin: '0 auto 10px auto', fontSize: '0.85rem', padding: '2px 10px' }}>注意!</div>
+                <div className="brand-pill-badge" style={{ margin: '0 auto 10px auto', fontSize: '0.85rem', padding: '2px 10px' }}>??!</div>
                 <h1 className="game-main-title" style={{ margin: '0 0 4px 0' }}>
                   <span className="title-dance" style={{ fontSize: '2rem', letterSpacing: '2px' }}>COMMAND DECK</span>
                 </h1>
@@ -914,7 +914,7 @@ export default function AdminPage() {
 
               <form onSubmit={handleAdminLogin} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div>
-                  <label style={{ display: 'block', color: 'var(--neon-cyan, #00f0ff)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 'bold', letterSpacing: '1px' }}>
+                  <label style={{ display: 'block', color: 'var(--neon-cyan, #FBC80D)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 'bold', letterSpacing: '1px' }}>
                     ADMINISTRATOR EMAIL
                   </label>
                   <input
@@ -929,7 +929,7 @@ export default function AdminPage() {
                       boxSizing: 'border-box',
                       padding: '12px 14px',
                       background: 'var(--bg-card)',
-                      border: '1.5px solid rgba(0, 240, 255, 0.3)',
+                      border: '1.5px solid rgba(251, 200, 13, 0.3)',
                       borderRadius: '10px',
                       color: '#fff',
                       fontSize: '0.95rem',
@@ -940,7 +940,7 @@ export default function AdminPage() {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', color: 'var(--neon-cyan, #00f0ff)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 'bold', letterSpacing: '1px' }}>
+                  <label style={{ display: 'block', color: 'var(--neon-cyan, #FBC80D)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 'bold', letterSpacing: '1px' }}>
                     PASSWORD
                   </label>
                   <input
@@ -955,7 +955,7 @@ export default function AdminPage() {
                       boxSizing: 'border-box',
                       padding: '12px 14px',
                       background: 'var(--bg-card)',
-                      border: '1.5px solid rgba(0, 240, 255, 0.3)',
+                      border: '1.5px solid rgba(251, 200, 13, 0.3)',
                       borderRadius: '10px',
                       color: '#fff',
                       fontSize: '0.95rem',
@@ -971,7 +971,7 @@ export default function AdminPage() {
                   style={{
                     marginTop: '8px',
                     padding: '12px',
-                    background: 'linear-gradient(90deg, #00f0ff 0%, #0088ff 100%)',
+                    background: 'linear-gradient(90deg, #FBC80D 0%, #0088ff 100%)',
                     border: 'none',
                     borderRadius: '10px',
                     color: '#050a18',
@@ -979,7 +979,7 @@ export default function AdminPage() {
                     fontWeight: '900',
                     letterSpacing: '1px',
                     cursor: isLoggingIn ? 'not-allowed' : 'pointer',
-                    boxShadow: '0 0 20px rgba(0, 240, 255, 0.4)'
+                    boxShadow: '0 0 20px rgba(251, 200, 13, 0.4)'
                   }}
                 >
                   {isLoggingIn ? 'AUTHENTICATING...' : 'ENTER COMMAND DECK'}
@@ -997,7 +997,7 @@ export default function AdminPage() {
                     cursor: 'pointer'
                   }}
                 >
-                  ← Return to Companion Hub
+                  ? Return to Companion Hub
                 </button>
               </div>
             </div>
@@ -1035,34 +1035,34 @@ export default function AdminPage() {
           <style>{`
             ::-webkit-scrollbar { width: 6px; height: 6px; }
             ::-webkit-scrollbar-track { background: rgba(3, 7, 18, 0.95); }
-            ::-webkit-scrollbar-thumb { background: rgba(0, 240, 255, 0.3); border-radius: 4px; }
-            ::-webkit-scrollbar-thumb:hover { background: rgba(0, 240, 255, 0.6); }
+            ::-webkit-scrollbar-thumb { background: rgba(251, 200, 13, 0.3); border-radius: 4px; }
+            ::-webkit-scrollbar-thumb:hover { background: rgba(251, 200, 13, 0.6); }
             .nav-item-btn {
               transition: all 0.2s ease;
             }
             .nav-item-btn:hover {
-              background: rgba(0, 240, 255, 0.1) !important;
-              color: var(--neon-cyan, #00f0ff) !important;
+              background: rgba(251, 200, 13, 0.1) !important;
+              color: var(--neon-cyan, #FBC80D) !important;
             }
             .data-row {
               transition: background-color 0.2s ease, border-color 0.2s ease;
             }
             .data-row:hover {
               background: rgba(18, 30, 60, 0.75) !important;
-              border-color: rgba(0, 240, 255, 0.35) !important;
+              border-color: rgba(251, 200, 13, 0.35) !important;
             }
             .kpi-card {
               transition: transform 0.2s ease, box-shadow 0.2s ease;
             }
             .kpi-card:hover {
               transform: translateY(-2px);
-              box-shadow: 0 4px 20px rgba(0, 240, 255, 0.12);
+              box-shadow: 0 4px 20px rgba(251, 200, 13, 0.12);
             }
             .category-pill {
               transition: all 0.15s ease;
             }
             .category-pill:hover {
-              border-color: var(--neon-cyan, #00f0ff) !important;
+              border-color: var(--neon-cyan, #FBC80D) !important;
               color: #fff !important;
             }
           `}</style>
@@ -1076,7 +1076,7 @@ export default function AdminPage() {
               alignItems: 'center',
               padding: '0 24px',
               background: 'rgba(10, 20, 45, 0.94)',
-              borderBottom: '1.5px solid rgba(0, 240, 255, 0.25)',
+              borderBottom: '1.5px solid rgba(251, 200, 13, 0.25)',
               backdropFilter: 'blur(14px)',
               zIndex: 100,
               flexShrink: 0
@@ -1086,10 +1086,10 @@ export default function AdminPage() {
               <button
                 onClick={() => navigate('/')}
                 style={{
-                  background: 'rgba(10, 25, 50, 0.85)',
-                  border: '1.5px solid rgba(0, 240, 255, 0.4)',
+                  background: 'rgba(0, 0, 0, 0.85)',
+                  border: '1.5px solid rgba(251, 200, 13, 0.4)',
                   borderRadius: '8px',
-                  color: 'var(--neon-cyan, #00f0ff)',
+                  color: 'var(--neon-cyan, #FBC80D)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
@@ -1103,9 +1103,9 @@ export default function AdminPage() {
               >
                 <ArrowLeft size={15} /> HUB
               </button>
-              <div className="brand-pill-badge" style={{ fontSize: '0.8rem', padding: '2px 8px' }}>注意!</div>
+              <div className="brand-pill-badge" style={{ fontSize: '0.8rem', padding: '2px 8px' }}>??!</div>
               <div style={{ fontSize: '1.25rem', fontWeight: '900', letterSpacing: '1.5px', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', color: '#fff' }}>
-                COMMAND DECK <span style={{ color: 'var(--neon-cyan, #00f0ff)', fontSize: '0.85rem', fontWeight: 'normal', letterSpacing: '1px' }}>// SYSTEM ADMIN</span>
+                COMMAND DECK <span style={{ color: 'var(--neon-cyan, #FBC80D)', fontSize: '0.85rem', fontWeight: 'normal', letterSpacing: '1px' }}>// SYSTEM ADMIN</span>
               </div>
             </div>
 
@@ -1143,7 +1143,7 @@ export default function AdminPage() {
               style={{
                 width: '240px',
                 background: 'rgba(8, 14, 30, 0.95)',
-                borderRight: '1px solid rgba(0, 240, 255, 0.18)',
+                borderRight: '1px solid rgba(251, 200, 13, 0.18)',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
@@ -1172,9 +1172,9 @@ export default function AdminPage() {
                           justifyContent: 'space-between',
                           padding: '10px 12px',
                           borderRadius: '10px',
-                          border: isSel ? '1px solid var(--neon-cyan, #00f0ff)' : '1px solid transparent',
-                          background: isSel ? 'rgba(0, 240, 255, 0.15)' : 'transparent',
-                          color: isSel ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255, 255, 255, 0.75)',
+                          border: isSel ? '1px solid var(--neon-cyan, #FBC80D)' : '1px solid transparent',
+                          background: isSel ? 'rgba(251, 200, 13, 0.15)' : 'transparent',
+                          color: isSel ? 'var(--neon-cyan, #FBC80D)' : 'rgba(255, 255, 255, 0.75)',
                           cursor: 'pointer',
                           fontWeight: isSel ? 'bold' : 'normal',
                           fontSize: '0.9rem',
@@ -1189,7 +1189,7 @@ export default function AdminPage() {
                         <span
                           style={{
                             fontSize: '0.72rem',
-                            background: isSel ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255, 255, 255, 0.1)',
+                            background: isSel ? 'var(--neon-cyan, #FBC80D)' : 'rgba(255, 255, 255, 0.1)',
                             color: isSel ? '#050a18' : 'rgba(255, 255, 255, 0.6)',
                             padding: '1px 6px',
                             borderRadius: '10px',
@@ -1211,7 +1211,7 @@ export default function AdminPage() {
                   <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#39ff14' }}>ECOSYSTEM ONLINE</span>
                 </div>
                 <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)' }}>
-                  Supabase RLS Active · Dual-Tier Fallback
+                  Supabase RLS Active � Dual-Tier Fallback
                 </div>
               </div>
             </aside>
@@ -1254,7 +1254,7 @@ export default function AdminPage() {
                 <div>
                   {/* Top Minimal KPI Stat Bar */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '16px' }}>
-                    <div className="kpi-card" style={{ background: 'var(--bg-card)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'var(--bg-card)', border: '1px solid rgba(251, 200, 13, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>TOTAL USERS</div>
                       <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#fff', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>{usersList.length}</div>
                     </div>
@@ -1269,7 +1269,7 @@ export default function AdminPage() {
                     <div className="kpi-card" style={{ background: 'var(--bg-card)', border: '1px solid rgba(251, 200, 13, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>CIRCULATING CRYSTALS</div>
                       <div style={{ fontSize: '1.4rem', fontWeight: '900', color: 'var(--neon-gold, #FBC80D)', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>
-                        💎 {usersList.reduce((acc, u) => acc + (u.crystals_collected || 0), 0)}
+                        ?? {usersList.reduce((acc, u) => acc + (u.crystals_collected || 0), 0)}
                       </div>
                     </div>
                   </div>
@@ -1299,7 +1299,7 @@ export default function AdminPage() {
                             boxSizing: 'border-box',
                             padding: '6px 10px 6px 28px',
                             background: 'var(--bg-card)',
-                            border: '1px solid rgba(0, 240, 255, 0.25)',
+                            border: '1px solid rgba(251, 200, 13, 0.25)',
                             borderRadius: '8px',
                             color: '#fff',
                             fontSize: '0.8rem',
@@ -1315,9 +1315,9 @@ export default function AdminPage() {
                           style={{
                             padding: '5px 10px',
                             borderRadius: '6px',
-                            border: userFilter === f ? '1px solid var(--neon-cyan, #00f0ff)' : '1px solid rgba(255,255,255,0.1)',
-                            background: userFilter === f ? 'rgba(0, 240, 255, 0.15)' : 'var(--bg-card)',
-                            color: userFilter === f ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.65)',
+                            border: userFilter === f ? '1px solid var(--neon-cyan, #FBC80D)' : '1px solid rgba(255,255,255,0.1)',
+                            background: userFilter === f ? 'rgba(251, 200, 13, 0.15)' : 'var(--bg-card)',
+                            color: userFilter === f ? 'var(--neon-cyan, #FBC80D)' : 'rgba(255,255,255,0.65)',
                             cursor: 'pointer',
                             fontWeight: 'bold',
                             fontSize: '0.76rem',
@@ -1349,7 +1349,7 @@ export default function AdminPage() {
                     <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 2fr 0.8fr 1fr 0.7fr 1.2fr', padding: '8px 12px', background: 'var(--bg-deep)', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 'bold', letterSpacing: '0.5px' }}>
                       <span>USER</span>
                       <span>EMAIL</span>
-                      <span>💎 CRYSTALS</span>
+                      <span>?? CRYSTALS</span>
                       <span>WIN RATE</span>
                       <span>STATUS</span>
                       <span style={{ textAlign: 'right' }}>ACTIONS</span>
@@ -1380,8 +1380,8 @@ export default function AdminPage() {
                             >
                               {/* User Avatar + Name */}
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                                <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(0, 240, 255, 0.1)', border: '1px solid var(--neon-cyan, #00f0ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', flexShrink: 0 }}>
-                                  ⚔️
+                                <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(251, 200, 13, 0.1)', border: '1px solid var(--neon-cyan, #FBC80D)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', flexShrink: 0 }}>
+                                  ??
                                 </div>
                                 <strong style={{ color: '#fff', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                   {u.username}
@@ -1394,7 +1394,7 @@ export default function AdminPage() {
                               </div>
 
                               {/* Crystals */}
-                              <div style={{ color: 'var(--neon-cyan, #00f0ff)', fontWeight: 'bold', fontSize: '0.85rem' }}>
+                              <div style={{ color: 'var(--neon-cyan, #FBC80D)', fontWeight: 'bold', fontSize: '0.85rem' }}>
                                 {u.crystals_collected || 0}
                               </div>
 
@@ -1546,7 +1546,7 @@ export default function AdminPage() {
                     <div className="kpi-card" style={{ background: 'var(--bg-card)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>CRYSTALS AWARDED</div>
                       <div style={{ fontSize: '1.4rem', fontWeight: '600', color: '#fff' }}>
-                        💎 {matchHistory.reduce((acc, m) => acc + (m.crystals_awarded || 1), 0)}
+                        ?? {matchHistory.reduce((acc, m) => acc + (m.crystals_awarded || 1), 0)}
                       </div>
                     </div>
                     <div className="kpi-card" style={{ background: 'var(--bg-card)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
@@ -1558,7 +1558,7 @@ export default function AdminPage() {
                     <div className="kpi-card" style={{ background: 'var(--bg-card)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>LATEST CHAMPION</div>
                       <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        👑 {matchHistory[0]?.winner_name || 'No duels yet'}
+                        ?? {matchHistory[0]?.winner_name || 'No duels yet'}
                       </div>
                     </div>
                   </div>
@@ -1598,7 +1598,7 @@ export default function AdminPage() {
                       <span>DATE & TIME</span>
                       <span>ROOM</span>
                       <span>MODE</span>
-                      <span>👑 WINNER</span>
+                      <span>?? WINNER</span>
                       <span>PLAYERS</span>
                       <span style={{ textAlign: 'right' }}>AWARDED</span>
                     </div>
@@ -1625,11 +1625,11 @@ export default function AdminPage() {
                             <span style={{ color: '#CBD5E1', fontSize: '0.78rem' }}>
                               {new Date(m.created_at).toLocaleString()}
                             </span>
-                            <span style={{ color: 'var(--neon-cyan, #00f0ff)', fontFamily: 'monospace', fontWeight: 'bold' }}>
+                            <span style={{ color: 'var(--neon-cyan, #FBC80D)', fontFamily: 'monospace', fontWeight: 'bold' }}>
                               {m.room_code || 'ARENA'}
                             </span>
                             <span>
-                              <span style={{ background: 'rgba(0, 240, 255, 0.1)', color: 'var(--neon-cyan, #00f0ff)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', textTransform: 'uppercase' }}>
+                              <span style={{ background: 'rgba(251, 200, 13, 0.1)', color: 'var(--neon-cyan, #FBC80D)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', textTransform: 'uppercase' }}>
                                 {m.game_mode || 'kontrola'}
                               </span>
                             </span>
@@ -1643,7 +1643,7 @@ export default function AdminPage() {
                               {Array.isArray(m.player_names) && m.player_names.length > 0 ? m.player_names.filter(Boolean).join(' vs ') : '2 Players'}
                             </span>
                             <span style={{ textAlign: 'right', fontWeight: 'bold', color: '#39ff14' }}>
-                              +{m.crystals_awarded || 1} 💎
+                              +{m.crystals_awarded || 1} ??
                             </span>
                           </div>
                         ))
@@ -1658,10 +1658,10 @@ export default function AdminPage() {
               ========================================================================= */}
               {activeTab === 'rules' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {/* ── COMPACT HEADER: Inline stats with action buttons ── */}
+                  {/* -- COMPACT HEADER: Inline stats with action buttons -- */}
                   <div style={{
                     background: 'var(--bg-card)',
-                    border: '1px solid rgba(0, 240, 255, 0.22)',
+                    border: '1px solid rgba(251, 200, 13, 0.22)',
                     borderRadius: '12px',
                     padding: '10px 14px',
                     display: 'flex',
@@ -1680,9 +1680,9 @@ export default function AdminPage() {
                             style={{
                               display: 'flex', alignItems: 'center', gap: '3px',
                               padding: '4px 8px', borderRadius: '16px',
-                              border: isSelected ? '1.5px solid var(--neon-cyan, #00f0ff)' : '1px solid rgba(255,255,255,0.12)',
-                              background: isSelected ? 'rgba(0, 240, 255, 0.15)' : 'var(--bg-card)',
-                              color: isSelected ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.6)',
+                              border: isSelected ? '1.5px solid var(--neon-cyan, #FBC80D)' : '1px solid rgba(255,255,255,0.12)',
+                              background: isSelected ? 'rgba(251, 200, 13, 0.15)' : 'var(--bg-card)',
+                              color: isSelected ? 'var(--neon-cyan, #FBC80D)' : 'rgba(255,255,255,0.6)',
                               cursor: 'pointer', fontWeight: 'bold', fontSize: '0.75rem',
                               fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)',
                               transition: 'all 0.15s ease', whiteSpace: 'nowrap'
@@ -1703,9 +1703,9 @@ export default function AdminPage() {
 
                     {/* Action buttons - compact icons only */}
                     <div style={{ display: 'flex', gap: '3px', flexShrink: 0, flexWrap: 'nowrap' }}>
-                      <button onClick={() => setIsNewDocModalOpen(true)} title="New Document" style={{ background: 'transparent', border: '1px solid rgba(0,240,255,0.4)', color: 'var(--neon-cyan, #00f0ff)', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Plus size={11} /></button>
+                      <button onClick={() => setIsNewDocModalOpen(true)} title="New Document" style={{ background: 'transparent', border: '1px solid rgba(0,240,255,0.4)', color: 'var(--neon-cyan, #FBC80D)', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Plus size={11} /></button>
                       <button onClick={() => setIsAppendModalOpen(true)} title="Append Q&A" style={{ background: 'transparent', border: '1px solid rgba(57,255,20,0.4)', color: '#39ff14', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FilePlus size={11} /></button>
-                      <button onClick={handleOpenEditDocModal} title="Edit Document" style={{ background: 'linear-gradient(90deg,#00f0ff,#0088ff)', border: 'none', color: '#050a18', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Edit2 size={11} /></button>
+                      <button onClick={handleOpenEditDocModal} title="Edit Document" style={{ background: 'linear-gradient(90deg,#FBC80D,#0088ff)', border: 'none', color: '#050a18', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Edit2 size={11} /></button>
                       <button onClick={() => handleDownloadDoc(activeDoc)} title="Export" style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.65)', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Download size={11} /></button>
                       {activeDoc?.isMaster ? (
                         <button onClick={handleResetMasterDoc} title="Reset Master" style={{ background: 'transparent', border: '1px solid rgba(251, 200, 13,0.3)', color: 'var(--neon-gold, #FBC80D)', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RefreshCw size={11} /></button>
@@ -1715,7 +1715,7 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  {/* ── SEARCH + VIEW TOGGLE ROW ── */}
+                  {/* -- SEARCH + VIEW TOGGLE ROW -- */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <div style={{ position: 'relative', flex: 1, maxWidth: '300px' }}>
                       <Search size={13} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.35)', pointerEvents: 'none' }} />
@@ -1731,20 +1731,20 @@ export default function AdminPage() {
                     <div style={{ display: 'flex', background: 'var(--bg-card)0.85)', border: '1px solid rgba(0,240,255,0.2)', borderRadius: '6px', padding: '2px', marginLeft: 'auto' }}>
                       <button
                         onClick={() => setDocViewMode('breakdown')}
-                        style={{ background: docViewMode === 'breakdown' ? 'rgba(0,240,255,0.18)' : 'transparent', border: 'none', color: docViewMode === 'breakdown' ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.45)', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.73rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '3px' }}
+                        style={{ background: docViewMode === 'breakdown' ? 'rgba(0,240,255,0.18)' : 'transparent', border: 'none', color: docViewMode === 'breakdown' ? 'var(--neon-cyan, #FBC80D)' : 'rgba(255,255,255,0.45)', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.73rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '3px' }}
                       >
                         <LayoutGrid size={11} /> List
                       </button>
                       <button
                         onClick={() => setDocViewMode('raw')}
-                        style={{ background: docViewMode === 'raw' ? 'rgba(0,240,255,0.18)' : 'transparent', border: 'none', color: docViewMode === 'raw' ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.45)', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.73rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '3px' }}
+                        style={{ background: docViewMode === 'raw' ? 'rgba(0,240,255,0.18)' : 'transparent', border: 'none', color: docViewMode === 'raw' ? 'var(--neon-cyan, #FBC80D)' : 'rgba(255,255,255,0.45)', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.73rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '3px' }}
                       >
                         <Code size={11} /> Raw
                       </button>
                     </div>
                   </div>
 
-                  {/* ── CONTENT VIEWPORT ── */}
+                  {/* -- CONTENT VIEWPORT -- */}
                   {docViewMode === 'breakdown' ? (
                     <div>
                       {filteredDocQAPairs.length === 0 ? (
@@ -1752,7 +1752,7 @@ export default function AdminPage() {
                           <p style={{ margin: '0 0 10px' }}>
                             {docsLoading ? 'Loading...' : docSearchQuery ? `No results for "${docSearchQuery}"` : 'No Q&A blocks yet.'}
                           </p>
-                          {!docsLoading && <button onClick={() => setIsAppendModalOpen(true)} style={{ background: 'rgba(0,240,255,0.1)', border: '1px solid var(--neon-cyan,#00f0ff)', color: 'var(--neon-cyan,#00f0ff)', padding: '5px 14px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}>+ Add Q&A</button>}
+                          {!docsLoading && <button onClick={() => setIsAppendModalOpen(true)} style={{ background: 'rgba(0,240,255,0.1)', border: '1px solid var(--neon-cyan,#FBC80D)', color: 'var(--neon-cyan,#FBC80D)', padding: '5px 14px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}>+ Add Q&A</button>}
                         </div>
                       ) : (
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
@@ -1770,7 +1770,7 @@ export default function AdminPage() {
                                   {copiedKey === `qa-${idx}` ? <Check size={9} /> : <Copy size={9} />}
                                 </button>
                               </div>
-                              <h3 style={{ fontSize: '0.86rem', color: 'var(--neon-cyan, #00f0ff)', margin: 0, fontWeight: 'bold', lineHeight: '1.3' }}>
+                              <h3 style={{ fontSize: '0.86rem', color: 'var(--neon-cyan, #FBC80D)', margin: 0, fontWeight: 'bold', lineHeight: '1.3' }}>
                                 {item.question}
                               </h3>
                               <p style={{ fontSize: '0.76rem', color: 'rgba(255,255,255,0.65)', lineHeight: '1.4', margin: 0, whiteSpace: 'pre-wrap', maxHeight: '100px', overflowY: 'auto', paddingRight: '2px' }}>
@@ -1786,10 +1786,10 @@ export default function AdminPage() {
                     <div style={{ background: 'var(--bg-card)0.97)', border: '1px solid rgba(0,240,255,0.2)', borderRadius: '8px', overflow: 'hidden' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--bg-card)0.95)', borderBottom: '1px solid rgba(0,240,255,0.15)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <FileCode size={12} color="var(--neon-cyan,#00f0ff)" />
+                          <FileCode size={12} color="var(--neon-cyan,#FBC80D)" />
                           <span style={{ fontSize: '0.77rem', fontWeight: 'bold', color: '#fff', fontFamily: 'monospace' }}>{activeDoc?.filename}</span>
                         </div>
-                        <button onClick={() => handleCopy(activeDoc?.content || '', 'raw-doc')} style={{ background: 'rgba(0,240,255,0.1)', border: '1px solid rgba(0,240,255,0.3)', color: 'var(--neon-cyan,#00f0ff)', padding: '2px 8px', borderRadius: '3px', cursor: 'pointer', fontSize: '0.68rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                        <button onClick={() => handleCopy(activeDoc?.content || '', 'raw-doc')} style={{ background: 'rgba(0,240,255,0.1)', border: '1px solid rgba(0,240,255,0.3)', color: 'var(--neon-cyan,#FBC80D)', padding: '2px 8px', borderRadius: '3px', cursor: 'pointer', fontSize: '0.68rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '2px' }}>
                           {copiedKey === 'raw-doc' ? <Check size={9} /> : <Copy size={9} />}
                         </button>
                       </div>
@@ -1801,7 +1801,7 @@ export default function AdminPage() {
                           return (
                             <div key={lIdx} style={{ display: 'flex', background: isHighlighted ? 'rgba(251, 200, 13,0.12)' : 'transparent', borderLeft: isHighlighted ? '2px solid var(--neon-gold,#FBC80D)' : 'none', paddingLeft: isHighlighted ? '6px' : '2px' }}>
                               <span style={{ width: '30px', flexShrink: 0, color: 'rgba(255,255,255,0.2)', userSelect: 'none', textAlign: 'right', paddingRight: '8px', fontSize: '0.7rem' }}>{lIdx + 1}</span>
-                              <span style={{ flex: 1, color: isHeading ? 'var(--neon-gold,#FBC80D)' : isQuestion ? 'var(--neon-cyan,#00f0ff)' : '#cbd5e1', fontWeight: isHeading || isQuestion ? 'bold' : 'normal' }}>
+                              <span style={{ flex: 1, color: isHeading ? 'var(--neon-gold,#FBC80D)' : isQuestion ? 'var(--neon-cyan,#FBC80D)' : '#cbd5e1', fontWeight: isHeading || isQuestion ? 'bold' : 'normal' }}>
                                 {line || '\u00A0'}
                               </span>
                             </div>
@@ -1861,9 +1861,9 @@ export default function AdminPage() {
                           style={{
                             padding: '5px 10px',
                             borderRadius: '6px',
-                            border: questionFilter === f ? '1px solid var(--neon-cyan, #00f0ff)' : '1px solid rgba(255,255,255,0.1)',
-                            background: questionFilter === f ? 'rgba(0, 240, 255, 0.15)' : 'var(--bg-card)',
-                            color: questionFilter === f ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.65)',
+                            border: questionFilter === f ? '1px solid var(--neon-cyan, #FBC80D)' : '1px solid rgba(255,255,255,0.1)',
+                            background: questionFilter === f ? 'rgba(251, 200, 13, 0.15)' : 'var(--bg-card)',
+                            color: questionFilter === f ? 'var(--neon-cyan, #FBC80D)' : 'rgba(255,255,255,0.65)',
                             cursor: 'pointer',
                             fontWeight: 'bold',
                             fontSize: '0.76rem',
@@ -1897,12 +1897,12 @@ export default function AdminPage() {
                               USER: {q.user_name || 'Anonymous'}
                             </span>
                             <span style={{ fontSize: '0.72rem', color: q.user_rating === 'helpful' ? '#39ff14' : q.user_rating === 'unhelpful' ? '#ff6b8f' : 'rgba(255,255,255,0.5)' }}>
-                              {q.user_rating === 'helpful' ? '👍 Helpful' : q.user_rating === 'unhelpful' ? '👎 Inaccurate' : 'Unrated'}
+                              {q.user_rating === 'helpful' ? '?? Helpful' : q.user_rating === 'unhelpful' ? '?? Inaccurate' : 'Unrated'}
                             </span>
                           </div>
 
                           <div style={{ fontSize: '0.96rem', color: '#fff', fontWeight: 'bold', marginBottom: '8px' }}>
-                            ❓ "{q.question_text}"
+                            ? "{q.question_text}"
                           </div>
 
                           <div style={{ background: 'rgba(255, 255, 255, 0.05)', borderRadius: '6px', padding: '8px 12px', marginBottom: '8px', borderLeft: '3px solid rgba(255,255,255,0.3)', fontSize: '0.82rem', color: '#cbd5e1' }}>
@@ -2012,8 +2012,8 @@ export default function AdminPage() {
               ========================================================================= */}
               {activeTab === 'monetization' && (
                 <div>
-                  {/* ── MODULE ACCESS CONFIGURATION ─────────────────────────────────── */}
-                  <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+                  {/* -- MODULE ACCESS CONFIGURATION ----------------------------------- */}
+                  <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(251, 200, 13, 0.2)', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
                     <h2 style={{ fontSize: '1rem', fontWeight: 'bold', color: 'var(--neon-cyan)', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <LayoutGrid size={16} /> Module Access Configuration
                     </h2>
@@ -2024,9 +2024,9 @@ export default function AdminPage() {
                     {/* Module cards */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
                       {[
-                        { slug: 'chatbot',    label: 'TCG Chatbot',           icon: '🤖', desc: 'AI chat companion & rules knowledge base' },
-                        { slug: 'calculator', label: 'Score Calculator',      icon: '🎲', desc: 'Tabletop score tracker & simulator' },
-                        { slug: 'kontrola',   label: 'Kontrola Game',         icon: '⚔️', desc: 'Online multiplayer card battle arena' },
+                        { slug: 'chatbot',    label: 'TCG Chatbot',           icon: '??', desc: 'AI chat companion & rules knowledge base' },
+                        { slug: 'calculator', label: 'Score Calculator',      icon: '??', desc: 'Tabletop score tracker & simulator' },
+                        { slug: 'kontrola',   label: 'Kontrola Game',         icon: '??', desc: 'Online multiplayer card battle arena' },
                       ].map(({ slug, label, icon, desc }) => {
                         const isPremium = appSettings.premium_modules?.includes(slug);
                         const moduleCost = appSettings.module_costs?.[slug] ?? appSettings.match_cost ?? 1;
@@ -2036,7 +2036,7 @@ export default function AdminPage() {
                             gridTemplateColumns: '1fr auto',
                             gap: '12px',
                             alignItems: 'center',
-                            background: isPremium ? 'rgba(251, 200, 13, 0.06)' : 'rgba(0, 240, 255, 0.04)',
+                            background: isPremium ? 'rgba(251, 200, 13, 0.06)' : 'rgba(251, 200, 13, 0.04)',
                             border: `1px solid ${isPremium ? 'rgba(251, 200, 13,0.3)' : 'rgba(0,240,255,0.15)'}`,
                             borderRadius: '10px',
                             padding: '12px 14px',
@@ -2065,10 +2065,10 @@ export default function AdminPage() {
 
                             {/* Right: toggle + cost input */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                              {/* Crystal cost input — only shown when premium */}
+                              {/* Crystal cost input � only shown when premium */}
                               {isPremium && (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                  <span style={{ fontSize: '0.9rem' }}>💎</span>
+                                  <span style={{ fontSize: '0.9rem' }}>??</span>
                                   <input
                                     type="number"
                                     min="0"
@@ -2154,7 +2154,7 @@ export default function AdminPage() {
                           : appSettings.match_cost ?? 1;
                         const payload = { ...appSettings, match_cost: lowestCost };
                         const success = await economyService.updateAppSettings(payload);
-                        setModNotice(success ? '✅ Module settings saved!' : '❌ Failed to save. Check DB connection.');
+                        setModNotice(success ? '? Module settings saved!' : '? Failed to save. Check DB connection.');
                         setTimeout(() => setModNotice(''), 3500);
                       }}
                       style={{ width: '100%', background: 'rgba(0,240,255,0.15)', border: '1px solid var(--neon-cyan)', color: 'var(--neon-cyan)', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
@@ -2164,7 +2164,7 @@ export default function AdminPage() {
                   </div>
 
                   {/* Global Economy Settings - Simple 2-Column Form */}
-                  <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+                  <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(251, 200, 13, 0.2)', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
                     <h2 style={{ fontSize: '1rem', fontWeight: 'bold', color: 'var(--neon-cyan)', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <Coins size={16} /> Global Economy Settings
                     </h2>
@@ -2194,21 +2194,21 @@ export default function AdminPage() {
                         setModNotice(success ? 'Settings updated!' : 'Failed to update settings.');
                         setTimeout(() => setModNotice(''), 3000);
                       }}
-                      style={{ width: '100%', background: 'rgba(0, 240, 255, 0.15)', border: '1px solid var(--neon-cyan)', color: 'var(--neon-cyan)', padding: '6px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}
+                      style={{ width: '100%', background: 'rgba(251, 200, 13, 0.15)', border: '1px solid var(--neon-cyan)', color: 'var(--neon-cyan)', padding: '6px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}
                     >
                       <Save size={12} style={{ display: 'inline', marginRight: '4px' }} /> Save
                     </button>
                   </div>
 
                   {/* Store Bundles - Simple Table/List */}
-                  <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px' }}>
-                    <div style={{ background: 'var(--bg-deep)', borderBottom: '1px solid rgba(0, 240, 255, 0.15)', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(251, 200, 13, 0.2)', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px' }}>
+                    <div style={{ background: 'var(--bg-deep)', borderBottom: '1px solid rgba(251, 200, 13, 0.15)', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <h2 style={{ color: 'var(--neon-cyan)', margin: 0, fontSize: '0.95rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <ShoppingCart size={16} /> Store Bundles ({storeBundles.length})
                       </h2>
                       <button
                         onClick={() => setEditingBundle({ title: '', description: '', image_url: '', crystal_amount: 0, price_usd: 0, discount_percent: 0 })}
-                        style={{ background: 'rgba(0, 240, 255, 0.15)', border: '1px solid var(--neon-cyan)', color: 'var(--neon-cyan)', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}
+                        style={{ background: 'rgba(251, 200, 13, 0.15)', border: '1px solid var(--neon-cyan)', color: 'var(--neon-cyan)', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}
                       >
                         <Plus size={12} /> Add
                       </button>
@@ -2291,12 +2291,12 @@ export default function AdminPage() {
                         </div>
                         
                         {/* Help Text */}
-                        <div style={{ background: 'rgba(0, 240, 255, 0.1)', border: '1px solid rgba(0, 240, 255, 0.3)', borderRadius: '4px', padding: '8px', marginBottom: '8px', fontSize: '0.7rem', color: 'rgba(255,255,255,0.8)' }}>
-                          💡 <strong>Field Guide:</strong> Title appears as the main bundle name. Crystal Amount = diamonds awarded. Price in USD cents (1.99 = $1.99). Discount % shows a red badge if &gt; 0.
+                        <div style={{ background: 'rgba(251, 200, 13, 0.1)', border: '1px solid rgba(251, 200, 13, 0.3)', borderRadius: '4px', padding: '8px', marginBottom: '8px', fontSize: '0.7rem', color: 'rgba(255,255,255,0.8)' }}>
+                          ?? <strong>Field Guide:</strong> Title appears as the main bundle name. Crystal Amount = diamonds awarded. Price in USD cents (1.99 = $1.99). Discount % shows a red badge if &gt; 0.
                         </div>
                         
                         <div style={{ display: 'flex', gap: '6px' }}>
-                          <button onClick={async () => { const created = await economyService.upsertStoreBundle(editingBundle); if(created) { setEditingBundle(null); loadEconomyData(); } }} style={{ flex: 1, background: 'rgba(0, 240, 255, 0.15)', border: '1px solid var(--neon-cyan)', color: 'var(--neon-cyan)', padding: '8px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}>
+                          <button onClick={async () => { const created = await economyService.upsertStoreBundle(editingBundle); if(created) { setEditingBundle(null); loadEconomyData(); } }} style={{ flex: 1, background: 'rgba(251, 200, 13, 0.15)', border: '1px solid var(--neon-cyan)', color: 'var(--neon-cyan)', padding: '8px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}>
                             {editingBundle.id ? 'Update Bundle' : 'Create Bundle'}
                           </button>
                           <button onClick={() => setEditingBundle(null)} style={{ flex: 1, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>Cancel</button>
@@ -2314,7 +2314,7 @@ export default function AdminPage() {
                               <div style={{ color: '#fff', fontWeight: 'bold' }}>{bundle.title}</div>
                               {bundle.description && <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>{bundle.description.substring(0, 40)}</div>}
                             </div>
-                            <div style={{ color: 'var(--neon-cyan)' }}>💎 {bundle.crystal_amount}</div>
+                            <div style={{ color: 'var(--neon-cyan)' }}>?? {bundle.crystal_amount}</div>
                             <div style={{ color: 'var(--neon-gold)' }}>${bundle.price_usd}</div>
                             {bundle.discount_percent > 0 && <div style={{ background: 'rgba(255, 68, 68, 0.2)', color: '#ff4444', padding: '2px 6px', borderRadius: '3px', fontSize: '0.75rem', fontWeight: 'bold' }}>-{bundle.discount_percent}%</div>}
                             {!bundle.discount_percent && <div></div>}
@@ -2364,7 +2364,7 @@ export default function AdminPage() {
                         redeemCodes.map((c, idx) => (
                           <div key={c.id} style={{ display: 'grid', gridTemplateColumns: '1.5fr 0.8fr 0.8fr 1fr 0.6fr', alignItems: 'center', gap: '12px', padding: '10px 16px', borderBottom: idx < redeemCodes.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none', fontSize: '0.82rem' }}>
                             <div style={{ color: '#fff', fontFamily: 'monospace', fontWeight: 'bold' }}>{c.code}</div>
-                            <div style={{ color: 'var(--neon-cyan)' }}>💎 {c.crystal_amount}</div>
+                            <div style={{ color: 'var(--neon-cyan)' }}>?? {c.crystal_amount}</div>
                             <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem' }}>{c.times_used || 0} / {c.max_uses}</div>
                             <div style={{ color: c.times_used >= c.max_uses ? '#ff6b8f' : '#39ff14', fontSize: '0.75rem', fontWeight: 'bold' }}>
                               {c.times_used >= c.max_uses ? 'EXPIRED' : 'ACTIVE'}
@@ -2470,9 +2470,9 @@ export default function AdminPage() {
                     ) : (
                       musicTracks.filter(m => musicFilter === 'all' || m.status === musicFilter).map((track) => {
                         const statusColors = {
-                          pending: { bg: 'rgba(251, 200, 13,0.15)', color: 'var(--neon-gold)', border: 'rgba(251, 200, 13,0.4)', label: '⏳ PENDING' },
-                          approved: { bg: 'rgba(57,255,20,0.15)', color: '#39ff14', border: 'rgba(57,255,20,0.4)', label: '✓ APPROVED' },
-                          rejected: { bg: 'rgba(237, 30, 36,0.15)', color: '#ff6b8f', border: 'rgba(237, 30, 36,0.4)', label: '✕ REJECTED' }
+                          pending: { bg: 'rgba(251, 200, 13,0.15)', color: 'var(--neon-gold)', border: 'rgba(251, 200, 13,0.4)', label: '? PENDING' },
+                          approved: { bg: 'rgba(57,255,20,0.15)', color: '#39ff14', border: 'rgba(57,255,20,0.4)', label: '? APPROVED' },
+                          rejected: { bg: 'rgba(237, 30, 36,0.15)', color: '#ff6b8f', border: 'rgba(237, 30, 36,0.4)', label: '? REJECTED' }
                         };
                         const statusStyle = statusColors[track.status] || statusColors.pending;
                         const submittedDate = new Date(track.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -2482,7 +2482,7 @@ export default function AdminPage() {
                             key={track.id}
                             style={{
                               background: 'linear-gradient(135deg, rgba(13, 26, 56, 0.8) 0%, var(--bg-card) 100%)',
-                              border: '1px solid rgba(0, 240, 255, 0.15)',
+                              border: '1px solid rgba(251, 200, 13, 0.15)',
                               borderRadius: '16px',
                               padding: '0',
                               overflow: 'hidden',
@@ -2493,11 +2493,11 @@ export default function AdminPage() {
                               backdropFilter: 'blur(10px)'
                             }}
                             onMouseOver={e => {
-                              e.currentTarget.style.borderColor = 'rgba(0, 240, 255, 0.4)';
-                              e.currentTarget.style.boxShadow = '0 12px 48px rgba(0, 240, 255, 0.15)';
+                              e.currentTarget.style.borderColor = 'rgba(251, 200, 13, 0.4)';
+                              e.currentTarget.style.boxShadow = '0 12px 48px rgba(251, 200, 13, 0.15)';
                             }}
                             onMouseOut={e => {
-                              e.currentTarget.style.borderColor = 'rgba(0, 240, 255, 0.15)';
+                              e.currentTarget.style.borderColor = 'rgba(251, 200, 13, 0.15)';
                               e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.3)';
                             }}
                           >
@@ -2550,7 +2550,7 @@ export default function AdminPage() {
                                       onClick={async () => {
                                         const success = await musicService.updateMusicStatus(track.id, 'approved');
                                         if (success) {
-                                          setModNotice(`✅ Approved "${track.title}"!`);
+                                          setModNotice(`? Approved "${track.title}"!`);
                                           setTimeout(() => setModNotice(''), 3000);
                                           loadMusic();
                                         } else {
@@ -2587,7 +2587,7 @@ export default function AdminPage() {
                                       onClick={async () => {
                                         const success = await musicService.updateMusicStatus(track.id, 'rejected');
                                         if (success) {
-                                          setModNotice(`❌ Rejected "${track.title}"`);
+                                          setModNotice(`? Rejected "${track.title}"`);
                                           setTimeout(() => setModNotice(''), 3000);
                                           loadMusic();
                                         } else {
@@ -2630,7 +2630,7 @@ export default function AdminPage() {
                                       async () => {
                                         const success = await musicService.deleteMusic(track.id);
                                         if (success) {
-                                          setModNotice(`🗑️ Deleted "${track.title}"`);
+                                          setModNotice(`??? Deleted "${track.title}"`);
                                           setTimeout(() => setModNotice(''), 3000);
                                           loadMusic();
                                         } else {
@@ -2687,7 +2687,7 @@ export default function AdminPage() {
                       { label: 'INVESTIGATING', value: bugReports.filter(r => r.status === 'investigating').length, color: '#FBC80D' },
                       { label: 'RESOLVED', value: bugReports.filter(r => r.status === 'resolved').length, color: '#39ff14' },
                       { label: 'DISMISSED', value: bugReports.filter(r => r.status === 'dismissed').length, color: 'rgba(255,255,255,0.35)' },
-                      { label: 'TOTAL', value: bugReports.length, color: '#00f0ff' }
+                      { label: 'TOTAL', value: bugReports.length, color: '#FBC80D' }
                     ].map(stat => (
                       <div key={stat.label} className="kpi-card" style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                         <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>{stat.label}</div>
@@ -2700,7 +2700,7 @@ export default function AdminPage() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
                     <div>
                       <h2 style={{ fontSize: '1.3rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '1px' }}>
-                        🐛 BUG REPORTS
+                        ?? BUG REPORTS
                       </h2>
                       <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>
                         Automatic crash captures and player-submitted issues
@@ -2717,7 +2717,7 @@ export default function AdminPage() {
                           style={{
                             background: bugReportFilter === f ? 'rgba(0,240,255,0.15)' : 'rgba(255,255,255,0.05)',
                             border: bugReportFilter === f ? '1px solid rgba(0,240,255,0.6)' : '1px solid rgba(255,255,255,0.1)',
-                            color: bugReportFilter === f ? '#00f0ff' : 'rgba(255,255,255,0.6)',
+                            color: bugReportFilter === f ? '#FBC80D' : 'rgba(255,255,255,0.6)',
                             padding: '5px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 'bold', textTransform: 'uppercase'
                           }}
                         >
@@ -2747,8 +2747,8 @@ export default function AdminPage() {
                       {bugReports.map(report => {
                         const isExpanded = expandedBugId === report.id;
                         const statusColors = { new: '#ff2a55', investigating: '#FBC80D', resolved: '#39ff14', dismissed: 'rgba(255,255,255,0.35)' };
-                        const typeIcons = { crash: '💥', freeze: '🧊', blackout: '⬛', manual: '✍️', error: '⚠️' };
-                        const statusColor = statusColors[report.status] || '#00f0ff';
+                        const typeIcons = { crash: '??', freeze: '??', blackout: '?', manual: '??', error: '??' };
+                        const statusColor = statusColors[report.status] || '#FBC80D';
 
                         return (
                           <div
@@ -2765,16 +2765,16 @@ export default function AdminPage() {
                               style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', cursor: 'pointer', flexWrap: 'wrap' }}
                               onClick={() => setExpandedBugId(isExpanded ? null : report.id)}
                             >
-                              <span style={{ fontSize: '1.1rem' }}>{typeIcons[report.error_type] || '🐛'}</span>
+                              <span style={{ fontSize: '1.1rem' }}>{typeIcons[report.error_type] || '??'}</span>
 
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ fontWeight: 'bold', color: '#fff', fontSize: '0.88rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                   {report.error_message}
                                 </div>
                                 <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)', marginTop: '2px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                                  <span>👤 {report.username}</span>
-                                  {report.match_id && <span>🎮 Match: {report.match_id}</span>}
-                                  <span>🕐 {new Date(report.created_at).toLocaleString()}</span>
+                                  <span>?? {report.username}</span>
+                                  {report.match_id && <span>?? Match: {report.match_id}</span>}
+                                  <span>?? {new Date(report.created_at).toLocaleString()}</span>
                                   <span style={{ textTransform: 'uppercase', color: 'rgba(0,240,255,0.7)' }}>{report.error_type}</span>
                                 </div>
                               </div>
@@ -2785,7 +2785,7 @@ export default function AdminPage() {
                               </span>
 
                               {/* Expand chevron */}
-                              <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem' }}>{isExpanded ? '▲' : '▼'}</span>
+                              <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem' }}>{isExpanded ? '?' : '?'}</span>
                             </div>
 
                             {/* Expanded Detail Panel */}
@@ -2809,7 +2809,7 @@ export default function AdminPage() {
                                   {[
                                     { label: 'Error Type', value: report.error_type },
                                     { label: 'Page URL', value: report.page_url },
-                                    { label: 'Match ID', value: report.match_id || '—' },
+                                    { label: 'Match ID', value: report.match_id || '�' },
                                     { label: 'User Agent', value: report.user_agent?.substring(0, 60) + '...' }
                                   ].map(field => (
                                     <div key={field.label} style={{ background: 'rgba(0,0,0,0.3)', padding: '8px 10px', borderRadius: '6px' }}>
@@ -2860,7 +2860,7 @@ export default function AdminPage() {
                                         const notes = bugAdminNotes[report.id] !== undefined ? bugAdminNotes[report.id] : (report.admin_notes || null);
                                         const ok = await bugReportService.updateBugReportStatus(report.id, newStatus, notes);
                                         if (ok) {
-                                          setModNotice(`✅ Report marked as ${newStatus}`);
+                                          setModNotice(`? Report marked as ${newStatus}`);
                                           setTimeout(() => setModNotice(''), 3000);
                                           loadBugReports(bugReportFilter === 'all' ? null : bugReportFilter);
                                           setExpandedBugId(null);
@@ -2875,7 +2875,7 @@ export default function AdminPage() {
                                         padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase'
                                       }}
                                     >
-                                      {newStatus === 'investigating' ? '🔍 Investigate' : newStatus === 'resolved' ? '✅ Resolve' : '🚫 Dismiss'}
+                                      {newStatus === 'investigating' ? '?? Investigate' : newStatus === 'resolved' ? '? Resolve' : '?? Dismiss'}
                                     </button>
                                   ))}
                                   <button
@@ -2886,7 +2886,7 @@ export default function AdminPage() {
                                         async () => {
                                           const ok = await bugReportService.deleteBugReport(report.id);
                                           if (ok) {
-                                            setModNotice('🗑️ Bug report deleted');
+                                            setModNotice('??? Bug report deleted');
                                             setTimeout(() => setModNotice(''), 3000);
                                             loadBugReports(bugReportFilter === 'all' ? null : bugReportFilter);
                                             setExpandedBugId(null);
@@ -2919,12 +2919,12 @@ export default function AdminPage() {
                   {/* KPI Bar */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', marginBottom: '16px' }}>
                     {[
-                      { label: 'NEW', value: supportMessages.filter(s => s.status === 'new').length, color: '#00f0ff' },
+                      { label: 'NEW', value: supportMessages.filter(s => s.status === 'new').length, color: '#FBC80D' },
                       { label: 'RESPONDED', value: supportMessages.filter(s => s.status === 'responded').length, color: '#FBC80D' },
                       { label: 'RESOLVED', value: supportMessages.filter(s => s.status === 'resolved').length, color: '#39ff14' },
-                      { label: 'TOTAL', value: supportMessages.length, color: '#00f0ff' }
+                      { label: 'TOTAL', value: supportMessages.length, color: '#FBC80D' }
                     ].map(stat => (
-                      <div key={stat.label} style={{ background: 'var(--bg-card)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                      <div key={stat.label} style={{ background: 'var(--bg-card)', border: '1px solid rgba(251, 200, 13, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
                         <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>{stat.label}</div>
                         <div style={{ fontSize: '1.4rem', fontWeight: '900', color: stat.color, fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>{stat.value}</div>
                       </div>
@@ -2932,11 +2932,11 @@ export default function AdminPage() {
                   </div>
 
                   {/* Header with Filters */}
-                  <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                  <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(251, 200, 13, 0.2)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                       <div>
                         <h2 style={{ fontSize: '1.3rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '1px' }}>
-                          💬 SUPPORT MESSAGES
+                          ?? SUPPORT MESSAGES
                         </h2>
                         <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>
                           Player support requests & feedback
@@ -2956,7 +2956,7 @@ export default function AdminPage() {
                           style={{
                             background: supportFilter === f ? 'rgba(0,240,255,0.15)' : 'rgba(255,255,255,0.05)',
                             border: supportFilter === f ? '1px solid rgba(0,240,255,0.6)' : '1px solid rgba(255,255,255,0.1)',
-                            color: supportFilter === f ? '#00f0ff' : 'rgba(255,255,255,0.6)',
+                            color: supportFilter === f ? '#FBC80D' : 'rgba(255,255,255,0.6)',
                             padding: '5px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 'bold', textTransform: 'uppercase'
                           }}
                         >
@@ -2986,7 +2986,7 @@ export default function AdminPage() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {supportMessages.map((msg) => {
                         const statusColors = {
-                          new: { bg: 'rgba(0,200,255,0.1)', color: '#00f0ff', border: 'rgba(0,200,255,0.3)' },
+                          new: { bg: 'rgba(0,200,255,0.1)', color: '#FBC80D', border: 'rgba(0,200,255,0.3)' },
                           responded: { bg: 'rgba(251, 200, 13,0.1)', color: 'var(--neon-gold)', border: 'rgba(251, 200, 13,0.3)' },
                           resolved: { bg: 'rgba(57,255,20,0.1)', color: '#39ff14', border: 'rgba(57,255,20,0.3)' }
                         };
@@ -3006,7 +3006,7 @@ export default function AdminPage() {
                               boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)'
                             }}
                             onClick={() => setExpandedSupportId(expandedSupportId === msg.id ? null : msg.id)}
-                            onMouseOver={e => e.currentTarget.style.borderColor = 'rgba(0, 240, 255, 0.4)'}
+                            onMouseOver={e => e.currentTarget.style.borderColor = 'rgba(251, 200, 13, 0.4)'}
                             onMouseOut={e => e.currentTarget.style.borderColor = 'rgba(0, 200, 255, 0.2)'}
                           >
                             {/* Header */}
@@ -3092,7 +3092,7 @@ export default function AdminPage() {
                                         e.stopPropagation();
                                         bugReportService.updateBugReportStatus(msg.id, 'responded', supportAdminNotes[msg.id] || null).then((ok) => {
                                           if (ok) {
-                                            setModNotice('✅ Marked as responded');
+                                            setModNotice('? Marked as responded');
                                             setTimeout(() => setModNotice(''), 3000);
                                             loadSupportMessages(supportFilter === 'all' ? null : supportFilter);
                                           } else {
@@ -3111,7 +3111,7 @@ export default function AdminPage() {
                                         e.stopPropagation();
                                         bugReportService.updateBugReportStatus(msg.id, 'resolved', supportAdminNotes[msg.id] || null).then((ok) => {
                                           if (ok) {
-                                            setModNotice('✅ Marked as resolved');
+                                            setModNotice('? Marked as resolved');
                                             setTimeout(() => setModNotice(''), 3000);
                                             loadSupportMessages(supportFilter === 'all' ? null : supportFilter);
                                           } else {
@@ -3133,7 +3133,7 @@ export default function AdminPage() {
                                         async () => {
                                           const ok = await bugReportService.deleteBugReport(msg.id);
                                           if (ok) {
-                                            setModNotice('🗑️ Support message deleted');
+                                            setModNotice('??? Support message deleted');
                                             setTimeout(() => setModNotice(''), 3000);
                                             loadSupportMessages(supportFilter === 'all' ? null : supportFilter);
                                             setExpandedSupportId(null);
@@ -3240,7 +3240,7 @@ export default function AdminPage() {
                     <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '14px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                         <span style={{ fontSize: '0.92rem', fontWeight: 'bold', color: '#fff' }}>
-                          ⚔️ Kontrola Arena (Web)
+                          ?? Kontrola Arena (Web)
                         </span>
                         <span style={{ fontSize: '0.68rem', background: 'rgba(57, 255, 20, 0.15)', color: '#39ff14', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>CONNECTED</span>
                       </div>
@@ -3253,7 +3253,7 @@ export default function AdminPage() {
                     <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '14px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                         <span style={{ fontSize: '0.92rem', fontWeight: 'bold', color: '#fff' }}>
-                          🎲 Tabletop Simulator / Unity
+                          ?? Tabletop Simulator / Unity
                         </span>
                         <span style={{ fontSize: '0.68rem', background: 'rgba(57, 255, 20, 0.15)', color: '#39ff14', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>CONNECTED</span>
                       </div>
@@ -3266,7 +3266,7 @@ export default function AdminPage() {
                     <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '14px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                         <span style={{ fontSize: '0.92rem', fontWeight: 'bold', color: '#fff' }}>
-                          📱 Mobile Tournament (Flutter)
+                          ?? Mobile Tournament (Flutter)
                         </span>
                         <span style={{ fontSize: '0.68rem', background: 'rgba(57, 255, 20, 0.15)', color: '#39ff14', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>CONNECTED</span>
                       </div>
@@ -3279,7 +3279,7 @@ export default function AdminPage() {
                     <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '14px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                         <span style={{ fontSize: '0.92rem', fontWeight: 'bold', color: '#fff' }}>
-                          🤖 AI Rulekeeper Assistant
+                          ?? AI Rulekeeper Assistant
                         </span>
                         <span style={{ fontSize: '0.68rem', background: 'rgba(57, 255, 20, 0.15)', color: '#39ff14', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>CONNECTED</span>
                       </div>
@@ -3388,7 +3388,7 @@ export default function AdminPage() {
           ========================================================================= */}
           {isEditDocModalOpen && activeDoc && (
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-              <div style={{ width: '100%', maxWidth: '850px', maxHeight: '92vh', display: 'flex', flexDirection: 'column', background: 'rgba(12, 18, 36, 0.98)', border: '1.5px solid var(--neon-cyan, #00f0ff)', borderRadius: '18px', padding: '24px', boxShadow: '0 0 50px rgba(0, 240, 255, 0.35)', boxSizing: 'border-box' }}>
+              <div style={{ width: '100%', maxWidth: '850px', maxHeight: '92vh', display: 'flex', flexDirection: 'column', background: 'rgba(12, 18, 36, 0.98)', border: '1.5px solid var(--neon-cyan, #FBC80D)', borderRadius: '18px', padding: '24px', boxShadow: '0 0 50px rgba(251, 200, 13, 0.35)', boxSizing: 'border-box' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                   <div>
                     <h2 style={{ fontSize: '1.35rem', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', letterSpacing: '1px' }}>
@@ -3407,13 +3407,13 @@ export default function AdminPage() {
                 {(() => {
                   const modalMetrics = calculateGroqMetrics(editDocData.content);
                   return (
-                    <div style={{ background: 'var(--bg-deep)', border: `1px solid ${modalMetrics.status === 'EXCEEDED' ? '#ff2a55' : modalMetrics.status === 'WARNING' ? '#FBC80D' : 'rgba(0, 240, 255, 0.3)'}`, borderRadius: '10px', padding: '10px 14px', marginBottom: '12px' }}>
+                    <div style={{ background: 'var(--bg-deep)', border: `1px solid ${modalMetrics.status === 'EXCEEDED' ? '#ff2a55' : modalMetrics.status === 'WARNING' ? '#FBC80D' : 'rgba(251, 200, 13, 0.3)'}`, borderRadius: '10px', padding: '10px 14px', marginBottom: '12px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', fontSize: '0.78rem' }}>
                         <span style={{ color: '#fff', fontWeight: 'bold' }}>
-                          ⚡ Groq Context Rubric: <strong style={{ color: modalMetrics.status === 'EXCEEDED' ? '#ff2a55' : modalMetrics.status === 'WARNING' ? '#FBC80D' : '#39ff14' }}>{modalMetrics.charCount.toLocaleString()}</strong> / {GROQ_LIMITS.MAX_CONTEXT_CHARS.toLocaleString()} chars (~{modalMetrics.estimatedTokens.toLocaleString()} tokens)
+                          ? Groq Context Rubric: <strong style={{ color: modalMetrics.status === 'EXCEEDED' ? '#ff2a55' : modalMetrics.status === 'WARNING' ? '#FBC80D' : '#39ff14' }}>{modalMetrics.charCount.toLocaleString()}</strong> / {GROQ_LIMITS.MAX_CONTEXT_CHARS.toLocaleString()} chars (~{modalMetrics.estimatedTokens.toLocaleString()} tokens)
                         </span>
                         <span style={{ fontSize: '0.72rem', fontWeight: 'bold', color: modalMetrics.status === 'EXCEEDED' ? '#ff2a55' : modalMetrics.status === 'WARNING' ? '#FBC80D' : '#39ff14' }}>
-                          {modalMetrics.status === 'EXCEEDED' ? '🚨 EXCEEDS GROQ RUBRIC LIMIT' : modalMetrics.status === 'WARNING' ? '⚠️ APPROACHING CONTEXT CEILING' : '✓ SAFE CONTEXT BUDGET'}
+                          {modalMetrics.status === 'EXCEEDED' ? '?? EXCEEDS GROQ RUBRIC LIMIT' : modalMetrics.status === 'WARNING' ? '?? APPROACHING CONTEXT CEILING' : '? SAFE CONTEXT BUDGET'}
                         </span>
                       </div>
                       <div style={{ width: '100%', height: '6px', background: 'var(--bg-card)', borderRadius: '3px', overflow: 'hidden' }}>
@@ -3426,7 +3426,7 @@ export default function AdminPage() {
                 <form onSubmit={handleSaveEditedDoc} style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: '12px', minHeight: 0 }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '10px' }}>
                     <div>
-                      <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--neon-cyan, #00f0ff)', marginBottom: '4px', fontWeight: 'bold' }}>DOCUMENT TITLE</label>
+                      <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--neon-cyan, #FBC80D)', marginBottom: '4px', fontWeight: 'bold' }}>DOCUMENT TITLE</label>
                       <input
                         type="text"
                         required
@@ -3436,7 +3436,7 @@ export default function AdminPage() {
                       />
                     </div>
                     <div>
-                      <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--neon-cyan, #00f0ff)', marginBottom: '4px', fontWeight: 'bold' }}>CATEGORY</label>
+                      <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--neon-cyan, #FBC80D)', marginBottom: '4px', fontWeight: 'bold' }}>CATEGORY</label>
                       <input
                         type="text"
                         value={editDocData.category}
@@ -3447,7 +3447,7 @@ export default function AdminPage() {
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-                    <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--neon-cyan, #00f0ff)', marginBottom: '4px', fontWeight: 'bold' }}>DOCUMENT CONTENT (.txt)</label>
+                    <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--neon-cyan, #FBC80D)', marginBottom: '4px', fontWeight: 'bold' }}>DOCUMENT CONTENT (.txt)</label>
                     <textarea
                       required
                       value={editDocData.content}
@@ -3458,7 +3458,7 @@ export default function AdminPage() {
                         boxSizing: 'border-box',
                         padding: '10px 12px',
                         background: 'var(--bg-card)',
-                        border: '1px solid rgba(0, 240, 255, 0.25)',
+                        border: '1px solid rgba(251, 200, 13, 0.25)',
                         borderRadius: '8px',
                         color: '#f1f5f9',
                         fontSize: '0.82rem',
@@ -3485,7 +3485,7 @@ export default function AdminPage() {
                       <button
                         type="submit"
                         disabled={isSavingDoc}
-                        style={{ padding: '7px 18px', borderRadius: '6px', border: 'none', background: 'linear-gradient(90deg, #00f0ff 0%, #0088ff 100%)', color: '#050a18', fontWeight: 'bold', cursor: isSavingDoc ? 'not-allowed' : 'pointer', fontSize: '0.84rem', opacity: isSavingDoc ? 0.7 : 1 }}
+                        style={{ padding: '7px 18px', borderRadius: '6px', border: 'none', background: 'linear-gradient(90deg, #FBC80D 0%, #0088ff 100%)', color: '#050a18', fontWeight: 'bold', cursor: isSavingDoc ? 'not-allowed' : 'pointer', fontSize: '0.84rem', opacity: isSavingDoc ? 0.7 : 1 }}
                       >
                         {isSavingDoc ? 'Saving...' : 'Save Changes'}
                       </button>
@@ -3501,7 +3501,7 @@ export default function AdminPage() {
           ========================================================================= */}
           {isAppendModalOpen && activeDoc && (
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-              <div style={{ width: '100%', maxWidth: '620px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-card) 0.98)', border: '1.5px solid var(--neon-cyan, #00f0ff)', borderRadius: '18px', padding: '24px', boxShadow: '0 0 45px rgba(0, 240, 255, 0.3)' }}>
+              <div style={{ width: '100%', maxWidth: '620px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-card) 0.98)', border: '1.5px solid var(--neon-cyan, #FBC80D)', borderRadius: '18px', padding: '24px', boxShadow: '0 0 45px rgba(251, 200, 13, 0.3)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                   <div>
                     <h2 style={{ fontSize: '1.35rem', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>
@@ -3526,9 +3526,9 @@ export default function AdminPage() {
                         flex: 1,
                         padding: '8px',
                         borderRadius: '6px',
-                        border: appendData.type === 'qa' ? '1px solid var(--neon-cyan, #00f0ff)' : '1px solid rgba(255,255,255,0.1)',
-                        background: appendData.type === 'qa' ? 'rgba(0, 240, 255, 0.18)' : 'var(--bg-card)',
-                        color: appendData.type === 'qa' ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.6)',
+                        border: appendData.type === 'qa' ? '1px solid var(--neon-cyan, #FBC80D)' : '1px solid rgba(255,255,255,0.1)',
+                        background: appendData.type === 'qa' ? 'rgba(251, 200, 13, 0.18)' : 'var(--bg-card)',
+                        color: appendData.type === 'qa' ? 'var(--neon-cyan, #FBC80D)' : 'rgba(255,255,255,0.6)',
                         fontWeight: 'bold',
                         cursor: 'pointer',
                         fontSize: '0.82rem'
@@ -3543,9 +3543,9 @@ export default function AdminPage() {
                         flex: 1,
                         padding: '8px',
                         borderRadius: '6px',
-                        border: appendData.type === 'section' ? '1px solid var(--neon-cyan, #00f0ff)' : '1px solid rgba(255,255,255,0.1)',
-                        background: appendData.type === 'section' ? 'rgba(0, 240, 255, 0.18)' : 'var(--bg-card)',
-                        color: appendData.type === 'section' ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.6)',
+                        border: appendData.type === 'section' ? '1px solid var(--neon-cyan, #FBC80D)' : '1px solid rgba(255,255,255,0.1)',
+                        background: appendData.type === 'section' ? 'rgba(251, 200, 13, 0.18)' : 'var(--bg-card)',
+                        color: appendData.type === 'section' ? 'var(--neon-cyan, #FBC80D)' : 'rgba(255,255,255,0.6)',
                         fontWeight: 'bold',
                         cursor: 'pointer',
                         fontSize: '0.82rem'
@@ -3556,7 +3556,7 @@ export default function AdminPage() {
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--neon-cyan, #00f0ff)', marginBottom: '4px', fontWeight: 'bold' }}>
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--neon-cyan, #FBC80D)', marginBottom: '4px', fontWeight: 'bold' }}>
                       {appendData.type === 'qa' ? 'QUESTION (Will auto-append ? if missing)' : 'SECTION HEADING (e.g. 12. TOURNAMENT OVERTIME)'}
                     </label>
                     <input
@@ -3571,7 +3571,7 @@ export default function AdminPage() {
 
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                      <label style={{ fontSize: '0.8rem', color: 'var(--neon-cyan, #00f0ff)', fontWeight: 'bold' }}>
+                      <label style={{ fontSize: '0.8rem', color: 'var(--neon-cyan, #FBC80D)', fontWeight: 'bold' }}>
                         {appendData.type === 'qa' ? 'SPOKEN ANSWER / MECHANIC BREAKDOWN' : 'SECTION BODY TEXT'}
                       </label>
                       <span style={{ fontSize: '0.72rem', color: (appendData.content.length > 4000) ? '#ff2a55' : 'rgba(255,255,255,0.5)' }}>
@@ -3589,7 +3589,7 @@ export default function AdminPage() {
                   </div>
 
                   {/* Formatted Append Preview */}
-                  <div style={{ background: 'var(--bg-card)', border: '1px dashed rgba(0, 240, 255, 0.25)', borderRadius: '8px', padding: '10px 12px' }}>
+                  <div style={{ background: 'var(--bg-card)', border: '1px dashed rgba(251, 200, 13, 0.25)', borderRadius: '8px', padding: '10px 12px' }}>
                     <div style={{ fontSize: '0.7rem', color: 'var(--neon-gold, #FBC80D)', fontWeight: 'bold', marginBottom: '4px' }}>
                       PREVIEW OF APPENDED TEXT:
                     </div>
@@ -3628,7 +3628,7 @@ export default function AdminPage() {
           ========================================================================= */}
           {isNewDocModalOpen && (
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-              <div style={{ width: '100%', maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-card) 0.98)', border: '1.5px solid var(--neon-cyan, #00f0ff)', borderRadius: '18px', padding: '24px', boxShadow: '0 0 45px rgba(0, 240, 255, 0.3)' }}>
+              <div style={{ width: '100%', maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-card) 0.98)', border: '1.5px solid var(--neon-cyan, #FBC80D)', borderRadius: '18px', padding: '24px', boxShadow: '0 0 45px rgba(251, 200, 13, 0.3)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                   <h2 style={{ fontSize: '1.35rem', color: '#fff', margin: 0, fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>
                     ADD NEW KNOWLEDGE DOCUMENT
@@ -3640,7 +3640,7 @@ export default function AdminPage() {
 
                 <form onSubmit={handleCreateNewDoc} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--neon-cyan, #00f0ff)', marginBottom: '4px', fontWeight: 'bold' }}>FILENAME (.txt)</label>
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--neon-cyan, #FBC80D)', marginBottom: '4px', fontWeight: 'bold' }}>FILENAME (.txt)</label>
                     <input
                       type="text"
                       required
@@ -3653,7 +3653,7 @@ export default function AdminPage() {
 
                   <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '10px' }}>
                     <div>
-                      <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--neon-cyan, #00f0ff)', marginBottom: '4px', fontWeight: 'bold' }}>DOCUMENT TITLE</label>
+                      <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--neon-cyan, #FBC80D)', marginBottom: '4px', fontWeight: 'bold' }}>DOCUMENT TITLE</label>
                       <input
                         type="text"
                         required
@@ -3664,7 +3664,7 @@ export default function AdminPage() {
                       />
                     </div>
                     <div>
-                      <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--neon-cyan, #00f0ff)', marginBottom: '4px', fontWeight: 'bold' }}>CATEGORY</label>
+                      <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--neon-cyan, #FBC80D)', marginBottom: '4px', fontWeight: 'bold' }}>CATEGORY</label>
                       <input
                         type="text"
                         value={newDocData.category}
@@ -3677,7 +3677,7 @@ export default function AdminPage() {
 
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                      <label style={{ fontSize: '0.8rem', color: 'var(--neon-cyan, #00f0ff)', fontWeight: 'bold' }}>INITIAL CONTENT</label>
+                      <label style={{ fontSize: '0.8rem', color: 'var(--neon-cyan, #FBC80D)', fontWeight: 'bold' }}>INITIAL CONTENT</label>
                       <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)' }}>
                         {newDocData.content.length} chars (Limit: 131,072 chars)
                       </span>
@@ -3702,7 +3702,7 @@ export default function AdminPage() {
                     <button
                       type="submit"
                       disabled={isSavingDoc}
-                      style={{ padding: '7px 18px', borderRadius: '6px', border: 'none', background: 'linear-gradient(90deg, #00f0ff 0%, #0088ff 100%)', color: '#050a18', fontWeight: 'bold', cursor: isSavingDoc ? 'not-allowed' : 'pointer', fontSize: '0.84rem', opacity: isSavingDoc ? 0.7 : 1 }}
+                      style={{ padding: '7px 18px', borderRadius: '6px', border: 'none', background: 'linear-gradient(90deg, #FBC80D 0%, #0088ff 100%)', color: '#050a18', fontWeight: 'bold', cursor: isSavingDoc ? 'not-allowed' : 'pointer', fontSize: '0.84rem', opacity: isSavingDoc ? 0.7 : 1 }}
                     >
                       {isSavingDoc ? 'Creating...' : 'Create Document'}
                     </button>
@@ -3726,7 +3726,7 @@ export default function AdminPage() {
                 onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
                 onMouseOut={e => e.currentTarget.style.background = 'transparent'}
               >Cancel</button>
-              <button onClick={() => { confirmDialog.onConfirm(); setConfirmDialog(null); }} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: confirmDialog.isDanger ? 'linear-gradient(135deg, #ff2a55, #cc0033)' : 'linear-gradient(135deg, #00f0ff, #0088ff)', color: confirmDialog.isDanger ? '#fff' : '#040a18', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold', boxShadow: `0 4px 12px ${confirmDialog.isDanger ? 'rgba(255,42,85,0.3)' : 'rgba(0,240,255,0.3)'}`, transition: 'transform 0.15s' }}
+              <button onClick={() => { confirmDialog.onConfirm(); setConfirmDialog(null); }} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: confirmDialog.isDanger ? 'linear-gradient(135deg, #ff2a55, #cc0033)' : 'linear-gradient(135deg, #FBC80D, #0088ff)', color: confirmDialog.isDanger ? '#fff' : '#040a18', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold', boxShadow: `0 4px 12px ${confirmDialog.isDanger ? 'rgba(255,42,85,0.3)' : 'rgba(0,240,255,0.3)'}`, transition: 'transform 0.15s' }}
                 onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'}
                 onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
               >{confirmDialog.confirmLabel}</button>
@@ -3737,6 +3737,7 @@ export default function AdminPage() {
     </>
   );
 }
+
 
 
 

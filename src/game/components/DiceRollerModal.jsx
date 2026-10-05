@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { resolveDiceCombat } from '../utils/gameEngine';
 import { CHARACTERS, ZOMBIE_PROFILE, getAssetUrl } from '../data/characters';
 import { soundFX } from '../utils/audio';
@@ -112,13 +112,13 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
         }}
       >
         {/* Header */}
-        <div className="modal-header combat-header cyber-dialog-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(0, 240, 255, 0.25)', paddingBottom: '12px' }}>
+        <div className="modal-header combat-header cyber-dialog-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(251, 200, 13, 0.25)', paddingBottom: '12px' }}>
           <div className="combat-title-box dialog-title-group" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <span className="combat-step-badge clash-badge" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0, 240, 255, 0.15)', border: '1.5px solid #00f0ff', color: '#00f0ff', padding: '6px 14px', borderRadius: '8px', fontWeight: '900', letterSpacing: '0.08em', fontSize: '0.88rem' }}>
+            <span className="combat-step-badge clash-badge" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(251, 200, 13, 0.15)', border: '1.5px solid #FBC80D', color: '#FBC80D', padding: '6px 14px', borderRadius: '8px', fontWeight: '900', letterSpacing: '0.08em', fontSize: '0.88rem' }}>
               <Dices size={18} /> OFFICIAL COMBAT CLASH
             </span>
             <h2 style={{ fontSize: '1.6rem', margin: 0, color: '#ffffff', fontFamily: 'Orbitron, sans-serif' }}>
-              {attacker.name} <span style={{ color: 'var(--neon-pink)', margin: '0 8px' }}>⚔️</span> {defender.name}
+              {attacker.name} <span style={{ color: 'var(--neon-pink)', margin: '0 8px' }}>??</span> {defender.name}
             </h2>
           </div>
           <button onClick={onClose} style={{ background: 'rgba(237, 30, 36, 0.2)', border: '1px solid #ED1E24', borderRadius: '8px', color: '#ED1E24', cursor: 'pointer', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold' }}>
@@ -141,13 +141,13 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
                 <div style={{ fontSize: '0.92rem', color: 'var(--neon-pink)', marginTop: '2px' }}>
                   {characterMove?.name || actionCard?.name || 'Standard Attack'}
                   <span style={{ marginLeft: '6px', opacity: 0.9, fontWeight: 'bold' }}>
-                    ({isMultiplier ? `1-Die × ${characterMove.multiplier} AP` : `${characterMove?.baseAP || 25} AP`})
+                    ({isMultiplier ? `1-Die � ${characterMove.multiplier} AP` : `${characterMove?.baseAP || 25} AP`})
                   </span>
                 </div>
               </div>
             </div>
           </div>
-          <div className="vs-circle" style={{ fontWeight: '900', color: 'var(--neon-cyan)', fontSize: '1.2rem', padding: '10px 16px', background: 'rgba(0, 240, 255, 0.12)', borderRadius: '50%', border: '2px solid rgba(0, 240, 255, 0.5)' }}>VS</div>
+          <div className="vs-circle" style={{ fontWeight: '900', color: 'var(--neon-cyan)', fontSize: '1.2rem', padding: '10px 16px', background: 'rgba(251, 200, 13, 0.12)', borderRadius: '50%', border: '2px solid rgba(251, 200, 13, 0.5)' }}>VS</div>
           <div className="combatant-side defender-side cyber-combatant-card" style={{ borderColor: 'var(--neon-gold)', padding: '14px 20px', background: 'rgba(251, 200, 13, 0.12)', borderRadius: '14px', border: '1.5px solid #FBC80D' }}>
             <div className="combatant-role-badge def-badge" style={{ fontSize: '0.8rem', color: '#FBC80D', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Shield size={15} /> DEFENDER
@@ -214,7 +214,7 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
 
         {phase === 'clash_summary' && (
           <div style={{ textAlign: 'center', margin: '15px 0 8px' }}>
-            <div style={{ color: '#00f0ff', marginBottom: '10px', fontSize: '1.2rem', fontWeight: 'bold' }}>
+            <div style={{ color: '#FBC80D', marginBottom: '10px', fontSize: '1.2rem', fontWeight: 'bold' }}>
               CLASH SUMMARY
             </div>
             
@@ -268,7 +268,7 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
                 }
               }}
               style={{
-                width: '100%', padding: '14px', background: 'linear-gradient(90deg, #00f0ff, #0077ff)',
+                width: '100%', padding: '14px', background: 'linear-gradient(90deg, #FBC80D, #0077ff)',
                 color: '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer'
               }}
             >
@@ -279,14 +279,14 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
 
         {phase === 'multiplier' && (
           <div style={{ textAlign: 'center', margin: '15px 0 8px' }}>
-            <div style={{ color: '#00f0ff', marginBottom: '10px', fontSize: '1.2rem', fontWeight: 'bold' }}>
+            <div style={{ color: '#FBC80D', marginBottom: '10px', fontSize: '1.2rem', fontWeight: 'bold' }}>
               CLASH WON! ROLL MULTIPLIER
             </div>
             <button
               onClick={handleRollMultiplier}
               disabled={isRolling}
               style={{
-                width: '100%', padding: '14px', background: 'linear-gradient(90deg, #00f0ff, #0077ff)',
+                width: '100%', padding: '14px', background: 'linear-gradient(90deg, #FBC80D, #0077ff)',
                 color: '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer'
               }}
             >
@@ -297,10 +297,10 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
         )}
 
         {phase === 'result' && result && (
-          <div className="combat-result-breakdown" style={{ background: 'rgba(0, 0, 0, 0.6)', border: '1px solid rgba(0, 240, 255, 0.3)', borderRadius: '10px', padding: '14px', marginTop: '10px' }}>
+          <div className="combat-result-breakdown" style={{ background: 'rgba(0, 0, 0, 0.6)', border: '1px solid rgba(251, 200, 13, 0.3)', borderRadius: '10px', padding: '14px', marginTop: '10px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
               <strong style={{ fontSize: '1.1rem', color: result.isMiss ? '#888' : (result.defenseActivated ? 'var(--neon-cyan)' : '#ED1E24') }}>
-                {result.isMiss ? '❌ ATTACK MISSED (CLASH LOST)' : (result.defenseActivated ? '🛡️ DEFENSE 6+ ACHIEVED' : '💥 FULL DAMAGE PENETRATION')}
+                {result.isMiss ? '? ATTACK MISSED (CLASH LOST)' : (result.defenseActivated ? '??? DEFENSE 6+ ACHIEVED' : '?? FULL DAMAGE PENETRATION')}
               </strong>
             </div>
 
@@ -311,8 +311,8 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
                   <strong style={{ fontSize: '1rem', color: '#ED1E24' }}>{result.rawAP} AP</strong>
                 </div>
 
-                <div style={{ background: result.defenseActivated ? 'rgba(0, 240, 255, 0.15)' : 'rgba(255,255,255,0.05)', border: result.defenseActivated ? '1px solid var(--neon-cyan)' : 'none', padding: '8px', borderRadius: '6px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.7rem', color: result.defenseActivated ? 'var(--neon-cyan)' : 'rgba(255,255,255,0.6)' }}>🛡️ DP REDUCTION</div>
+                <div style={{ background: result.defenseActivated ? 'rgba(251, 200, 13, 0.15)' : 'rgba(255,255,255,0.05)', border: result.defenseActivated ? '1px solid var(--neon-cyan)' : 'none', padding: '8px', borderRadius: '6px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.7rem', color: result.defenseActivated ? 'var(--neon-cyan)' : 'rgba(255,255,255,0.6)' }}>??? DP REDUCTION</div>
                   <strong style={{ fontSize: '1rem', color: result.defenseActivated ? 'var(--neon-cyan)' : '#888' }}>
                     {result.defenseActivated ? `-${result.innateDP} AP` : '0 (Failed)'}
                   </strong>
@@ -328,7 +328,7 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
             <button
               onClick={handleApplyDamage}
               style={{
-                width: '100%', padding: '12px', background: 'linear-gradient(90deg, #00f0ff, #0088ff)',
+                width: '100%', padding: '12px', background: 'linear-gradient(90deg, #FBC80D, #0088ff)',
                 color: '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', marginTop: '10px'
               }}
             >
@@ -341,4 +341,5 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
     </div>
   );
 }
+
 

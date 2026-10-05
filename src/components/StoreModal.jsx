@@ -93,10 +93,10 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete })
           width: '100%',
           maxWidth: '700px',
           background: 'rgba(10, 20, 40, 0.95)',
-          border: '2px solid var(--neon-cyan, #00f0ff)',
+          border: '2px solid var(--neon-cyan, #FBC80D)',
           borderRadius: '16px',
           padding: '32px',
-          boxShadow: '0 0 40px rgba(0, 240, 255, 0.25)',
+          boxShadow: '0 0 40px rgba(251, 200, 13, 0.25)',
           fontFamily: 'Bebas Neue, sans-serif',
           position: 'relative'
         }}
@@ -124,8 +124,8 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete })
         </button>
 
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <ShoppingCart size={48} color="var(--neon-cyan, #00f0ff)" style={{ margin: '0 auto 10px auto' }} />
-          <h2 style={{ color: 'var(--neon-cyan, #00f0ff)', margin: '0 0 4px 0', fontSize: '2.2rem', textTransform: 'uppercase', letterSpacing: '2px' }}>
+          <ShoppingCart size={48} color="var(--neon-cyan, #FBC80D)" style={{ margin: '0 auto 10px auto' }} />
+          <h2 style={{ color: 'var(--neon-cyan, #FBC80D)', margin: '0 0 4px 0', fontSize: '2.2rem', textTransform: 'uppercase', letterSpacing: '2px' }}>
             CRYSTAL STORE
           </h2>
           <p style={{ color: 'rgba(255,255,255,0.6)', margin: 0, fontSize: '1.1rem' }}>Purchase Diamonds to access premium game modes.</p>
@@ -178,7 +178,7 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete })
                   {bundle.image_url ? (
                     <img src={bundle.image_url} alt={bundle.title} style={{ width: '80px', height: '80px', objectFit: 'contain', marginBottom: '10px' }} />
                   ) : (
-                    <div style={{ fontSize: '3rem', marginBottom: '10px', textShadow: '0 0 20px rgba(0, 240, 255, 0.8)' }}>💎</div>
+                    <div style={{ fontSize: '3rem', marginBottom: '10px', textShadow: '0 0 20px rgba(251, 200, 13, 0.8)' }}>💎</div>
                   )}
                   <div style={{ fontSize: '1.4rem', fontWeight: 'bold', color: '#fff', marginBottom: '4px' }}>{bundle.crystal_amount} Diamonds</div>
                   <div style={{ fontSize: '0.9rem', color: 'var(--neon-gold, #FBC80D)', fontWeight: 'bold', marginBottom: '4px' }}>{bundle.title}</div>
@@ -249,4 +249,5 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete })
     </div>
   );
 };
+
 

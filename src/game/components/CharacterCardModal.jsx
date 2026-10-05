@@ -79,7 +79,7 @@ export default function CharacterCardModal({ characterId, onClose }) {
             <div style={{ animation: 'fadeIn 0.3s ease' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', background: 'rgba(0,0,0,0.4)', padding: '12px', borderRadius: '8px' }}>
                 <div style={{ textAlign: 'center' }}><Heart size={16} color="#ED1E24" style={{marginBottom:'4px'}}/><div style={{fontSize:'0.75rem', color:'#a1a1aa'}}>HP</div><div style={{fontWeight:'bold'}}>{charData.maxHP}</div></div>
-                <div style={{ textAlign: 'center' }}><Shield size={16} color="#00f0ff" style={{marginBottom:'4px'}}/><div style={{fontSize:'0.75rem', color:'#a1a1aa'}}>DEF DP</div><div style={{fontWeight:'bold'}}>{charData.defaultDP}</div></div>
+                <div style={{ textAlign: 'center' }}><Shield size={16} color="#FBC80D" style={{marginBottom:'4px'}}/><div style={{fontSize:'0.75rem', color:'#a1a1aa'}}>DEF DP</div><div style={{fontWeight:'bold'}}>{charData.defaultDP}</div></div>
                 <div style={{ textAlign: 'center' }}><Swords size={16} color="#FBC80D" style={{marginBottom:'4px'}}/><div style={{fontSize:'0.75rem', color:'#a1a1aa'}}>MIND</div><div style={{fontWeight:'bold'}}>{charData.mindStrength}</div></div>
               </div>
               
@@ -128,4 +128,5 @@ export default function CharacterCardModal({ characterId, onClose }) {
     </div>
   );
 }
+
 

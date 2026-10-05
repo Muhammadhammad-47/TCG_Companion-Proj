@@ -378,7 +378,7 @@ export default function GameSetup({ onStartGame, onBack }) {
                   onClick={handleRollForFirstPlayer}
                   disabled={isRollingFirst}
                   style={{
-                    background: isRollingFirst ? 'rgba(0, 240, 255, 0.3)' : 'rgba(0, 240, 255, 0.15)',
+                    background: isRollingFirst ? 'rgba(251, 200, 13, 0.3)' : 'rgba(251, 200, 13, 0.15)',
                     border: '1.5px solid var(--neon-cyan)',
                     color: 'var(--neon-cyan)',
                     borderRadius: '8px',
@@ -390,7 +390,7 @@ export default function GameSetup({ onStartGame, onBack }) {
                     gap: '6px',
                     cursor: isRollingFirst ? 'wait' : 'pointer',
                     transition: 'all 0.2s ease',
-                    boxShadow: '0 0 10px rgba(0, 240, 255, 0.2)'
+                    boxShadow: '0 0 10px rgba(251, 200, 13, 0.2)'
                   }}
                   title="Roll 2 dice for each player to decide who goes first per official rules"
                 >
@@ -400,7 +400,7 @@ export default function GameSetup({ onStartGame, onBack }) {
               </div>
 
               {firstPlayerRolls && (
-                <div style={{ background: 'rgba(0, 240, 255, 0.08)', border: '1px solid rgba(0, 240, 255, 0.3)', borderRadius: '8px', padding: '6px 10px', marginBottom: '10px', fontSize: '0.75rem', display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+                <div style={{ background: 'rgba(251, 200, 13, 0.08)', border: '1px solid rgba(251, 200, 13, 0.3)', borderRadius: '8px', padding: '6px 10px', marginBottom: '10px', fontSize: '0.75rem', display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
                   <span style={{ color: 'var(--neon-gold)', fontWeight: 'bold' }}>?? Dice Roll-Off:</span>
                   {players.map((p, i) => (
                     <span key={i} style={{ color: i === startingPlayerIndex ? '#39ff14' : 'rgba(255,255,255,0.7)', fontWeight: i === startingPlayerIndex ? 'bold' : 'normal' }}>
@@ -508,9 +508,9 @@ export default function GameSetup({ onStartGame, onBack }) {
                       width: '40px',
                       height: '40px',
                       borderRadius: '10px',
-                      background: 'rgba(0, 240, 255, 0.12)',
-                      border: '1.5px solid rgba(0, 240, 255, 0.4)',
-                      color: '#00f0ff',
+                      background: 'rgba(251, 200, 13, 0.12)',
+                      border: '1.5px solid rgba(251, 200, 13, 0.4)',
+                      color: '#FBC80D',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -529,7 +529,7 @@ export default function GameSetup({ onStartGame, onBack }) {
                       alignItems: 'baseline',
                       gap: '6px',
                       background: 'rgba(6, 14, 32, 0.85)',
-                      border: '1.5px solid rgba(0, 240, 255, 0.3)',
+                      border: '1.5px solid rgba(251, 200, 13, 0.3)',
                       borderRadius: '10px',
                       padding: '6px 20px',
                       minWidth: '130px',
@@ -570,9 +570,9 @@ export default function GameSetup({ onStartGame, onBack }) {
                       width: '40px',
                       height: '40px',
                       borderRadius: '10px',
-                      background: 'rgba(0, 240, 255, 0.12)',
-                      border: '1.5px solid rgba(0, 240, 255, 0.4)',
-                      color: '#00f0ff',
+                      background: 'rgba(251, 200, 13, 0.12)',
+                      border: '1.5px solid rgba(251, 200, 13, 0.4)',
+                      color: '#FBC80D',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -595,11 +595,11 @@ export default function GameSetup({ onStartGame, onBack }) {
                         key={preset.val}
                         onClick={() => setStartingLP(preset.val)}
                         style={{
-                          background: startingLP === preset.val ? 'rgba(0, 240, 255, 0.25)' : 'rgba(255, 255, 255, 0.05)',
-                          border: startingLP === preset.val ? '1.5px solid #00f0ff' : '1px solid rgba(255, 255, 255, 0.15)',
+                          background: startingLP === preset.val ? 'rgba(251, 200, 13, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                          border: startingLP === preset.val ? '1.5px solid #FBC80D' : '1px solid rgba(255, 255, 255, 0.15)',
                           borderRadius: '8px',
                           padding: '6px 10px',
-                          color: startingLP === preset.val ? '#00f0ff' : '#CBD5E1',
+                          color: startingLP === preset.val ? '#FBC80D' : '#CBD5E1',
                           fontSize: '0.74rem',
                           fontWeight: startingLP === preset.val ? 'bold' : 'normal',
                           cursor: 'pointer',
@@ -640,5 +640,6 @@ export default function GameSetup({ onStartGame, onBack }) {
     </div>
   );
 }
+
 
 

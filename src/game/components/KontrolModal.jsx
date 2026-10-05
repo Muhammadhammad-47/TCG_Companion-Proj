@@ -469,7 +469,7 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
                 width: '100%',
                 marginTop: '10px',
                 padding: '14px',
-                background: kontrolWinner === 'attacker' ? 'linear-gradient(90deg, #00f0ff, #0088ff)' : 'rgba(237, 30, 36, 0.2)',
+                background: kontrolWinner === 'attacker' ? 'linear-gradient(90deg, #FBC80D, #0088ff)' : 'rgba(237, 30, 36, 0.2)',
                 color: kontrolWinner === 'attacker' ? '#000' : '#ED1E24',
                 border: kontrolWinner === 'attacker' ? 'none' : '1px solid #ED1E24',
                 borderRadius: '8px',
@@ -486,4 +486,5 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
     </div>
   );
 }
+
 

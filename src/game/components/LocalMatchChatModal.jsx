@@ -1,17 +1,17 @@
-﻿import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, Send, X } from 'lucide-react';
 import { CHARACTERS, getAssetUrl } from '../data/characters';
 import { soundFX } from '../utils/audio';
 
 const QUICK_SHOUTOUTS = [
-  { icon: '⚔️', text: 'I challenge you to a duel!' },
-  { icon: '🛡️', text: 'My DP Armor is impenetrable!' },
-  { icon: '⚡', text: 'Charging up Energy Tokens!' },
-  { icon: '☣️', text: 'Beware the Poison Stacks!' },
-  { icon: '👑', text: 'Stability Crystal is mine!' },
-  { icon: '🎲', text: 'Let the dice decide!' },
-  { icon: '🔥', text: 'Special technique ready!' },
-  { icon: '🤝', text: 'Good game, player!' }
+  { icon: '??', text: 'I challenge you to a duel!' },
+  { icon: '???', text: 'My DP Armor is impenetrable!' },
+  { icon: '?', text: 'Charging up Energy Tokens!' },
+  { icon: '??', text: 'Beware the Poison Stacks!' },
+  { icon: '??', text: 'Stability Crystal is mine!' },
+  { icon: '??', text: 'Let the dice decide!' },
+  { icon: '??', text: 'Special technique ready!' },
+  { icon: '??', text: 'Good game, player!' }
 ];
 
 export default function LocalMatchChatModal({
@@ -65,9 +65,9 @@ export default function LocalMatchChatModal({
         height: '430px',
         maxHeight: '62vh',
         background: 'linear-gradient(180deg, #0d1b38 0%, #060e20 100%)',
-        border: '2px solid rgba(0, 240, 255, 0.45)',
+        border: '2px solid rgba(251, 200, 13, 0.45)',
         borderRadius: '16px',
-        boxShadow: '0 20px 50px rgba(0,0,0,0.95), 0 0 30px rgba(0, 240, 255, 0.3)',
+        boxShadow: '0 20px 50px rgba(0,0,0,0.95), 0 0 30px rgba(251, 200, 13, 0.3)',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
@@ -83,12 +83,12 @@ export default function LocalMatchChatModal({
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: '10px 14px',
-          background: 'rgba(0, 240, 255, 0.08)',
-          borderBottom: '1px solid rgba(0, 240, 255, 0.25)'
+          background: 'rgba(251, 200, 13, 0.08)',
+          borderBottom: '1px solid rgba(251, 200, 13, 0.25)'
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ background: '#00f0ff', color: '#000', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#FBC80D', color: '#000', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <MessageSquare size={13} />
           </div>
           <div>
@@ -150,22 +150,22 @@ export default function LocalMatchChatModal({
                   setSelectedSpeakerId(p.id);
                 }}
                 style={{
-                  background: isSelected ? 'rgba(0, 240, 255, 0.22)' : 'rgba(255, 255, 255, 0.06)',
-                  border: isSelected ? '1.5px solid #00f0ff' : '1px solid rgba(255, 255, 255, 0.15)',
+                  background: isSelected ? 'rgba(251, 200, 13, 0.22)' : 'rgba(255, 255, 255, 0.06)',
+                  border: isSelected ? '1.5px solid #FBC80D' : '1px solid rgba(255, 255, 255, 0.15)',
                   borderRadius: '14px',
                   padding: '2px 7px',
-                  color: isSelected ? '#00f0ff' : '#fff',
+                  color: isSelected ? '#FBC80D' : '#fff',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '4px',
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
                   transition: 'all 0.15s ease',
-                  boxShadow: isSelected ? '0 0 6px rgba(0, 240, 255, 0.4)' : 'none',
+                  boxShadow: isSelected ? '0 0 6px rgba(251, 200, 13, 0.4)' : 'none',
                   flexShrink: 0
                 }}
               >
-                <div style={{ width: '16px', height: '16px', borderRadius: '50%', overflow: 'hidden', border: `1px solid ${char.themeColor || '#00f0ff'}` }}>
+                <div style={{ width: '16px', height: '16px', borderRadius: '50%', overflow: 'hidden', border: `1px solid ${char.themeColor || '#FBC80D'}` }}>
                   <img src={getAssetUrl(char.image)} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <span style={{ fontSize: '0.68rem', fontWeight: isSelected ? 'bold' : 'normal' }}>
@@ -191,7 +191,7 @@ export default function LocalMatchChatModal({
       >
         {chatMessages.length === 0 && (
           <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.4)', margin: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-            <MessageSquare size={24} color="rgba(0, 240, 255, 0.3)" />
+            <MessageSquare size={24} color="rgba(251, 200, 13, 0.3)" />
             <p style={{ margin: 0, fontSize: '0.78rem' }}>No messages yet.</p>
             <span style={{ fontSize: '0.66rem' }}>Send a tactical shoutout below!</span>
           </div>
@@ -218,7 +218,7 @@ export default function LocalMatchChatModal({
                   height: '26px',
                   borderRadius: '50%',
                   overflow: 'hidden',
-                  border: `1.5px solid ${msgChar.themeColor || '#00f0ff'}`,
+                  border: `1.5px solid ${msgChar.themeColor || '#FBC80D'}`,
                   flexShrink: 0,
                   boxShadow: '0 2px 6px rgba(0,0,0,0.6)'
                 }}
@@ -228,7 +228,7 @@ export default function LocalMatchChatModal({
 
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '1px' }}>
-                  <span style={{ fontSize: '0.66rem', fontWeight: 'bold', color: msgChar.themeColor || '#00f0ff' }}>
+                  <span style={{ fontSize: '0.66rem', fontWeight: 'bold', color: msgChar.themeColor || '#FBC80D' }}>
                     {msg.senderName}
                   </span>
                   <span style={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.4)' }}>
@@ -239,9 +239,9 @@ export default function LocalMatchChatModal({
                 <div
                   style={{
                     background: isMe
-                      ? 'linear-gradient(135deg, rgba(0, 119, 255, 0.4) 0%, rgba(0, 240, 255, 0.25) 100%)'
+                      ? 'linear-gradient(135deg, rgba(0, 119, 255, 0.4) 0%, rgba(251, 200, 13, 0.25) 100%)'
                       : 'rgba(255, 255, 255, 0.08)',
-                    border: isMe ? '1px solid rgba(0, 240, 255, 0.45)' : '1px solid rgba(255, 255, 255, 0.12)',
+                    border: isMe ? '1px solid rgba(251, 200, 13, 0.45)' : '1px solid rgba(255, 255, 255, 0.12)',
                     borderRadius: isMe ? '12px 3px 12px 12px' : '3px 12px 12px 12px',
                     padding: '5px 9px',
                     color: '#fff',
@@ -290,8 +290,8 @@ export default function LocalMatchChatModal({
               flexShrink: 0
             }}
             onMouseEnter={e => {
-              e.currentTarget.style.background = 'rgba(0, 240, 255, 0.2)';
-              e.currentTarget.style.borderColor = '#00f0ff';
+              e.currentTarget.style.background = 'rgba(251, 200, 13, 0.2)';
+              e.currentTarget.style.borderColor = '#FBC80D';
             }}
             onMouseLeave={e => {
               e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
@@ -313,7 +313,7 @@ export default function LocalMatchChatModal({
         style={{
           padding: '8px 10px',
           background: 'rgba(5, 12, 28, 0.95)',
-          borderTop: '1px solid rgba(0, 240, 255, 0.2)',
+          borderTop: '1px solid rgba(251, 200, 13, 0.2)',
           display: 'flex',
           gap: '6px'
         }}
@@ -326,7 +326,7 @@ export default function LocalMatchChatModal({
           style={{
             flex: 1,
             background: 'rgba(255, 255, 255, 0.07)',
-            border: '1px solid rgba(0, 240, 255, 0.3)',
+            border: '1px solid rgba(251, 200, 13, 0.3)',
             borderRadius: '6px',
             padding: '6px 10px',
             color: '#fff',
@@ -337,7 +337,7 @@ export default function LocalMatchChatModal({
         <button
           type="submit"
           style={{
-            background: 'linear-gradient(90deg, #00f0ff, #0077ff)',
+            background: 'linear-gradient(90deg, #FBC80D, #0077ff)',
             border: 'none',
             borderRadius: '6px',
             padding: '0 12px',
@@ -348,7 +348,7 @@ export default function LocalMatchChatModal({
             alignItems: 'center',
             gap: '4px',
             cursor: 'pointer',
-            boxShadow: '0 0 10px rgba(0, 240, 255, 0.35)'
+            boxShadow: '0 0 10px rgba(251, 200, 13, 0.35)'
           }}
         >
           <Send size={12} />
@@ -358,6 +358,7 @@ export default function LocalMatchChatModal({
     </div>
   );
 }
+
 
 
 

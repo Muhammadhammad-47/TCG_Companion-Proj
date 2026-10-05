@@ -65,9 +65,9 @@ export default function KontrolaChatModal({
         height: '430px',
         maxHeight: '62vh',
         background: 'linear-gradient(180deg, #0d1b38 0%, #060e20 100%)',
-        border: '2px solid rgba(0, 240, 255, 0.45)',
+        border: '2px solid rgba(251, 200, 13, 0.45)',
         borderRadius: '16px',
-        boxShadow: '0 20px 50px rgba(0,0,0,0.95), 0 0 30px rgba(0, 240, 255, 0.3)',
+        boxShadow: '0 20px 50px rgba(0,0,0,0.95), 0 0 30px rgba(251, 200, 13, 0.3)',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
@@ -83,12 +83,12 @@ export default function KontrolaChatModal({
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: '10px 14px',
-          background: 'rgba(0, 240, 255, 0.08)',
-          borderBottom: '1px solid rgba(0, 240, 255, 0.25)'
+          background: 'rgba(251, 200, 13, 0.08)',
+          borderBottom: '1px solid rgba(251, 200, 13, 0.25)'
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ background: '#00f0ff', color: '#000', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#FBC80D', color: '#000', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <MessageSquare size={13} />
           </div>
           <div>
@@ -130,7 +130,7 @@ export default function KontrolaChatModal({
       >
         {chatMessages.length === 0 && (
           <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.4)', margin: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-            <MessageSquare size={24} color="rgba(0, 240, 255, 0.3)" />
+            <MessageSquare size={24} color="rgba(251, 200, 13, 0.3)" />
             <p style={{ margin: 0, fontSize: '0.78rem' }}>No messages yet.</p>
             <span style={{ fontSize: '0.66rem' }}>Send a tactical shoutout below!</span>
           </div>
@@ -157,7 +157,7 @@ export default function KontrolaChatModal({
                   height: '26px',
                   borderRadius: '50%',
                   overflow: 'hidden',
-                  border: `1.5px solid ${msgChar.themeColor || '#00f0ff'}`,
+                  border: `1.5px solid ${msgChar.themeColor || '#FBC80D'}`,
                   flexShrink: 0,
                   boxShadow: '0 2px 6px rgba(0,0,0,0.6)'
                 }}
@@ -167,7 +167,7 @@ export default function KontrolaChatModal({
 
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '1px' }}>
-                  <span style={{ fontSize: '0.66rem', fontWeight: 'bold', color: msgChar.themeColor || '#00f0ff' }}>
+                  <span style={{ fontSize: '0.66rem', fontWeight: 'bold', color: msgChar.themeColor || '#FBC80D' }}>
                     {msg.senderName}
                   </span>
                   <span style={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.4)' }}>
@@ -178,9 +178,9 @@ export default function KontrolaChatModal({
                 <div
                   style={{
                     background: isMe
-                      ? 'linear-gradient(135deg, rgba(0, 119, 255, 0.4) 0%, rgba(0, 240, 255, 0.25) 100%)'
+                      ? 'linear-gradient(135deg, rgba(0, 119, 255, 0.4) 0%, rgba(251, 200, 13, 0.25) 100%)'
                       : 'rgba(255, 255, 255, 0.08)',
-                    border: isMe ? '1px solid rgba(0, 240, 255, 0.45)' : '1px solid rgba(255, 255, 255, 0.12)',
+                    border: isMe ? '1px solid rgba(251, 200, 13, 0.45)' : '1px solid rgba(255, 255, 255, 0.12)',
                     borderRadius: isMe ? '12px 3px 12px 12px' : '3px 12px 12px 12px',
                     padding: '5px 9px',
                     color: '#fff',
@@ -229,8 +229,8 @@ export default function KontrolaChatModal({
               flexShrink: 0
             }}
             onMouseEnter={e => {
-              e.currentTarget.style.background = 'rgba(0, 240, 255, 0.2)';
-              e.currentTarget.style.borderColor = '#00f0ff';
+              e.currentTarget.style.background = 'rgba(251, 200, 13, 0.2)';
+              e.currentTarget.style.borderColor = '#FBC80D';
             }}
             onMouseLeave={e => {
               e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
@@ -252,7 +252,7 @@ export default function KontrolaChatModal({
         style={{
           padding: '8px 10px',
           background: 'rgba(5, 12, 28, 0.95)',
-          borderTop: '1px solid rgba(0, 240, 255, 0.2)',
+          borderTop: '1px solid rgba(251, 200, 13, 0.2)',
           display: 'flex',
           gap: '6px'
         }}
@@ -265,7 +265,7 @@ export default function KontrolaChatModal({
           style={{
             flex: 1,
             background: 'rgba(255, 255, 255, 0.07)',
-            border: '1px solid rgba(0, 240, 255, 0.3)',
+            border: '1px solid rgba(251, 200, 13, 0.3)',
             borderRadius: '6px',
             padding: '6px 10px',
             color: '#fff',
@@ -276,7 +276,7 @@ export default function KontrolaChatModal({
         <button
           type="submit"
           style={{
-            background: 'linear-gradient(90deg, #00f0ff, #0077ff)',
+            background: 'linear-gradient(90deg, #FBC80D, #0077ff)',
             border: 'none',
             borderRadius: '6px',
             padding: '0 12px',
@@ -287,7 +287,7 @@ export default function KontrolaChatModal({
             alignItems: 'center',
             gap: '4px',
             cursor: 'pointer',
-            boxShadow: '0 0 10px rgba(0, 240, 255, 0.35)'
+            boxShadow: '0 0 10px rgba(251, 200, 13, 0.35)'
           }}
         >
           <Send size={12} />
@@ -297,6 +297,7 @@ export default function KontrolaChatModal({
     </div>
   );
 }
+
 
 
 
