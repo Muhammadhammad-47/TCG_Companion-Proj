@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Shield, BookOpen, HelpCircle, Plus, Search, Filter,
@@ -776,7 +776,7 @@ export default function AdminPage() {
   const getCategoryBadge = (cat) => {
     const c = (cat || 'Combat').toLowerCase();
     let bg = 'rgba(251, 200, 13, 0.12)';
-    let color = 'var(--neon-cyan, #FBC80D)';
+    let color = 'var(--neon-gold, #FBC80D)';
     let border = 'rgba(251, 200, 13, 0.35)';
 
     if (c === 'combat') {
@@ -824,11 +824,11 @@ export default function AdminPage() {
         style={{
           width: '100vw',
           height: '100vh',
-          background: 'radial-gradient(circle at 50% 20%, #111a36 0%, #080d1e 60%, #040710 100%)',
+          background: 'radial-gradient(circle at 50% 20%, #000000 0%, #000000 70%, #000000 100%)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: 'var(--neon-cyan, #FBC80D)',
+          color: 'var(--neon-gold, #FBC80D)',
           fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)'
         }}
       >
@@ -850,7 +850,7 @@ export default function AdminPage() {
             style={{
               width: '100%',
               height: '100%',
-              background: 'radial-gradient(circle at 50% 20%, #111a36 0%, #080d1e 60%, #040710 100%)',
+              background: 'radial-gradient(circle at 50% 20%, #000000 0%, #000000 70%, #000000 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -872,7 +872,7 @@ export default function AdminPage() {
                 width: '100%',
                 maxWidth: '430px',
                 background: 'var(--bg-card)',
-                border: '1.5px solid var(--neon-cyan, #FBC80D)',
+                border: '1.5px solid var(--neon-gold, #FBC80D)',
                 borderRadius: '20px',
                 padding: '32px',
                 boxShadow: '0 15px 45px rgba(0,0,0,0.8), 0 0 35px rgba(251, 200, 13, 0.25)',
@@ -914,7 +914,7 @@ export default function AdminPage() {
 
               <form onSubmit={handleAdminLogin} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div>
-                  <label style={{ display: 'block', color: 'var(--neon-cyan, #FBC80D)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 'bold', letterSpacing: '1px' }}>
+                  <label style={{ display: 'block', color: 'var(--neon-gold, #FBC80D)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 'bold', letterSpacing: '1px' }}>
                     ADMINISTRATOR EMAIL
                   </label>
                   <input
@@ -940,7 +940,7 @@ export default function AdminPage() {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', color: 'var(--neon-cyan, #FBC80D)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 'bold', letterSpacing: '1px' }}>
+                  <label style={{ display: 'block', color: 'var(--neon-gold, #FBC80D)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 'bold', letterSpacing: '1px' }}>
                     PASSWORD
                   </label>
                   <input
@@ -971,7 +971,7 @@ export default function AdminPage() {
                   style={{
                     marginTop: '8px',
                     padding: '12px',
-                    background: 'linear-gradient(90deg, #FBC80D 0%, #0088ff 100%)',
+                    background: 'linear-gradient(135deg, #FBC80D 0%, #FFD700 100%)',
                     border: 'none',
                     borderRadius: '10px',
                     color: '#050a18',
@@ -1016,7 +1016,7 @@ export default function AdminPage() {
           style={{
             width: '100%',
             height: '100%',
-            background: 'radial-gradient(circle at 50% 20%, #111a36 0%, #080d1e 60%, #040710 100%)',
+            background: 'radial-gradient(circle at 50% 20%, #000000 0%, #000000 70%, #000000 100%)',
             color: 'var(--text-main, #FFFFFF)',
             fontFamily: 'var(--font-sub, "Barlow Condensed", sans-serif)',
             display: 'flex',
@@ -1042,7 +1042,7 @@ export default function AdminPage() {
             }
             .nav-item-btn:hover {
               background: rgba(251, 200, 13, 0.1) !important;
-              color: var(--neon-cyan, #FBC80D) !important;
+              color: var(--neon-gold, #FBC80D) !important;
             }
             .data-row {
               transition: background-color 0.2s ease, border-color 0.2s ease;
@@ -1062,7 +1062,7 @@ export default function AdminPage() {
               transition: all 0.15s ease;
             }
             .category-pill:hover {
-              border-color: var(--neon-cyan, #FBC80D) !important;
+              border-color: var(--neon-gold, #FBC80D) !important;
               color: #fff !important;
             }
           `}</style>
@@ -1089,7 +1089,7 @@ export default function AdminPage() {
                   background: 'rgba(0, 0, 0, 0.85)',
                   border: '1.5px solid rgba(251, 200, 13, 0.4)',
                   borderRadius: '8px',
-                  color: 'var(--neon-cyan, #FBC80D)',
+                  color: 'var(--neon-gold, #FBC80D)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
@@ -1105,7 +1105,7 @@ export default function AdminPage() {
               </button>
               <div className="brand-pill-badge" style={{ fontSize: '0.8rem', padding: '2px 8px' }}>??!</div>
               <div style={{ fontSize: '1.25rem', fontWeight: '900', letterSpacing: '1.5px', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', color: '#fff' }}>
-                COMMAND DECK <span style={{ color: 'var(--neon-cyan, #FBC80D)', fontSize: '0.85rem', fontWeight: 'normal', letterSpacing: '1px' }}>// SYSTEM ADMIN</span>
+                COMMAND DECK <span style={{ color: 'var(--neon-gold, #FBC80D)', fontSize: '0.85rem', fontWeight: 'normal', letterSpacing: '1px' }}>// SYSTEM ADMIN</span>
               </div>
             </div>
 
@@ -1172,9 +1172,9 @@ export default function AdminPage() {
                           justifyContent: 'space-between',
                           padding: '10px 12px',
                           borderRadius: '10px',
-                          border: isSel ? '1px solid var(--neon-cyan, #FBC80D)' : '1px solid transparent',
+                          border: isSel ? '1px solid var(--neon-gold, #FBC80D)' : '1px solid transparent',
                           background: isSel ? 'rgba(251, 200, 13, 0.15)' : 'transparent',
-                          color: isSel ? 'var(--neon-cyan, #FBC80D)' : 'rgba(255, 255, 255, 0.75)',
+                          color: isSel ? 'var(--neon-gold, #FBC80D)' : 'rgba(255, 255, 255, 0.75)',
                           cursor: 'pointer',
                           fontWeight: isSel ? 'bold' : 'normal',
                           fontSize: '0.9rem',
@@ -1189,7 +1189,7 @@ export default function AdminPage() {
                         <span
                           style={{
                             fontSize: '0.72rem',
-                            background: isSel ? 'var(--neon-cyan, #FBC80D)' : 'rgba(255, 255, 255, 0.1)',
+                            background: isSel ? 'var(--neon-gold, #FBC80D)' : 'rgba(255, 255, 255, 0.1)',
                             color: isSel ? '#050a18' : 'rgba(255, 255, 255, 0.6)',
                             padding: '1px 6px',
                             borderRadius: '10px',
@@ -1315,9 +1315,9 @@ export default function AdminPage() {
                           style={{
                             padding: '5px 10px',
                             borderRadius: '6px',
-                            border: userFilter === f ? '1px solid var(--neon-cyan, #FBC80D)' : '1px solid rgba(255,255,255,0.1)',
+                            border: userFilter === f ? '1px solid var(--neon-gold, #FBC80D)' : '1px solid rgba(255,255,255,0.1)',
                             background: userFilter === f ? 'rgba(251, 200, 13, 0.15)' : 'var(--bg-card)',
-                            color: userFilter === f ? 'var(--neon-cyan, #FBC80D)' : 'rgba(255,255,255,0.65)',
+                            color: userFilter === f ? 'var(--neon-gold, #FBC80D)' : 'rgba(255,255,255,0.65)',
                             cursor: 'pointer',
                             fontWeight: 'bold',
                             fontSize: '0.76rem',
@@ -1380,7 +1380,7 @@ export default function AdminPage() {
                             >
                               {/* User Avatar + Name */}
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                                <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(251, 200, 13, 0.1)', border: '1px solid var(--neon-cyan, #FBC80D)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', flexShrink: 0 }}>
+                                <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(251, 200, 13, 0.1)', border: '1px solid var(--neon-gold, #FBC80D)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', flexShrink: 0 }}>
                                   ??
                                 </div>
                                 <strong style={{ color: '#fff', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -1394,7 +1394,7 @@ export default function AdminPage() {
                               </div>
 
                               {/* Crystals */}
-                              <div style={{ color: 'var(--neon-cyan, #FBC80D)', fontWeight: 'bold', fontSize: '0.85rem' }}>
+                              <div style={{ color: 'var(--neon-gold, #FBC80D)', fontWeight: 'bold', fontSize: '0.85rem' }}>
                                 {u.crystals_collected || 0}
                               </div>
 
@@ -1496,8 +1496,8 @@ export default function AdminPage() {
                   {/* Modals for Crystal Adjustment */}
                   {crystalModalUser && (
                     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                      <div style={{ background: 'var(--bg-card)', border: '1.5px solid var(--neon-cyan)', borderRadius: '12px', padding: '20px', maxWidth: '300px', width: '90%' }}>
-                        <h3 style={{ color: 'var(--neon-cyan)', margin: '0 0 14px 0', fontSize: '1rem' }}>Adjust Crystals: {crystalModalUser.username}</h3>
+                      <div style={{ background: 'var(--bg-card)', border: '1.5px solid var(--neon-gold)', borderRadius: '12px', padding: '20px', maxWidth: '300px', width: '90%' }}>
+                        <h3 style={{ color: 'var(--neon-gold)', margin: '0 0 14px 0', fontSize: '1rem' }}>Adjust Crystals: {crystalModalUser.username}</h3>
                         <input
                           type="number"
                           value={newCrystalCount}
@@ -1505,7 +1505,7 @@ export default function AdminPage() {
                           style={{ width: '100%', padding: '8px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(0,240,255,0.3)', color: '#fff', borderRadius: '6px', marginBottom: '12px', boxSizing: 'border-box', fontSize: '0.9rem' }}
                         />
                         <div style={{ display: 'flex', gap: '8px' }}>
-                          <button onClick={handleSaveCrystals} style={{ flex: 1, background: 'rgba(0,240,255,0.2)', border: '1px solid var(--neon-cyan)', color: 'var(--neon-cyan)', padding: '8px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Save</button>
+                          <button onClick={handleSaveCrystals} style={{ flex: 1, background: 'rgba(0,240,255,0.2)', border: '1px solid var(--neon-gold)', color: 'var(--neon-gold)', padding: '8px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Save</button>
                           <button onClick={() => setCrystalModalUser(null)} style={{ flex: 1, background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', padding: '8px', borderRadius: '6px', cursor: 'pointer' }}>Cancel</button>
                         </div>
                       </div>
@@ -1625,11 +1625,11 @@ export default function AdminPage() {
                             <span style={{ color: '#CBD5E1', fontSize: '0.78rem' }}>
                               {new Date(m.created_at).toLocaleString()}
                             </span>
-                            <span style={{ color: 'var(--neon-cyan, #FBC80D)', fontFamily: 'monospace', fontWeight: 'bold' }}>
+                            <span style={{ color: 'var(--neon-gold, #FBC80D)', fontFamily: 'monospace', fontWeight: 'bold' }}>
                               {m.room_code || 'ARENA'}
                             </span>
                             <span>
-                              <span style={{ background: 'rgba(251, 200, 13, 0.1)', color: 'var(--neon-cyan, #FBC80D)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', textTransform: 'uppercase' }}>
+                              <span style={{ background: 'rgba(251, 200, 13, 0.1)', color: 'var(--neon-gold, #FBC80D)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', textTransform: 'uppercase' }}>
                                 {m.game_mode || 'kontrola'}
                               </span>
                             </span>
@@ -1680,9 +1680,9 @@ export default function AdminPage() {
                             style={{
                               display: 'flex', alignItems: 'center', gap: '3px',
                               padding: '4px 8px', borderRadius: '16px',
-                              border: isSelected ? '1.5px solid var(--neon-cyan, #FBC80D)' : '1px solid rgba(255,255,255,0.12)',
+                              border: isSelected ? '1.5px solid var(--neon-gold, #FBC80D)' : '1px solid rgba(255,255,255,0.12)',
                               background: isSelected ? 'rgba(251, 200, 13, 0.15)' : 'var(--bg-card)',
-                              color: isSelected ? 'var(--neon-cyan, #FBC80D)' : 'rgba(255,255,255,0.6)',
+                              color: isSelected ? 'var(--neon-gold, #FBC80D)' : 'rgba(255,255,255,0.6)',
                               cursor: 'pointer', fontWeight: 'bold', fontSize: '0.75rem',
                               fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)',
                               transition: 'all 0.15s ease', whiteSpace: 'nowrap'
@@ -1703,9 +1703,9 @@ export default function AdminPage() {
 
                     {/* Action buttons - compact icons only */}
                     <div style={{ display: 'flex', gap: '3px', flexShrink: 0, flexWrap: 'nowrap' }}>
-                      <button onClick={() => setIsNewDocModalOpen(true)} title="New Document" style={{ background: 'transparent', border: '1px solid rgba(0,240,255,0.4)', color: 'var(--neon-cyan, #FBC80D)', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Plus size={11} /></button>
+                      <button onClick={() => setIsNewDocModalOpen(true)} title="New Document" style={{ background: 'transparent', border: '1px solid rgba(0,240,255,0.4)', color: 'var(--neon-gold, #FBC80D)', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Plus size={11} /></button>
                       <button onClick={() => setIsAppendModalOpen(true)} title="Append Q&A" style={{ background: 'transparent', border: '1px solid rgba(57,255,20,0.4)', color: '#39ff14', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FilePlus size={11} /></button>
-                      <button onClick={handleOpenEditDocModal} title="Edit Document" style={{ background: 'linear-gradient(90deg,#FBC80D,#0088ff)', border: 'none', color: '#050a18', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Edit2 size={11} /></button>
+                      <button onClick={handleOpenEditDocModal} title="Edit Document" style={{ background: 'linear-gradient(90deg,#FBC80D,#FBC80D)', border: 'none', color: '#050a18', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Edit2 size={11} /></button>
                       <button onClick={() => handleDownloadDoc(activeDoc)} title="Export" style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.65)', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Download size={11} /></button>
                       {activeDoc?.isMaster ? (
                         <button onClick={handleResetMasterDoc} title="Reset Master" style={{ background: 'transparent', border: '1px solid rgba(251, 200, 13,0.3)', color: 'var(--neon-gold, #FBC80D)', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RefreshCw size={11} /></button>
@@ -1731,13 +1731,13 @@ export default function AdminPage() {
                     <div style={{ display: 'flex', background: 'var(--bg-card)0.85)', border: '1px solid rgba(0,240,255,0.2)', borderRadius: '6px', padding: '2px', marginLeft: 'auto' }}>
                       <button
                         onClick={() => setDocViewMode('breakdown')}
-                        style={{ background: docViewMode === 'breakdown' ? 'rgba(0,240,255,0.18)' : 'transparent', border: 'none', color: docViewMode === 'breakdown' ? 'var(--neon-cyan, #FBC80D)' : 'rgba(255,255,255,0.45)', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.73rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '3px' }}
+                        style={{ background: docViewMode === 'breakdown' ? 'rgba(0,240,255,0.18)' : 'transparent', border: 'none', color: docViewMode === 'breakdown' ? 'var(--neon-gold, #FBC80D)' : 'rgba(255,255,255,0.45)', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.73rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '3px' }}
                       >
                         <LayoutGrid size={11} /> List
                       </button>
                       <button
                         onClick={() => setDocViewMode('raw')}
-                        style={{ background: docViewMode === 'raw' ? 'rgba(0,240,255,0.18)' : 'transparent', border: 'none', color: docViewMode === 'raw' ? 'var(--neon-cyan, #FBC80D)' : 'rgba(255,255,255,0.45)', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.73rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '3px' }}
+                        style={{ background: docViewMode === 'raw' ? 'rgba(0,240,255,0.18)' : 'transparent', border: 'none', color: docViewMode === 'raw' ? 'var(--neon-gold, #FBC80D)' : 'rgba(255,255,255,0.45)', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.73rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '3px' }}
                       >
                         <Code size={11} /> Raw
                       </button>
@@ -1752,7 +1752,7 @@ export default function AdminPage() {
                           <p style={{ margin: '0 0 10px' }}>
                             {docsLoading ? 'Loading...' : docSearchQuery ? `No results for "${docSearchQuery}"` : 'No Q&A blocks yet.'}
                           </p>
-                          {!docsLoading && <button onClick={() => setIsAppendModalOpen(true)} style={{ background: 'rgba(0,240,255,0.1)', border: '1px solid var(--neon-cyan,#FBC80D)', color: 'var(--neon-cyan,#FBC80D)', padding: '5px 14px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}>+ Add Q&A</button>}
+                          {!docsLoading && <button onClick={() => setIsAppendModalOpen(true)} style={{ background: 'rgba(0,240,255,0.1)', border: '1px solid var(--neon-gold,#FBC80D)', color: 'var(--neon-gold,#FBC80D)', padding: '5px 14px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}>+ Add Q&A</button>}
                         </div>
                       ) : (
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
@@ -1770,7 +1770,7 @@ export default function AdminPage() {
                                   {copiedKey === `qa-${idx}` ? <Check size={9} /> : <Copy size={9} />}
                                 </button>
                               </div>
-                              <h3 style={{ fontSize: '0.86rem', color: 'var(--neon-cyan, #FBC80D)', margin: 0, fontWeight: 'bold', lineHeight: '1.3' }}>
+                              <h3 style={{ fontSize: '0.86rem', color: 'var(--neon-gold, #FBC80D)', margin: 0, fontWeight: 'bold', lineHeight: '1.3' }}>
                                 {item.question}
                               </h3>
                               <p style={{ fontSize: '0.76rem', color: 'rgba(255,255,255,0.65)', lineHeight: '1.4', margin: 0, whiteSpace: 'pre-wrap', maxHeight: '100px', overflowY: 'auto', paddingRight: '2px' }}>
@@ -1786,10 +1786,10 @@ export default function AdminPage() {
                     <div style={{ background: 'var(--bg-card)0.97)', border: '1px solid rgba(0,240,255,0.2)', borderRadius: '8px', overflow: 'hidden' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--bg-card)0.95)', borderBottom: '1px solid rgba(0,240,255,0.15)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <FileCode size={12} color="var(--neon-cyan,#FBC80D)" />
+                          <FileCode size={12} color="var(--neon-gold,#FBC80D)" />
                           <span style={{ fontSize: '0.77rem', fontWeight: 'bold', color: '#fff', fontFamily: 'monospace' }}>{activeDoc?.filename}</span>
                         </div>
-                        <button onClick={() => handleCopy(activeDoc?.content || '', 'raw-doc')} style={{ background: 'rgba(0,240,255,0.1)', border: '1px solid rgba(0,240,255,0.3)', color: 'var(--neon-cyan,#FBC80D)', padding: '2px 8px', borderRadius: '3px', cursor: 'pointer', fontSize: '0.68rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                        <button onClick={() => handleCopy(activeDoc?.content || '', 'raw-doc')} style={{ background: 'rgba(0,240,255,0.1)', border: '1px solid rgba(0,240,255,0.3)', color: 'var(--neon-gold,#FBC80D)', padding: '2px 8px', borderRadius: '3px', cursor: 'pointer', fontSize: '0.68rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '2px' }}>
                           {copiedKey === 'raw-doc' ? <Check size={9} /> : <Copy size={9} />}
                         </button>
                       </div>
@@ -1801,7 +1801,7 @@ export default function AdminPage() {
                           return (
                             <div key={lIdx} style={{ display: 'flex', background: isHighlighted ? 'rgba(251, 200, 13,0.12)' : 'transparent', borderLeft: isHighlighted ? '2px solid var(--neon-gold,#FBC80D)' : 'none', paddingLeft: isHighlighted ? '6px' : '2px' }}>
                               <span style={{ width: '30px', flexShrink: 0, color: 'rgba(255,255,255,0.2)', userSelect: 'none', textAlign: 'right', paddingRight: '8px', fontSize: '0.7rem' }}>{lIdx + 1}</span>
-                              <span style={{ flex: 1, color: isHeading ? 'var(--neon-gold,#FBC80D)' : isQuestion ? 'var(--neon-cyan,#FBC80D)' : '#cbd5e1', fontWeight: isHeading || isQuestion ? 'bold' : 'normal' }}>
+                              <span style={{ flex: 1, color: isHeading ? 'var(--neon-gold,#FBC80D)' : isQuestion ? 'var(--neon-gold,#FBC80D)' : '#cbd5e1', fontWeight: isHeading || isQuestion ? 'bold' : 'normal' }}>
                                 {line || '\u00A0'}
                               </span>
                             </div>
@@ -1861,9 +1861,9 @@ export default function AdminPage() {
                           style={{
                             padding: '5px 10px',
                             borderRadius: '6px',
-                            border: questionFilter === f ? '1px solid var(--neon-cyan, #FBC80D)' : '1px solid rgba(255,255,255,0.1)',
+                            border: questionFilter === f ? '1px solid var(--neon-gold, #FBC80D)' : '1px solid rgba(255,255,255,0.1)',
                             background: questionFilter === f ? 'rgba(251, 200, 13, 0.15)' : 'var(--bg-card)',
-                            color: questionFilter === f ? 'var(--neon-cyan, #FBC80D)' : 'rgba(255,255,255,0.65)',
+                            color: questionFilter === f ? 'var(--neon-gold, #FBC80D)' : 'rgba(255,255,255,0.65)',
                             cursor: 'pointer',
                             fontWeight: 'bold',
                             fontSize: '0.76rem',
@@ -2014,7 +2014,7 @@ export default function AdminPage() {
                 <div>
                   {/* -- MODULE ACCESS CONFIGURATION ----------------------------------- */}
                   <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(251, 200, 13, 0.2)', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
-                    <h2 style={{ fontSize: '1rem', fontWeight: 'bold', color: 'var(--neon-cyan)', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <h2 style={{ fontSize: '1rem', fontWeight: 'bold', color: 'var(--neon-gold)', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <LayoutGrid size={16} /> Module Access Configuration
                     </h2>
                     <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', margin: '0 0 16px 0' }}>
@@ -2054,7 +2054,7 @@ export default function AdminPage() {
                                     </span>
                                   )}
                                   {!isPremium && (
-                                    <span style={{ fontSize: '0.62rem', fontWeight: 'bold', background: 'rgba(0,240,255,0.1)', color: 'var(--neon-cyan)', border: '1px solid rgba(0,240,255,0.3)', borderRadius: '4px', padding: '1px 6px', letterSpacing: '0.5px' }}>
+                                    <span style={{ fontSize: '0.62rem', fontWeight: 'bold', background: 'rgba(0,240,255,0.1)', color: 'var(--neon-gold)', border: '1px solid rgba(0,240,255,0.3)', borderRadius: '4px', padding: '1px 6px', letterSpacing: '0.5px' }}>
                                       FREE
                                     </span>
                                   )}
@@ -2115,7 +2115,7 @@ export default function AdminPage() {
                                   display: 'flex', alignItems: 'center', gap: '5px',
                                   background: isPremium ? 'rgba(251, 200, 13,0.15)' : 'rgba(0,240,255,0.08)',
                                   border: `1px solid ${isPremium ? 'rgba(251, 200, 13,0.5)' : 'rgba(0,240,255,0.3)'}`,
-                                  color: isPremium ? 'var(--neon-gold)' : 'var(--neon-cyan)',
+                                  color: isPremium ? 'var(--neon-gold)' : 'var(--neon-gold)',
                                   borderRadius: '8px',
                                   padding: '5px 12px',
                                   cursor: 'pointer',
@@ -2157,7 +2157,7 @@ export default function AdminPage() {
                         setModNotice(success ? '? Module settings saved!' : '? Failed to save. Check DB connection.');
                         setTimeout(() => setModNotice(''), 3500);
                       }}
-                      style={{ width: '100%', background: 'rgba(0,240,255,0.15)', border: '1px solid var(--neon-cyan)', color: 'var(--neon-cyan)', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                      style={{ width: '100%', background: 'rgba(0,240,255,0.15)', border: '1px solid var(--neon-gold)', color: 'var(--neon-gold)', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                     >
                       <Save size={13} /> Save Module Configuration
                     </button>
@@ -2165,7 +2165,7 @@ export default function AdminPage() {
 
                   {/* Global Economy Settings - Simple 2-Column Form */}
                   <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(251, 200, 13, 0.2)', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
-                    <h2 style={{ fontSize: '1rem', fontWeight: 'bold', color: 'var(--neon-cyan)', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <h2 style={{ fontSize: '1rem', fontWeight: 'bold', color: 'var(--neon-gold)', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <Coins size={16} /> Global Economy Settings
                     </h2>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
@@ -2194,7 +2194,7 @@ export default function AdminPage() {
                         setModNotice(success ? 'Settings updated!' : 'Failed to update settings.');
                         setTimeout(() => setModNotice(''), 3000);
                       }}
-                      style={{ width: '100%', background: 'rgba(251, 200, 13, 0.15)', border: '1px solid var(--neon-cyan)', color: 'var(--neon-cyan)', padding: '6px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}
+                      style={{ width: '100%', background: 'rgba(251, 200, 13, 0.15)', border: '1px solid var(--neon-gold)', color: 'var(--neon-gold)', padding: '6px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}
                     >
                       <Save size={12} style={{ display: 'inline', marginRight: '4px' }} /> Save
                     </button>
@@ -2203,12 +2203,12 @@ export default function AdminPage() {
                   {/* Store Bundles - Simple Table/List */}
                   <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(251, 200, 13, 0.2)', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px' }}>
                     <div style={{ background: 'var(--bg-deep)', borderBottom: '1px solid rgba(251, 200, 13, 0.15)', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <h2 style={{ color: 'var(--neon-cyan)', margin: 0, fontSize: '0.95rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <h2 style={{ color: 'var(--neon-gold)', margin: 0, fontSize: '0.95rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <ShoppingCart size={16} /> Store Bundles ({storeBundles.length})
                       </h2>
                       <button
                         onClick={() => setEditingBundle({ title: '', description: '', image_url: '', crystal_amount: 0, price_usd: 0, discount_percent: 0 })}
-                        style={{ background: 'rgba(251, 200, 13, 0.15)', border: '1px solid var(--neon-cyan)', color: 'var(--neon-cyan)', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}
+                        style={{ background: 'rgba(251, 200, 13, 0.15)', border: '1px solid var(--neon-gold)', color: 'var(--neon-gold)', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}
                       >
                         <Plus size={12} /> Add
                       </button>
@@ -2216,7 +2216,7 @@ export default function AdminPage() {
 
                     {editingBundle && (
                       <div style={{ background: 'rgba(0, 0, 0, 0.4)', padding: '12px 16px', borderBottom: '1px solid rgba(251, 200, 13, 0.3)' }}>
-                        <h3 style={{ color: 'var(--neon-cyan)', fontSize: '0.9rem', margin: '0 0 10px 0', fontWeight: 'bold' }}>
+                        <h3 style={{ color: 'var(--neon-gold)', fontSize: '0.9rem', margin: '0 0 10px 0', fontWeight: 'bold' }}>
                           {editingBundle.id ? 'Edit Bundle' : 'Create New Bundle'}
                         </h3>
                         
@@ -2296,7 +2296,7 @@ export default function AdminPage() {
                         </div>
                         
                         <div style={{ display: 'flex', gap: '6px' }}>
-                          <button onClick={async () => { const created = await economyService.upsertStoreBundle(editingBundle); if(created) { setEditingBundle(null); loadEconomyData(); } }} style={{ flex: 1, background: 'rgba(251, 200, 13, 0.15)', border: '1px solid var(--neon-cyan)', color: 'var(--neon-cyan)', padding: '8px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}>
+                          <button onClick={async () => { const created = await economyService.upsertStoreBundle(editingBundle); if(created) { setEditingBundle(null); loadEconomyData(); } }} style={{ flex: 1, background: 'rgba(251, 200, 13, 0.15)', border: '1px solid var(--neon-gold)', color: 'var(--neon-gold)', padding: '8px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}>
                             {editingBundle.id ? 'Update Bundle' : 'Create Bundle'}
                           </button>
                           <button onClick={() => setEditingBundle(null)} style={{ flex: 1, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>Cancel</button>
@@ -2314,12 +2314,12 @@ export default function AdminPage() {
                               <div style={{ color: '#fff', fontWeight: 'bold' }}>{bundle.title}</div>
                               {bundle.description && <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>{bundle.description.substring(0, 40)}</div>}
                             </div>
-                            <div style={{ color: 'var(--neon-cyan)' }}>?? {bundle.crystal_amount}</div>
+                            <div style={{ color: 'var(--neon-gold)' }}>?? {bundle.crystal_amount}</div>
                             <div style={{ color: 'var(--neon-gold)' }}>${bundle.price_usd}</div>
                             {bundle.discount_percent > 0 && <div style={{ background: 'rgba(255, 68, 68, 0.2)', color: '#ff4444', padding: '2px 6px', borderRadius: '3px', fontSize: '0.75rem', fontWeight: 'bold' }}>-{bundle.discount_percent}%</div>}
                             {!bundle.discount_percent && <div></div>}
                             <div style={{ display: 'flex', gap: '3px', justifyContent: 'flex-end' }}>
-                              <button onClick={() => setEditingBundle(bundle)} style={{ background: 'transparent', border: '1px solid rgba(0,240,255,0.3)', color: 'var(--neon-cyan)', padding: '2px 6px', borderRadius: '3px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Edit"><Edit2 size={11} /></button>
+                              <button onClick={() => setEditingBundle(bundle)} style={{ background: 'transparent', border: '1px solid rgba(0,240,255,0.3)', color: 'var(--neon-gold)', padding: '2px 6px', borderRadius: '3px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Edit"><Edit2 size={11} /></button>
                               <button onClick={async () => { await economyService.deleteStoreBundle(bundle.id); loadEconomyData(); }} style={{ background: 'transparent', border: '1px solid rgba(237, 30, 36,0.3)', color: '#ff6b8f', padding: '2px 6px', borderRadius: '3px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Delete"><Trash2 size={11} /></button>
                             </div>
                           </div>
@@ -2364,7 +2364,7 @@ export default function AdminPage() {
                         redeemCodes.map((c, idx) => (
                           <div key={c.id} style={{ display: 'grid', gridTemplateColumns: '1.5fr 0.8fr 0.8fr 1fr 0.6fr', alignItems: 'center', gap: '12px', padding: '10px 16px', borderBottom: idx < redeemCodes.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none', fontSize: '0.82rem' }}>
                             <div style={{ color: '#fff', fontFamily: 'monospace', fontWeight: 'bold' }}>{c.code}</div>
-                            <div style={{ color: 'var(--neon-cyan)' }}>?? {c.crystal_amount}</div>
+                            <div style={{ color: 'var(--neon-gold)' }}>?? {c.crystal_amount}</div>
                             <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem' }}>{c.times_used || 0} / {c.max_uses}</div>
                             <div style={{ color: c.times_used >= c.max_uses ? '#ff6b8f' : '#39ff14', fontSize: '0.75rem', fontWeight: 'bold' }}>
                               {c.times_used >= c.max_uses ? 'EXPIRED' : 'ACTIVE'}
@@ -2403,9 +2403,9 @@ export default function AdminPage() {
                           style={{
                             padding: '5px 12px',
                             borderRadius: '6px',
-                            border: `1px solid ${musicFilter === filter ? 'var(--neon-cyan)' : 'rgba(255,255,255,0.2)'}`,
+                            border: `1px solid ${musicFilter === filter ? 'var(--neon-gold)' : 'rgba(255,255,255,0.2)'}`,
                             background: musicFilter === filter ? 'rgba(0,240,255,0.15)' : 'transparent',
-                            color: musicFilter === filter ? 'var(--neon-cyan)' : 'rgba(255,255,255,0.6)',
+                            color: musicFilter === filter ? 'var(--neon-gold)' : 'rgba(255,255,255,0.6)',
                             cursor: 'pointer',
                             fontSize: '0.75rem',
                             fontWeight: 'bold',
@@ -2504,13 +2504,13 @@ export default function AdminPage() {
                             {/* Card Header - Track Title & Artist */}
                             <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0, 0, 0, 0.2)' }}>
                               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                                <Music size={18} style={{ color: 'var(--neon-cyan)', flexShrink: 0, marginTop: '2px' }} />
+                                <Music size={18} style={{ color: 'var(--neon-gold)', flexShrink: 0, marginTop: '2px' }} />
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                   <div style={{ color: '#fff', fontWeight: '600', fontSize: '0.95rem', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                     {track.title}
                                   </div>
                                   <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>
-                                    by <strong style={{ color: 'var(--neon-cyan)' }}>{track.username}</strong>
+                                    by <strong style={{ color: 'var(--neon-gold)' }}>{track.username}</strong>
                                   </div>
                                 </div>
                                 <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', whiteSpace: 'nowrap' }}>
@@ -2998,7 +2998,7 @@ export default function AdminPage() {
                             key={msg.id}
                             style={{
                               background: 'linear-gradient(135deg, rgba(13, 26, 56, 0.8) 0%, var(--bg-card) 100%)',
-                              border: '1px solid rgba(0, 200, 255, 0.2)',
+                              border: '1px solid rgba(251, 200, 13, 0.2)',
                               borderRadius: '12px',
                               padding: '16px',
                               cursor: 'pointer',
@@ -3007,13 +3007,13 @@ export default function AdminPage() {
                             }}
                             onClick={() => setExpandedSupportId(expandedSupportId === msg.id ? null : msg.id)}
                             onMouseOver={e => e.currentTarget.style.borderColor = 'rgba(251, 200, 13, 0.4)'}
-                            onMouseOut={e => e.currentTarget.style.borderColor = 'rgba(0, 200, 255, 0.2)'}
+                            onMouseOut={e => e.currentTarget.style.borderColor = 'rgba(251, 200, 13, 0.2)'}
                           >
                             {/* Header */}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                               <div>
                                 <div style={{ color: '#fff', fontWeight: 'bold', fontSize: '0.95rem' }}>
-                                  From: <span style={{ color: 'var(--neon-cyan)' }}>{msg.username || 'Guest'}</span>
+                                  From: <span style={{ color: 'var(--neon-gold)' }}>{msg.username || 'Guest'}</span>
                                 </div>
                                 <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginTop: '2px' }}>
                                   {createdDate}
@@ -3388,7 +3388,7 @@ export default function AdminPage() {
           ========================================================================= */}
           {isEditDocModalOpen && activeDoc && (
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-              <div style={{ width: '100%', maxWidth: '850px', maxHeight: '92vh', display: 'flex', flexDirection: 'column', background: 'rgba(12, 18, 36, 0.98)', border: '1.5px solid var(--neon-cyan, #FBC80D)', borderRadius: '18px', padding: '24px', boxShadow: '0 0 50px rgba(251, 200, 13, 0.35)', boxSizing: 'border-box' }}>
+              <div style={{ width: '100%', maxWidth: '850px', maxHeight: '92vh', display: 'flex', flexDirection: 'column', background: 'rgba(12, 18, 36, 0.98)', border: '1.5px solid var(--neon-gold, #FBC80D)', borderRadius: '18px', padding: '24px', boxShadow: '0 0 50px rgba(251, 200, 13, 0.35)', boxSizing: 'border-box' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                   <div>
                     <h2 style={{ fontSize: '1.35rem', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', letterSpacing: '1px' }}>
@@ -3426,7 +3426,7 @@ export default function AdminPage() {
                 <form onSubmit={handleSaveEditedDoc} style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: '12px', minHeight: 0 }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '10px' }}>
                     <div>
-                      <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--neon-cyan, #FBC80D)', marginBottom: '4px', fontWeight: 'bold' }}>DOCUMENT TITLE</label>
+                      <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--neon-gold, #FBC80D)', marginBottom: '4px', fontWeight: 'bold' }}>DOCUMENT TITLE</label>
                       <input
                         type="text"
                         required
@@ -3436,7 +3436,7 @@ export default function AdminPage() {
                       />
                     </div>
                     <div>
-                      <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--neon-cyan, #FBC80D)', marginBottom: '4px', fontWeight: 'bold' }}>CATEGORY</label>
+                      <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--neon-gold, #FBC80D)', marginBottom: '4px', fontWeight: 'bold' }}>CATEGORY</label>
                       <input
                         type="text"
                         value={editDocData.category}
@@ -3447,7 +3447,7 @@ export default function AdminPage() {
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-                    <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--neon-cyan, #FBC80D)', marginBottom: '4px', fontWeight: 'bold' }}>DOCUMENT CONTENT (.txt)</label>
+                    <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--neon-gold, #FBC80D)', marginBottom: '4px', fontWeight: 'bold' }}>DOCUMENT CONTENT (.txt)</label>
                     <textarea
                       required
                       value={editDocData.content}
@@ -3485,7 +3485,7 @@ export default function AdminPage() {
                       <button
                         type="submit"
                         disabled={isSavingDoc}
-                        style={{ padding: '7px 18px', borderRadius: '6px', border: 'none', background: 'linear-gradient(90deg, #FBC80D 0%, #0088ff 100%)', color: '#050a18', fontWeight: 'bold', cursor: isSavingDoc ? 'not-allowed' : 'pointer', fontSize: '0.84rem', opacity: isSavingDoc ? 0.7 : 1 }}
+                        style={{ padding: '7px 18px', borderRadius: '6px', border: 'none', background: 'linear-gradient(135deg, #FBC80D 0%, #FFD700 100%)', color: '#050a18', fontWeight: 'bold', cursor: isSavingDoc ? 'not-allowed' : 'pointer', fontSize: '0.84rem', opacity: isSavingDoc ? 0.7 : 1 }}
                       >
                         {isSavingDoc ? 'Saving...' : 'Save Changes'}
                       </button>
@@ -3501,7 +3501,7 @@ export default function AdminPage() {
           ========================================================================= */}
           {isAppendModalOpen && activeDoc && (
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-              <div style={{ width: '100%', maxWidth: '620px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-card) 0.98)', border: '1.5px solid var(--neon-cyan, #FBC80D)', borderRadius: '18px', padding: '24px', boxShadow: '0 0 45px rgba(251, 200, 13, 0.3)' }}>
+              <div style={{ width: '100%', maxWidth: '620px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-card) 0.98)', border: '1.5px solid var(--neon-gold, #FBC80D)', borderRadius: '18px', padding: '24px', boxShadow: '0 0 45px rgba(251, 200, 13, 0.3)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                   <div>
                     <h2 style={{ fontSize: '1.35rem', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>
@@ -3526,9 +3526,9 @@ export default function AdminPage() {
                         flex: 1,
                         padding: '8px',
                         borderRadius: '6px',
-                        border: appendData.type === 'qa' ? '1px solid var(--neon-cyan, #FBC80D)' : '1px solid rgba(255,255,255,0.1)',
+                        border: appendData.type === 'qa' ? '1px solid var(--neon-gold, #FBC80D)' : '1px solid rgba(255,255,255,0.1)',
                         background: appendData.type === 'qa' ? 'rgba(251, 200, 13, 0.18)' : 'var(--bg-card)',
-                        color: appendData.type === 'qa' ? 'var(--neon-cyan, #FBC80D)' : 'rgba(255,255,255,0.6)',
+                        color: appendData.type === 'qa' ? 'var(--neon-gold, #FBC80D)' : 'rgba(255,255,255,0.6)',
                         fontWeight: 'bold',
                         cursor: 'pointer',
                         fontSize: '0.82rem'
@@ -3543,9 +3543,9 @@ export default function AdminPage() {
                         flex: 1,
                         padding: '8px',
                         borderRadius: '6px',
-                        border: appendData.type === 'section' ? '1px solid var(--neon-cyan, #FBC80D)' : '1px solid rgba(255,255,255,0.1)',
+                        border: appendData.type === 'section' ? '1px solid var(--neon-gold, #FBC80D)' : '1px solid rgba(255,255,255,0.1)',
                         background: appendData.type === 'section' ? 'rgba(251, 200, 13, 0.18)' : 'var(--bg-card)',
-                        color: appendData.type === 'section' ? 'var(--neon-cyan, #FBC80D)' : 'rgba(255,255,255,0.6)',
+                        color: appendData.type === 'section' ? 'var(--neon-gold, #FBC80D)' : 'rgba(255,255,255,0.6)',
                         fontWeight: 'bold',
                         cursor: 'pointer',
                         fontSize: '0.82rem'
@@ -3556,7 +3556,7 @@ export default function AdminPage() {
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--neon-cyan, #FBC80D)', marginBottom: '4px', fontWeight: 'bold' }}>
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--neon-gold, #FBC80D)', marginBottom: '4px', fontWeight: 'bold' }}>
                       {appendData.type === 'qa' ? 'QUESTION (Will auto-append ? if missing)' : 'SECTION HEADING (e.g. 12. TOURNAMENT OVERTIME)'}
                     </label>
                     <input
@@ -3571,7 +3571,7 @@ export default function AdminPage() {
 
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                      <label style={{ fontSize: '0.8rem', color: 'var(--neon-cyan, #FBC80D)', fontWeight: 'bold' }}>
+                      <label style={{ fontSize: '0.8rem', color: 'var(--neon-gold, #FBC80D)', fontWeight: 'bold' }}>
                         {appendData.type === 'qa' ? 'SPOKEN ANSWER / MECHANIC BREAKDOWN' : 'SECTION BODY TEXT'}
                       </label>
                       <span style={{ fontSize: '0.72rem', color: (appendData.content.length > 4000) ? '#ff2a55' : 'rgba(255,255,255,0.5)' }}>
@@ -3628,7 +3628,7 @@ export default function AdminPage() {
           ========================================================================= */}
           {isNewDocModalOpen && (
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-              <div style={{ width: '100%', maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-card) 0.98)', border: '1.5px solid var(--neon-cyan, #FBC80D)', borderRadius: '18px', padding: '24px', boxShadow: '0 0 45px rgba(251, 200, 13, 0.3)' }}>
+              <div style={{ width: '100%', maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-card) 0.98)', border: '1.5px solid var(--neon-gold, #FBC80D)', borderRadius: '18px', padding: '24px', boxShadow: '0 0 45px rgba(251, 200, 13, 0.3)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                   <h2 style={{ fontSize: '1.35rem', color: '#fff', margin: 0, fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>
                     ADD NEW KNOWLEDGE DOCUMENT
@@ -3640,7 +3640,7 @@ export default function AdminPage() {
 
                 <form onSubmit={handleCreateNewDoc} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--neon-cyan, #FBC80D)', marginBottom: '4px', fontWeight: 'bold' }}>FILENAME (.txt)</label>
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--neon-gold, #FBC80D)', marginBottom: '4px', fontWeight: 'bold' }}>FILENAME (.txt)</label>
                     <input
                       type="text"
                       required
@@ -3653,7 +3653,7 @@ export default function AdminPage() {
 
                   <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '10px' }}>
                     <div>
-                      <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--neon-cyan, #FBC80D)', marginBottom: '4px', fontWeight: 'bold' }}>DOCUMENT TITLE</label>
+                      <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--neon-gold, #FBC80D)', marginBottom: '4px', fontWeight: 'bold' }}>DOCUMENT TITLE</label>
                       <input
                         type="text"
                         required
@@ -3664,7 +3664,7 @@ export default function AdminPage() {
                       />
                     </div>
                     <div>
-                      <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--neon-cyan, #FBC80D)', marginBottom: '4px', fontWeight: 'bold' }}>CATEGORY</label>
+                      <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--neon-gold, #FBC80D)', marginBottom: '4px', fontWeight: 'bold' }}>CATEGORY</label>
                       <input
                         type="text"
                         value={newDocData.category}
@@ -3677,7 +3677,7 @@ export default function AdminPage() {
 
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                      <label style={{ fontSize: '0.8rem', color: 'var(--neon-cyan, #FBC80D)', fontWeight: 'bold' }}>INITIAL CONTENT</label>
+                      <label style={{ fontSize: '0.8rem', color: 'var(--neon-gold, #FBC80D)', fontWeight: 'bold' }}>INITIAL CONTENT</label>
                       <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)' }}>
                         {newDocData.content.length} chars (Limit: 131,072 chars)
                       </span>
@@ -3702,7 +3702,7 @@ export default function AdminPage() {
                     <button
                       type="submit"
                       disabled={isSavingDoc}
-                      style={{ padding: '7px 18px', borderRadius: '6px', border: 'none', background: 'linear-gradient(90deg, #FBC80D 0%, #0088ff 100%)', color: '#050a18', fontWeight: 'bold', cursor: isSavingDoc ? 'not-allowed' : 'pointer', fontSize: '0.84rem', opacity: isSavingDoc ? 0.7 : 1 }}
+                      style={{ padding: '7px 18px', borderRadius: '6px', border: 'none', background: 'linear-gradient(135deg, #FBC80D 0%, #FFD700 100%)', color: '#050a18', fontWeight: 'bold', cursor: isSavingDoc ? 'not-allowed' : 'pointer', fontSize: '0.84rem', opacity: isSavingDoc ? 0.7 : 1 }}
                     >
                       {isSavingDoc ? 'Creating...' : 'Create Document'}
                     </button>
@@ -3719,14 +3719,14 @@ export default function AdminPage() {
       {confirmDialog && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}>
           <div style={{ background: 'rgba(8, 16, 36, 0.98)', border: `2px solid ${confirmDialog.isDanger ? 'var(--neon-crimson)' : 'rgba(0,240,255,0.4)'}`, borderRadius: '16px', padding: '24px', maxWidth: '520px', width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.8)', fontFamily: 'Bebas Neue, sans-serif' }}>
-            <h3 style={{ margin: '0 0 12px 0', color: confirmDialog.isDanger ? 'var(--neon-crimson)' : 'var(--neon-cyan)', fontSize: '1.3rem', fontWeight: 'bold', letterSpacing: '1px' }}>{confirmDialog.title}</h3>
+            <h3 style={{ margin: '0 0 12px 0', color: confirmDialog.isDanger ? 'var(--neon-crimson)' : 'var(--neon-gold)', fontSize: '1.3rem', fontWeight: 'bold', letterSpacing: '1px' }}>{confirmDialog.title}</h3>
             <p style={{ margin: '0 0 20px 0', color: 'rgba(255,255,255,0.85)', fontSize: '0.95rem', lineHeight: '1.5' }}>{confirmDialog.message}</p>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button onClick={() => setConfirmDialog(null)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.25)', background: 'transparent', color: '#fff', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold', transition: 'background 0.2s' }}
                 onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
                 onMouseOut={e => e.currentTarget.style.background = 'transparent'}
               >Cancel</button>
-              <button onClick={() => { confirmDialog.onConfirm(); setConfirmDialog(null); }} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: confirmDialog.isDanger ? 'linear-gradient(135deg, #ff2a55, #cc0033)' : 'linear-gradient(135deg, #FBC80D, #0088ff)', color: confirmDialog.isDanger ? '#fff' : '#040a18', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold', boxShadow: `0 4px 12px ${confirmDialog.isDanger ? 'rgba(255,42,85,0.3)' : 'rgba(0,240,255,0.3)'}`, transition: 'transform 0.15s' }}
+              <button onClick={() => { confirmDialog.onConfirm(); setConfirmDialog(null); }} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: confirmDialog.isDanger ? 'linear-gradient(135deg, #ff2a55, #cc0033)' : 'linear-gradient(135deg, #FBC80D, #FBC80D)', color: confirmDialog.isDanger ? '#fff' : '#040a18', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold', boxShadow: `0 4px 12px ${confirmDialog.isDanger ? 'rgba(255,42,85,0.3)' : 'rgba(0,240,255,0.3)'}`, transition: 'transform 0.15s' }}
                 onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'}
                 onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
               >{confirmDialog.confirmLabel}</button>

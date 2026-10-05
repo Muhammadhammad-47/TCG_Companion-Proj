@@ -85,10 +85,10 @@ export default function BugReportButton({
       <button
         onClick={() => setIsOpen(true)}
         style={{
-          background: 'linear-gradient(135deg, #0088ff 0%, #00ccff 100%)',
+          background: 'linear-gradient(135deg, #FBC80D 0%, #FFD700 100%)',
           border: 'none',
           borderRadius: '12px',
-          color: '#fff',
+          color: '#000000',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
@@ -97,17 +97,17 @@ export default function BugReportButton({
           transition: 'all 0.3s ease',
           fontFamily: 'Bebas Neue, sans-serif',
           letterSpacing: '0.5px',
-          boxShadow: '0 0 20px rgba(0, 200, 255, 0.4)',
+          boxShadow: '0 0 20px rgba(251, 200, 13, 0.5)',
           padding: '10px 18px',
           fontSize: '0.9rem',
           ...style
         }}
         onMouseOver={(e) => {
-          e.currentTarget.style.boxShadow = '0 0 30px rgba(0, 200, 255, 0.7)';
+          e.currentTarget.style.boxShadow = '0 0 30px rgba(251, 200, 13, 0.8)';
           e.currentTarget.style.transform = 'scale(1.05)';
         }}
         onMouseOut={(e) => {
-          e.currentTarget.style.boxShadow = '0 0 20px rgba(0, 200, 255, 0.4)';
+          e.currentTarget.style.boxShadow = '0 0 20px rgba(251, 200, 13, 0.5)';
           e.currentTarget.style.transform = 'scale(1)';
         }}
       >
@@ -134,15 +134,15 @@ export default function BugReportButton({
         >
           <div
             style={{
-              background: 'linear-gradient(135deg, var(--bg-card) 0%, rgba(10, 20, 40, 0.98) 100%)',
-              border: '2px solid rgba(0, 200, 255, 0.5)',
+              background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.98) 100%)',
+              border: '2px solid rgba(251, 200, 13, 0.6)',
               borderRadius: '20px',
               padding: '28px',
               width: '100%',
               maxWidth: '550px',
               maxHeight: '90vh',
               overflowY: 'auto',
-              boxShadow: '0 0 60px rgba(0, 200, 255, 0.3), inset 0 0 20px rgba(0, 200, 255, 0.1)',
+              boxShadow: '0 0 60px rgba(251, 200, 13, 0.4), inset 0 0 20px rgba(251, 200, 13, 0.08)',
               position: 'relative',
               margin: 'auto'
             }}
@@ -156,21 +156,21 @@ export default function BugReportButton({
                     width: '48px',
                     height: '48px',
                     borderRadius: '12px',
-                    background: 'linear-gradient(135deg, rgba(0, 200, 255, 0.2) 0%, rgba(0, 150, 255, 0.2) 100%)',
+                    background: 'linear-gradient(135deg, rgba(251, 200, 13, 0.15) 0%, rgba(251, 200, 13, 0.08) 100%)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    border: '2px solid rgba(0, 200, 255, 0.5)',
-                    boxShadow: '0 0 20px rgba(0, 200, 255, 0.3)'
+                    border: '2px solid rgba(251, 200, 13, 0.6)',
+                    boxShadow: '0 0 20px rgba(251, 200, 13, 0.3)'
                   }}
                 >
-                  <MessageSquare size={24} style={{ color: '#00ccff' }} />
+                  <MessageSquare size={24} style={{ color: '#FBC80D' }} />
                 </div>
                 <div>
                   <h3 style={{ color: '#fff', margin: 0, fontSize: '1.5rem', fontWeight: 'bold', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '1px' }}>
                     CONTACT SUPPORT
                   </h3>
-                  <p style={{ color: 'rgba(0, 200, 255, 0.8)', margin: '4px 0 0 0', fontSize: '0.85rem', fontFamily: 'Bebas Neue, sans-serif' }}>
+                  <p style={{ color: 'rgba(251, 200, 13, 0.8)', margin: '4px 0 0 0', fontSize: '0.85rem', fontFamily: 'Bebas Neue, sans-serif' }}>
                     We're here to help
                   </p>
                 </div>
@@ -198,7 +198,7 @@ export default function BugReportButton({
               <label
                 style={{
                   display: 'block',
-                  color: '#00ccff',
+                  color: '#FBC80D',
                   fontSize: '0.9rem',
                   fontWeight: 'bold',
                   marginBottom: '10px',
@@ -217,8 +217,8 @@ export default function BugReportButton({
                 style={{
                   width: '100%',
                   boxSizing: 'border-box',
-                  background: 'var(--bg-card)',
-                  border: '1.5px solid rgba(0, 200, 255, 0.3)',
+                  background: 'rgba(0, 0, 0, 0.8)',
+                  border: '1.5px solid rgba(251, 200, 13, 0.3)',
                   borderRadius: '12px',
                   color: '#fff',
                   padding: '14px 16px',
@@ -230,19 +230,19 @@ export default function BugReportButton({
                   cursor: isSubmitting ? 'not-allowed' : 'text'
                 }}
                 onFocus={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(0, 200, 255, 0.6)';
-                  e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 200, 255, 0.2)';
+                  e.currentTarget.style.borderColor = 'rgba(251, 200, 13, 0.6)';
+                  e.currentTarget.style.boxShadow = '0 0 15px rgba(251, 200, 13, 0.2)';
                 }}
                 onBlur={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(0, 200, 255, 0.3)';
+                  e.currentTarget.style.borderColor = 'rgba(251, 200, 13, 0.3)';
                   e.currentTarget.style.boxShadow = 'none';
                 }}
               />
             </div>
 
             {/* Screenshot Section */}
-            <div style={{ marginBottom: '20px', padding: '16px', background: 'rgba(0, 200, 255, 0.05)', borderRadius: '12px', border: '1px solid rgba(0, 200, 255, 0.15)' }}>
-              <label style={{ display: 'block', color: '#00ccff', fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '12px', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.5px' }}>
+            <div style={{ marginBottom: '20px', padding: '16px', background: 'rgba(251, 200, 13, 0.05)', borderRadius: '12px', border: '1px solid rgba(251, 200, 13, 0.15)' }}>
+              <label style={{ display: 'block', color: '#FBC80D', fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '12px', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.5px' }}>
                 📸 SCREENSHOT (Optional)
               </label>
 
@@ -252,10 +252,10 @@ export default function BugReportButton({
                   disabled={isSubmitting}
                   style={{
                     width: '100%',
-                    background: 'rgba(0, 200, 255, 0.15)',
-                    border: '1.5px dashed rgba(0, 200, 255, 0.4)',
+                    background: 'rgba(251, 200, 13, 0.15)',
+                    border: '1.5px dashed rgba(251, 200, 13, 0.4)',
                     borderRadius: '10px',
-                    color: '#00ccff',
+                    color: '#FBC80D',
                     padding: '14px',
                     cursor: isSubmitting ? 'not-allowed' : 'pointer',
                     fontSize: '0.9rem',
@@ -279,12 +279,12 @@ export default function BugReportButton({
                       maxWidth: '100px',
                       maxHeight: '100px',
                       borderRadius: '8px',
-                      border: '1px solid rgba(0, 200, 255, 0.3)',
+                      border: '1px solid rgba(251, 200, 13, 0.3)',
                       objectFit: 'cover'
                     }}
                   />
                   <div style={{ flex: 1, minWidth: '150px' }}>
-                    <p style={{ color: '#00ccff', fontSize: '0.85rem', margin: '0 0 8px 0', fontWeight: 'bold' }}>
+                    <p style={{ color: '#FBC80D', fontSize: '0.85rem', margin: '0 0 8px 0', fontWeight: 'bold' }}>
                       ✓ Screenshot attached
                     </p>
                     <button
@@ -389,8 +389,8 @@ export default function BugReportButton({
                 disabled={isSubmitting || !message.trim()}
                 style={{
                   background: isSubmitting || !message.trim()
-                    ? 'rgba(0, 200, 255, 0.2)'
-                    : 'linear-gradient(135deg, #0088ff 0%, #00ccff 100%)',
+                    ? 'rgba(251, 200, 13, 0.2)'
+                    : 'linear-gradient(135deg, #FBC80D 0%, #FBC80D 100%)',
                   border: 'none',
                   borderRadius: '10px',
                   color: '#fff',
@@ -404,7 +404,7 @@ export default function BugReportButton({
                   gap: '8px',
                   fontFamily: 'Bebas Neue, sans-serif',
                   letterSpacing: '0.5px',
-                  boxShadow: '0 0 20px rgba(0, 200, 255, 0.4)',
+                  boxShadow: '0 0 20px rgba(251, 200, 13, 0.4)',
                   transition: 'all 0.2s ease'
                 }}
               >

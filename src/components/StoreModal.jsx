@@ -93,7 +93,7 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete })
           width: '100%',
           maxWidth: '700px',
           background: 'rgba(10, 20, 40, 0.95)',
-          border: '2px solid var(--neon-cyan, #FBC80D)',
+          border: '2px solid var(--neon-gold, #FBC80D)',
           borderRadius: '16px',
           padding: '32px',
           boxShadow: '0 0 40px rgba(251, 200, 13, 0.25)',
@@ -124,8 +124,8 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete })
         </button>
 
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <ShoppingCart size={48} color="var(--neon-cyan, #FBC80D)" style={{ margin: '0 auto 10px auto' }} />
-          <h2 style={{ color: 'var(--neon-cyan, #FBC80D)', margin: '0 0 4px 0', fontSize: '2.2rem', textTransform: 'uppercase', letterSpacing: '2px' }}>
+          <ShoppingCart size={48} color="var(--neon-gold, #FBC80D)" style={{ margin: '0 auto 10px auto' }} />
+          <h2 style={{ color: 'var(--neon-gold, #FBC80D)', margin: '0 0 4px 0', fontSize: '2.2rem', textTransform: 'uppercase', letterSpacing: '2px' }}>
             CRYSTAL STORE
           </h2>
           <p style={{ color: 'rgba(255,255,255,0.6)', margin: 0, fontSize: '1.1rem' }}>Purchase Diamonds to access premium game modes.</p>

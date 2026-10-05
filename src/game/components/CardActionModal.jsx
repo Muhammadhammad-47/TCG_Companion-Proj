@@ -210,7 +210,7 @@ export default function CardActionModal({
           top: '40px',
           left: '40px',
           background: 'linear-gradient(135deg, #1a2a4c 0%, #0d1b38 100%)',
-          border: '3px solid var(--neon-cyan)',
+          border: '3px solid var(--neon-gold)',
           borderRadius: '12px',
           padding: '16px 36px',
           display: 'flex',
@@ -261,7 +261,7 @@ export default function CardActionModal({
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '42px', height: '42px', borderRadius: '50%', overflow: 'hidden', border: '1.5px solid var(--neon-cyan)', background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '42px', height: '42px', borderRadius: '50%', overflow: 'hidden', border: '1.5px solid var(--neon-gold)', background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <img
                   src={getAssetUrl(char.image || 'characters/chynaman.png')}
                   alt={char.name}
@@ -269,7 +269,7 @@ export default function CardActionModal({
                 />
               </div>
               <div>
-                <span style={{ fontSize: '0.72rem', letterSpacing: '1px', color: 'var(--neon-cyan)', fontWeight: 'bold' }}>
+                <span style={{ fontSize: '0.72rem', letterSpacing: '1px', color: 'var(--neon-gold)', fontWeight: 'bold' }}>
                   TACTICAL COMBAT PLAY
                 </span>
                 <h2 style={{ fontSize: '1.25rem', margin: '2px 0 0 0', fontFamily: 'Orbitron, sans-serif' }}>
@@ -341,7 +341,7 @@ export default function CardActionModal({
             >
               {/* Left Column: Action Cards */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--neon-cyan)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--neon-gold)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <span>1. CHOOSE ACTION CARD</span>
                 </div>
 
@@ -365,7 +365,7 @@ export default function CardActionModal({
                         onClick={() => !disabledForZombie && handleActionClick(card)}
                         style={{
                           background: isSelected ? 'rgba(251, 200, 13, 0.18)' : 'rgba(255, 255, 255, 0.04)',
-                          border: isSelected ? `2px solid ${card.color || 'var(--neon-cyan)'}` : '1px solid rgba(255, 255, 255, 0.12)',
+                          border: isSelected ? `2px solid ${card.color || 'var(--neon-gold)'}` : '1px solid rgba(255, 255, 255, 0.12)',
                           borderRadius: '10px',
                           padding: '12px',
                           cursor: disabledForZombie ? 'not-allowed' : 'pointer',
@@ -532,7 +532,7 @@ export default function CardActionModal({
                             </div>
                             <div>
                               <strong style={{ fontSize: '0.82rem', color: '#fff', display: 'block' }}>{target.name}</strong>
-                              <span style={{ fontSize: '0.72rem', color: 'var(--neon-cyan)' }}>{target.hp} HP</span>
+                              <span style={{ fontSize: '0.72rem', color: 'var(--neon-gold)' }}>{target.hp} HP</span>
                             </div>
                           </div>
                         );

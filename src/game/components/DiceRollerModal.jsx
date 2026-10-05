@@ -147,7 +147,7 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
               </div>
             </div>
           </div>
-          <div className="vs-circle" style={{ fontWeight: '900', color: 'var(--neon-cyan)', fontSize: '1.2rem', padding: '10px 16px', background: 'rgba(251, 200, 13, 0.12)', borderRadius: '50%', border: '2px solid rgba(251, 200, 13, 0.5)' }}>VS</div>
+          <div className="vs-circle" style={{ fontWeight: '900', color: 'var(--neon-gold)', fontSize: '1.2rem', padding: '10px 16px', background: 'rgba(251, 200, 13, 0.12)', borderRadius: '50%', border: '2px solid rgba(251, 200, 13, 0.5)' }}>VS</div>
           <div className="combatant-side defender-side cyber-combatant-card" style={{ borderColor: 'var(--neon-gold)', padding: '14px 20px', background: 'rgba(251, 200, 13, 0.12)', borderRadius: '14px', border: '1.5px solid #FBC80D' }}>
             <div className="combatant-role-badge def-badge" style={{ fontSize: '0.8rem', color: '#FBC80D', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Shield size={15} /> DEFENDER
@@ -299,7 +299,7 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
         {phase === 'result' && result && (
           <div className="combat-result-breakdown" style={{ background: 'rgba(0, 0, 0, 0.6)', border: '1px solid rgba(251, 200, 13, 0.3)', borderRadius: '10px', padding: '14px', marginTop: '10px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <strong style={{ fontSize: '1.1rem', color: result.isMiss ? '#888' : (result.defenseActivated ? 'var(--neon-cyan)' : '#ED1E24') }}>
+              <strong style={{ fontSize: '1.1rem', color: result.isMiss ? '#888' : (result.defenseActivated ? 'var(--neon-gold)' : '#ED1E24') }}>
                 {result.isMiss ? '? ATTACK MISSED (CLASH LOST)' : (result.defenseActivated ? '??? DEFENSE 6+ ACHIEVED' : '?? FULL DAMAGE PENETRATION')}
               </strong>
             </div>
@@ -311,9 +311,9 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
                   <strong style={{ fontSize: '1rem', color: '#ED1E24' }}>{result.rawAP} AP</strong>
                 </div>
 
-                <div style={{ background: result.defenseActivated ? 'rgba(251, 200, 13, 0.15)' : 'rgba(255,255,255,0.05)', border: result.defenseActivated ? '1px solid var(--neon-cyan)' : 'none', padding: '8px', borderRadius: '6px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.7rem', color: result.defenseActivated ? 'var(--neon-cyan)' : 'rgba(255,255,255,0.6)' }}>??? DP REDUCTION</div>
-                  <strong style={{ fontSize: '1rem', color: result.defenseActivated ? 'var(--neon-cyan)' : '#888' }}>
+                <div style={{ background: result.defenseActivated ? 'rgba(251, 200, 13, 0.15)' : 'rgba(255,255,255,0.05)', border: result.defenseActivated ? '1px solid var(--neon-gold)' : 'none', padding: '8px', borderRadius: '6px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.7rem', color: result.defenseActivated ? 'var(--neon-gold)' : 'rgba(255,255,255,0.6)' }}>??? DP REDUCTION</div>
+                  <strong style={{ fontSize: '1rem', color: result.defenseActivated ? 'var(--neon-gold)' : '#888' }}>
                     {result.defenseActivated ? `-${result.innateDP} AP` : '0 (Failed)'}
                   </strong>
                 </div>
@@ -328,7 +328,7 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
             <button
               onClick={handleApplyDamage}
               style={{
-                width: '100%', padding: '12px', background: 'linear-gradient(90deg, #FBC80D, #0088ff)',
+                width: '100%', padding: '12px', background: 'linear-gradient(90deg, #FBC80D, #FBC80D)',
                 color: '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', marginTop: '10px'
               }}
             >
