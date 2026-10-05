@@ -163,8 +163,8 @@
 
 .brand-pill-badge {
   align-self: flex-start;
-  background: #ff5e00;
-  color: #ffffff;
+  background: var(--neon-orange-alt);
+  color: var(--text-main);
   font-family: var(--font-display);
   font-weight: 800;
   font-size: 0.85rem;
@@ -223,7 +223,7 @@
   font-family: var(--font-body);
   font-size: 0.95rem;
   font-style: italic;
-  color: #38bdf8;
+  color: var(--neon-cyan);
   margin-top: 2px;
   font-weight: 500;
 }
@@ -272,7 +272,7 @@
 .bot-title {
   font-family: var(--font-display);
   font-size: 0.95rem;
-  color: #ffffff;
+  color: var(--text-main);
   letter-spacing: 0.05em;
 }
 
@@ -304,7 +304,7 @@
   flex: 1;
   background: transparent;
   border: none;
-  color: #ffffff;
+  color: var(--text-main);
   font-size: 0.85rem;
   padding: 6px 8px;
 }
@@ -323,7 +323,7 @@
 
 .bot-send-btn:hover {
   background: var(--neon-cyan);
-  color: #02050e;
+  color: var(--bg-deep);
   box-shadow: 0 0 10px var(--neon-cyan);
 }
 
@@ -334,7 +334,7 @@
   border-left: 3px solid var(--neon-cyan);
   border-radius: 0 6px 6px 0;
   font-size: 0.78rem;
-  color: #e2e8f0;
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -361,13 +361,13 @@
   font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.18em;
-  color: #e2e8f0;
+  color: var(--text-muted);
 }
 
 .active-player-card {
   width: 175px;
   height: 235px;
-  background: linear-gradient(180deg, #101e3e 0%, #081024 100%);
+  background: linear-gradient(180deg, var(--rank-3-bg) 0%, var(--dial-bg) 100%);
   border: 1.5px solid var(--neon-crimson);
   border-radius: 12px;
   box-shadow:
@@ -421,7 +421,7 @@
   font-family: var(--font-display);
   font-size: 1.25rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-main);
   margin: 0;
 }
 
@@ -447,10 +447,10 @@
 
 .btn-next-turn-ribbon {
   width: 90%;
-  background: linear-gradient(180deg, #ED1E24 0%, #b8003a 100%);
-  border: 1px solid #ff4d79;
+  background: linear-gradient(180deg, var(--neon-crimson) 0%, #b8003a 100%);
+  border: 1px solid var(--crimson-bright);
   border-radius: 6px;
-  color: #ffffff;
+  color: var(--text-main);
   font-family: var(--font-display);
   font-weight: 800;
   font-size: 0.75rem;
@@ -496,8 +496,8 @@
 }
 
 .dial-track-bg {
-  fill: #081228;
-  stroke: rgba(0, 240, 255, 0.15);
+  fill: var(--dial-bg);
+  stroke: var(--border-subtle);
   stroke-width: 10;
 }
 
@@ -529,7 +529,7 @@
   font-family: var(--font-mono);
   font-size: 1.8rem;
   font-weight: 800;
-  color: #ffffff;
+  color: var(--text-main);
   margin: 2px 0;
 }
 
@@ -661,8 +661,8 @@
   font-family: var(--font-mono);
   font-size: 0.75rem;
   font-weight: 800;
-  background: #0d284f;
-  color: #ffffff;
+  background: var(--rank-badge-bg);
+  color: var(--text-main);
   border: 1px solid rgba(0, 240, 255, 0.3);
 }
 
@@ -676,8 +676,8 @@
 .score-rank-badge.rank-2,
 .score-rank-badge.rank-3,
 .score-rank-badge.rank-4 {
-  background: #102e5c;
-  color: #38bdf8;
+  background: var(--rank-3-bg);
+  color: var(--neon-cyan);
 }
 
 /* Bottom Actions Bar */

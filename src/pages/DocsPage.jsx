@@ -45,9 +45,9 @@ export default function DocsPage() {
   };
 
   const CodeBlock = ({ code, label, copyId }) => (
-    <div style={{ background: '#020510', border: '1px solid rgba(255, 255, 255, 0.09)', borderRadius: '10px', padding: '14px', position: 'relative', marginTop: '10px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', paddingBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <span style={{ fontSize: '0.72rem', color: 'var(--neon-cyan, #00f0ff)', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>
+    <div style={{ background: 'var(--bg-deep)', border: '1px solid var(--border-minimal)', borderRadius: '10px', padding: '14px', position: 'relative', marginTop: '10px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', paddingBottom: '6px', borderBottom: '1px solid var(--border-minimal-row)' }}>
+        <span style={{ fontSize: '0.72rem', color: 'var(--neon-cyan)', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>
           {label || 'HTTP / JSON PAYLOAD'}
         </span>
         {copyId && (
@@ -56,7 +56,7 @@ export default function DocsPage() {
             style={{
               background: 'none',
               border: 'none',
-              color: copiedKey === copyId ? '#39ff14' : 'rgba(255,255,255,0.55)',
+              color: copiedKey === copyId ? 'var(--neon-green)' : 'var(--icon-muted)',
               cursor: 'pointer',
               fontSize: '0.75rem',
               display: 'flex',
@@ -89,10 +89,10 @@ export default function DocsPage() {
   );
 
   const ParamTable = ({ headers = ['PARAMETER', 'TYPE', 'REQUIRED', 'DESCRIPTION'], rows = [] }) => (
-    <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '10px', overflow: 'hidden', margin: '12px 0 16px 0' }}>
+    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-minimal)', borderRadius: '10px', overflow: 'hidden', margin: '12px 0 16px 0' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.86rem' }}>
         <thead>
-          <tr style={{ background: 'rgba(10, 20, 45, 0.8)', borderBottom: '1px solid rgba(0, 240, 255, 0.2)', textAlign: 'left', color: 'var(--neon-cyan, #00f0ff)', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', fontSize: '0.78rem', letterSpacing: '1px' }}>
+          <tr style={{ background: 'var(--header-bg-dark)', borderBottom: '1px solid var(--border-subtle)', textAlign: 'left', color: 'var(--neon-cyan)', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', fontSize: '0.78rem', letterSpacing: '1px' }}>
             {headers.map((h, i) => (
               <th key={i} style={{ padding: '10px 14px' }}>{h}</th>
             ))}
@@ -100,13 +100,13 @@ export default function DocsPage() {
         </thead>
         <tbody>
           {rows.map((row, rIdx) => (
-            <tr key={rIdx} style={{ borderBottom: rIdx < rows.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-              <td style={{ padding: '9px 14px', color: '#fff' }}><code>{row[0]}</code></td>
-              <td style={{ padding: '9px 14px', color: '#39ff14', fontSize: '0.8rem' }}>{row[1]}</td>
-              <td style={{ padding: '9px 14px', color: row[2] === 'Required' ? 'var(--neon-crimson, #ED1E24)' : 'rgba(255,255,255,0.45)', fontSize: '0.8rem', fontWeight: row[2] === 'Required' ? 'bold' : 'normal' }}>
+            <tr key={rIdx} style={{ borderBottom: rIdx < rows.length - 1 ? '1px solid var(--border-minimal-row)' : 'none' }}>
+              <td style={{ padding: '9px 14px', color: 'var(--text-main)' }}><code>{row[0]}</code></td>
+              <td style={{ padding: '9px 14px', color: 'var(--neon-green)', fontSize: '0.8rem' }}>{row[1]}</td>
+              <td style={{ padding: '9px 14px', color: row[2] === 'Required' ? 'var(--neon-crimson)' : 'var(--text-muted)', fontSize: '0.8rem', fontWeight: row[2] === 'Required' ? 'bold' : 'normal' }}>
                 {row[2]}
               </td>
-              <td style={{ padding: '9px 14px', color: '#CBD5E1', fontSize: '0.84rem' }}>{row[3]}</td>
+              <td style={{ padding: '9px 14px', color: 'var(--text-muted)', fontSize: '0.84rem' }}>{row[3]}</td>
             </tr>
           ))}
         </tbody>
@@ -147,34 +147,34 @@ export default function DocsPage() {
             }}>
               {method}
             </span>
-            <code style={{ fontSize: '1rem', color: '#fff', fontWeight: 'bold' }}>{path}</code>
+            <code style={{ fontSize: '1rem', color: 'var(--text-main)', fontWeight: 'bold' }}>{path}</code>
             <span style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.7)', marginLeft: '8px' }}>{title}</span>
           </div>
           <div>
-             <ChevronRight size={18} style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s', color: 'rgba(255,255,255,0.5)' }} />
+             <ChevronRight size={18} style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s', color: 'var(--icon-muted)' }} />
           </div>
         </div>
         
         {isOpen && (
-          <div style={{ padding: '20px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-            <p style={{ color: '#CBD5E1', fontSize: '0.85rem', margin: '0 0 16px 0', lineHeight: '1.5' }}>{description}</p>
+          <div style={{ padding: '20px', borderTop: '1px solid var(--border-minimal-row)' }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '0 0 16px 0', lineHeight: '1.5' }}>{description}</p>
             {parameters && parameters.length > 0 && (
                <>
-                 <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#fff', marginBottom: '8px' }}>Parameters</div>
+                 <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-main)', marginBottom: '8px' }}>Parameters</div>
                  <ParamTable rows={parameters} />
                </>
             )}
             {bodyCode && (
                <>
-                 <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#fff', marginBottom: '8px', marginTop: '16px' }}>Request Body</div>
+                 <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-main)', marginBottom: '8px', marginTop: '16px' }}>Request Body</div>
                  <CodeBlock label="JSON" code={bodyCode} copyId={copyId + '_req'} />
                </>
             )}
             {responseCode && (
                <>
-                 <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#fff', marginBottom: '8px', marginTop: '16px' }}>Responses</div>
-                 <div style={{ borderLeft: '3px solid #39ff14', paddingLeft: '12px', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#39ff14' }}>200 OK</span>
+                 <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-main)', marginBottom: '8px', marginTop: '16px' }}>Responses</div>
+                 <div style={{ borderLeft: '3px solid var(--neon-green)', paddingLeft: '12px', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--neon-green)' }}>200 OK</span>
                  </div>
                  <CodeBlock label="JSON" code={responseCode} copyId={copyId + '_resp'} />
                </>
@@ -347,7 +347,7 @@ export default function DocsPage() {
                 style={{
                   background: 'rgba(0, 240, 255, 0.08)',
                   border: '1px solid rgba(0, 240, 255, 0.3)',
-                  color: 'var(--neon-cyan, #00f0ff)',
+                  color: 'var(--neon-cyan)',
                   padding: '6px 14px',
                   borderRadius: '8px',
                   cursor: 'pointer',
@@ -359,7 +359,7 @@ export default function DocsPage() {
                   gap: '6px'
                 }}
               >
-                {copiedKey === 'header_url' ? <Check size={13} color="#39ff14" /> : <Copy size={13} />}
+                {copiedKey === 'header_url' ? <Check size={13} color="var(--neon-green)" /> : <Copy size={13} />}
                 <span>COPY REST URL</span>
               </button>
             </div>
@@ -381,7 +381,7 @@ export default function DocsPage() {
             >
               <div>
                 <div style={{ position: 'relative', marginBottom: '14px' }}>
-                  <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.4)' }} />
+                  <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--icon-muted)' }} />
                   <input
                     type="text"
                     placeholder="Search endpoints..."
@@ -394,7 +394,7 @@ export default function DocsPage() {
                       background: 'var(--bg-card)',
                       border: '1px solid rgba(0, 240, 255, 0.25)',
                       borderRadius: '8px',
-                      color: '#fff',
+                      color: 'var(--text-main)',
                       fontSize: '0.82rem',
                       outline: 'none'
                     }}
@@ -403,11 +403,11 @@ export default function DocsPage() {
 
                 {searchFilter.trim() ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '420px', overflowY: 'auto' }}>
-                    <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold', padding: '0 4px 6px 4px', letterSpacing: '1px' }}>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--icon-muted)', fontWeight: 'bold', padding: '0 4px 6px 4px', letterSpacing: '1px' }}>
                       SEARCH RESULTS ({searchResults.length})
                     </div>
                     {searchResults.length === 0 ? (
-                      <div style={{ padding: '12px 8px', fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)' }}>
+                      <div style={{ padding: '12px 8px', fontSize: '0.78rem', color: 'var(--icon-muted)' }}>
                         No matching endpoints found.
                       </div>
                     ) : (
@@ -420,29 +420,29 @@ export default function DocsPage() {
                           }}
                           style={{
                             background: 'var(--bg-card)',
-                            border: '1px solid rgba(255,255,255,0.08)',
+                            border: '1px solid var(--border-minimal)',
                             borderRadius: '8px',
                             padding: '8px 10px',
                             textAlign: 'left',
                             cursor: 'pointer',
-                            color: '#fff',
+                            color: 'var(--text-main)',
                             display: 'flex',
                             flexDirection: 'column',
                             gap: '2px'
                           }}
                         >
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--neon-cyan, #00f0ff)' }}>{sr.title}</span>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--neon-cyan)' }}>{sr.title}</span>
                             <span style={{ fontSize: '0.68rem', background: getMethodColor(sr.method, 0.15), color: getMethodColor(sr.method, 1), padding: '1px 5px', borderRadius: '4px' }}>{sr.method}</span>
                           </div>
-                          <code style={{ fontSize: '0.72rem', color: '#CBD5E1' }}>{sr.path}</code>
+                          <code style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{sr.path}</code>
                         </button>
                       ))
                     )}
                   </div>
                 ) : (
                   <div>
-                    <div style={{ fontSize: '0.72rem', letterSpacing: '1.5px', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold', padding: '0 8px 10px 8px', textTransform: 'uppercase' }}>
+                    <div style={{ fontSize: '0.72rem', letterSpacing: '1.5px', color: 'var(--icon-muted)', fontWeight: 'bold', padding: '0 8px 10px 8px', textTransform: 'uppercase' }}>
                       API RESOURCES
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -460,9 +460,9 @@ export default function DocsPage() {
                               justifyContent: 'space-between',
                               padding: '10px 12px',
                               borderRadius: '10px',
-                              border: isSel ? '1px solid var(--neon-cyan, #00f0ff)' : '1px solid transparent',
+                              border: isSel ? '1px solid var(--neon-cyan)' : '1px solid transparent',
                               background: isSel ? 'rgba(0, 240, 255, 0.15)' : 'transparent',
-                              color: isSel ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255, 255, 255, 0.75)',
+                              color: isSel ? 'var(--neon-cyan)' : 'rgba(255, 255, 255, 0.75)',
                               cursor: 'pointer',
                               fontWeight: isSel ? 'bold' : 'normal',
                               textAlign: 'left',
@@ -484,12 +484,12 @@ export default function DocsPage() {
                 )}
               </div>
 
-              <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '10px', padding: '12px' }}>
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-minimal)', borderRadius: '10px', padding: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#39ff14', boxShadow: '0 0 8px #39ff14' }}></span>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#39ff14' }}>REST API ONLINE</span>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--neon-green)', boxShadow: '0 0 8px var(--neon-green)' }}></span>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--neon-green)' }}>REST API ONLINE</span>
                 </div>
-                <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)' }}>
+                <div style={{ fontSize: '0.72rem', color: 'var(--icon-muted)' }}>
                   Swagger OpenAPI 3.0
                 </div>
               </div>

@@ -241,9 +241,9 @@ export default function GamePage() {
           width: '32px',
           height: '32px',
           borderRadius: '50%',
-          background: 'rgba(10, 25, 50, 0.85)',
-          border: '1px solid rgba(0, 240, 255, 0.35)',
-          color: '#ffffff',
+          background: 'var(--button-bg-dark)',
+          border: '1px solid var(--button-border-cyan)',
+          color: 'var(--text-main)',
           fontSize: '1.2rem',
           display: 'flex',
           alignItems: 'center',
@@ -305,7 +305,7 @@ export default function GamePage() {
 
         {/* Rules Chatbot Overlay */}
         {activeTab === 'rules' && (
-          <div style={{ position: 'fixed', top: '5%', left: '5%', width: '90%', height: '90%', zIndex: 999999, borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--neon-cyan)', background: '#02040c', boxShadow: '0 0 30px rgba(0,240,255,0.2)' }}>
+          <div style={{ position: 'fixed', top: '5%', left: '5%', width: '90%', height: '90%', zIndex: 999999, borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--neon-cyan)', background: 'var(--bg-deep)', boxShadow: '0 0 30px rgba(0,240,255,0.2)' }}>
             <Chat onBack={() => setActiveTab(rulesReturnTab || 'menu')} isOverlay={true} />
           </div>
         )}

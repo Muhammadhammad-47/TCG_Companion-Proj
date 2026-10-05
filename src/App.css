@@ -19,6 +19,19 @@
   --text-muted: #CBD5E1;
   --font-display: 'Bebas Neue', sans-serif;
   --font-sub: 'Barlow Condensed', sans-serif;
+  
+  /* Additional color palette for docs and components */
+  --border-minimal: rgba(255, 255, 255, 0.09);
+  --header-bg-dark: rgba(10, 20, 45, 0.8);
+  --border-minimal-row: rgba(255, 255, 255, 0.05);
+  --icon-muted: rgba(255, 255, 255, 0.5);
+  --button-bg-dark: rgba(10, 25, 50, 0.85);
+  --button-border-cyan: rgba(0, 240, 255, 0.35);
+  --neon-orange-alt: #ff5e00;
+  --crimson-bright: #ff4d79;
+  --dial-bg: #081228;
+  --rank-badge-bg: #0d284f;
+  --rank-3-bg: #102e5c;
 }
 
 * {
