@@ -70,6 +70,11 @@ const ACTION_CARD_IMAGE_MAP = {
   'X-CHANGE FULL': 'ACTION CARDS/PREMIUM/XCHANGE FULL CARD.png'
 };
 
+// FLYER CARDS
+const FLYER_CARD_MAP = {
+  'ANIME EXPRESS TV': 'FLYER CARDS/TCG FLYER CARD V1.png'
+};
+
 // BLITZ CARDS by character key
 const BLITZ_CARD_MAP = {
   'bee': 'BLITZ CARDS/BEE BLITZ GOLD.png',
@@ -156,6 +161,12 @@ export const getCardGraphicUrl = (cardName, characterId = null) => {
   if (cleanName.includes('KONTROL')) {
     const kontrolPath = KONTROL_CARD_MAP[characterId?.toLowerCase()] || KONTROL_CARD_MAP.chyna;
     return encodeURI(`${getBaseUrl()}Kontrolla_Data/Graphics/${kontrolPath}`);
+  }
+
+  // Check if it's FLYER card
+  if (cleanName.includes('ANIME EXPRESS') || cleanName.includes('FLYER')) {
+    const flyerPath = FLYER_CARD_MAP['ANIME EXPRESS TV'];
+    return encodeURI(`${getBaseUrl()}Kontrolla_Data/Graphics/${flyerPath}`);
   }
 
   // Check direct Action Card Map

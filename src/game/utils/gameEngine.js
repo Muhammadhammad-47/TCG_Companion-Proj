@@ -51,6 +51,7 @@ export function createInitialGameState(playerConfigs) {
       turnActionCompleted: false,
       actionCardsHand: drawRandomCards(10),
       burnExtinguishRoll: false, // Flag for per-turn burn extinguish check
+      flyerNoWeakness: false, // Flag for ANIME EXPRESS TV (FLYER card) - no weakness for one turn
       stats: {
         damageDealt: 0,
         damageTaken: 0,
@@ -201,8 +202,8 @@ export function resolveDiceCombat({
       rawAP = characterMove.baseAP || 25;
     }
   } else if (actionCard) {
-    if (actionCard.id === 'atk_super') rawAP = 40;
-    else if (actionCard.id === 'atk_basic') rawAP = 25;
+    if (actionCard.id === 'atk_x2') rawAP = 40;
+    else if (actionCard.id === 'atk_x1') rawAP = 25;
     else rawAP = 20;
   } else {
     rawAP = 25;
@@ -213,15 +214,25 @@ export function resolveDiceCombat({
   // 2. Check Elemental Weakness
   let weaknessTriggered = false;
   let weaknessBonus = 0;
-  const moveElement = characterMove?.element || (actionCard?.id === 'poison_card' ? 'Poison' : 'Physical');
+  const moveElement = characterMove?.element || (actionCard?.id === 'poison_x1' || actionCard?.id === 'poison_x2' ? 'Poison' : 'Physical');
 
-  if (defChar.weakness && moveElement) {
+  // Check if defender has FLYER card immunity (ANIME EXPRESS TV)
+  const hasflyerImmunity = defender?.flyerNoWeakness || false;
+
+  if (defChar.weakness && moveElement && !hasflyerImmunity) {
     const wType = defChar.weakness.type.toLowerCase();
     const mElem = moveElement.toLowerCase();
 
     if (wType.includes(mElem) || (mElem === 'fire' && wType.includes('fire')) || (mElem === 'lightning' && wType.includes('lightning')) || (mElem === 'poison' && wType.includes('poison'))) {
       weaknessTriggered = true;
       weaknessBonus = defChar.weakness.bonusAP || 10;
+    }
+  } else if (hasflyerImmunity && defChar.weakness && moveElement) {
+    // Log that weakness was blocked by FLYER card
+    const wType = defChar.weakness.type.toLowerCase();
+    const mElem = moveElement.toLowerCase();
+    if (wType.includes(mElem) || (mElem === 'fire' && wType.includes('fire')) || (mElem === 'lightning' && wType.includes('lightning')) || (mElem === 'poison' && wType.includes('poison'))) {
+      // Would be weakness, but FLYER immunity blocks it
     }
   }
 
@@ -264,7 +275,7 @@ export function resolveDiceCombat({
   }
 
   // 7. Check special effects
-  const appliesPoison = characterMove?.appliesPoison || actionCard?.id === 'poison_card' || attacker.isZombie;
+  const appliesPoison = characterMove?.appliesPoison || actionCard?.id === 'poison_x1' || actionCard?.id === 'poison_x2' || attacker.isZombie;
   const appliesStun = characterMove?.appliesStun || characterMove?.stun || actionCard?.name?.includes('FREEZE') || false;
   
   let burnStacks = 0;
@@ -342,6 +353,7 @@ export function advanceTurn(state) {
       updated.claimedTurnET = false;
       updated.turnActionCompleted = false;
       updated.retreatedThisTurn = false;
+      updated.flyerNoWeakness = false; // Reset FLYER card immunity at turn end
       updated.buffAP = 0;
       updated.buffDP = 0;
 

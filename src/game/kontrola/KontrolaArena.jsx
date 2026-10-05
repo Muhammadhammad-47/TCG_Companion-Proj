@@ -134,9 +134,17 @@ export default function KontrolaArena() {
   useEffect(() => {
     economyService.getAppSettings().then(settings => {
       setAppSettings(settings);
-      setIsPremium(settings?.premium_modules?.includes('kontrola') || false);
     }).catch(err => console.warn('Failed fetching economy settings in Arena', err));
   }, []);
+
+  // Set deck tier based on user's Pro/Basic status
+  useEffect(() => {
+    if (userProfile) {
+      const isProUser = userProfile.is_premium === true;
+      setIsPremium(isProUser);
+      console.log(`🎮 Deck Mode: ${isProUser ? '👑 PRO (157 cards - Basic + Premium + FLYER)' : '📦 BASIC (100 cards)'} for ${userProfile.username}`);
+    }
+  }, [userProfile]);
 
   const [selectedActionCard, setSelectedActionCard] = useState(null);
   const [selectedCharacterAttack, setSelectedCharacterAttack] = useState(null);

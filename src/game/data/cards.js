@@ -1,95 +1,97 @@
-// TCG Card Game — Official 10 Action Cards from GDD
+// TCG Card Game — Official Action Cards from Action Cards % - Sheet1.csv
+// NOTE: KONTROL and BLITZ are CHARACTER ABILITIES (not action cards)
+// They are part of each character's move set and are activated differently
 
 export const ACTION_CARDS = [
   {
-    id: 'atk_basic',
-    name: 'Attack',
-    category: 'Attack',
+    id: 'atk_x1',
+    name: 'ATTACK X1',
+    type: 'ATTACK',
     costET: 1,
     icon: '⚔️',
     color: '#ff3b6b',
     desc: 'Standard combat attack. Pair with a character move (Costs 1 ET).'
   },
   {
-    id: 'atk_super',
-    name: 'Super Attack',
-    category: 'Attack',
+    id: 'atk_x2',
+    name: 'ATTACK X2',
+    type: 'ATTACK',
     costET: 2,
     icon: '💥',
     color: '#ff9d2d',
-    desc: 'High-power combat technique (Costs 2 ET).'
+    desc: 'Double character attack unleash (Costs 2 ET).'
   },
   {
-    id: 'poison_card',
-    name: 'Poison',
-    category: 'Status',
+    id: 'poison_x1',
+    name: 'POISON X1',
+    type: 'STATUS',
     costET: 0,
     icon: '☠️',
     color: '#39ff14',
-    desc: 'Inflicts 1 Poison stack (-10 HP per stack every round). 5 Poison turns target into a Zombie! (0 ET)'
+    desc: 'Inflicts 1 Poison stack (-10 HP/turn). 5 Poison turns target into a Zombie! (0 ET)'
   },
   {
-    id: 'antidote_card',
-    name: 'Antidote',
-    category: 'Heal',
+    id: 'poison_x2',
+    name: 'POISON X2',
+    type: 'STATUS',
+    costET: 0,
+    icon: '☠️☠️',
+    color: '#39ff14',
+    desc: 'Inflicts 2 Poison stacks (-20 HP/turn). (0 ET)'
+  },
+  {
+    id: 'antidote_x1',
+    name: 'ANTIDOTE X1',
+    type: 'HEAL',
     costET: 0,
     icon: '🧪',
     color: '#2df6ff',
-    desc: 'Removes 1 Poison card and restores +20 HP. Cures Zombie Mode if poison drops below 5! (0 ET)'
+    desc: 'Removes 1 Poison card. (0 ET)'
   },
   {
-    id: 'shield_card',
-    name: 'Shield',
-    category: 'Defense',
+    id: 'shield_basic',
+    name: 'SHIELD BASIC +25 HP',
+    type: 'DEFENSE',
     costET: 0,
     icon: '🛡️',
     color: '#3b9dff',
-    desc: 'Deploys a defensive barrier granting +30 Shield points to absorb incoming damage. (0 ET)'
+    desc: 'Grants +25 Shield barrier points. (0 ET)'
   },
   {
-    id: 'heal_card',
-    name: 'Heal',
-    category: 'Heal',
+    id: 'heal_h10',
+    name: 'HEAL H10',
+    type: 'HEAL',
     costET: 0,
     icon: '💖',
     color: '#ff1a9d',
-    desc: 'Restores +30 HP immediately. (0 ET)'
+    desc: 'Restores +10 HP. (0 ET)'
   },
   {
-    id: 'amplify_card',
-    name: 'Amplify',
-    category: 'Bonus',
+    id: 'heal_h20',
+    name: 'HEAL H20',
+    type: 'HEAL',
     costET: 0,
-    icon: '⚡',
-    color: '#ffb02e',
-    desc: 'Boost active action with 1 effect: +20 HP, +20 AP attack, or +10 DP defense (0 ET).'
+    icon: '💖',
+    color: '#ff1a9d',
+    desc: 'Restores +20 HP. (0 ET)'
   },
   {
-    id: 'kontrol_card',
-    name: 'Kontrol',
-    category: 'Special',
-    costET: 3,
-    icon: '🧠',
-    color: '#a855f7',
-    desc: 'Roll 1 die > target Mind Strength. Force them to attack another opponent or steal 1 Action Card (3 ET, Max 2/match).'
-  },
-  {
-    id: 'blitz_card',
-    name: 'Blitz (Saigo No Blitz)',
-    category: 'Ultimate',
-    costET: 5,
-    icon: '⚡',
-    color: '#ffe93d',
-    desc: 'Requires HP < 50. Sacrifices 50% remaining HP to unleash 200 AP devastation across opponents (5 ET, Max 2/match).'
-  },
-  {
-    id: 'retreat_card',
-    name: 'Retreat',
-    category: 'Tactical',
+    id: 'retreat',
+    name: 'RETREAT',
+    type: 'TACTICAL',
     costET: 0,
     icon: '💨',
     color: '#7c8dff',
-    desc: 'Roll 1 die to escape combat without taking damage based on character speed (0 ET).'
+    desc: 'Escape combat without taking damage based on character retreat speed (0 ET).'
+  },
+  {
+    id: 'lightning_x1',
+    name: 'LIGHTNING X1',
+    type: 'ATTACK',
+    costET: 1,
+    icon: '⚡',
+    color: '#ffe93d',
+    desc: 'Lightning strike dealing damage and -1 turn penalty (1 ET).'
   }
 ];
 

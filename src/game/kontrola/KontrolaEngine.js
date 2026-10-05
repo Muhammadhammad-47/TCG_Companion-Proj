@@ -18,7 +18,9 @@ export const KONTROLA_CHARACTERS = {
     attacks: {
       'FIRE OF FURY PER PUNCH': { ap: 5, dice: 1, element: 'Fire', desc: 'Roll 1 Die × 5 AP Fire damage.' },
       'FIRE TIGER SOUL PUNCH': { ap: 25, dice: 0, element: 'Fire', desc: 'Direct blazing strike dealing 25 AP.' },
-      'GOLDEN MIC LIGHTING': { ap: 40, dice: 0, element: 'Lightning', isSuper: true, desc: 'Super Lightning strike dealing 40 AP.' }
+      'GOLDEN MIC LIGHTING': { ap: 40, dice: 0, element: 'Lightning', isSuper: true, desc: 'Super Lightning strike dealing 40 AP.' },
+      'KONTROL': { ap: 0, dice: 1, element: 'Psychic', isKontrol: true, desc: 'Roll 1d6 > target Mind Strength. Force attack alternate or steal 1 card (Rare, Max 2/match, 5-turn cooldown).' },
+      'SAIGO NO BLITZ': { ap: 200, dice: 0, element: 'Energy', isBlitz: true, desc: 'Requires HP < 50. Sacrifice 50% HP to deal 200 AP AoE (Rare, Max 2/match).' }
     }
   },
   bee: {
@@ -37,7 +39,9 @@ export const KONTROLA_CHARACTERS = {
     attacks: {
       'STING SLAP PER STING': { ap: 3, dice: 1, element: 'Lightning', desc: 'Roll 1 Die × 3 AP Sting damage.' },
       'PAPARAZZI STUN': { ap: 25, dice: 0, element: 'Sonic', loseTurn: true, desc: '25 AP strike; target loses 1 turn.' },
-      'BEE DRONE BOMB': { ap: 40, dice: 0, element: 'Lightning', isSuper: true, desc: 'Super Drone Bomb dealing 40 AP.' }
+      'BEE DRONE BOMB': { ap: 40, dice: 0, element: 'Lightning', isSuper: true, desc: 'Super Drone Bomb dealing 40 AP.' },
+      'KONTROL': { ap: 0, dice: 1, element: 'Psychic', isKontrol: true, desc: 'Roll 1d6 > target Mind Strength. Force attack alternate or steal 1 card (Rare, Max 2/match, 5-turn cooldown).' },
+      'SAIGO NO BLITZ': { ap: 200, dice: 0, element: 'Energy', isBlitz: true, desc: 'Requires HP < 50. Sacrifice 50% HP to deal 200 AP AoE (Rare, Max 2/match).' }
     }
   },
   kiko: {
@@ -56,7 +60,9 @@ export const KONTROLA_CHARACTERS = {
     attacks: {
       'TAIL WHIP PER WHIP': { ap: 4, dice: 1, element: 'Physical', desc: 'Roll 1 Die × 4 AP Tail strikes.' },
       'MULTIPLICITY': { ap: 30, dice: 0, element: 'Sonic', desc: 'Sonic clones strike dealing 30 AP.' },
-      'SOUL BLAST 3000': { ap: 40, dice: 0, element: 'Energy', isSuper: true, desc: 'Super Soul Blast dealing 40 AP.' }
+      'SOUL BLAST 3000': { ap: 40, dice: 0, element: 'Energy', isSuper: true, desc: 'Super Soul Blast dealing 40 AP.' },
+      'KONTROL': { ap: 0, dice: 1, element: 'Psychic', isKontrol: true, desc: 'Roll 1d6 > target Mind Strength. Force attack alternate or steal 1 card (Rare, Max 2/match, 5-turn cooldown).' },
+      'SAIGO NO BLITZ': { ap: 200, dice: 0, element: 'Energy', isBlitz: true, desc: 'Requires HP < 50. Sacrifice 50% HP to deal 200 AP AoE (Rare, Max 2/match).' }
     }
   },
   katsumi: {
@@ -75,7 +81,9 @@ export const KONTROLA_CHARACTERS = {
     attacks: {
       'SAVAGE PAWS PER STRIKE': { ap: 5, dice: 1, element: 'Physical', desc: 'Roll 1 Die × 5 AP Paw strikes.' },
       'SHADOW PURR': { ap: 20, dice: 0, element: 'Shadow', desc: 'Shadow illusion dealing 20 AP.' },
-      'CLAW OF FATE': { ap: 35, dice: 0, element: 'Shadow', desc: 'Critical shadow slash dealing 35 AP.' }
+      'CLAW OF FATE': { ap: 35, dice: 0, element: 'Shadow', desc: 'Critical shadow slash dealing 35 AP.' },
+      'KONTROL': { ap: 0, dice: 1, element: 'Psychic', isKontrol: true, desc: 'Roll 1d6 > target Mind Strength. Force attack alternate or steal 1 card (Rare, Max 2/match, 5-turn cooldown).' },
+      'SAIGO NO BLITZ': { ap: 200, dice: 0, element: 'Energy', isBlitz: true, desc: 'Requires HP < 50. Sacrifice 50% HP to deal 200 AP AoE (Rare, Max 2/match).' }
     }
   },
   poochi: {
@@ -94,7 +102,9 @@ export const KONTROLA_CHARACTERS = {
     attacks: {
       'GLITTER SPARKS PER SPARK': { ap: 4, dice: 1, element: 'Magic', desc: 'Roll 1 Die × 4 AP Glitter sparks.' },
       'LASSO OF TRUTH': { ap: 25, dice: 0, element: 'Magic', revealCards: true, desc: '25 AP strike; target reveals Action Cards.' },
-      'GLITTER BURST': { ap: 35, dice: 0, element: 'Magic', desc: 'Magical glitter explosion dealing 35 AP.' }
+      'GLITTER BURST': { ap: 35, dice: 0, element: 'Magic', desc: 'Magical glitter explosion dealing 35 AP.' },
+      'KONTROL': { ap: 0, dice: 1, element: 'Psychic', isKontrol: true, desc: 'Roll 1d6 > target Mind Strength. Force attack alternate or steal 1 card (Rare, Max 2/match, 5-turn cooldown).' },
+      'SAIGO NO BLITZ': { ap: 200, dice: 0, element: 'Energy', isBlitz: true, desc: 'Requires HP < 50. Sacrifice 50% HP to deal 200 AP AoE (Rare, Max 2/match).' }
     }
   },
   queeny: {
@@ -113,7 +123,9 @@ export const KONTROLA_CHARACTERS = {
     attacks: {
       'HAIR WHIP PER WHIP': { ap: 4, dice: 1, element: 'Physical', desc: 'Roll 1 Die × 4 AP Hair whip strikes.' },
       'SIREN BLAST': { ap: 30, dice: 0, element: 'Psychic', desc: 'Hypnotic siren wave dealing 30 AP.' },
-      'RAINBOW FAN BLAST': { ap: 35, dice: 0, element: 'Psychic', desc: 'Prismatic fan blast dealing 35 AP.' }
+      'RAINBOW FAN BLAST': { ap: 35, dice: 0, element: 'Psychic', desc: 'Prismatic fan blast dealing 35 AP.' },
+      'KONTROL': { ap: 0, dice: 1, element: 'Psychic', isKontrol: true, desc: 'Roll 1d6 > target Mind Strength (+2 bonus). Force attack alternate or steal 1 card (Rare, Max 2/match, 5-turn cooldown).' },
+      'SAIGO NO BLITZ': { ap: 200, dice: 0, element: 'Energy', isBlitz: true, desc: 'Requires HP < 50. Sacrifice 50% HP to deal 200 AP AoE (Rare, Max 2/match).' }
     }
   },
   shroomy: {
@@ -132,7 +144,9 @@ export const KONTROLA_CHARACTERS = {
     attacks: {
       'POPPERS PER POP': { ap: 4, dice: 1, element: 'Nature', desc: 'Roll 1 Die × 4 AP Spore poppers.' },
       'MS BOMBA': { ap: 40, dice: 0, element: 'Fire', desc: 'Explosive spore bomb dealing 40 AP.' },
-      'SOUL SNATCHER': { ap: 50, dice: 0, element: 'Dark', isSuper: true, desc: 'Super Soul Snatcher dealing 50 AP.' }
+      'SOUL SNATCHER': { ap: 50, dice: 0, element: 'Dark', isSuper: true, desc: 'Super Soul Snatcher dealing 50 AP.' },
+      'KONTROL': { ap: 0, dice: 1, element: 'Psychic', isKontrol: true, desc: 'Roll 1d6 > target Mind Strength. Force attack alternate or steal 1 card (Rare, Max 2/match, 5-turn cooldown).' },
+      'SAIGO NO BLITZ': { ap: 200, dice: 0, element: 'Energy', isBlitz: true, desc: 'Requires HP < 50. Sacrifice 50% HP to deal 200 AP AoE (Rare, Max 2/match).' }
     }
   }
 };
@@ -173,6 +187,9 @@ export const ACTION_CARDS_BASIC = [
 ];
 
 // 157-Card Premium Blueprint from Action Cards % - Sheet1.csv
+// NOTE: KONTROL (count: 2) and SAIGO NO BLITZ (count: 2) are CHARACTER ABILITIES, not in standard action card decks
+// They are activated through character card moves, not as action cards
+// These cards are listed in the CSV but should not be shuffled into the deck
 export const ACTION_CARDS_PREMIUM = [
   ...ACTION_CARDS_BASIC,
   { name: 'ANTIDOTE FULL', type: 'HEAL', count: 2, costET: 0, desc: 'Cures all poison cards.' },
@@ -192,9 +209,8 @@ export const ACTION_CARDS_PREMIUM = [
   { name: 'HEAL H40', type: 'HEAL', count: 2, costET: 0, desc: 'Restores +40 HP.' },
   { name: '+DEFENCE D20', type: 'DEFENSE', count: 4, costET: 0, desc: '+20 Defense points.' },
   { name: 'X-CHANGE FULL', type: 'OTHERS', count: 2, costET: 0, desc: 'Exchange cards with all opponents.' },
-  { name: 'KONTROL', type: 'SPECIAL', count: 2, costET: 3, desc: 'Mind Control target (Mind Strength check). Max 2/match.' },
-  { name: 'SAIGO NO BLITZ', type: 'ULTIMATE', count: 2, costET: 5, desc: 'Devastating 200 AP blast (HP < 50 req). Max 2/match.' },
-  { name: 'FIRE INFERNO LOCK', type: 'ATTACK', count: 1, costET: 1, desc: 'Burns with spreading flames (-20 HP, spreads to neighbors, must roll doubles to extinguish, -5 HP/turn).' }
+  { name: 'FIRE INFERNO LOCK', type: 'ATTACK', count: 1, costET: 1, desc: 'Burns with spreading flames (-20 HP, spreads to neighbors, must roll doubles to extinguish, -5 HP/turn).' },
+  { name: 'ANIME EXPRESS TV', type: 'FLYER', count: 1, costET: 0, desc: 'Avoid any weaknesses while defending for one turn.' }
 ];
 
 export function shuffle(array) {
@@ -308,6 +324,10 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       const bonus = dName.includes('D20') ? 20 : 15;
       newDefenderState.hasDefendBasic = true;
       newDefenderState.shield = (newDefenderState.shield || 0) + bonus;
+    } else if (dName.includes('ANIME EXPRESS') || dName.includes('FLYER')) {
+      // ANIME EXPRESS TV: No Weakness Shield for one turn
+      newDefenderState.flyerNoWeakness = true;
+      log += ` 📺 ANIME EXPRESS TV played! ${newDefenderState.name} is immune to weaknesses for this turn!`;
     }
   }
 
