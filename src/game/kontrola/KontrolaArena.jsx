@@ -2240,7 +2240,7 @@ export default function KontrolaArena() {
                 {/* 1. Verified Player Username Badge */}
                 <div
                   style={{
-                    background: 'rgba(14, 22, 42, 0.88)',
+                    background: 'var(--bg-card) 0.88)',
                     border: '1.5px solid rgba(0, 240, 255, 0.3)',
                     borderRadius: '16px',
                     padding: '18px 24px',
@@ -2425,7 +2425,7 @@ export default function KontrolaArena() {
                 {lobbyTab === 'browse' && (
                   <div
                     style={{
-                      background: 'rgba(14, 22, 42, 0.88)',
+                      background: 'var(--bg-card) 0.88)',
                       border: '1px solid rgba(0, 240, 255, 0.25)',
                       borderRadius: '16px',
                       padding: '20px'
@@ -2564,7 +2564,7 @@ export default function KontrolaArena() {
                 {lobbyTab === 'create' && (
                   <div
                     style={{
-                      background: 'rgba(14, 22, 42, 0.88)',
+                      background: 'var(--bg-card) 0.88)',
                       border: '1px solid rgba(0, 240, 255, 0.25)',
                       borderRadius: '16px',
                       padding: '24px'
@@ -2609,7 +2609,7 @@ export default function KontrolaArena() {
                 {lobbyTab === 'join' && (
                   <div
                     style={{
-                      background: 'rgba(14, 22, 42, 0.88)',
+                      background: 'var(--bg-card) 0.88)',
                       border: '1px solid rgba(251, 200, 13, 0.3)',
                       borderRadius: '16px',
                       padding: '24px'
@@ -2679,7 +2679,7 @@ export default function KontrolaArena() {
                   maxWidth: '680px',
                   margin: '0 auto',
                   zIndex: 10,
-                  background: 'rgba(14, 22, 42, 0.92)',
+                  background: 'var(--bg-card) 0.92)',
                   border: '1.5px solid var(--neon-cyan)',
                   borderRadius: '20px',
                   padding: '28px 32px',
@@ -4085,7 +4085,7 @@ export default function KontrolaArena() {
             <div
               style={{
                 position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                background: 'rgba(5, 10, 24, 0.95)', zIndex: 10000,
+                background: 'var(--bg-card) 0.95)', zIndex: 10000,
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff',
                 animation: 'fadeIn 0.3s ease'
               }}
@@ -4143,7 +4143,7 @@ export default function KontrolaArena() {
              <div
               style={{
                 position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                background: 'rgba(5, 10, 24, 0.95)', zIndex: 10000,
+                background: 'var(--bg-card) 0.95)', zIndex: 10000,
                 display: 'flex', color: '#fff'
               }}
              >
@@ -4248,7 +4248,7 @@ export default function KontrolaArena() {
              <div
               style={{
                 position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                background: 'rgba(5, 10, 24, 0.95)', zIndex: 10000,
+                background: 'var(--bg-card) 0.95)', zIndex: 10000,
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff'
               }}
              >
@@ -4331,7 +4331,7 @@ export default function KontrolaArena() {
               position: 'fixed',
               bottom: '20px',
               right: '20px',
-              background: 'rgba(14, 22, 42, 0.95)',
+              background: 'var(--bg-card) 0.95)',
               border: '2px solid rgba(168, 85, 247, 0.5)',
               borderRadius: '16px',
               padding: isMusicPlayerOpen ? '16px' : '12px',

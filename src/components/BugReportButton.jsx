@@ -134,7 +134,7 @@ export default function BugReportButton({
         >
           <div
             style={{
-              background: 'linear-gradient(135deg, rgba(5, 10, 24, 0.98) 0%, rgba(10, 20, 40, 0.98) 100%)',
+              background: 'linear-gradient(135deg, var(--bg-card) 0%, rgba(10, 20, 40, 0.98) 100%)',
               border: '2px solid rgba(0, 200, 255, 0.5)',
               borderRadius: '20px',
               padding: '28px',
@@ -217,7 +217,7 @@ export default function BugReportButton({
                 style={{
                   width: '100%',
                   boxSizing: 'border-box',
-                  background: 'rgba(5, 10, 24, 0.8)',
+                  background: 'var(--bg-card)',
                   border: '1.5px solid rgba(0, 200, 255, 0.3)',
                   borderRadius: '12px',
                   color: '#fff',

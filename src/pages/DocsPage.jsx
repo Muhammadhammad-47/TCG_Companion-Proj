@@ -89,7 +89,7 @@ export default function DocsPage() {
   );
 
   const ParamTable = ({ headers = ['PARAMETER', 'TYPE', 'REQUIRED', 'DESCRIPTION'], rows = [] }) => (
-    <div style={{ background: 'rgba(5, 10, 24, 0.65)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '10px', overflow: 'hidden', margin: '12px 0 16px 0' }}>
+    <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '10px', overflow: 'hidden', margin: '12px 0 16px 0' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.86rem' }}>
         <thead>
           <tr style={{ background: 'rgba(10, 20, 45, 0.8)', borderBottom: '1px solid rgba(0, 240, 255, 0.2)', textAlign: 'left', color: 'var(--neon-cyan, #00f0ff)', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', fontSize: '0.78rem', letterSpacing: '1px' }}>
@@ -127,7 +127,7 @@ export default function DocsPage() {
   const EndpointAccordion = ({ method, path, title, description, parameters, bodyCode, responseCode, copyId }) => {
     const [isOpen, setIsOpen] = useState(false);
     return (
-      <div style={{ marginBottom: '16px', borderRadius: '8px', border: '1px solid ' + getMethodColor(method, 0.3), overflow: 'hidden', background: isOpen ? 'rgba(10, 16, 30, 0.95)' : 'rgba(14, 22, 42, 0.7)', transition: 'all 0.3s ease' }}>
+      <div style={{ marginBottom: '16px', borderRadius: '8px', border: '1px solid ' + getMethodColor(method, 0.3), overflow: 'hidden', background: isOpen ? 'var(--bg-card)' : 'var(--bg-card)', transition: 'all 0.3s ease' }}>
         <div 
           onClick={() => setIsOpen(!isOpen)}
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer', background: getMethodColor(method, 0.1) }}
@@ -391,7 +391,7 @@ export default function DocsPage() {
                       width: '100%',
                       boxSizing: 'border-box',
                       padding: '7px 10px 7px 30px',
-                      background: 'rgba(5, 10, 24, 0.85)',
+                      background: 'var(--bg-card)',
                       border: '1px solid rgba(0, 240, 255, 0.25)',
                       borderRadius: '8px',
                       color: '#fff',
@@ -419,7 +419,7 @@ export default function DocsPage() {
                             setSearchFilter('');
                           }}
                           style={{
-                            background: 'rgba(14, 22, 42, 0.8)',
+                            background: 'var(--bg-card)',
                             border: '1px solid rgba(255,255,255,0.08)',
                             borderRadius: '8px',
                             padding: '8px 10px',
@@ -484,7 +484,7 @@ export default function DocsPage() {
                 )}
               </div>
 
-              <div style={{ background: 'rgba(5, 10, 24, 0.6)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '10px', padding: '12px' }}>
+              <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '10px', padding: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
                   <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#39ff14', boxShadow: '0 0 8px #39ff14' }}></span>
                   <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#39ff14' }}>REST API ONLINE</span>
@@ -517,13 +517,13 @@ export default function DocsPage() {
                       GLOBAL SERVER CONFIGURATION
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
-                      <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '16px' }}>
+                      <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '16px' }}>
                         <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', marginBottom: '8px' }}>BASE REST URL</div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <code style={{ color: '#fff', fontSize: '0.9rem' }}>{supabaseUrl}</code>
                         </div>
                       </div>
-                      <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '16px' }}>
+                      <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '16px' }}>
                         <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', marginBottom: '8px' }}>API KEY (ANON)</div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <code style={{ color: 'var(--neon-gold, #FBC80D)', fontSize: '0.84rem' }}>{anonKey.substring(0, 24)}...</code>

@@ -871,7 +871,7 @@ export default function AdminPage() {
               style={{
                 width: '100%',
                 maxWidth: '430px',
-                background: 'rgba(14, 22, 42, 0.9)',
+                background: 'var(--bg-card) 0.9)',
                 border: '1.5px solid var(--neon-cyan, #00f0ff)',
                 borderRadius: '20px',
                 padding: '32px',
@@ -928,7 +928,7 @@ export default function AdminPage() {
                       width: '100%',
                       boxSizing: 'border-box',
                       padding: '12px 14px',
-                      background: 'rgba(5, 10, 24, 0.85)',
+                      background: 'var(--bg-card) 0.85)',
                       border: '1.5px solid rgba(0, 240, 255, 0.3)',
                       borderRadius: '10px',
                       color: '#fff',
@@ -954,7 +954,7 @@ export default function AdminPage() {
                       width: '100%',
                       boxSizing: 'border-box',
                       padding: '12px 14px',
-                      background: 'rgba(5, 10, 24, 0.85)',
+                      background: 'var(--bg-card) 0.85)',
                       border: '1.5px solid rgba(0, 240, 255, 0.3)',
                       borderRadius: '10px',
                       color: '#fff',
@@ -1111,7 +1111,7 @@ export default function AdminPage() {
 
             {/* Top Right: User Identity & Sign Out (NO DUPLICATE TCG APIS BUTTON) */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(5, 10, 24, 0.8)', padding: '5px 12px', borderRadius: '8px', border: '1px solid rgba(251, 200, 13, 0.3)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--bg-card) 0.8)', padding: '5px 12px', borderRadius: '8px', border: '1px solid rgba(251, 200, 13, 0.3)' }}>
                 <Crown size={14} color="var(--neon-gold, #FBC80D)" />
                 <span style={{ fontWeight: 'bold', color: '#fff', fontSize: '0.85rem' }}>{userProfile?.username || 'Admin'}</span>
               </div>
@@ -1205,7 +1205,7 @@ export default function AdminPage() {
               </div>
 
               {/* Sidebar Bottom: Quick System Status */}
-              <div style={{ background: 'rgba(5, 10, 24, 0.6)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '10px', padding: '12px' }}>
+              <div style={{ background: 'var(--bg-card) 0.6)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '10px', padding: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
                   <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#39ff14', boxShadow: '0 0 8px #39ff14' }}></span>
                   <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#39ff14' }}>ECOSYSTEM ONLINE</span>
@@ -1254,19 +1254,19 @@ export default function AdminPage() {
                 <div>
                   {/* Top Minimal KPI Stat Bar */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '16px' }}>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'var(--bg-card) 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>TOTAL USERS</div>
                       <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#fff', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>{usersList.length}</div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(57, 255, 20, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'var(--bg-card) 0.75)', border: '1px solid rgba(57, 255, 20, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>ACTIVE USERS</div>
                       <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#39ff14', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>{usersList.filter(u => !u.is_banned).length}</div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(237, 30, 36, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'var(--bg-card) 0.75)', border: '1px solid rgba(237, 30, 36, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>SUSPENDED</div>
                       <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#ff6b8f', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>{usersList.filter(u => u.is_banned).length}</div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(251, 200, 13, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'var(--bg-card) 0.75)', border: '1px solid rgba(251, 200, 13, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>CIRCULATING CRYSTALS</div>
                       <div style={{ fontSize: '1.4rem', fontWeight: '900', color: 'var(--neon-gold, #FBC80D)', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>
                         💎 {usersList.reduce((acc, u) => acc + (u.crystals_collected || 0), 0)}
@@ -1298,7 +1298,7 @@ export default function AdminPage() {
                             width: '100%',
                             boxSizing: 'border-box',
                             padding: '6px 10px 6px 28px',
-                            background: 'rgba(5, 10, 24, 0.85)',
+                            background: 'var(--bg-card) 0.85)',
                             border: '1px solid rgba(0, 240, 255, 0.25)',
                             borderRadius: '8px',
                             color: '#fff',
@@ -1316,7 +1316,7 @@ export default function AdminPage() {
                             padding: '5px 10px',
                             borderRadius: '6px',
                             border: userFilter === f ? '1px solid var(--neon-cyan, #00f0ff)' : '1px solid rgba(255,255,255,0.1)',
-                            background: userFilter === f ? 'rgba(0, 240, 255, 0.15)' : 'rgba(14, 22, 42, 0.6)',
+                            background: userFilter === f ? 'rgba(0, 240, 255, 0.15)' : 'var(--bg-card) 0.6)',
                             color: userFilter === f ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.65)',
                             cursor: 'pointer',
                             fontWeight: 'bold',
@@ -1345,8 +1345,8 @@ export default function AdminPage() {
                   </div>
 
                   {/* Compact Minimal Table - No Redundant Columns */}
-                  <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', overflow: 'hidden' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 2fr 0.8fr 1fr 0.7fr 1.2fr', padding: '8px 12px', background: 'rgba(6, 12, 28, 0.95)', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 'bold', letterSpacing: '0.5px' }}>
+                  <div style={{ background: 'var(--bg-card) 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', overflow: 'hidden' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 2fr 0.8fr 1fr 0.7fr 1.2fr', padding: '8px 12px', background: 'var(--bg-deep) 0.95)', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 'bold', letterSpacing: '0.5px' }}>
                       <span>USER</span>
                       <span>EMAIL</span>
                       <span>💎 CRYSTALS</span>
@@ -1496,7 +1496,7 @@ export default function AdminPage() {
                   {/* Modals for Crystal Adjustment */}
                   {crystalModalUser && (
                     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                      <div style={{ background: 'rgba(14, 22, 42, 0.95)', border: '1.5px solid var(--neon-cyan)', borderRadius: '12px', padding: '20px', maxWidth: '300px', width: '90%' }}>
+                      <div style={{ background: 'var(--bg-card) 0.95)', border: '1.5px solid var(--neon-cyan)', borderRadius: '12px', padding: '20px', maxWidth: '300px', width: '90%' }}>
                         <h3 style={{ color: 'var(--neon-cyan)', margin: '0 0 14px 0', fontSize: '1rem' }}>Adjust Crystals: {crystalModalUser.username}</h3>
                         <input
                           type="number"
@@ -1514,7 +1514,7 @@ export default function AdminPage() {
 
                   {banModalUser && (
                     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                      <div style={{ background: 'rgba(14, 22, 42, 0.95)', border: '1.5px solid var(--neon-crimson)', borderRadius: '12px', padding: '20px', maxWidth: '300px', width: '90%' }}>
+                      <div style={{ background: 'var(--bg-card) 0.95)', border: '1.5px solid var(--neon-crimson)', borderRadius: '12px', padding: '20px', maxWidth: '300px', width: '90%' }}>
                         <h3 style={{ color: '#ff6b8f', margin: '0 0 8px 0', fontSize: '1rem' }}>
                           {banModalUser.is_banned ? 'Reinstate' : 'Suspend'} User?
                         </h3>
@@ -1539,23 +1539,23 @@ export default function AdminPage() {
               {activeTab === 'matches' && (
                 <div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '16px' }}>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'var(--bg-card) 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>TOTAL DUELS</div>
                       <div style={{ fontSize: '1.4rem', fontWeight: '600', color: '#fff' }}>{matchHistory.length}</div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'var(--bg-card) 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>CRYSTALS AWARDED</div>
                       <div style={{ fontSize: '1.4rem', fontWeight: '600', color: '#fff' }}>
                         💎 {matchHistory.reduce((acc, m) => acc + (m.crystals_awarded || 1), 0)}
                       </div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'var(--bg-card) 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>ACTIVE ARENA ROOMS</div>
                       <div style={{ fontSize: '1.4rem', fontWeight: '600', color: '#fff' }}>
                         {new Set(matchHistory.map(m => m.room_code || 'ARENA')).size}
                       </div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'var(--bg-card) 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>LATEST CHAMPION</div>
                       <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         👑 {matchHistory[0]?.winner_name || 'No duels yet'}
@@ -1593,8 +1593,8 @@ export default function AdminPage() {
                     </button>
                   </div>
 
-                  <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', overflow: 'hidden' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 2fr 2fr 1fr', padding: '10px 16px', background: 'rgba(6, 12, 28, 0.95)', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', fontSize: '0.74rem', color: 'rgba(255,255,255,0.7)', fontWeight: 'bold', letterSpacing: '1px' }}>
+                  <div style={{ background: 'var(--bg-card) 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', overflow: 'hidden' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 2fr 2fr 1fr', padding: '10px 16px', background: 'var(--bg-deep) 0.95)', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', fontSize: '0.74rem', color: 'rgba(255,255,255,0.7)', fontWeight: 'bold', letterSpacing: '1px' }}>
                       <span>DATE & TIME</span>
                       <span>ROOM</span>
                       <span>MODE</span>
@@ -1681,7 +1681,7 @@ export default function AdminPage() {
                               display: 'flex', alignItems: 'center', gap: '3px',
                               padding: '4px 8px', borderRadius: '16px',
                               border: isSelected ? '1.5px solid var(--neon-cyan, #00f0ff)' : '1px solid rgba(255,255,255,0.12)',
-                              background: isSelected ? 'rgba(0, 240, 255, 0.15)' : 'rgba(14, 22, 42, 0.7)',
+                              background: isSelected ? 'rgba(0, 240, 255, 0.15)' : 'var(--bg-card) 0.7)',
                               color: isSelected ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.6)',
                               cursor: 'pointer', fontWeight: 'bold', fontSize: '0.75rem',
                               fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)',
@@ -1724,11 +1724,11 @@ export default function AdminPage() {
                         placeholder="Search Q&A..."
                         value={docSearchQuery}
                         onChange={(e) => setDocSearchQuery(e.target.value)}
-                        style={{ width: '100%', boxSizing: 'border-box', padding: '6px 10px 6px 30px', background: 'rgba(5,10,24,0.85)', border: '1px solid rgba(0,240,255,0.2)', borderRadius: '6px', color: '#fff', fontSize: '0.8rem', outline: 'none' }}
+                        style={{ width: '100%', boxSizing: 'border-box', padding: '6px 10px 6px 30px', background: 'var(--bg-card)0.85)', border: '1px solid rgba(0,240,255,0.2)', borderRadius: '6px', color: '#fff', fontSize: '0.8rem', outline: 'none' }}
                       />
                     </div>
 
-                    <div style={{ display: 'flex', background: 'rgba(5,10,24,0.85)', border: '1px solid rgba(0,240,255,0.2)', borderRadius: '6px', padding: '2px', marginLeft: 'auto' }}>
+                    <div style={{ display: 'flex', background: 'var(--bg-card)0.85)', border: '1px solid rgba(0,240,255,0.2)', borderRadius: '6px', padding: '2px', marginLeft: 'auto' }}>
                       <button
                         onClick={() => setDocViewMode('breakdown')}
                         style={{ background: docViewMode === 'breakdown' ? 'rgba(0,240,255,0.18)' : 'transparent', border: 'none', color: docViewMode === 'breakdown' ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.45)', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.73rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '3px' }}
@@ -1783,8 +1783,8 @@ export default function AdminPage() {
                     </div>
                   ) : (
                     /* Raw view */
-                    <div style={{ background: 'rgba(5,10,24,0.97)', border: '1px solid rgba(0,240,255,0.2)', borderRadius: '8px', overflow: 'hidden' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'rgba(10,18,38,0.95)', borderBottom: '1px solid rgba(0,240,255,0.15)' }}>
+                    <div style={{ background: 'var(--bg-card)0.97)', border: '1px solid rgba(0,240,255,0.2)', borderRadius: '8px', overflow: 'hidden' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--bg-card)0.95)', borderBottom: '1px solid rgba(0,240,255,0.15)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <FileCode size={12} color="var(--neon-cyan,#00f0ff)" />
                           <span style={{ fontSize: '0.77rem', fontWeight: 'bold', color: '#fff', fontFamily: 'monospace' }}>{activeDoc?.filename}</span>
@@ -1819,23 +1819,23 @@ export default function AdminPage() {
               {activeTab === 'questions' && (
                 <div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '16px' }}>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'var(--bg-card) 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>INBOUND QUERIES</div>
                       <div style={{ fontSize: '1.4rem', fontWeight: '600', color: '#fff' }}>{questions.length}</div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'var(--bg-card) 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>HELPFUL RATING %</div>
                       <div style={{ fontSize: '1.4rem', fontWeight: '600', color: '#fff' }}>
                         {questions.length > 0 ? Math.round((questions.filter(q => q.user_rating === 'helpful').length / questions.length) * 100) : 100}%
                       </div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'var(--bg-card) 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>PLAYER CORRECTIONS</div>
                       <div style={{ fontSize: '1.4rem', fontWeight: '600', color: '#fff' }}>
                         {questions.filter(q => q.user_suggested_answer).length}
                       </div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'var(--bg-card) 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>UNHELPFUL / FLAGGED</div>
                       <div style={{ fontSize: '1.4rem', fontWeight: '600', color: '#fff' }}>
                         {questions.filter(q => q.user_rating === 'unhelpful').length}
@@ -1862,7 +1862,7 @@ export default function AdminPage() {
                             padding: '5px 10px',
                             borderRadius: '6px',
                             border: questionFilter === f ? '1px solid var(--neon-cyan, #00f0ff)' : '1px solid rgba(255,255,255,0.1)',
-                            background: questionFilter === f ? 'rgba(0, 240, 255, 0.15)' : 'rgba(14, 22, 42, 0.6)',
+                            background: questionFilter === f ? 'rgba(0, 240, 255, 0.15)' : 'var(--bg-card) 0.6)',
                             color: questionFilter === f ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.65)',
                             cursor: 'pointer',
                             fontWeight: 'bold',
@@ -1878,7 +1878,7 @@ export default function AdminPage() {
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {questions.length === 0 ? (
-                      <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', padding: '36px', textAlign: 'center', color: 'rgba(255,255,255,0.4)' }}>
+                      <div style={{ background: 'var(--bg-card) 0.75)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', padding: '36px', textAlign: 'center', color: 'rgba(255,255,255,0.4)' }}>
                         No player questions logged under this filter.
                       </div>
                     ) : (
@@ -1886,7 +1886,7 @@ export default function AdminPage() {
                         <div
                           key={q.id}
                           style={{
-                            background: 'rgba(14, 22, 42, 0.4)',
+                            background: 'var(--bg-card) 0.4)',
                             border: '1px solid rgba(255, 255, 255, 0.1)',
                             borderRadius: '8px',
                             padding: '14px'
@@ -2013,7 +2013,7 @@ export default function AdminPage() {
               {activeTab === 'monetization' && (
                 <div>
                   {/* ── MODULE ACCESS CONFIGURATION ─────────────────────────────────── */}
-                  <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+                  <div style={{ background: 'var(--bg-card) 0.4)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
                     <h2 style={{ fontSize: '1rem', fontWeight: 'bold', color: 'var(--neon-cyan)', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <LayoutGrid size={16} /> Module Access Configuration
                     </h2>
@@ -2164,7 +2164,7 @@ export default function AdminPage() {
                   </div>
 
                   {/* Global Economy Settings - Simple 2-Column Form */}
-                  <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+                  <div style={{ background: 'var(--bg-card) 0.4)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
                     <h2 style={{ fontSize: '1rem', fontWeight: 'bold', color: 'var(--neon-cyan)', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <Coins size={16} /> Global Economy Settings
                     </h2>
@@ -2201,8 +2201,8 @@ export default function AdminPage() {
                   </div>
 
                   {/* Store Bundles - Simple Table/List */}
-                  <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px' }}>
-                    <div style={{ background: 'rgba(6, 12, 28, 0.95)', borderBottom: '1px solid rgba(0, 240, 255, 0.15)', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ background: 'var(--bg-card) 0.4)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px' }}>
+                    <div style={{ background: 'var(--bg-deep) 0.95)', borderBottom: '1px solid rgba(0, 240, 255, 0.15)', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <h2 style={{ color: 'var(--neon-cyan)', margin: 0, fontSize: '0.95rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <ShoppingCart size={16} /> Store Bundles ({storeBundles.length})
                       </h2>
@@ -2330,8 +2330,8 @@ export default function AdminPage() {
 
 
                   {/* Redeem Codes - Simple Table */}
-                  <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(251, 200, 13, 0.2)', borderRadius: '12px', overflow: 'hidden' }}>
-                    <div style={{ background: 'rgba(6, 12, 28, 0.95)', borderBottom: '1px solid rgba(251, 200, 13, 0.15)', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ background: 'var(--bg-card) 0.4)', border: '1px solid rgba(251, 200, 13, 0.2)', borderRadius: '12px', overflow: 'hidden' }}>
+                    <div style={{ background: 'var(--bg-deep) 0.95)', borderBottom: '1px solid rgba(251, 200, 13, 0.15)', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <h2 style={{ color: 'var(--neon-gold)', margin: 0, fontSize: '0.95rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Gem size={16} /> Promo Codes ({redeemCodes.length})
                       </h2>
@@ -2438,19 +2438,19 @@ export default function AdminPage() {
 
                   {/* Stats cards */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px', marginBottom: '16px' }}>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'var(--bg-card) 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>TOTAL TRACKS</div>
                       <div style={{ fontSize: '1.3rem', fontWeight: '600', color: '#fff' }}>{musicTracks.length}</div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'var(--bg-card) 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>PENDING</div>
                       <div style={{ fontSize: '1.3rem', fontWeight: '600', color: 'var(--neon-gold)' }}>{musicTracks.filter(m => m.status === 'pending').length}</div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'var(--bg-card) 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>APPROVED</div>
                       <div style={{ fontSize: '1.3rem', fontWeight: '600', color: '#39ff14' }}>{musicTracks.filter(m => m.status === 'approved').length}</div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'var(--bg-card) 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>REJECTED</div>
                       <div style={{ fontSize: '1.3rem', fontWeight: '600', color: '#ff6b8f' }}>{musicTracks.filter(m => m.status === 'rejected').length}</div>
                     </div>
@@ -2481,7 +2481,7 @@ export default function AdminPage() {
                           <div 
                             key={track.id}
                             style={{
-                              background: 'linear-gradient(135deg, rgba(13, 26, 56, 0.8) 0%, rgba(5, 10, 24, 0.8) 100%)',
+                              background: 'linear-gradient(135deg, rgba(13, 26, 56, 0.8) 0%, var(--bg-card) 0.8) 100%)',
                               border: '1px solid rgba(0, 240, 255, 0.15)',
                               borderRadius: '16px',
                               padding: '0',
@@ -2847,7 +2847,7 @@ export default function AdminPage() {
                                     onChange={e => setBugAdminNotes(prev => ({ ...prev, [report.id]: e.target.value }))}
                                     placeholder="Add investigation notes..."
                                     rows={2}
-                                    style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(5,10,24,0.8)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: '#fff', padding: '8px', fontSize: '0.82rem', resize: 'vertical' }}
+                                    style={{ width: '100%', boxSizing: 'border-box', background: 'var(--bg-card)0.8)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: '#fff', padding: '8px', fontSize: '0.82rem', resize: 'vertical' }}
                                   />
                                 </div>
 
@@ -2924,7 +2924,7 @@ export default function AdminPage() {
                       { label: 'RESOLVED', value: supportMessages.filter(s => s.status === 'resolved').length, color: '#39ff14' },
                       { label: 'TOTAL', value: supportMessages.length, color: '#00f0ff' }
                     ].map(stat => (
-                      <div key={stat.label} style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                      <div key={stat.label} style={{ background: 'var(--bg-card) 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
                         <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>{stat.label}</div>
                         <div style={{ fontSize: '1.4rem', fontWeight: '900', color: stat.color, fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>{stat.value}</div>
                       </div>
@@ -2932,7 +2932,7 @@ export default function AdminPage() {
                   </div>
 
                   {/* Header with Filters */}
-                  <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                  <div style={{ background: 'var(--bg-card) 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                       <div>
                         <h2 style={{ fontSize: '1.3rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '1px' }}>
@@ -2997,7 +2997,7 @@ export default function AdminPage() {
                           <div
                             key={msg.id}
                             style={{
-                              background: 'linear-gradient(135deg, rgba(13, 26, 56, 0.8) 0%, rgba(5, 10, 24, 0.8) 100%)',
+                              background: 'linear-gradient(135deg, rgba(13, 26, 56, 0.8) 0%, var(--bg-card) 0.8) 100%)',
                               border: '1px solid rgba(0, 200, 255, 0.2)',
                               borderRadius: '12px',
                               padding: '16px',
@@ -3164,19 +3164,19 @@ export default function AdminPage() {
               {activeTab === 'tcg_apis' && (
                 <div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '16px' }}>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'var(--bg-card) 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>GATEWAY STATUS</div>
                       <div style={{ fontSize: '1.3rem', fontWeight: '600', color: '#fff' }}>ONLINE (200 OK)</div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'var(--bg-card) 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>REST DB LATENCY</div>
                       <div style={{ fontSize: '1.3rem', fontWeight: '600', color: '#fff' }}>~28ms</div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'var(--bg-card) 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>POSTGRES RLS</div>
                       <div style={{ fontSize: '1.3rem', fontWeight: '600', color: '#fff' }}>ACTIVE & LOCKED</div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'var(--bg-card) 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>CONNECTED TCG APPS</div>
                       <div style={{ fontSize: '1.3rem', fontWeight: '600', color: '#fff' }}>4 CLIENT TYPES</div>
                     </div>
@@ -3214,7 +3214,7 @@ export default function AdminPage() {
 
                   {/* Config Keys Cards */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '10px', marginBottom: '16px' }}>
-                    <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div style={{ background: 'var(--bg-card) 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)', marginBottom: '4px' }}>PRODUCTION REST URL</div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <code style={{ color: '#fff', fontSize: '0.84rem' }}>{supabaseUrl}</code>
@@ -3224,7 +3224,7 @@ export default function AdminPage() {
                       </div>
                     </div>
 
-                    <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div style={{ background: 'var(--bg-card) 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)', marginBottom: '4px' }}>ANON PUBLIC KEY</div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <code style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.82rem', filter: 'blur(2px)', transition: 'filter 0.2s ease' }} onMouseOver={(e) => e.currentTarget.style.filter = 'none'} onMouseOut={(e) => e.currentTarget.style.filter = 'blur(2px)'}>{anonKey.substring(0, 36)}...</code>
@@ -3237,7 +3237,7 @@ export default function AdminPage() {
 
                   {/* Connected TCG Applications Cards */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '12px' }}>
-                    <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '14px' }}>
+                    <div style={{ background: 'var(--bg-card) 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '14px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                         <span style={{ fontSize: '0.92rem', fontWeight: 'bold', color: '#fff' }}>
                           ⚔️ Kontrola Arena (Web)
@@ -3250,7 +3250,7 @@ export default function AdminPage() {
                       <code style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)' }}>POST /rest/v1/matches</code>
                     </div>
 
-                    <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '14px' }}>
+                    <div style={{ background: 'var(--bg-card) 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '14px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                         <span style={{ fontSize: '0.92rem', fontWeight: 'bold', color: '#fff' }}>
                           🎲 Tabletop Simulator / Unity
@@ -3263,7 +3263,7 @@ export default function AdminPage() {
                       <code style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)' }}>GET /rest/v1/rules_knowledge</code>
                     </div>
 
-                    <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '14px' }}>
+                    <div style={{ background: 'var(--bg-card) 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '14px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                         <span style={{ fontSize: '0.92rem', fontWeight: 'bold', color: '#fff' }}>
                           📱 Mobile Tournament (Flutter)
@@ -3276,7 +3276,7 @@ export default function AdminPage() {
                       <code style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)' }}>GET /rest/v1/profiles</code>
                     </div>
 
-                    <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '14px' }}>
+                    <div style={{ background: 'var(--bg-card) 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '14px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                         <span style={{ fontSize: '0.92rem', fontWeight: 'bold', color: '#fff' }}>
                           🤖 AI Rulekeeper Assistant
@@ -3300,7 +3300,7 @@ export default function AdminPage() {
           ========================================================================= */}
           {crystalModalUser && (
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-              <div style={{ width: '100%', maxWidth: '380px', background: 'rgba(14, 22, 42, 0.95)', border: '1.5px solid var(--neon-gold, #FBC80D)', borderRadius: '16px', padding: '24px', boxShadow: '0 0 35px rgba(251, 200, 13, 0.25)' }}>
+              <div style={{ width: '100%', maxWidth: '380px', background: 'var(--bg-card) 0.95)', border: '1.5px solid var(--neon-gold, #FBC80D)', borderRadius: '16px', padding: '24px', boxShadow: '0 0 35px rgba(251, 200, 13, 0.25)' }}>
                 <h3 style={{ fontSize: '1.3rem', color: '#fff', margin: '0 0 6px 0', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>Adjust Stability Crystals</h3>
                 <p style={{ color: '#cbd5e1', fontSize: '0.86rem', margin: '0 0 14px 0' }}>
                   Set balance for <strong>{crystalModalUser.username}</strong>:
@@ -3314,7 +3314,7 @@ export default function AdminPage() {
                     width: '100%',
                     boxSizing: 'border-box',
                     padding: '10px',
-                    background: 'rgba(5, 10, 24, 0.85)',
+                    background: 'var(--bg-card) 0.85)',
                     border: '1.5px solid var(--neon-gold, #FBC80D)',
                     borderRadius: '8px',
                     color: '#fff',
@@ -3407,7 +3407,7 @@ export default function AdminPage() {
                 {(() => {
                   const modalMetrics = calculateGroqMetrics(editDocData.content);
                   return (
-                    <div style={{ background: 'rgba(6, 12, 28, 0.9)', border: `1px solid ${modalMetrics.status === 'EXCEEDED' ? '#ff2a55' : modalMetrics.status === 'WARNING' ? '#FBC80D' : 'rgba(0, 240, 255, 0.3)'}`, borderRadius: '10px', padding: '10px 14px', marginBottom: '12px' }}>
+                    <div style={{ background: 'var(--bg-deep) 0.9)', border: `1px solid ${modalMetrics.status === 'EXCEEDED' ? '#ff2a55' : modalMetrics.status === 'WARNING' ? '#FBC80D' : 'rgba(0, 240, 255, 0.3)'}`, borderRadius: '10px', padding: '10px 14px', marginBottom: '12px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', fontSize: '0.78rem' }}>
                         <span style={{ color: '#fff', fontWeight: 'bold' }}>
                           ⚡ Groq Context Rubric: <strong style={{ color: modalMetrics.status === 'EXCEEDED' ? '#ff2a55' : modalMetrics.status === 'WARNING' ? '#FBC80D' : '#39ff14' }}>{modalMetrics.charCount.toLocaleString()}</strong> / {GROQ_LIMITS.MAX_CONTEXT_CHARS.toLocaleString()} chars (~{modalMetrics.estimatedTokens.toLocaleString()} tokens)
@@ -3416,7 +3416,7 @@ export default function AdminPage() {
                           {modalMetrics.status === 'EXCEEDED' ? '🚨 EXCEEDS GROQ RUBRIC LIMIT' : modalMetrics.status === 'WARNING' ? '⚠️ APPROACHING CONTEXT CEILING' : '✓ SAFE CONTEXT BUDGET'}
                         </span>
                       </div>
-                      <div style={{ width: '100%', height: '6px', background: 'rgba(5, 10, 24, 0.8)', borderRadius: '3px', overflow: 'hidden' }}>
+                      <div style={{ width: '100%', height: '6px', background: 'var(--bg-card) 0.8)', borderRadius: '3px', overflow: 'hidden' }}>
                         <div style={{ width: `${Math.min(100, modalMetrics.utilizationPercent)}%`, height: '100%', background: modalMetrics.status === 'EXCEEDED' ? '#ff2a55' : modalMetrics.status === 'WARNING' ? '#FBC80D' : '#39ff14' }} />
                       </div>
                     </div>
@@ -3432,7 +3432,7 @@ export default function AdminPage() {
                         required
                         value={editDocData.title}
                         onChange={(e) => setEditDocData({ ...editDocData, title: e.target.value })}
-                        style={{ width: '100%', boxSizing: 'border-box', padding: '7px 10px', background: 'rgba(5, 10, 24, 0.85)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', color: '#fff', fontSize: '0.84rem' }}
+                        style={{ width: '100%', boxSizing: 'border-box', padding: '7px 10px', background: 'var(--bg-card) 0.85)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', color: '#fff', fontSize: '0.84rem' }}
                       />
                     </div>
                     <div>
@@ -3441,7 +3441,7 @@ export default function AdminPage() {
                         type="text"
                         value={editDocData.category}
                         onChange={(e) => setEditDocData({ ...editDocData, category: e.target.value })}
-                        style={{ width: '100%', boxSizing: 'border-box', padding: '7px 10px', background: 'rgba(5, 10, 24, 0.85)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', color: '#fff', fontSize: '0.84rem' }}
+                        style={{ width: '100%', boxSizing: 'border-box', padding: '7px 10px', background: 'var(--bg-card) 0.85)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', color: '#fff', fontSize: '0.84rem' }}
                       />
                     </div>
                   </div>
@@ -3457,7 +3457,7 @@ export default function AdminPage() {
                         minHeight: '260px',
                         boxSizing: 'border-box',
                         padding: '10px 12px',
-                        background: 'rgba(5, 10, 24, 0.95)',
+                        background: 'var(--bg-card) 0.95)',
                         border: '1px solid rgba(0, 240, 255, 0.25)',
                         borderRadius: '8px',
                         color: '#f1f5f9',
@@ -3501,7 +3501,7 @@ export default function AdminPage() {
           ========================================================================= */}
           {isAppendModalOpen && activeDoc && (
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-              <div style={{ width: '100%', maxWidth: '620px', maxHeight: '90vh', overflowY: 'auto', background: 'rgba(14, 22, 42, 0.98)', border: '1.5px solid var(--neon-cyan, #00f0ff)', borderRadius: '18px', padding: '24px', boxShadow: '0 0 45px rgba(0, 240, 255, 0.3)' }}>
+              <div style={{ width: '100%', maxWidth: '620px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-card) 0.98)', border: '1.5px solid var(--neon-cyan, #00f0ff)', borderRadius: '18px', padding: '24px', boxShadow: '0 0 45px rgba(0, 240, 255, 0.3)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                   <div>
                     <h2 style={{ fontSize: '1.35rem', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>
@@ -3527,7 +3527,7 @@ export default function AdminPage() {
                         padding: '8px',
                         borderRadius: '6px',
                         border: appendData.type === 'qa' ? '1px solid var(--neon-cyan, #00f0ff)' : '1px solid rgba(255,255,255,0.1)',
-                        background: appendData.type === 'qa' ? 'rgba(0, 240, 255, 0.18)' : 'rgba(5, 10, 24, 0.6)',
+                        background: appendData.type === 'qa' ? 'rgba(0, 240, 255, 0.18)' : 'var(--bg-card) 0.6)',
                         color: appendData.type === 'qa' ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.6)',
                         fontWeight: 'bold',
                         cursor: 'pointer',
@@ -3544,7 +3544,7 @@ export default function AdminPage() {
                         padding: '8px',
                         borderRadius: '6px',
                         border: appendData.type === 'section' ? '1px solid var(--neon-cyan, #00f0ff)' : '1px solid rgba(255,255,255,0.1)',
-                        background: appendData.type === 'section' ? 'rgba(0, 240, 255, 0.18)' : 'rgba(5, 10, 24, 0.6)',
+                        background: appendData.type === 'section' ? 'rgba(0, 240, 255, 0.18)' : 'var(--bg-card) 0.6)',
                         color: appendData.type === 'section' ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.6)',
                         fontWeight: 'bold',
                         cursor: 'pointer',
@@ -3565,7 +3565,7 @@ export default function AdminPage() {
                       value={appendData.title}
                       onChange={(e) => setAppendData({ ...appendData, title: e.target.value })}
                       placeholder={appendData.type === 'qa' ? 'e.g. How does Saigo No Blitz activate when HP is below 50?' : 'e.g. 12. TOURNAMENT ERRATA'}
-                      style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', background: 'rgba(5, 10, 24, 0.85)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff', fontSize: '0.86rem' }}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', background: 'var(--bg-card) 0.85)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff', fontSize: '0.86rem' }}
                     />
                   </div>
 
@@ -3584,12 +3584,12 @@ export default function AdminPage() {
                       value={appendData.content}
                       onChange={(e) => setAppendData({ ...appendData, content: e.target.value })}
                       placeholder="Write the clear rule breakdown or answer here..."
-                      style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', background: 'rgba(5, 10, 24, 0.85)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff', fontSize: '0.86rem', lineHeight: '1.5' }}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', background: 'var(--bg-card) 0.85)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff', fontSize: '0.86rem', lineHeight: '1.5' }}
                     />
                   </div>
 
                   {/* Formatted Append Preview */}
-                  <div style={{ background: 'rgba(5, 10, 24, 0.8)', border: '1px dashed rgba(0, 240, 255, 0.25)', borderRadius: '8px', padding: '10px 12px' }}>
+                  <div style={{ background: 'var(--bg-card) 0.8)', border: '1px dashed rgba(0, 240, 255, 0.25)', borderRadius: '8px', padding: '10px 12px' }}>
                     <div style={{ fontSize: '0.7rem', color: 'var(--neon-gold, #FBC80D)', fontWeight: 'bold', marginBottom: '4px' }}>
                       PREVIEW OF APPENDED TEXT:
                     </div>
@@ -3628,7 +3628,7 @@ export default function AdminPage() {
           ========================================================================= */}
           {isNewDocModalOpen && (
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-              <div style={{ width: '100%', maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto', background: 'rgba(14, 22, 42, 0.98)', border: '1.5px solid var(--neon-cyan, #00f0ff)', borderRadius: '18px', padding: '24px', boxShadow: '0 0 45px rgba(0, 240, 255, 0.3)' }}>
+              <div style={{ width: '100%', maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-card) 0.98)', border: '1.5px solid var(--neon-cyan, #00f0ff)', borderRadius: '18px', padding: '24px', boxShadow: '0 0 45px rgba(0, 240, 255, 0.3)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                   <h2 style={{ fontSize: '1.35rem', color: '#fff', margin: 0, fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>
                     ADD NEW KNOWLEDGE DOCUMENT
@@ -3647,7 +3647,7 @@ export default function AdminPage() {
                       value={newDocData.filename}
                       onChange={(e) => setNewDocData({ ...newDocData, filename: e.target.value })}
                       placeholder="e.g. Tournament_Rules_2026.txt"
-                      style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', background: 'rgba(5, 10, 24, 0.85)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff', fontSize: '0.86rem' }}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', background: 'var(--bg-card) 0.85)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff', fontSize: '0.86rem' }}
                     />
                   </div>
 
@@ -3660,7 +3660,7 @@ export default function AdminPage() {
                         value={newDocData.title}
                         onChange={(e) => setNewDocData({ ...newDocData, title: e.target.value })}
                         placeholder="e.g. Official Tournament & Errata Guide"
-                        style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', background: 'rgba(5, 10, 24, 0.85)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff', fontSize: '0.86rem' }}
+                        style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', background: 'var(--bg-card) 0.85)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff', fontSize: '0.86rem' }}
                       />
                     </div>
                     <div>
@@ -3670,7 +3670,7 @@ export default function AdminPage() {
                         value={newDocData.category}
                         onChange={(e) => setNewDocData({ ...newDocData, category: e.target.value })}
                         placeholder="e.g. Tournament"
-                        style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', background: 'rgba(5, 10, 24, 0.85)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff', fontSize: '0.86rem' }}
+                        style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', background: 'var(--bg-card) 0.85)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff', fontSize: '0.86rem' }}
                       />
                     </div>
                   </div>
@@ -3687,7 +3687,7 @@ export default function AdminPage() {
                       value={newDocData.content}
                       onChange={(e) => setNewDocData({ ...newDocData, content: e.target.value })}
                       placeholder="Add initial Q&A pairs or rules text for this document..."
-                      style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', background: 'rgba(5, 10, 24, 0.85)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff', fontSize: '0.84rem', fontFamily: 'Consolas, monospace', lineHeight: '1.5' }}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', background: 'var(--bg-card) 0.85)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff', fontSize: '0.84rem', fontFamily: 'Consolas, monospace', lineHeight: '1.5' }}
                     />
                   </div>
 

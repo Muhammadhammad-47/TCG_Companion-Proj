@@ -1724,7 +1724,7 @@ export function Hub() {
                   borderRadius: '24px', 
                   background: canAccessModule('game', appSettings, userProfile) 
                     ? 'linear-gradient(90deg, #0d1a38 0%, #050a18 100%)' 
-                    : 'linear-gradient(90deg, rgba(13, 26, 56, 0.3) 0%, rgba(5, 10, 24, 0.3) 100%)',
+                    : 'linear-gradient(90deg, rgba(13, 26, 56, 0.3) 0%, var(--bg-card) 100%)',
                   border: canAccessModule('game', appSettings, userProfile)
                     ? '2px solid var(--neon-cyan)'
                     : '2px solid rgba(0, 240, 255, 0.2)',
@@ -1894,7 +1894,7 @@ export function Hub() {
                 onChange={(e) => setMusicTitle(e.target.value)}
                 placeholder="Epic Battle Theme"
                 maxLength={100}
-                style={{ width: '100%', boxSizing: 'border-box', padding: '12px 16px', background: 'rgba(5, 10, 24, 0.8)', border: '1.5px solid rgba(168,85,247,0.3)', borderRadius: '10px', color: '#fff', fontSize: '1rem', fontFamily: 'Barlow Condensed, sans-serif' }}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '12px 16px', background: 'var(--bg-card)', border: '1.5px solid rgba(168,85,247,0.3)', borderRadius: '10px', color: '#fff', fontSize: '1rem', fontFamily: 'Barlow Condensed, sans-serif' }}
               />
             </div>
 
@@ -1906,7 +1906,7 @@ export function Hub() {
                 type="file"
                 accept="audio/mpeg,audio/mp3,audio/wav,audio/ogg,audio/webm,.mp3,.wav,.ogg"
                 onChange={(e) => setMusicFile(e.target.files[0])}
-                style={{ width: '100%', boxSizing: 'border-box', padding: '12px 16px', background: 'rgba(5, 10, 24, 0.8)', border: '1.5px solid rgba(168,85,247,0.3)', borderRadius: '10px', color: '#fff', fontSize: '1rem', fontFamily: 'Barlow Condensed, sans-serif', cursor: 'pointer' }}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '12px 16px', background: 'var(--bg-card)', border: '1.5px solid rgba(168,85,247,0.3)', borderRadius: '10px', color: '#fff', fontSize: '1rem', fontFamily: 'Barlow Condensed, sans-serif', cursor: 'pointer' }}
               />
               <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', marginTop: '6px', fontFamily: 'Barlow Condensed, sans-serif' }}>
                 MP3, WAV, or OGG format. Maximum 10MB. {musicFile && `Selected: ${musicFile.name} (${(musicFile.size / 1024 / 1024).toFixed(2)} MB)`}
