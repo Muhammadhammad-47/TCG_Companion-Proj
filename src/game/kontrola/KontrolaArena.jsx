@@ -1532,19 +1532,26 @@ export default function KontrolaArena() {
           nextTurnPlayerId = livingPlayers[nextIdx] || livingPlayers[0];
         }
 
-        // Check if next player is Asleep (Sleepy X1 / X2 / Shock)
+        // Check if next player is Asleep (Sleepy X1 / X2 / Lightning X1/X2)
+        // Process each sleeping player sequentially, decrementing sleep counter and advancing turn
         let checkedSleepCount = 0;
         while (updatedStates[nextTurnPlayerId]?.sleepTurns > 0 && checkedSleepCount < livingPlayers.length) {
           const sleepingChar = updatedStates[nextTurnPlayerId];
           sleepingChar.sleepTurns = Math.max(0, sleepingChar.sleepTurns - 1);
           turnLogs.unshift(`💤 ${sleepingChar.name} is asleep and skips their turn! (${sleepingChar.sleepTurns} turn(s) remaining)`);
           
+          // Advance to next player for sleeping turn check
           const sIdx = livingPlayers.indexOf(nextTurnPlayerId);
           const step = currentState.turnDirection === 'counter' ? -1 : 1;
           let nextSIdx = (sIdx + step) % livingPlayers.length;
           if (nextSIdx < 0) nextSIdx += livingPlayers.length;
           nextTurnPlayerId = livingPlayers[nextSIdx];
           checkedSleepCount++;
+        }
+        
+        // Safety: ensure we have a valid next player even if something went wrong
+        if (!nextTurnPlayerId || !updatedStates[nextTurnPlayerId]) {
+          nextTurnPlayerId = livingPlayers[0];
         }
 
         // Check Poison damage tick on the player starting their turn (-10 HP per turn per poison stack)
@@ -1573,6 +1580,24 @@ export default function KontrolaArena() {
           if (incomingChar.hp <= 0) {
             incomingChar.isDefeated = true;
             turnLogs.unshift(`💀 ${incomingChar.name} was incinerated by Burn damage and eliminated!`);
+            const remainingLiving = currentState.players.filter((pId) => !updatedStates[pId]?.isDefeated);
+            if (remainingLiving.length === 1) {
+              matchWinner = updatedStates[remainingLiving[0]] ? { ...updatedStates[remainingLiving[0]], playerId: remainingLiving[0] } : null;
+            }
+            const dIdx = livingPlayers.indexOf(nextTurnPlayerId);
+            nextTurnPlayerId = livingPlayers[(dIdx + 1) % livingPlayers.length];
+          }
+        }
+        // Check Vampire drain effect (-10 HP, -1 ET per turn for 3 turns)
+        if (incomingChar && typeof incomingChar.vampireStealTurnsLeft === 'number' && incomingChar.vampireStealTurnsLeft > 0 && !incomingChar.isDefeated) {
+          const vampireDrain = 10;
+          const vampireETDrain = 1;
+          incomingChar.hp = Math.max(0, incomingChar.hp - vampireDrain);
+          incomingChar.energyTokens = Math.max(0, (incomingChar.energyTokens || 0) - vampireETDrain);
+          turnLogs.unshift(`🧛 ${incomingChar.name} suffered ${vampireDrain} HP and ${vampireETDrain} ET drain from Vampire curse! (${incomingChar.vampireStealTurnsLeft} turn${incomingChar.vampireStealTurnsLeft > 1 ? 's' : ''} remaining)`);
+          if (incomingChar.hp <= 0) {
+            incomingChar.isDefeated = true;
+            turnLogs.unshift(`💀 ${incomingChar.name} was drained to death by Vampire curse and eliminated!`);
             const remainingLiving = currentState.players.filter((pId) => !updatedStates[pId]?.isDefeated);
             if (remainingLiving.length === 1) {
               matchWinner = updatedStates[remainingLiving[0]] ? { ...updatedStates[remainingLiving[0]], playerId: remainingLiving[0] } : null;

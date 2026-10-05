@@ -12,6 +12,7 @@ export const KONTROLA_CHARACTERS = {
     weakness: 'Magic/Poison',
     weaknessBonus: 10,
     innateDP: 10,
+    retreatSpeed: 3,
     themeColor: '#ff3366',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/CHYNA WILD CARD REG.png',
     attacks: {
@@ -24,12 +25,13 @@ export const KONTROLA_CHARACTERS = {
     id: 'bee',
     name: 'Zabina "Bee" Solé',
     title: 'Queen of the Hive',
-    maxHp: 100,
+    maxHp: 70,
     mind: 5,
     element: 'Lightning',
     weakness: 'Magic/Poison',
     weaknessBonus: 10,
     innateDP: 10,
+    retreatSpeed: 3,
     themeColor: '#ffe600',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/BEE WILD CARD GOLD.png',
     attacks: {
@@ -48,6 +50,7 @@ export const KONTROLA_CHARACTERS = {
     weakness: 'Fire',
     weaknessBonus: 10,
     innateDP: 10,
+    retreatSpeed: 1,
     themeColor: '#00f0ff',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/KIKO WILD CARD GOLD.png',
     attacks: {
@@ -66,6 +69,7 @@ export const KONTROLA_CHARACTERS = {
     weakness: 'Poison',
     weaknessBonus: 15,
     innateDP: 10,
+    retreatSpeed: 1,
     themeColor: '#a855f7',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/KAT WILD CARD GOLD.png',
     attacks: {
@@ -78,12 +82,13 @@ export const KONTROLA_CHARACTERS = {
     id: 'poochi',
     name: 'Poochi',
     title: 'The Celestial Canine',
-    maxHp: 100,
+    maxHp: 70,
     mind: 2,
     element: 'Magic',
     weakness: 'Magic/Poison',
     weaknessBonus: 10,
     innateDP: 10,
+    retreatSpeed: 1,
     themeColor: '#ff66cc',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/POOCHI WILD CARD GOLD.png',
     attacks: {
@@ -102,6 +107,7 @@ export const KONTROLA_CHARACTERS = {
     weakness: 'Fire',
     weaknessBonus: 10,
     innateDP: 10,
+    retreatSpeed: 4,
     themeColor: '#e0b0ff',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/QUEENY WILD CARD GOLD.png',
     attacks: {
@@ -114,12 +120,13 @@ export const KONTROLA_CHARACTERS = {
     id: 'shroomy',
     name: 'Shroomy',
     title: 'The Spore Alchemist',
-    maxHp: 100,
+    maxHp: 65,
     mind: 2,
     element: 'Nature',
     weakness: 'Fire',
     weaknessBonus: 10,
     innateDP: 10,
+    retreatSpeed: 1,
     themeColor: '#39ff14',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/SHROOMY WILD CARD GOLD.png',
     attacks: {
@@ -154,6 +161,7 @@ export const ACTION_CARDS_BASIC = [
   { name: 'REVIVE', type: 'HEAL', count: 6, costET: 0, desc: 'Brings player back to life with 50% HP.' },
   { name: 'SLEEPY X1', type: 'OTHERS', count: 6, costET: 0, desc: 'Target falls asleep and skips 1 turn.' },
   { name: 'VISION X1', type: 'OTHERS', count: 6, costET: 0, desc: 'Target reveals Action Cards for 15s.' },
+  { name: 'FREEZE X1', type: 'STATUS', count: 6, costET: 0, desc: 'Target loses 1 turn and -2 dice penalty.' },
   { name: 'VITALITY GAIN V20', type: 'HEAL', count: 6, costET: 0, minLevel: 2, desc: '+20 HP or level up to Level 2 (Requires Level 2).' },
   { name: 'X-CHANGE X1', type: 'OTHERS', count: 6, costET: 0, desc: 'Exchange 1 Action Card with an opponent.' },
   { name: 'DEFENCE - COUNTER', type: 'DEFENSE', count: 1, costET: 0, desc: '0% damage taken, reflect 25% back.' },
@@ -181,11 +189,12 @@ export const ACTION_CARDS_PREMIUM = [
   { name: 'VAMPIRE LIFE STEAL', type: 'ATTACK', count: 1, costET: 1, desc: 'Steals 1 ET and 10 HP for 3 turns.' },
   { name: 'DRAIN', type: 'ATTACK', count: 2, costET: 1, desc: 'Steals all opponent Energy Tokens.' },
   { name: 'VITALITY GAIN V30', type: 'HEAL', count: 2, costET: 0, desc: '+30 HP vitality surge.' },
-  { name: 'VITALITY V40', type: 'HEAL', count: 2, costET: 0, desc: '+40 HP vitality surge.' },
+  { name: 'HEAL H40', type: 'HEAL', count: 2, costET: 0, desc: 'Restores +40 HP.' },
   { name: '+DEFENCE D20', type: 'DEFENSE', count: 4, costET: 0, desc: '+20 Defense points.' },
   { name: 'X-CHANGE FULL', type: 'OTHERS', count: 2, costET: 0, desc: 'Exchange cards with all opponents.' },
   { name: 'KONTROL', type: 'SPECIAL', count: 2, costET: 3, desc: 'Mind Control target (Mind Strength check). Max 2/match.' },
-  { name: 'SAIGO NO BLITZ', type: 'ULTIMATE', count: 2, costET: 5, desc: 'Devastating 200 AP blast (HP < 50 req). Max 2/match.' }
+  { name: 'SAIGO NO BLITZ', type: 'ULTIMATE', count: 2, costET: 5, desc: 'Devastating 200 AP blast (HP < 50 req). Max 2/match.' },
+  { name: 'FIRE INFERNO LOCK', type: 'ATTACK', count: 1, costET: 1, desc: 'Burns with spreading flames (-20 HP, spreads to neighbors, must roll doubles to extinguish, -5 HP/turn).' }
 ];
 
 export function shuffle(array) {
@@ -261,6 +270,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   let heal = 0;
   let shieldGain = 0;
   let aoeDamage = 0;
+  let aoeSplitDamage = false;
 
   let newAttackerState = { ...attackerState };
   let newDefenderState = defenderState ? { ...defenderState } : null;
@@ -287,6 +297,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       newDefenderState.hasBoomerang = true;
     } else if (dName.includes('DODGE')) {
       newDefenderState.hasDodge = true;
+      newDefenderState.dodgeCardName = defCard.name; // Track which DODGE card for later resolution
     } else if (dName.includes('COUNTER')) {
       // covers DEFENCE - COUNTER and DODGE - COUNTER
       newDefenderState.hasCounter = true;
@@ -306,6 +317,18 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
 
   // 1. KONTROL CARD
   if (cardName.includes('KONTROL') && newDefenderState) {
+    // Check cooldown
+    if (newAttackerState.kontrolCooldown > 0) {
+      log += ` ⏸️ KONTROL on cooldown! ${newAttackerState.kontrolCooldown} more turn(s) before available.`;
+      return { newAttackerState, newDefenderState, log };
+    }
+
+    // Check usage limit
+    if (newAttackerState.kontrolUsesLeft <= 0) {
+      log += ` ⏸️ KONTROL limit reached for this match (Max 2/match)!`;
+      return { newAttackerState, newDefenderState, log };
+    }
+
     if (isDefenderZombie) {
       log += ` Kontrol fails! Zombies are mindless and cannot be controlled.`;
     } else {
@@ -319,22 +342,67 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       } else {
         log += ` Kontrol FAILED! Roll ${controllerRoll} did not beat Mind Strength ${targetMind}.`;
       }
+
+      // Decrement usage counter and set cooldown
+      newAttackerState.kontrolUsesLeft = Math.max(0, newAttackerState.kontrolUsesLeft - 1);
+      newAttackerState.kontrolCooldown = 5; // 5-turn cooldown per documentation
+      
+      // KONTROL Choice: Random option A or B
+      if (controllerRoll > targetMind) {
+        const choice = Math.random() > 0.5 ? 'A' : 'B';
+        if (choice === 'A') {
+          // Option A: Opponent must attack another player next turn
+          newDefenderState.kontrolForceAlternateTarget = true;
+          log += ` 🧠 KONTROL OPTION A: ${newDefenderState.name} MUST attack another player next turn!`;
+        } else {
+          // Option B: Steal 1 random Action Card from opponent
+          if (newDefenderState.actionCardsHand && newDefenderState.actionCardsHand.length > 0) {
+            const randomIdx = Math.floor(Math.random() * newDefenderState.actionCardsHand.length);
+            const stolenCard = newDefenderState.actionCardsHand[randomIdx];
+            newDefenderState.actionCardsHand.splice(randomIdx, 1);
+            newAttackerState.actionCardsHand = newAttackerState.actionCardsHand || [];
+            newAttackerState.actionCardsHand.push(stolenCard);
+            log += ` 🧠 KONTROL OPTION B: ${newAttackerState.name} stole "${stolenCard.name}" from ${newDefenderState.name}!`;
+          } else {
+            log += ` 🧠 KONTROL OPTION B selected but ${newDefenderState.name} has no cards to steal!`;
+          }
+        }
+      }
     }
   }
   // 2. SAIGO NO BLITZ (200 AP)
   else if (cardName.includes('BLITZ')) {
+    // Check cooldown
+    if (newAttackerState.blitzCooldown > 0) {
+      log += ` ⚡ BLITZ on cooldown! ${newAttackerState.blitzCooldown} more turn(s) before available.`;
+      return { newAttackerState, newDefenderState, log };
+    }
+
+    // Check usage limit
+    if (newAttackerState.blitzUsesLeft <= 0) {
+      log += ` ⚡ BLITZ limit reached for this match (Max 2/match)!`;
+      return { newAttackerState, newDefenderState, log };
+    }
+
     if (newAttackerState.hp >= 50) {
       log += ` Blitz requires HP < 50! Cannot activate.`;
     } else {
       const selfSacrifice = Math.floor(newAttackerState.hp * 0.5);
       newAttackerState.hp = Math.max(1, newAttackerState.hp - selfSacrifice);
       damage = 200;
+      
+      // Decrement usage counter and set cooldown
+      newAttackerState.blitzUsesLeft = Math.max(0, newAttackerState.blitzUsesLeft - 1);
+      newAttackerState.blitzCooldown = 0; // No cooldown, but limited to 2 uses
+      
       if (newDefenderState) {
         newDefenderState.hp = Math.max(0, newDefenderState.hp - damage);
-        log += ` SAIGO NO BLITZ hit ${newDefenderState.name} for 200 AP devastation! (${attackerState.name} sacrificed ${selfSacrifice} HP)`;
+        log += ` SAIGO NO BLITZ hit ${newDefenderState.name} for 200 AP devastation! (${newAttackerState.name} sacrificed ${selfSacrifice} HP)`;
       } else {
-        log += ` SAIGO NO BLITZ unleashed 200 AP blast!`;
-        aoeDamage = 200;
+        // 1vAll: Split 200 AP equally among all defending players
+        log += ` SAIGO NO BLITZ unleashed 200 AP Area-of-Effect blast!`;
+        aoeDamage = 200; // Send to UI with splitting flag
+        aoeSplitDamage = true; // Flag to indicate damage should be split
       }
     }
   }
@@ -345,8 +413,11 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       log += ` Boomerang Trap set! Next successful attack against you will be reflected 100%.`;
       return { newAttackerState, newDefenderState, log };
     } else if (cardName === 'MISDIRECT') {
+      // NOTE: MISDIRECT is documented as an active response card (defender plays during opponent's attack)
+      // Current implementation treats it as a passive trap set by attacker
+      // TODO: Redesign as active response during attack phase when response mechanics are implemented
       newAttackerState.hasMisdirect = true;
-      log += ` Misdirect Trap set! Next incoming attack will be completely negated.`;
+      log += ` ⚠️ MISDIRECT set! (Note: Redesign needed - should be defender response card per documentation)`;
       return { newAttackerState, newDefenderState, log };
     }
 
@@ -358,9 +429,21 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       attackElement = 'Lightning';
       log += ` [${actionCard.name}: Elemental Lightning strike dealing ${baseAP} AP]`;
     } else if (cardName.includes('FIRE FLAME')) {
-      baseAP = cardName.includes('X2') ? 20 : 10;
+      const isX2 = cardName.includes('X2');
+      baseAP = isX2 ? 20 : 10;
+      const failurePenalty = isX2 ? 20 : 10;
       attackElement = 'Fire';
-      log += ` [${actionCard.name}: Elemental Fire strike dealing ${baseAP} AP]`;
+      
+      // Check if attacker rolled doubles
+      const rolledDoubles = attackerRoll.rolls[0] === attackerRoll.rolls[1];
+      
+      if (!rolledDoubles) {
+        log += ` 🔥 FIRE FLAME failed (no doubles)! ${newAttackerState.name} takes ${failurePenalty} HP penalty!`;
+        newAttackerState.hp = Math.max(0, newAttackerState.hp - failurePenalty);
+        return { newAttackerState, newDefenderState, log };
+      }
+      
+      log += ` [${actionCard.name}: Rolled doubles! Elemental Fire strike dealing ${baseAP} AP]`;
     } else if (isAttackerZombie) {
       baseAP = 20; // Zombie Venom Strike
       attackElement = 'Poison';
@@ -380,9 +463,23 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     }
 
     // Clash Contest: Attacker 2 dice vs Defender 2 dice
-    const isClashTie = attackerRoll.total === defenderRoll.total;
-    const atkWin = !isClashTie && attackerRoll.total > defenderRoll.total;
-    log += ` Clash: Attacker ${attackerRoll.total} vs Defender ${defenderRoll.total}.`;
+    // Apply any dice penalties (e.g., from FREEZE cards)
+    let adjustedAttackerRoll = attackerRoll.total;
+    let adjustedDefenderRoll = defenderRoll.total;
+    
+    if (newDefenderState?.dicePenalty) {
+      adjustedDefenderRoll = Math.max(0, adjustedDefenderRoll - newDefenderState.dicePenalty);
+      log += ` ❄️ FREEZE penalty: -${newDefenderState.dicePenalty} to defender roll! (${defenderRoll.total} - ${newDefenderState.dicePenalty} = ${adjustedDefenderRoll})`;
+    }
+    
+    if (newAttackerState?.dicePenalty) {
+      adjustedAttackerRoll = Math.max(0, adjustedAttackerRoll - newAttackerState.dicePenalty);
+      log += ` ❄️ FREEZE penalty: -${newAttackerState.dicePenalty} to attacker roll! (${attackerRoll.total} - ${newAttackerState.dicePenalty} = ${adjustedAttackerRoll})`;
+    }
+    
+    const isClashTie = adjustedAttackerRoll === adjustedDefenderRoll;
+    const atkWin = !isClashTie && adjustedAttackerRoll > adjustedDefenderRoll;
+    log += ` Clash: Attacker ${adjustedAttackerRoll} vs Defender ${adjustedDefenderRoll}.`;
 
     if (isClashTie) {
       // Per the official rules: a tie means both must re-roll — the DiceRoller handles this UI-side.
@@ -395,6 +492,14 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         isTie: true  // signal to the host engine to not finalize — re-roll required
       };
     } else if (atkWin) {
+      // DODGE BASIC: If defender has DODGE BASIC and attacker wins clash, attacker damage +25%
+      // (attacker won the clash, so defender failed to evade)
+      if (newDefenderState?.hasDodge && newDefenderState.dodgeCardName?.includes('BASIC')) {
+        log += ` 💨 DODGE BASIC failed! ${newDefenderState.name} couldn't evade. Attacker's damage +25%!`;
+        baseAP = Math.floor(baseAP * 1.25);
+        newDefenderState.hasDodge = false; // Consume the dodge
+      }
+      
       let finalDamage = baseAP;
 
       if (cardName === 'DRAIN') {
@@ -422,8 +527,20 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           newAttackerState.hp = Math.min(newAttackerState.maxHp || 100, newAttackerState.hp + stolenHp);
           newAttackerState.energyTokens = (newAttackerState.energyTokens || 0) + stolenEt;
           log += ` VAMPIRE LIFE STEAL hit! Stole ${stolenHp} HP and ${stolenEt} ET.`;
+          
+          // Apply 3-turn duration to defender for continued drain
+          newDefenderState.vampireStealStack = (newDefenderState.vampireStealStack || 0) + 1;
+          newDefenderState.vampireStealTurnsLeft = 3;
+          log += ` 🧛 VAMPIRE effect applied for 3 turns! Each turn: -10 HP, -1 ET to ${newDefenderState.name}.`;
         }
         finalDamage = 0; // Handled directly above
+      } else if (cardName === 'FIRE INFERNO LOCK') {
+        // FIRE INFERNO LOCK: -20 HP, apply burn, spreads to neighbors
+        if (newDefenderState) {
+          finalDamage = 20;
+          newDefenderState.burnCount = (newDefenderState.burnCount || 0) + 1;
+          log += ` 🔥🔥 FIRE INFERNO LOCK! Deal 20 AP and applied burn status! Must roll doubles each turn to extinguish.`;
+        }
       }
 
       // TRAP CONSUMPTION
@@ -434,17 +551,48 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           finalDamage = 0;
           newDefenderState.immuneFire = false;
         } else if (newDefenderState.hasMisdirect) {
-          log += ` 🔀 MISDIRECT TRAP TRIGGERED! The attack was completely negated!`;
-          finalDamage = 0;
+          // MISDIRECT: Try to redirect attack to random other player or fail with -20 HP penalty
+          const redirectSuccess = Math.random() > 0.4; // 60% chance to redirect
+          
+          if (redirectSuccess) {
+            log += ` 🔀 MISDIRECT TRIGGERED! Attack redirected!`;
+            // Attack is negated for original defender
+            finalDamage = 0;
+          } else {
+            log += ` ❌ MISDIRECT FAILED! ${newAttackerState.name} takes -20 HP penalty!`;
+            newAttackerState.hp = Math.max(0, newAttackerState.hp - 20);
+          }
           newDefenderState.hasMisdirect = false;
         } else if (newDefenderState.hasDodge) {
-          log += ` 💨 DODGE TRIGGERED! ${newDefenderState.name} evaded all damage!`;
-          finalDamage = 0;
+          // Check which DODGE card was used
+          const dodgeCardName = newDefenderState.dodgeCardName || 'DODGE - FULL GUARD';
+          
+          if (dodgeCardName.includes('FULL GUARD')) {
+            // DODGE FULL GUARD: Requires doubles to evade completely
+            const rolledDoubles = defenderRoll.rolls && defenderRoll.rolls[0] === defenderRoll.rolls[1];
+            const isBlitzActive = newAttackerState.isBlitzActive || false;
+            
+            if (rolledDoubles) {
+              log += ` 💨 DODGE FULL GUARD SUCCESS! Rolled doubles, evaded all damage!`;
+              finalDamage = 0;
+            } else if (isBlitzActive) {
+              log += ` 💨 DODGE FULL GUARD partially successful vs Blitz (50% damage reduction)!`;
+              finalDamage = Math.floor(finalDamage * 0.5);
+            } else {
+              log += ` ❌ DODGE FULL GUARD failed (no doubles), taking full damage!`;
+            }
+          } else if (dodgeCardName.includes('BASIC')) {
+            // DODGE BASIC: Check clash result - if won clash, evade. If lost clash, attacker damage +25%
+            // This is a passive defense card - it acts during clash, not during trap phase
+            // Will be handled in clash validation section below
+            log += ` 💨 DODGE BASIC triggered! Clash already determined outcome above.`;
+          }
           newDefenderState.hasDodge = false;
         } else if (newDefenderState.hasBoomerang) {
           if (defenderRoll.total >= 6) {
-            log += ` 🪃 BOOMERANG TRIGGERED! ${newDefenderState.name} rolled ${defenderRoll.total} (6+)! ${newAttackerState.name}'s attack reflected 100% back!`;
+            log += ` 🪃 BOOMERANG TRIGGERED! ${newDefenderState.name} rolled ${defenderRoll.total} (6+)! ${newAttackerState.name}'s attack reflected 100% back and loses next turn!`;
             newAttackerState.hp = Math.max(0, newAttackerState.hp - finalDamage);
+            newAttackerState.sleepTurns = (newAttackerState.sleepTurns || 0) + 1;  // Attacker loses next turn
             finalDamage = 0;
           } else {
             log += ` 🪃 BOOMERANG FAILED! ${newDefenderState.name} rolled ${defenderRoll.total} (needed 6+). Trap breaks, taking full damage.`;
@@ -500,11 +648,17 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         newDefenderState.hp = Math.max(0, newDefenderState.hp - finalDamage);
         log += ` Attack lands! ${newDefenderState.name} takes ${finalDamage} damage.`;
 
-        // Lightning effect: shocks defender causing them to lose turns
+        // Lightning effect: shocks defender causing them to lose turns AND removes poison card
         if (cardName.includes('LIGHTNING')) {
           const skipTurns = cardName.includes('X2') ? 2 : 1;
           newDefenderState.sleepTurns = (newDefenderState.sleepTurns || 0) + skipTurns;
           log += ` Lightning shock! ${newDefenderState.name} loses ${skipTurns} turn(s)!`;
+          
+          // LIGHTNING X1 / X2 removes 1 poison card from defender per official rules
+          if (newDefenderState.poisonCount > 0) {
+            newDefenderState.poisonCount = Math.max(0, newDefenderState.poisonCount - 1);
+            log += ` ⚡ Lightning cleansed 1 Poison card from ${newDefenderState.name}!`;
+          }
         }
 
         // If Zombie is hit by Fire or Lightning -> removes 1 poison card
@@ -527,7 +681,13 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         }
       }
     } else {
-      log += ` Defender blocked or dodged the attack! 0 damage taken.`;
+      // DODGE BASIC: If defender has DODGE BASIC and is defending, they succeed on clash win
+      if (newDefenderState?.hasDodge && newDefenderState.dodgeCardName?.includes('BASIC')) {
+        log += ` 💨 DODGE BASIC SUCCESS! ${newDefenderState.name} evaded all damage!`;
+        newDefenderState.hasDodge = false; // Consume the dodge
+      } else {
+        log += ` Defender blocked or dodged the attack! 0 damage taken.`;
+      }
     }
   }
   // 4. POISON CARDS
@@ -604,11 +764,11 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   else if (cardName.includes('REVIVE')) {
     // Check if attacker is defeated
     if (newAttackerState.hp <= 0 || newAttackerState.isDefeated) {
-      // Restore attacker to 25% of max HP
-      const reviveHP = Math.floor((newAttackerState.maxHp || 100) * 0.25);
+      // Restore attacker to 50% of max HP (per official rules)
+      const reviveHP = Math.floor((newAttackerState.maxHp || 100) * 0.5);
       newAttackerState.hp = Math.max(1, reviveHP);
       newAttackerState.isDefeated = false;
-      log += ` ${newAttackerState.name} was REVIVED! Restored to ${reviveHP} HP (25% of max).`;
+      log += ` ${newAttackerState.name} was REVIVED! Restored to ${reviveHP} HP (50% of max).`;
     } else {
       log += ` REVIVE card failed! ${newAttackerState.name} is not defeated. Card wasted.`;
     }
@@ -650,9 +810,16 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   // 9. SLEEPY & FREEZE CARDS
   else if (cardName.includes('SLEEPY') || cardName.includes('FREEZE')) {
     const sleepRounds = cardName.includes('X2') ? 2 : 1;
+    const dicePenalty = cardName.includes('FREEZE') ? (cardName.includes('X2') ? 4 : 2) : 0;
+    
     if (newDefenderState) {
       newDefenderState.sleepTurns = (newDefenderState.sleepTurns || 0) + sleepRounds;
-      log += ` 💤 Put ${newDefenderState.name} to sleep for ${sleepRounds} turn(s)!`;
+      if (dicePenalty > 0) {
+        newDefenderState.dicePenalty = (newDefenderState.dicePenalty || 0) + dicePenalty;
+        log += ` ❄️ Put ${newDefenderState.name} to sleep for ${sleepRounds} turn(s)! Dice roll penalty: -${dicePenalty}`;
+      } else {
+        log += ` 💤 Put ${newDefenderState.name} to sleep for ${sleepRounds} turn(s)!`;
+      }
     }
   }
   // 10. VISION CARDS
@@ -666,6 +833,25 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   // 11. TIME MACHINE
   else if (cardName === 'TIME MACHINE') {
     log += ` ⏳ TIME MACHINE activated! ${newAttackerState.name} gains an extra turn.`;
+  }
+  // 11b. RETREAT CARD
+  else if (cardName === 'RETREAT') {
+    // Get attacker's character to check retreat speed
+    const attackerCharData = attackerChar || KONTROLA_CHARACTERS[newAttackerState.characterId || 'chynaman'];
+    const retreatSpeedReq = attackerCharData?.retreatSpeed || 1;
+    
+    // Roll 1 die
+    const retreatRoll = rollDice(1);
+    const retreatSuccess = retreatRoll.total >= retreatSpeedReq;
+    
+    if (retreatSuccess) {
+      log += ` 💨 RETREAT SUCCESS! ${newAttackerState.name} rolled ${retreatRoll.total} (${retreatSpeedReq}+) and escaped combat!`;
+      newAttackerState.retreatedThisTurn = true;
+      return { newAttackerState, newDefenderState, log, retreatSuccess: true };
+    } else {
+      log += ` 💨 RETREAT FAILED! ${newAttackerState.name} rolled ${retreatRoll.total} (needed ${retreatSpeedReq}+). Combat continues!`;
+      return { newAttackerState, newDefenderState, log, retreatSuccess: false };
+    }
   }
   // 12. X-CHANGE
   else if (cardName === 'X-CHANGE X1' || cardName.includes('X-CHANGE')) {
@@ -695,14 +881,26 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     log += ` ⚠️ ${newAttackerState.name} reached 5 Poison cards and TRANSFORMED INTO A ZOMBIE (40 HP)!`;
   }
 
-  return { 
-    newAttackerState, 
-    newDefenderState, 
-    log, 
+  // Stability Crystals: Transfer on defeat
+  if (newDefenderState && newDefenderState.hp <= 0 && !newDefenderState.isDefeated) {
+    newDefenderState.isDefeated = true;
+    // Transfer 1 crystal from defeated player to attacker
+    if (newDefenderState.crystals > 0) {
+      newAttackerState.crystals = (newAttackerState.crystals || 0) + 1;
+      newDefenderState.crystals = Math.max(0, newDefenderState.crystals - 1);
+      log += ` 🔷 ${newAttackerState.name} claimed 1 Stability Crystal from defeated ${newDefenderState.name}!`;
+    }
+  }
+
+  return {
+    newAttackerState,
+    newDefenderState,
+    log,
     extraTurnGranted: cardName === 'TIME MACHINE',
     triggerAttackX2SecondHit: cardName === 'ATTACK X2',
     triggerXChange: false, // Handled in Arena UI now
-    aoeDamage
+    aoeDamage,
+    aoeSplitDamage: aoeSplitDamage || false // Flag for 1vAll damage splitting
   };
 };
 

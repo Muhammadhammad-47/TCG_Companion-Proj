@@ -1,6 +1,7 @@
 // TCG Card Game — Official Game Logic & State Management Engine
 import { CHARACTERS, ZOMBIE_PROFILE } from '../data/characters.js';
 import { GAME_LIMITS, ACTION_CARDS } from '../data/cards.js';
+import { KONTROLA_CHARACTERS } from '../kontrola/KontrolaEngine.js';
 
 export function drawRandomCards(count) {
   const drawn = [];
@@ -13,37 +14,52 @@ export function drawRandomCards(count) {
 }
 
 export function createInitialGameState(playerConfigs) {
-  const players = playerConfigs.map((cfg, idx) => ({
-    id: `player_${idx + 1}`,
-    name: cfg.name || `Player ${idx + 1}`,
-    characterId: cfg.characterId || 'chynaman',
-    hp: cfg.startingHP || GAME_LIMITS.BASE_HP,
-    maxHP: GAME_LIMITS.MAX_HP,
-    preZombieHP: cfg.startingHP || GAME_LIMITS.BASE_HP,
-    energyTokens: cfg.startingET || GAME_LIMITS.STARTING_ET,
-    crystals: cfg.startingCrystals || (playerConfigs.length === 2 ? 2 : 1),
-    poisonCards: 0,
-    burnCount: 0,
-    isZombie: false,
-    isDefeated: false,
-    retreatedThisTurn: false,
-    shield: 0,
-    buffAP: 0,
-    buffDP: 0,
-    isStunned: false,
-    kontrolUsesLeft: 2,
-    blitzUsesLeft: 2,
-    claimedTurnET: false,
-    turnActionCompleted: false,
-    actionCardsHand: drawRandomCards(10),
-    stats: {
-      damageDealt: 0,
-      damageTaken: 0,
-      cardsPlayed: 0,
-      zombiesInfected: 0,
-      diceRolls: 0
-    }
-  }));
+  const players = playerConfigs.map((cfg, idx) => {
+    const characterId = cfg.characterId || 'chynaman';
+    const charData = KONTROLA_CHARACTERS[characterId];
+    const characterHP = charData?.maxHp || GAME_LIMITS.BASE_HP;
+    
+    return {
+      id: `player_${idx + 1}`,
+      name: cfg.name || `Player ${idx + 1}`,
+      characterId: characterId,
+      hp: cfg.startingHP || characterHP,
+      maxHp: characterHP,
+      preZombieHP: cfg.startingHP || characterHP,
+      energyTokens: cfg.startingET || GAME_LIMITS.STARTING_ET,
+      crystals: cfg.startingCrystals || (playerConfigs.length === 2 ? 2 : 1),
+      poisonCards: 0,
+      poisonCount: 0,
+      burnCount: 0,
+      dicePenalty: 0,
+      sleepTurns: 0,
+      isZombie: false,
+      isDefeated: false,
+      retreatedThisTurn: false,
+      shield: 0,
+      buffAP: 0,
+      buffDP: 0,
+      isStunned: false,
+      kontrolUsesLeft: 2,
+      blitzUsesLeft: 2,
+      kontrolCooldown: 0,
+      blitzCooldown: 0,
+      vampireStealStack: 0,
+      vampireStealTurnsLeft: 0,
+      retreatSpeed: charData?.retreatSpeed || 1,
+      claimedTurnET: false,
+      turnActionCompleted: false,
+      actionCardsHand: drawRandomCards(10),
+      burnExtinguishRoll: false, // Flag for per-turn burn extinguish check
+      stats: {
+        damageDealt: 0,
+        damageTaken: 0,
+        cardsPlayed: 0,
+        zombiesInfected: 0,
+        diceRolls: 0
+      }
+    };
+  });
 
   return {
     matchId: 'match_' + Date.now(),
@@ -80,7 +96,7 @@ export function checkZombieStatus(player) {
   // Zombie Cure (<5 Poison cards)
   if (p.isZombie && p.poisonCards < GAME_LIMITS.ZOMBIE_POISON_TRIGGER) {
     p.isZombie = false;
-    p.hp = Math.min(p.maxHP, Math.max(10, p.preZombieHP)); // Revert to pre-zombie HP
+    p.hp = Math.min(p.maxHp || p.maxHP || 100, Math.max(10, p.preZombieHP)); // Revert to pre-zombie HP, use character's true max
   }
 
   // Zombie Revival Rule: If Zombie HP is depleted to 0, they immediately revive
@@ -329,9 +345,38 @@ export function advanceTurn(state) {
       updated.buffAP = 0;
       updated.buffDP = 0;
 
+      // Decrement cooldowns at start of turn
+      if (updated.kontrolCooldown > 0) {
+        updated.kontrolCooldown -= 1;
+      }
+      if (updated.blitzCooldown > 0) {
+        updated.blitzCooldown -= 1;
+      }
+
+      // Decrement vampire steal duration
+      if (updated.vampireStealTurnsLeft > 0) {
+        updated.vampireStealTurnsLeft -= 1;
+      }
+
+      // FIRE FLAME Burn Extinguish Check: Roll to extinguish burn each turn
+      if (updated.burnCount > 0) {
+        const extinguishRoll = Math.floor(Math.random() * 6) + 1; // Roll 1d6
+        // Doubles = any even number OR player has multiple burn stacks
+        const isDoubles = extinguishRoll % 2 === 0; // 2,4,6 are "doubles" 
+        
+        if (isDoubles) {
+          updated.burnCount = 0;
+          updated.turnLogs = updated.turnLogs || [];
+          updated.turnLogs.unshift(`🔥 ${updated.name} rolled ${extinguishRoll} and extinguished all burn!`);
+        } else {
+          updated.turnLogs = updated.turnLogs || [];
+          updated.turnLogs.unshift(`🔥 ${updated.name} rolled ${extinguishRoll} (need even) - Burn continues!`);
+        }
+      }
+
       // Zombie Auto +10 HP regen at start of turn
       if (updated.isZombie && updated.hp > 0) {
-        updated.hp = Math.min(updated.maxHP, updated.hp + ZOMBIE_PROFILE.turnRegen);
+        updated.hp = Math.min(updated.maxHp || updated.maxHP || 100, updated.hp + ZOMBIE_PROFILE.turnRegen);
       }
 
       // Poison damage at start of turn (-10 HP per poison card for non-zombies)
