@@ -85,7 +85,7 @@ class ErrorBoundary extends React.Component {
         >
           <div
             style={{
-              background: 'rgba(14, 22, 42, 0.95)',
+              background: 'var(--bg-card)',
               border: '2px solid rgba(255, 42, 85, 0.5)',
               borderRadius: '16px',
               padding: '32px',

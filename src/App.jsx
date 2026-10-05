@@ -1863,7 +1863,7 @@ export function Hub() {
       {/* Music Submission Modal */}
       {isMusicModalOpen && userProfile?.is_premium && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '20px' }}>
-          <div style={{ width: '100%', maxWidth: '500px', background: 'rgba(14, 22, 42, 0.98)', border: '2px solid rgba(168, 85, 247, 0.5)', borderRadius: '20px', padding: '32px', boxShadow: '0 0 40px rgba(168,85,247,0.3)' }}>
+          <div style={{ width: '100%', maxWidth: '500px', background: 'var(--bg-card)', border: '2px solid rgba(168, 85, 247, 0.5)', borderRadius: '20px', padding: '32px', boxShadow: '0 0 40px rgba(168,85,247,0.3)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h2 style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#c084fc', margin: 0, fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '1px' }}>
                 <Music size={24} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '10px' }} />

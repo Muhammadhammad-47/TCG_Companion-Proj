@@ -1660,7 +1660,7 @@ export default function AdminPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {/* ── COMPACT HEADER: Inline stats with action buttons ── */}
                   <div style={{
-                    background: 'rgba(10, 18, 38, 0.9)',
+                    background: 'var(--bg-card)',
                     border: '1px solid rgba(0, 240, 255, 0.22)',
                     borderRadius: '12px',
                     padding: '10px 14px',
@@ -1748,7 +1748,7 @@ export default function AdminPage() {
                   {docViewMode === 'breakdown' ? (
                     <div>
                       {filteredDocQAPairs.length === 0 ? (
-                        <div style={{ background: 'rgba(14,22,42,0.5)', border: '1px dashed rgba(0,240,255,0.2)', borderRadius: '10px', padding: '40px 20px', textAlign: 'center', color: 'rgba(255,255,255,0.45)', fontSize: '0.88rem' }}>
+                        <div style={{ background: 'var(--bg-card)', border: '1px dashed rgba(0,240,255,0.2)', borderRadius: '10px', padding: '40px 20px', textAlign: 'center', color: 'rgba(255,255,255,0.45)', fontSize: '0.88rem' }}>
                           <p style={{ margin: '0 0 10px' }}>
                             {docsLoading ? 'Loading...' : docSearchQuery ? `No results for "${docSearchQuery}"` : 'No Q&A blocks yet.'}
                           </p>
@@ -1759,7 +1759,7 @@ export default function AdminPage() {
                           {filteredDocQAPairs.map((item, idx) => (
                             <div
                               key={idx}
-                              style={{ background: 'rgba(14,22,42,0.45)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '11px', display: 'flex', flexDirection: 'column', gap: '6px' }}
+                              style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '11px', display: 'flex', flexDirection: 'column', gap: '6px' }}
                             >
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
                                 <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.32)', fontWeight: 'bold', flexShrink: 0 }}>#{idx + 1}</span>
@@ -2689,7 +2689,7 @@ export default function AdminPage() {
                       { label: 'DISMISSED', value: bugReports.filter(r => r.status === 'dismissed').length, color: 'rgba(255,255,255,0.35)' },
                       { label: 'TOTAL', value: bugReports.length, color: '#00f0ff' }
                     ].map(stat => (
-                      <div key={stat.label} className="kpi-card" style={{ background: 'rgba(14,22,42,0.4)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '12px 14px' }}>
+                      <div key={stat.label} className="kpi-card" style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                         <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>{stat.label}</div>
                         <div style={{ fontSize: '1.5rem', fontWeight: '700', color: stat.color }}>{stat.value}</div>
                       </div>
@@ -2754,7 +2754,7 @@ export default function AdminPage() {
                           <div
                             key={report.id}
                             style={{
-                              background: 'rgba(14,22,42,0.5)',
+                              background: 'var(--bg-card)',
                               border: `1px solid ${report.status === 'new' ? 'rgba(255,42,85,0.4)' : 'rgba(255,255,255,0.1)'}`,
                               borderRadius: '10px',
                               overflow: 'hidden'
