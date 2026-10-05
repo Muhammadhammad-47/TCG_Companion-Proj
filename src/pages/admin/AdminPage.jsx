@@ -785,7 +785,7 @@ export default function AdminPage() {
       border = 'rgba(255, 42, 85, 0.35)';
     } else if (c === 'energy') {
       bg = 'rgba(255, 230, 0, 0.12)';
-      color = 'var(--neon-gold, #ffe600)';
+      color = 'var(--neon-gold, #FBC80D)';
       border = 'rgba(255, 230, 0, 0.35)';
     } else if (c === 'characters') {
       bg = 'rgba(168, 85, 247, 0.12)';
@@ -856,7 +856,7 @@ export default function AdminPage() {
               justifyContent: 'center',
               padding: '24px',
               boxSizing: 'border-box',
-              fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
+              fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)',
               position: 'relative',
               overflow: 'hidden'
             }}
@@ -895,7 +895,7 @@ export default function AdminPage() {
                 <div
                   style={{
                     background: 'rgba(255, 51, 102, 0.15)',
-                    border: '1.5px solid var(--neon-crimson, #ff3366)',
+                    border: '1.5px solid var(--neon-crimson, #ED1E24)',
                     color: '#ff88aa',
                     padding: '10px 14px',
                     borderRadius: '10px',
@@ -1017,8 +1017,8 @@ export default function AdminPage() {
             width: '100%',
             height: '100%',
             background: 'radial-gradient(circle at 50% 20%, #111a36 0%, #080d1e 60%, #040710 100%)',
-            color: 'var(--text-main, #f8fafc)',
-            fontFamily: 'var(--font-sub, "Outfit", sans-serif)',
+            color: 'var(--text-main, #FFFFFF)',
+            fontFamily: 'var(--font-sub, "Barlow Condensed", sans-serif)',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
@@ -1120,7 +1120,7 @@ export default function AdminPage() {
                 onClick={handleAdminLogout}
                 style={{
                   background: 'rgba(255, 51, 102, 0.15)',
-                  border: '1px solid var(--neon-crimson, #ff3366)',
+                  border: '1px solid var(--neon-crimson, #ED1E24)',
                   color: '#ff88aa',
                   padding: '6px 12px',
                   borderRadius: '8px',

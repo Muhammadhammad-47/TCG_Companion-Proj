@@ -47,7 +47,7 @@ export default function DocsPage() {
   const CodeBlock = ({ code, label, copyId }) => (
     <div style={{ background: '#020510', border: '1px solid rgba(255, 255, 255, 0.09)', borderRadius: '10px', padding: '14px', position: 'relative', marginTop: '10px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', paddingBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <span style={{ fontSize: '0.72rem', color: 'var(--neon-cyan, #00f0ff)', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+        <span style={{ fontSize: '0.72rem', color: 'var(--neon-cyan, #00f0ff)', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>
           {label || 'HTTP / JSON PAYLOAD'}
         </span>
         {copyId && (
@@ -62,7 +62,7 @@ export default function DocsPage() {
               display: 'flex',
               alignItems: 'center',
               gap: '4px',
-              fontFamily: 'var(--font-sub, "Outfit", sans-serif)'
+              fontFamily: 'var(--font-sub, "Barlow Condensed", sans-serif)'
             }}
           >
             {copiedKey === copyId ? <Check size={13} /> : <Copy size={13} />}
@@ -92,7 +92,7 @@ export default function DocsPage() {
     <div style={{ background: 'rgba(5, 10, 24, 0.65)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '10px', overflow: 'hidden', margin: '12px 0 16px 0' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.86rem' }}>
         <thead>
-          <tr style={{ background: 'rgba(10, 20, 45, 0.8)', borderBottom: '1px solid rgba(0, 240, 255, 0.2)', textAlign: 'left', color: 'var(--neon-cyan, #00f0ff)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', fontSize: '0.78rem', letterSpacing: '1px' }}>
+          <tr style={{ background: 'rgba(10, 20, 45, 0.8)', borderBottom: '1px solid rgba(0, 240, 255, 0.2)', textAlign: 'left', color: 'var(--neon-cyan, #00f0ff)', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', fontSize: '0.78rem', letterSpacing: '1px' }}>
             {headers.map((h, i) => (
               <th key={i} style={{ padding: '10px 14px' }}>{h}</th>
             ))}
@@ -103,7 +103,7 @@ export default function DocsPage() {
             <tr key={rIdx} style={{ borderBottom: rIdx < rows.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
               <td style={{ padding: '9px 14px', color: '#fff' }}><code>{row[0]}</code></td>
               <td style={{ padding: '9px 14px', color: '#39ff14', fontSize: '0.8rem' }}>{row[1]}</td>
-              <td style={{ padding: '9px 14px', color: row[2] === 'Required' ? 'var(--neon-crimson, #ff3366)' : 'rgba(255,255,255,0.45)', fontSize: '0.8rem', fontWeight: row[2] === 'Required' ? 'bold' : 'normal' }}>
+              <td style={{ padding: '9px 14px', color: row[2] === 'Required' ? 'var(--neon-crimson, #ED1E24)' : 'rgba(255,255,255,0.45)', fontSize: '0.8rem', fontWeight: row[2] === 'Required' ? 'bold' : 'normal' }}>
                 {row[2]}
               </td>
               <td style={{ padding: '9px 14px', color: '#94a3b8', fontSize: '0.84rem' }}>{row[3]}</td>
@@ -279,8 +279,8 @@ export default function DocsPage() {
             display: 'flex',
             flexDirection: 'column',
             background: 'radial-gradient(circle at 50% 20%, #111a36 0%, #080d1e 60%, #040710 100%)',
-            color: '#f8fafc',
-            fontFamily: 'var(--font-sub, "Outfit", sans-serif)',
+            color: '#FFFFFF',
+            fontFamily: 'var(--font-sub, "Barlow Condensed", sans-serif)',
             overflow: 'hidden',
             position: 'relative'
           }}
@@ -353,7 +353,7 @@ export default function DocsPage() {
                   cursor: 'pointer',
                   fontSize: '0.82rem',
                   fontWeight: 'bold',
-                  fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
+                  fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px'
@@ -472,7 +472,7 @@ export default function DocsPage() {
                           >
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                               <Icon size={16} />
-                              <div style={{ fontSize: '0.88rem', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '0.5px' }}>
+                              <div style={{ fontSize: '0.88rem', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', letterSpacing: '0.5px' }}>
                                 {page.title}
                               </div>
                             </div>
@@ -505,7 +505,7 @@ export default function DocsPage() {
             >
               {activePage === 'overview' && (
                 <div>
-                  <h1 style={{ fontSize: '2.2rem', fontWeight: '900', color: '#fff', margin: '0 0 8px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px' }}>
+                  <h1 style={{ fontSize: '2.2rem', fontWeight: '900', color: '#fff', margin: '0 0 8px 0', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', letterSpacing: '1px' }}>
                     API REFERENCE <span style={{ color: 'var(--neon-cyan, #00f0ff)' }}>OVERVIEW</span>
                   </h1>
                   <p style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.6)', margin: '0 0 32px 0', maxWidth: '850px', lineHeight: '1.6' }}>
@@ -513,7 +513,7 @@ export default function DocsPage() {
                   </p>
 
                   <div style={{ marginBottom: '24px' }}>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--neon-cyan, #00f0ff)', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--neon-cyan, #00f0ff)', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>
                       GLOBAL SERVER CONFIGURATION
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
@@ -526,7 +526,7 @@ export default function DocsPage() {
                       <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '16px' }}>
                         <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', marginBottom: '8px' }}>API KEY (ANON)</div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <code style={{ color: 'var(--neon-gold, #ffe600)', fontSize: '0.84rem' }}>{anonKey.substring(0, 24)}...</code>
+                          <code style={{ color: 'var(--neon-gold, #FBC80D)', fontSize: '0.84rem' }}>{anonKey.substring(0, 24)}...</code>
                         </div>
                       </div>
                     </div>
@@ -536,7 +536,7 @@ export default function DocsPage() {
 
               {activePage !== 'overview' && activePage !== 'sdks' && (
                 <div>
-                  <h1 style={{ fontSize: '2rem', fontWeight: '900', color: '#fff', margin: '0 0 4px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                  <h1 style={{ fontSize: '2rem', fontWeight: '900', color: '#fff', margin: '0 0 4px 0', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', letterSpacing: '1px', textTransform: 'uppercase' }}>
                     {docPages.find(p => p.id === activePage)?.title}
                   </h1>
                   <p style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.6)', margin: '0 0 24px 0' }}>
@@ -561,7 +561,7 @@ export default function DocsPage() {
               
               {activePage === 'sdks' && (
                 <div>
-                  <h1 style={{ fontSize: '2rem', fontWeight: '900', color: '#fff', margin: '0 0 24px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px' }}>
+                  <h1 style={{ fontSize: '2rem', fontWeight: '900', color: '#fff', margin: '0 0 24px 0', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', letterSpacing: '1px' }}>
                     SDK LIBRARIES
                   </h1>
                   <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>

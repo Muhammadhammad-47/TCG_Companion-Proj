@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=Rajdhani:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&family=Caveat+Brush&display=swap');
 
 :root {
   --bg-deep: #070b18;
@@ -8,17 +8,17 @@
   --accent-cyan: #00f0ff;
   --accent-cyan-glow: rgba(56, 189, 248, 0.4);
   --accent-red: #e11d48;
-  --accent-gold: #ffe600;
+  --accent-gold: #FBC80D;
   --neon-cyan: #00f0ff;
-  --neon-crimson: #ff3366;
-  --neon-gold: #ffe600;
+  --neon-crimson: #ED1E24;
+  --neon-gold: #FBC80D;
   --neon-green: #39ff14;
-  --neon-purple: #e0b0ff;
+  --neon-purple: #A855F7;
   --neon-orange: #ff9900;
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --font-display: 'Rajdhani', sans-serif;
-  --font-sub: 'Outfit', sans-serif;
+  --text-main: #FFFFFF;
+  --text-muted: #CBD5E1;
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-sub: 'Barlow Condensed', sans-serif;
 }
 
 * {
@@ -626,7 +626,7 @@ body {
   inset: 0;
   border-radius: 50%;
   padding: 4px;
-  background: conic-gradient(from 0deg, #ff3366, #33ccff, #9933ff, #ff3366);
+  background: conic-gradient(from 0deg, #ED1E24, #33ccff, #9933ff, #ED1E24);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
