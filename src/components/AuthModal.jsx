@@ -97,7 +97,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
           boxShadow: '0 0 50px rgba(0, 240, 255, 0.25), 0 20px 50px rgba(0, 0, 0, 0.8)',
           position: 'relative',
           boxSizing: 'border-box',
-          fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
+          fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)',
           zIndex: 1
         }}
         onClick={(e) => e.stopPropagation()}
@@ -139,7 +139,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
             {authMode === 'signin' && 'PLAYER LOGIN'}
             {authMode === 'forgot' && 'ACCOUNT RECOVERY'}
           </h2>
-          <p style={{ color: 'var(--text-muted, #94a3b8)', fontSize: '0.95rem', margin: 0, fontFamily: 'var(--font-sub, "Outfit", sans-serif)' }}>
+          <p style={{ color: 'var(--text-muted, #CBD5E1)', fontSize: '0.95rem', margin: 0, fontFamily: 'var(--font-sub, "Barlow Condensed", sans-serif)' }}>
             {authMode === 'signup' && 'Create your player profile to preserve battle crystals & ranking.'}
             {authMode === 'signin' && 'Authenticate to enter the battle arena, chatbot & simulator.'}
             {authMode === 'forgot' && 'Enter your registered email to receive a password reset link.'}
@@ -172,7 +172,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
                 cursor: 'pointer',
                 fontSize: '1rem',
                 letterSpacing: '1px',
-                fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
+                fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)',
                 transition: 'all 0.2s'
               }}
             >
@@ -192,7 +192,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
                 cursor: 'pointer',
                 fontSize: '1rem',
                 letterSpacing: '1px',
-                fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
+                fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)',
                 transition: 'all 0.2s'
               }}
             >
@@ -214,7 +214,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
                 cursor: 'pointer',
                 fontWeight: 'bold',
                 fontSize: '0.9rem',
-                fontFamily: 'var(--font-display, "Rajdhani", sans-serif)'
+                fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)'
               }}
             >
               <ArrowLeft size={16} /> Back to Sign In
@@ -226,8 +226,8 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
         {errorMsg && (
           <div
             style={{
-              background: 'rgba(255, 51, 102, 0.15)',
-              border: '1.5px solid var(--neon-crimson, #ff3366)',
+              background: 'rgba(237, 30, 36, 0.15)',
+              border: '1.5px solid var(--neon-crimson, #ED1E24)',
               color: '#ff88aa',
               padding: '10px 14px',
               borderRadius: '12px',
@@ -236,7 +236,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
               alignItems: 'center',
               gap: '8px',
               marginBottom: '18px',
-              fontFamily: 'var(--font-sub, "Outfit", sans-serif)'
+              fontFamily: 'var(--font-sub, "Barlow Condensed", sans-serif)'
             }}
           >
             <AlertCircle size={18} style={{ flexShrink: 0 }} />
@@ -257,7 +257,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
               alignItems: 'center',
               gap: '8px',
               marginBottom: '18px',
-              fontFamily: 'var(--font-sub, "Outfit", sans-serif)'
+              fontFamily: 'var(--font-sub, "Barlow Condensed", sans-serif)'
             }}
           >
             <CheckCircle size={18} style={{ flexShrink: 0 }} />
@@ -291,7 +291,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
                     color: '#fff',
                     fontSize: '1rem',
                     outline: 'none',
-                    fontFamily: 'var(--font-sub, "Outfit", sans-serif)'
+                    fontFamily: 'var(--font-sub, "Barlow Condensed", sans-serif)'
                   }}
                 />
               </div>
@@ -321,7 +321,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
                   color: '#fff',
                   fontSize: '1rem',
                   outline: 'none',
-                  fontFamily: 'var(--font-sub, "Outfit", sans-serif)'
+                  fontFamily: 'var(--font-sub, "Barlow Condensed", sans-serif)'
                 }}
               />
             </div>
@@ -340,10 +340,10 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
                     style={{
                       background: 'none',
                       border: 'none',
-                      color: 'var(--neon-gold, #ffe600)',
+                      color: 'var(--neon-gold, #FBC80D)',
                       fontSize: '0.8rem',
                       cursor: 'pointer',
-                      fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
+                      fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)',
                       fontWeight: 'bold'
                     }}
                   >
@@ -370,7 +370,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
                     color: '#fff',
                     fontSize: '1rem',
                     outline: 'none',
-                    fontFamily: 'var(--font-sub, "Outfit", sans-serif)'
+                    fontFamily: 'var(--font-sub, "Barlow Condensed", sans-serif)'
                   }}
                 />
               </div>
@@ -394,7 +394,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
               opacity: loading ? 0.7 : 1,
               boxShadow: '0 0 25px rgba(0, 240, 255, 0.4)',
               transition: 'all 0.2s',
-              fontFamily: 'var(--font-display, "Rajdhani", sans-serif)'
+              fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)'
             }}
           >
             {loading ? 'PROCESSING...' : authMode === 'signup' ? 'CREATE ACCOUNT' : authMode === 'signin' ? 'ENTER ATTENTION TCG' : 'SEND RESET LINK'}
@@ -402,11 +402,12 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
         </form>
 
         {/* Footer info */}
-        <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', fontFamily: 'var(--font-sub, "Outfit", sans-serif)' }}>
+        <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', fontFamily: 'var(--font-sub, "Barlow Condensed", sans-serif)' }}>
           Secured by Attention TCG Ecosystem Database & Postgres RLS
         </div>
       </div>
     </div>
   );
 }
+
 

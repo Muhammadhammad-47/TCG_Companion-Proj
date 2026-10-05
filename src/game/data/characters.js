@@ -1,4 +1,4 @@
-// TCG Card Game — Official Character Database & Statistics from GDD
+﻿// TCG Card Game — Official Character Database & Statistics from GDD
 
 export const getAssetUrl = (path) => {
   if (!path) return '';
@@ -15,7 +15,7 @@ export const CHARACTERS = {
     title: 'The Blazing Duelist',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/CHYNA WILD CARD REG.png',
     avatar: '🔥🥋',
-    themeColor: '#ff3366',
+    themeColor: '#ED1E24',
     bgGradient: 'linear-gradient(135deg, #431418 0%, #1f080a 100%)',
     baseHP: 100,
     maxHP: 200,
@@ -541,3 +541,4 @@ export const ZOMBIE_PROFILE = {
     }
   ]
 };
+

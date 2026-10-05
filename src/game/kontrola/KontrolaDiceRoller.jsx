@@ -470,7 +470,7 @@ export default function KontrolaDiceRoller({
         display: 'flex',
         flexDirection: 'column',
         gap: '16px',
-        fontFamily: 'Outfit, sans-serif',
+        fontFamily: 'Barlow Condensed, sans-serif',
         animation: 'fadeIn 0.3s ease'
       }}
     >
@@ -1132,4 +1132,5 @@ export default function KontrolaDiceRoller({
     </div>
   );
 }
+
 

@@ -220,7 +220,7 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
             
             {doublesAlert && (
               <div style={{ marginBottom: '10px' }}>
-                <div style={{ color: '#FBC80D', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '8px', background: 'rgba(255,215,0,0.1)', padding: '8px', borderRadius: '6px' }}>
+                <div style={{ color: '#FBC80D', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '8px', background: 'rgba(251, 200, 13,0.1)', padding: '8px', borderRadius: '6px' }}>
                   {doublesAlert === 'both' ? 'Both players rolled doubles! Both claim 1 Chance Card & Re-roll available.' :
                    doublesAlert === 'attacker' ? 'Attacker rolled doubles! Attacker claims 1 Chance Card & Re-roll available.' :
                    'Defender rolled doubles! Defender claims 1 Chance Card & Re-roll available.'}
@@ -341,3 +341,4 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
     </div>
   );
 }
+

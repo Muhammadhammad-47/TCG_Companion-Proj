@@ -3935,7 +3935,7 @@ export default function KontrolaArena() {
                 zIndex: 10000,
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                 color: '#fff',
-                fontFamily: 'Outfit, sans-serif'
+                fontFamily: 'Barlow Condensed, sans-serif'
               }}
             >
               {/* Animated threat banner */}
@@ -4281,7 +4281,7 @@ export default function KontrolaArena() {
                 padding: '16px',
                 zIndex: 1500,
                 boxShadow: '0 0 30px rgba(0, 240, 255, 0.35)',
-                fontFamily: 'Outfit, sans-serif',
+                fontFamily: 'Barlow Condensed, sans-serif',
                 animation: 'fadeIn 0.2s ease'
               }}
             >
@@ -4505,6 +4505,7 @@ export default function KontrolaArena() {
     </div>
   );
 }
+
 
 
 

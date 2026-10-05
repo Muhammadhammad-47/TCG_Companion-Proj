@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Send, X, Bot, Swords, ArrowLeft, ThumbsUp, ThumbsDown, User, Shield, LogOut, Check, Trophy, Settings, Music, Lock } from 'lucide-react';
 import axios from 'axios';
@@ -79,7 +79,7 @@ const renderModuleBadge = (moduleName, moduleSettings, userProfile) => {
           fontSize: '0.82rem',
           fontFamily: 'Bebas Neue, sans-serif',
           letterSpacing: '0.5px',
-          boxShadow: '0 0 12px rgba(255,215,0,0.25)',
+          boxShadow: '0 0 12px rgba(251, 200, 13,0.25)',
           pointerEvents: 'none'
         }}>
           <span style={{ fontSize: '0.95rem' }}>👑</span>
@@ -101,7 +101,7 @@ const renderModuleBadge = (moduleName, moduleSettings, userProfile) => {
           fontSize: '0.82rem',
           fontFamily: 'Bebas Neue, sans-serif',
           letterSpacing: '0.5px',
-          boxShadow: '0 0 12px rgba(255,215,0,0.25)',
+          boxShadow: '0 0 12px rgba(251, 200, 13,0.25)',
           pointerEvents: 'none'
         }}>
           <span style={{ fontSize: '0.95rem' }}>💎</span>
@@ -125,7 +125,7 @@ const renderModuleBadge = (moduleName, moduleSettings, userProfile) => {
           borderRadius: '50%',
           background: 'rgba(0,0,0,0.5)',
           border: '2px solid var(--neon-gold)',
-          boxShadow: '0 0 16px rgba(255,215,0,0.3)',
+          boxShadow: '0 0 16px rgba(251, 200, 13,0.3)',
           pointerEvents: 'none'
         }}>
           <Lock size={24} style={{ color: 'var(--neon-gold)' }} />
@@ -1562,8 +1562,8 @@ export function Hub() {
                       title="Command Deck"
                       style={{
                         display: 'flex', alignItems: 'center', gap: '6px',
-                        background: 'rgba(255,215,0,0.12)',
-                        border: '1px solid rgba(255,215,0,0.4)',
+                        background: 'rgba(251, 200, 13,0.12)',
+                        border: '1px solid rgba(251, 200, 13,0.4)',
                         color: 'var(--neon-gold)',
                         borderRadius: '20px',
                         padding: '6px 14px',
@@ -1572,8 +1572,8 @@ export function Hub() {
                         fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.5px',
                         transition: 'all 0.2s ease'
                       }}
-                      onMouseOver={e => e.currentTarget.style.background = 'rgba(255,215,0,0.22)'}
-                      onMouseOut={e => e.currentTarget.style.background = 'rgba(255,215,0,0.12)'}
+                      onMouseOver={e => e.currentTarget.style.background = 'rgba(251, 200, 13,0.22)'}
+                      onMouseOut={e => e.currentTarget.style.background = 'rgba(251, 200, 13,0.12)'}
                     >
                       <Settings size={14} /><span>Admin</span>
                     </button>
@@ -1628,7 +1628,7 @@ export function Hub() {
                             <div style={{ fontWeight: 'bold', color: '#fff', fontSize: '1rem' }}>{userProfile?.username || 'Player'}</div>
                             <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', marginTop: '2px' }}>{currentUser?.email}</div>
                             {userProfile?.is_admin && (
-                              <span style={{ display: 'inline-block', marginTop: '4px', fontSize: '0.62rem', fontWeight: 'bold', background: 'rgba(255,215,0,0.15)', color: 'var(--neon-gold)', border: '1px solid rgba(255,215,0,0.35)', borderRadius: '4px', padding: '1px 6px', letterSpacing: '0.5px' }}>ADMIN</span>
+                              <span style={{ display: 'inline-block', marginTop: '4px', fontSize: '0.62rem', fontWeight: 'bold', background: 'rgba(251, 200, 13,0.15)', color: 'var(--neon-gold)', border: '1px solid rgba(251, 200, 13,0.35)', borderRadius: '4px', padding: '1px 6px', letterSpacing: '0.5px' }}>ADMIN</span>
                             )}
                           </div>
 
@@ -1823,7 +1823,7 @@ export function Hub() {
                   fontSize: '0.75rem',
                   fontFamily: 'Bebas Neue, sans-serif',
                   letterSpacing: '0.5px',
-                  boxShadow: '0 0 12px rgba(255,215,0,0.25)',
+                  boxShadow: '0 0 12px rgba(251, 200, 13,0.25)',
                   pointerEvents: 'none'
                 }}>
                   <span>👑 PRO ONLY</span>
@@ -1842,7 +1842,7 @@ export function Hub() {
                     borderRadius: '50%',
                     background: 'rgba(0,0,0,0.5)',
                     border: '2px solid var(--neon-gold)',
-                    boxShadow: '0 0 16px rgba(255,215,0,0.3)'
+                    boxShadow: '0 0 16px rgba(251, 200, 13,0.3)'
                   }}>
                     <Lock size={24} style={{ color: 'var(--neon-gold)' }} />
                   </div>
@@ -1874,12 +1874,12 @@ export function Hub() {
               </button>
             </div>
 
-            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.95rem', marginBottom: '24px', fontFamily: 'Outfit, sans-serif', lineHeight: '1.5' }}>
+            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.95rem', marginBottom: '24px', fontFamily: 'Barlow Condensed, sans-serif', lineHeight: '1.5' }}>
               Upload your music track for admin approval. Once approved, players can enjoy it during matches!
             </p>
 
             {musicNotice && (
-              <div style={{ background: musicNotice.startsWith('✅') ? 'rgba(57,255,20,0.1)' : 'rgba(255,51,102,0.1)', border: `1px solid ${musicNotice.startsWith('✅') ? '#39ff14' : '#ff6b8f'}`, color: musicNotice.startsWith('✅') ? '#39ff14' : '#ff6b8f', padding: '12px 16px', borderRadius: '10px', marginBottom: '20px', fontSize: '0.9rem', fontWeight: 'bold', fontFamily: 'Bebas Neue, sans-serif' }}>
+              <div style={{ background: musicNotice.startsWith('✅') ? 'rgba(57,255,20,0.1)' : 'rgba(237, 30, 36,0.1)', border: `1px solid ${musicNotice.startsWith('✅') ? '#39ff14' : '#ff6b8f'}`, color: musicNotice.startsWith('✅') ? '#39ff14' : '#ff6b8f', padding: '12px 16px', borderRadius: '10px', marginBottom: '20px', fontSize: '0.9rem', fontWeight: 'bold', fontFamily: 'Bebas Neue, sans-serif' }}>
                 {musicNotice}
               </div>
             )}
@@ -1894,7 +1894,7 @@ export function Hub() {
                 onChange={(e) => setMusicTitle(e.target.value)}
                 placeholder="Epic Battle Theme"
                 maxLength={100}
-                style={{ width: '100%', boxSizing: 'border-box', padding: '12px 16px', background: 'rgba(5, 10, 24, 0.8)', border: '1.5px solid rgba(168,85,247,0.3)', borderRadius: '10px', color: '#fff', fontSize: '1rem', fontFamily: 'Outfit, sans-serif' }}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '12px 16px', background: 'rgba(5, 10, 24, 0.8)', border: '1.5px solid rgba(168,85,247,0.3)', borderRadius: '10px', color: '#fff', fontSize: '1rem', fontFamily: 'Barlow Condensed, sans-serif' }}
               />
             </div>
 
@@ -1906,9 +1906,9 @@ export function Hub() {
                 type="file"
                 accept="audio/mpeg,audio/mp3,audio/wav,audio/ogg,audio/webm,.mp3,.wav,.ogg"
                 onChange={(e) => setMusicFile(e.target.files[0])}
-                style={{ width: '100%', boxSizing: 'border-box', padding: '12px 16px', background: 'rgba(5, 10, 24, 0.8)', border: '1.5px solid rgba(168,85,247,0.3)', borderRadius: '10px', color: '#fff', fontSize: '1rem', fontFamily: 'Outfit, sans-serif', cursor: 'pointer' }}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '12px 16px', background: 'rgba(5, 10, 24, 0.8)', border: '1.5px solid rgba(168,85,247,0.3)', borderRadius: '10px', color: '#fff', fontSize: '1rem', fontFamily: 'Barlow Condensed, sans-serif', cursor: 'pointer' }}
               />
-              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', marginTop: '6px', fontFamily: 'Outfit, sans-serif' }}>
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', marginTop: '6px', fontFamily: 'Barlow Condensed, sans-serif' }}>
                 MP3, WAV, or OGG format. Maximum 10MB. {musicFile && `Selected: ${musicFile.name} (${(musicFile.size / 1024 / 1024).toFixed(2)} MB)`}
               </div>
             </div>
@@ -2095,12 +2095,12 @@ function App() {
           <div style={{ maxWidth: '440px', width: '100%', textAlign: 'center', background: 'rgba(30, 8, 14, 0.92)', border: '2px solid var(--neon-crimson, #ED1E24)', borderRadius: '20px', padding: '36px 28px', boxShadow: '0 0 40px rgba(255, 42, 85, 0.3)' }}>
             <div className="brand-pill-badge" style={{ margin: '0 auto 12px auto', fontSize: '0.9rem', padding: '3px 12px', background: 'var(--neon-crimson, #ED1E24)', color: '#fff', border: 'none' }}>SUSPENDED</div>
             <div style={{ fontSize: '1.8rem', letterSpacing: '2px', fontWeight: '900', color: '#fff', marginBottom: '8px' }}>ACCOUNT SUSPENDED</div>
-            <p style={{ color: '#cbd5e1', fontSize: '0.95rem', lineHeight: '1.6', fontFamily: 'var(--font-sub, "Outfit", sans-serif)', marginBottom: '24px' }}>
+            <p style={{ color: '#cbd5e1', fontSize: '0.95rem', lineHeight: '1.6', fontFamily: 'var(--font-sub, "Barlow Condensed", sans-serif)', marginBottom: '24px' }}>
               Your account (<strong>{userProfile?.username || currentUser?.email}</strong>) has been suspended by the Game Masters due to rule violations or moderation action.
             </p>
             <button
               onClick={() => authService.signOut().then(() => { setCurrentUser(null); setUserProfile(null); })}
-              style={{ padding: '10px 24px', borderRadius: '10px', border: '1px solid #ED1E24', background: 'rgba(255,51,102,0.2)', color: '#fff', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', fontSize: '1rem' }}
+              style={{ padding: '10px 24px', borderRadius: '10px', border: '1px solid #ED1E24', background: 'rgba(237, 30, 36,0.2)', color: '#fff', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', fontSize: '1rem' }}
             >
               Sign Out
             </button>
@@ -2148,5 +2148,6 @@ function App() {
 }
 
 export default App;
+
 
 

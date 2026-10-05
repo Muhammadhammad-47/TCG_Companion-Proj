@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+﻿import React, { useState, useRef } from 'react';
 import { MessageSquare, Send, X, AlertTriangle, Upload, CheckCircle } from 'lucide-react';
 import { bugReportService } from '../services/bugReportService';
 
@@ -224,7 +224,7 @@ export default function BugReportButton({
                   padding: '14px 16px',
                   fontSize: '0.95rem',
                   resize: 'vertical',
-                  fontFamily: 'Outfit, sans-serif',
+                  fontFamily: 'Barlow Condensed, sans-serif',
                   transition: 'all 0.2s ease',
                   opacity: isSubmitting ? 0.6 : 1,
                   cursor: isSubmitting ? 'not-allowed' : 'text'
@@ -418,3 +418,4 @@ export default function BugReportButton({
     </>
   );
 }
+

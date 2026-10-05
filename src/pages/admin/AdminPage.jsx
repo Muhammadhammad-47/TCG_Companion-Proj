@@ -904,7 +904,7 @@ export default function AdminPage() {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
-                    fontFamily: 'var(--font-sub, "Outfit", sans-serif)'
+                    fontFamily: 'var(--font-sub, "Barlow Condensed", sans-serif)'
                   }}
                 >
                   <AlertTriangle size={16} />
@@ -933,7 +933,7 @@ export default function AdminPage() {
                       borderRadius: '10px',
                       color: '#fff',
                       fontSize: '0.95rem',
-                      fontFamily: 'var(--font-sub, "Outfit", sans-serif)',
+                      fontFamily: 'var(--font-sub, "Barlow Condensed", sans-serif)',
                       outline: 'none'
                     }}
                   />
@@ -959,7 +959,7 @@ export default function AdminPage() {
                       borderRadius: '10px',
                       color: '#fff',
                       fontSize: '0.95rem',
-                      fontFamily: 'var(--font-sub, "Outfit", sans-serif)',
+                      fontFamily: 'var(--font-sub, "Barlow Condensed", sans-serif)',
                       outline: 'none'
                     }}
                   />
@@ -1708,7 +1708,7 @@ export default function AdminPage() {
                       <button onClick={handleOpenEditDocModal} title="Edit Document" style={{ background: 'linear-gradient(90deg,#00f0ff,#0088ff)', border: 'none', color: '#050a18', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Edit2 size={11} /></button>
                       <button onClick={() => handleDownloadDoc(activeDoc)} title="Export" style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.65)', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Download size={11} /></button>
                       {activeDoc?.isMaster ? (
-                        <button onClick={handleResetMasterDoc} title="Reset Master" style={{ background: 'transparent', border: '1px solid rgba(255,230,0,0.3)', color: 'var(--neon-gold, #FBC80D)', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RefreshCw size={11} /></button>
+                        <button onClick={handleResetMasterDoc} title="Reset Master" style={{ background: 'transparent', border: '1px solid rgba(251, 200, 13,0.3)', color: 'var(--neon-gold, #FBC80D)', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RefreshCw size={11} /></button>
                       ) : (
                         <button onClick={() => handleDeleteDoc(activeDoc?.id)} title="Delete" style={{ background: 'transparent', border: '1px solid rgba(255,42,85,0.3)', color: '#ff6b8f', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Trash2 size={11} /></button>
                       )}
@@ -1799,7 +1799,7 @@ export default function AdminPage() {
                           const isQuestion = line.trim().endsWith('?');
                           const isHighlighted = docSearchQuery && line.toLowerCase().includes(docSearchQuery.toLowerCase());
                           return (
-                            <div key={lIdx} style={{ display: 'flex', background: isHighlighted ? 'rgba(255,230,0,0.12)' : 'transparent', borderLeft: isHighlighted ? '2px solid var(--neon-gold,#FBC80D)' : 'none', paddingLeft: isHighlighted ? '6px' : '2px' }}>
+                            <div key={lIdx} style={{ display: 'flex', background: isHighlighted ? 'rgba(251, 200, 13,0.12)' : 'transparent', borderLeft: isHighlighted ? '2px solid var(--neon-gold,#FBC80D)' : 'none', paddingLeft: isHighlighted ? '6px' : '2px' }}>
                               <span style={{ width: '30px', flexShrink: 0, color: 'rgba(255,255,255,0.2)', userSelect: 'none', textAlign: 'right', paddingRight: '8px', fontSize: '0.7rem' }}>{lIdx + 1}</span>
                               <span style={{ flex: 1, color: isHeading ? 'var(--neon-gold,#FBC80D)' : isQuestion ? 'var(--neon-cyan,#00f0ff)' : '#cbd5e1', fontWeight: isHeading || isQuestion ? 'bold' : 'normal' }}>
                                 {line || '\u00A0'}
@@ -2869,8 +2869,8 @@ export default function AdminPage() {
                                         }
                                       }}
                                       style={{
-                                        background: newStatus === 'resolved' ? 'rgba(57,255,20,0.12)' : newStatus === 'investigating' ? 'rgba(255,230,0,0.12)' : 'rgba(255,255,255,0.06)',
-                                        border: newStatus === 'resolved' ? '1px solid rgba(57,255,20,0.4)' : newStatus === 'investigating' ? '1px solid rgba(255,230,0,0.4)' : '1px solid rgba(255,255,255,0.15)',
+                                        background: newStatus === 'resolved' ? 'rgba(57,255,20,0.12)' : newStatus === 'investigating' ? 'rgba(251, 200, 13,0.12)' : 'rgba(255,255,255,0.06)',
+                                        border: newStatus === 'resolved' ? '1px solid rgba(57,255,20,0.4)' : newStatus === 'investigating' ? '1px solid rgba(251, 200, 13,0.4)' : '1px solid rgba(255,255,255,0.15)',
                                         color: newStatus === 'resolved' ? '#39ff14' : newStatus === 'investigating' ? '#FBC80D' : 'rgba(255,255,255,0.6)',
                                         padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase'
                                       }}
@@ -3737,6 +3737,7 @@ export default function AdminPage() {
     </>
   );
 }
+
 
 
 

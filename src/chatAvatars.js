@@ -1,4 +1,4 @@
-// Chatbot character configurations and viseme mapping for lip-sync animation
+﻿// Chatbot character configurations and viseme mapping for lip-sync animation
 
 export const CHAT_AVATARS = {
   chyna: {
@@ -13,9 +13,9 @@ export const CHAT_AVATARS = {
     talkDir: 'Chatbot Characters/Chyna/MouthShapes',
     scale: 0.65,
     offsetY: '0px',
-    themeColor: '#ff3366',
-    glowColor: 'rgba(255, 51, 102, 0.6)',
-    ringGradient: 'conic-gradient(from 0deg, #ff3366, #ff6600, #ff0055, #ff3366)',
+    themeColor: '#ED1E24',
+    glowColor: 'rgba(237, 30, 36, 0.6)',
+    ringGradient: 'conic-gradient(from 0deg, #ED1E24, #ff6600, #ff0055, #ED1E24)',
     visuals: {
       enableWaves: false,
       enableOutline: true,
@@ -40,7 +40,7 @@ export const CHAT_AVATARS = {
     offsetY: '0px',
     themeColor: '#00f0ff',
     glowColor: 'rgba(0, 240, 255, 0.6)',
-    ringGradient: 'conic-gradient(from 0deg, #00f0ff, #ffd700, #ffaa00, #00f0ff)',
+    ringGradient: 'conic-gradient(from 0deg, #00f0ff, #FBC80D, #ffaa00, #00f0ff)',
     visuals: {
       enableWaves: false,
       enableOutline: true,
@@ -277,3 +277,4 @@ export const preloadCharacterVisemes = (characterId) => {
     img.src = encodeURI(`${baseUrl}${avatarConfig.talkDir}/${file}`);
   });
 };
+
