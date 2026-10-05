@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { resolveDiceCombat } from '../utils/gameEngine';
 import { CHARACTERS, ZOMBIE_PROFILE, getAssetUrl } from '../data/characters';
 import { soundFX } from '../utils/audio';
@@ -121,19 +121,19 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
               {attacker.name} <span style={{ color: 'var(--neon-pink)', margin: '0 8px' }}>⚔️</span> {defender.name}
             </h2>
           </div>
-          <button onClick={onClose} style={{ background: 'rgba(255, 51, 102, 0.2)', border: '1px solid #ff3366', borderRadius: '8px', color: '#ff3366', cursor: 'pointer', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold' }}>
+          <button onClick={onClose} style={{ background: 'rgba(237, 30, 36, 0.2)', border: '1px solid #ED1E24', borderRadius: '8px', color: '#ED1E24', cursor: 'pointer', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold' }}>
             <X size={16} /> CANCEL
           </button>
         </div>
 
         {/* Banner */}
         <div className="combatants-banner cyber-clash-banner" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '18px', alignItems: 'center', margin: '12px 0' }}>
-          <div className="combatant-side attacker-side cyber-combatant-card" style={{ borderColor: 'var(--neon-pink)', padding: '14px 20px', background: 'rgba(255, 51, 102, 0.12)', borderRadius: '14px', border: '1.5px solid #ff3366' }}>
-            <div className="combatant-role-badge atk-badge" style={{ fontSize: '0.8rem', color: '#ff3366', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div className="combatant-side attacker-side cyber-combatant-card" style={{ borderColor: 'var(--neon-pink)', padding: '14px 20px', background: 'rgba(237, 30, 36, 0.12)', borderRadius: '14px', border: '1.5px solid #ED1E24' }}>
+            <div className="combatant-role-badge atk-badge" style={{ fontSize: '0.8rem', color: '#ED1E24', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Swords size={15} /> ATTACKER
             </div>
             <div className="combatant-details" style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '8px' }}>
-              <div style={{ width: '56px', height: '56px', borderRadius: '50%', overflow: 'hidden', border: '2px solid #ff3366', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)' }}>
+              <div style={{ width: '56px', height: '56px', borderRadius: '50%', overflow: 'hidden', border: '2px solid #ED1E24', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)' }}>
                 <img src={getAssetUrl(atkChar.image)} alt={attacker.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
               <div>
@@ -148,12 +148,12 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
             </div>
           </div>
           <div className="vs-circle" style={{ fontWeight: '900', color: 'var(--neon-cyan)', fontSize: '1.2rem', padding: '10px 16px', background: 'rgba(0, 240, 255, 0.12)', borderRadius: '50%', border: '2px solid rgba(0, 240, 255, 0.5)' }}>VS</div>
-          <div className="combatant-side defender-side cyber-combatant-card" style={{ borderColor: 'var(--neon-gold)', padding: '14px 20px', background: 'rgba(255, 215, 0, 0.12)', borderRadius: '14px', border: '1.5px solid #ffd700' }}>
-            <div className="combatant-role-badge def-badge" style={{ fontSize: '0.8rem', color: '#ffd700', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div className="combatant-side defender-side cyber-combatant-card" style={{ borderColor: 'var(--neon-gold)', padding: '14px 20px', background: 'rgba(251, 200, 13, 0.12)', borderRadius: '14px', border: '1.5px solid #FBC80D' }}>
+            <div className="combatant-role-badge def-badge" style={{ fontSize: '0.8rem', color: '#FBC80D', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Shield size={15} /> DEFENDER
             </div>
             <div className="combatant-details" style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '8px' }}>
-              <div style={{ width: '56px', height: '56px', borderRadius: '50%', overflow: 'hidden', border: '2px solid #ffd700', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)' }}>
+              <div style={{ width: '56px', height: '56px', borderRadius: '50%', overflow: 'hidden', border: '2px solid #FBC80D', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)' }}>
                 <img src={getAssetUrl(defChar.image)} alt={defender.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
               <div>
@@ -167,7 +167,7 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
         </div>
 
         {doublesAlert && (
-          <div style={{ margin: '0 auto 10px', background: 'rgba(255, 215, 0, 0.2)', border: '1px solid #ffd700', padding: '10px 20px', borderRadius: '8px', color: '#ffd700', fontWeight: 'bold', fontSize: '1.1rem', animation: 'pulse 1.5s infinite' }}>
+          <div style={{ margin: '0 auto 10px', background: 'rgba(251, 200, 13, 0.2)', border: '1px solid #FBC80D', padding: '10px 20px', borderRadius: '8px', color: '#FBC80D', fontWeight: 'bold', fontSize: '1.1rem', animation: 'pulse 1.5s infinite' }}>
             DOUBLES! Claim 1 Chance Card and Re-roll!
           </div>
         )}
@@ -220,7 +220,7 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
             
             {doublesAlert && (
               <div style={{ marginBottom: '10px' }}>
-                <div style={{ color: '#ffd700', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '8px', background: 'rgba(255,215,0,0.1)', padding: '8px', borderRadius: '6px' }}>
+                <div style={{ color: '#FBC80D', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '8px', background: 'rgba(255,215,0,0.1)', padding: '8px', borderRadius: '6px' }}>
                   {doublesAlert === 'both' ? 'Both players rolled doubles! Both claim 1 Chance Card & Re-roll available.' :
                    doublesAlert === 'attacker' ? 'Attacker rolled doubles! Attacker claims 1 Chance Card & Re-roll available.' :
                    'Defender rolled doubles! Defender claims 1 Chance Card & Re-roll available.'}
@@ -231,7 +231,7 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
                     setPhase('clash');
                   }}
                   style={{
-                    width: '100%', padding: '14px', background: 'linear-gradient(90deg, #ffd700, #ffaa00)',
+                    width: '100%', padding: '14px', background: 'linear-gradient(90deg, #FBC80D, #ffaa00)',
                     color: '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer'
                   }}
                 >
@@ -299,7 +299,7 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
         {phase === 'result' && result && (
           <div className="combat-result-breakdown" style={{ background: 'rgba(0, 0, 0, 0.6)', border: '1px solid rgba(0, 240, 255, 0.3)', borderRadius: '10px', padding: '14px', marginTop: '10px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <strong style={{ fontSize: '1.1rem', color: result.isMiss ? '#888' : (result.defenseActivated ? 'var(--neon-cyan)' : '#ff3366') }}>
+              <strong style={{ fontSize: '1.1rem', color: result.isMiss ? '#888' : (result.defenseActivated ? 'var(--neon-cyan)' : '#ED1E24') }}>
                 {result.isMiss ? '❌ ATTACK MISSED (CLASH LOST)' : (result.defenseActivated ? '🛡️ DEFENSE 6+ ACHIEVED' : '💥 FULL DAMAGE PENETRATION')}
               </strong>
             </div>
@@ -308,7 +308,7 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '8px', margin: '10px 0' }}>
                 <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px', borderRadius: '6px', textAlign: 'center' }}>
                   <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.6)' }}>BASE AP</div>
-                  <strong style={{ fontSize: '1rem', color: '#ff3366' }}>{result.rawAP} AP</strong>
+                  <strong style={{ fontSize: '1rem', color: '#ED1E24' }}>{result.rawAP} AP</strong>
                 </div>
 
                 <div style={{ background: result.defenseActivated ? 'rgba(0, 240, 255, 0.15)' : 'rgba(255,255,255,0.05)', border: result.defenseActivated ? '1px solid var(--neon-cyan)' : 'none', padding: '8px', borderRadius: '6px', textAlign: 'center' }}>
@@ -318,9 +318,9 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
                   </strong>
                 </div>
 
-                <div style={{ background: 'rgba(255, 51, 102, 0.2)', border: '1px solid #ff3366', padding: '8px', borderRadius: '6px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.7rem', color: '#ff3366' }}>NET HP DAMAGE</div>
-                  <strong style={{ fontSize: '1.1rem', color: '#ff3366' }}>-{result.damageDealt} HP</strong>
+                <div style={{ background: 'rgba(237, 30, 36, 0.2)', border: '1px solid #ED1E24', padding: '8px', borderRadius: '6px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.7rem', color: '#ED1E24' }}>NET HP DAMAGE</div>
+                  <strong style={{ fontSize: '1.1rem', color: '#ED1E24' }}>-{result.damageDealt} HP</strong>
                 </div>
               </div>
             )}

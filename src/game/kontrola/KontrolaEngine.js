@@ -13,7 +13,7 @@ export const KONTROLA_CHARACTERS = {
     weaknessBonus: 10,
     innateDP: 10,
     retreatSpeed: 3,
-    themeColor: '#ff3366',
+    themeColor: '#ED1E24',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/CHYNA WILD CARD REG.png',
     attacks: {
       'FIRE OF FURY PER PUNCH': { ap: 5, dice: 1, element: 'Fire', desc: 'Roll 1 Die × 5 AP Fire damage.' },
@@ -34,7 +34,7 @@ export const KONTROLA_CHARACTERS = {
     weaknessBonus: 10,
     innateDP: 10,
     retreatSpeed: 3,
-    themeColor: '#ffe600',
+    themeColor: '#FBC80D',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/BEE WILD CARD GOLD.png',
     attacks: {
       'STING SLAP PER STING': { ap: 3, dice: 1, element: 'Lightning', desc: 'Roll 1 Die × 3 AP Sting damage.' },

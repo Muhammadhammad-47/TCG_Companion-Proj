@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { CHARACTERS, getAssetUrl } from '../data/characters';
 import { soundFX } from '../utils/audio';
@@ -81,7 +81,7 @@ export default function WinnerModal({ winner, players, turnNumber, gameStats = {
           <div className="champion-showcase-card">
             <div className="champ-laurel-badge">
               <div className="wreath-crown-icon">
-                <Crown size={22} color="#ffd700" fill="#ffd700" />
+                <Crown size={22} color="#FBC80D" fill="#FBC80D" />
               </div>
               <div className="wreath-circle">
                 <span className="wreath-leaf leaf-left">🌿</span>
@@ -125,7 +125,7 @@ export default function WinnerModal({ winner, players, turnNumber, gameStats = {
 
               <div className="breakdown-row">
                 <div className="breakdown-stat-label">
-                  <Layers size={14} color="#ffd700" />
+                  <Layers size={14} color="#FBC80D" />
                   <span>Cards Played</span>
                 </div>
                 <strong className="breakdown-val">{cardsPlayed}</strong>
@@ -245,7 +245,7 @@ export default function WinnerModal({ winner, players, turnNumber, gameStats = {
           </div>
 
           <div className="metric-praise-box">
-            <Sparkles size={16} color="#ffd700" />
+            <Sparkles size={16} color="#FBC80D" />
             <div className="praise-text">
               <strong>EXCELLENT STRATEGY!</strong>
               <span>Every move brought you closer to victory.</span>
@@ -267,7 +267,7 @@ export default function WinnerModal({ winner, players, turnNumber, gameStats = {
           </button>
 
           {onHome && (
-            <button className="btn-winner-secondary" onClick={onHome} style={{ background: 'rgba(255, 51, 102, 0.15)', border: '1px solid #ff3366', color: '#ff3366' }}>
+            <button className="btn-winner-secondary" onClick={onHome} style={{ background: 'rgba(237, 30, 36, 0.15)', border: '1px solid #ED1E24', color: '#ED1E24' }}>
               <X size={16} />
               <span>END GAME</span>
             </button>
@@ -294,3 +294,4 @@ export default function WinnerModal({ winner, players, turnNumber, gameStats = {
     </div>
   );
 }
+

@@ -80,7 +80,7 @@ class ErrorBoundary extends React.Component {
             justifyContent: 'center',
             zIndex: 9999,
             padding: '20px',
-            fontFamily: 'Rajdhani, sans-serif'
+            fontFamily: 'Bebas Neue, sans-serif'
           }}
         >
           <div

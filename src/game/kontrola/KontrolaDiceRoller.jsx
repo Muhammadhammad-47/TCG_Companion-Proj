@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { soundFX } from '../utils/audio';
 import { Dices, Shield, Swords, Check, Zap, X, Sparkles, AlertCircle, Clock, Eye, RotateCcw } from 'lucide-react';
 import { getCardGraphicUrl, getCharacterAttackGraphicUrl } from './kontrolaAssets';
@@ -517,7 +517,7 @@ export default function KontrolaDiceRoller({
               style={{
                 margin: 0,
                 fontSize: '1.4rem',
-                fontFamily: 'Rajdhani, sans-serif',
+                fontFamily: 'Bebas Neue, sans-serif',
                 letterSpacing: '1.5px',
                 color: '#fff',
                 fontWeight: '900'
@@ -557,7 +557,7 @@ export default function KontrolaDiceRoller({
               color: secondsRemaining <= 10 ? 'var(--neon-crimson)' : 'var(--neon-cyan)',
               fontSize: '0.85rem',
               fontWeight: 'bold',
-              fontFamily: 'Rajdhani, sans-serif'
+              fontFamily: 'Bebas Neue, sans-serif'
             }}
           >
             <Clock size={16} />
@@ -713,7 +713,7 @@ export default function KontrolaDiceRoller({
                   fontSize: '1.6rem',
                   fontWeight: '900',
                   color: 'var(--neon-crimson)',
-                  fontFamily: 'Rajdhani, sans-serif',
+                  fontFamily: 'Bebas Neue, sans-serif',
                   letterSpacing: '1px'
                 }}
               >
@@ -735,7 +735,7 @@ export default function KontrolaDiceRoller({
                   fontSize: '2.2rem',
                   fontWeight: '900',
                   color: 'rgba(255, 255, 255, 0.3)',
-                  fontFamily: 'Rajdhani, sans-serif'
+                  fontFamily: 'Bebas Neue, sans-serif'
                 }}
               >
                 VS
@@ -796,7 +796,7 @@ export default function KontrolaDiceRoller({
                   fontSize: '1.6rem',
                   fontWeight: '900',
                   color: 'var(--neon-gold)',
-                  fontFamily: 'Rajdhani, sans-serif',
+                  fontFamily: 'Bebas Neue, sans-serif',
                   letterSpacing: '1px'
                 }}
               >
@@ -827,7 +827,7 @@ export default function KontrolaDiceRoller({
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: '14px',
-                      fontFamily: 'Rajdhani, sans-serif',
+                      fontFamily: 'Bebas Neue, sans-serif',
                       letterSpacing: '1px',
                       transition: 'all 0.2s ease'
                     }}
@@ -847,7 +847,7 @@ export default function KontrolaDiceRoller({
                       border: '1.5px solid rgba(255, 42, 85, 0.3)',
                       color: '#ff8899',
                       fontSize: '1.1rem',
-                      fontFamily: 'Rajdhani, sans-serif',
+                      fontFamily: 'Bebas Neue, sans-serif',
                       letterSpacing: '1px'
                     }}
                   >
@@ -864,7 +864,7 @@ export default function KontrolaDiceRoller({
                     onClick={handleRollDefender}
                     disabled={isDefenderRolling}
                     style={{
-                      background: 'linear-gradient(90deg, #ffd700 0%, #ff9900 100%)',
+                      background: 'linear-gradient(90deg, #FBC80D 0%, #ff9900 100%)',
                       border: 'none',
                       color: '#000',
                       padding: '16px 44px',
@@ -872,11 +872,11 @@ export default function KontrolaDiceRoller({
                       fontSize: '1.25rem',
                       fontWeight: '900',
                       cursor: isDefenderRolling ? 'wait' : 'pointer',
-                      boxShadow: '0 0 30px rgba(255, 215, 0, 0.6)',
+                      boxShadow: '0 0 30px rgba(251, 200, 13, 0.6)',
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: '14px',
-                      fontFamily: 'Rajdhani, sans-serif',
+                      fontFamily: 'Bebas Neue, sans-serif',
                       letterSpacing: '1px',
                       transition: 'all 0.2s ease'
                     }}
@@ -892,11 +892,11 @@ export default function KontrolaDiceRoller({
                       gap: '12px',
                       padding: '14px 28px',
                       borderRadius: '12px',
-                      background: 'rgba(255, 215, 0, 0.08)',
-                      border: '1.5px solid rgba(255, 215, 0, 0.3)',
+                      background: 'rgba(251, 200, 13, 0.08)',
+                      border: '1.5px solid rgba(251, 200, 13, 0.3)',
                       color: 'var(--neon-gold)',
                       fontSize: '1.1rem',
-                      fontFamily: 'Rajdhani, sans-serif',
+                      fontFamily: 'Bebas Neue, sans-serif',
                       letterSpacing: '1px'
                     }}
                   >
@@ -912,7 +912,7 @@ export default function KontrolaDiceRoller({
             <div
               style={{
                 background: isTie
-                  ? 'rgba(255, 230, 0, 0.12)'
+                  ? 'rgba(251, 200, 13, 0.12)'
                   : atkWon
                   ? 'rgba(0, 240, 255, 0.12)'
                   : 'rgba(255, 42, 85, 0.12)',
@@ -925,7 +925,7 @@ export default function KontrolaDiceRoller({
                 padding: '20px 28px',
                 textAlign: 'center',
                 boxShadow: isTie
-                  ? '0 0 30px rgba(255, 230, 0, 0.25)'
+                  ? '0 0 30px rgba(251, 200, 13, 0.25)'
                   : atkWon
                   ? '0 0 30px rgba(0, 240, 255, 0.25)'
                   : '0 0 30px rgba(255, 42, 85, 0.25)'
@@ -936,7 +936,7 @@ export default function KontrolaDiceRoller({
                   margin: '0 0 8px 0',
                   fontSize: '1.6rem',
                   color: isTie ? 'var(--neon-gold)' : atkWon ? 'var(--neon-cyan)' : '#ff8899',
-                  fontFamily: 'Rajdhani, sans-serif',
+                  fontFamily: 'Bebas Neue, sans-serif',
                   fontWeight: '900',
                   letterSpacing: '1px'
                 }}
@@ -966,7 +966,7 @@ export default function KontrolaDiceRoller({
                     margin: '0 auto 16px auto',
                     padding: '8px 18px',
                     borderRadius: '10px',
-                    background: 'rgba(255, 215, 0, 0.15)',
+                    background: 'rgba(251, 200, 13, 0.15)',
                     border: '1px solid var(--neon-gold)',
                     color: 'var(--neon-gold)',
                     fontWeight: 'bold',
@@ -1046,7 +1046,7 @@ export default function KontrolaDiceRoller({
                         padding: '8px 22px',
                         borderRadius: '8px',
                         cursor: isRollingMultiplier ? 'wait' : 'pointer',
-                        fontFamily: 'Rajdhani, sans-serif',
+                        fontFamily: 'Bebas Neue, sans-serif',
                         fontSize: '0.95rem'
                       }}
                     >
@@ -1063,7 +1063,7 @@ export default function KontrolaDiceRoller({
                     <button
                       onClick={handleReRoll}
                       style={{
-                        background: 'linear-gradient(135deg, #ffd700, #ff8800)',
+                        background: 'linear-gradient(135deg, #FBC80D, #ff8800)',
                         color: '#000',
                         border: 'none',
                         padding: '14px 38px',
@@ -1074,9 +1074,9 @@ export default function KontrolaDiceRoller({
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '10px',
-                        fontFamily: 'Rajdhani, sans-serif',
+                        fontFamily: 'Bebas Neue, sans-serif',
                         letterSpacing: '1px',
-                        boxShadow: '0 0 25px rgba(255, 215, 0, 0.55)',
+                        boxShadow: '0 0 25px rgba(251, 200, 13, 0.55)',
                         transition: 'all 0.2s ease'
                       }}
                     >
@@ -1086,7 +1086,7 @@ export default function KontrolaDiceRoller({
                   ) : (
                     <div
                       style={{
-                        color: '#ffd700',
+                        color: '#FBC80D',
                         fontStyle: 'italic',
                         fontSize: '1rem',
                         display: 'flex',
@@ -1114,7 +1114,7 @@ export default function KontrolaDiceRoller({
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: '10px',
-                      fontFamily: 'Rajdhani, sans-serif',
+                      fontFamily: 'Bebas Neue, sans-serif',
                       letterSpacing: '1px',
                       boxShadow: '0 0 25px rgba(57, 255, 20, 0.45)',
                       transition: 'all 0.2s ease'
@@ -1132,3 +1132,4 @@ export default function KontrolaDiceRoller({
     </div>
   );
 }
+

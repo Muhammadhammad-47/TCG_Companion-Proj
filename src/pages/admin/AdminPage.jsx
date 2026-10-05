@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Shield, BookOpen, HelpCircle, Plus, Search, Filter,
@@ -784,9 +784,9 @@ export default function AdminPage() {
       color = 'var(--neon-crimson, #ff2a55)';
       border = 'rgba(255, 42, 85, 0.35)';
     } else if (c === 'energy') {
-      bg = 'rgba(255, 230, 0, 0.12)';
+      bg = 'rgba(251, 200, 13, 0.12)';
       color = 'var(--neon-gold, #FBC80D)';
-      border = 'rgba(255, 230, 0, 0.35)';
+      border = 'rgba(251, 200, 13, 0.35)';
     } else if (c === 'characters') {
       bg = 'rgba(168, 85, 247, 0.12)';
       color = '#c084fc';
@@ -829,7 +829,7 @@ export default function AdminPage() {
           alignItems: 'center',
           justifyContent: 'center',
           color: 'var(--neon-cyan, #00f0ff)',
-          fontFamily: 'var(--font-display, "Rajdhani", sans-serif)'
+          fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)'
         }}
       >
         <div style={{ textAlign: 'center' }}>
@@ -894,9 +894,9 @@ export default function AdminPage() {
               {loginError && (
                 <div
                   style={{
-                    background: 'rgba(255, 51, 102, 0.15)',
+                    background: 'rgba(237, 30, 36, 0.15)',
                     border: '1.5px solid var(--neon-crimson, #ED1E24)',
-                    color: '#ff88aa',
+                    color: '#ff6b8f',
                     padding: '10px 14px',
                     borderRadius: '10px',
                     fontSize: '0.88rem',
@@ -1096,7 +1096,7 @@ export default function AdminPage() {
                   padding: '5px 12px',
                   fontSize: '0.85rem',
                   fontWeight: 'bold',
-                  fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
+                  fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)',
                   cursor: 'pointer',
                   whiteSpace: 'nowrap'
                 }}
@@ -1104,30 +1104,30 @@ export default function AdminPage() {
                 <ArrowLeft size={15} /> HUB
               </button>
               <div className="brand-pill-badge" style={{ fontSize: '0.8rem', padding: '2px 8px' }}>注意!</div>
-              <div style={{ fontSize: '1.25rem', fontWeight: '900', letterSpacing: '1.5px', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', color: '#fff' }}>
+              <div style={{ fontSize: '1.25rem', fontWeight: '900', letterSpacing: '1.5px', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', color: '#fff' }}>
                 COMMAND DECK <span style={{ color: 'var(--neon-cyan, #00f0ff)', fontSize: '0.85rem', fontWeight: 'normal', letterSpacing: '1px' }}>// SYSTEM ADMIN</span>
               </div>
             </div>
 
             {/* Top Right: User Identity & Sign Out (NO DUPLICATE TCG APIS BUTTON) */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(5, 10, 24, 0.8)', padding: '5px 12px', borderRadius: '8px', border: '1px solid rgba(255, 230, 0, 0.3)' }}>
-                <Crown size={14} color="var(--neon-gold, #ffe600)" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(5, 10, 24, 0.8)', padding: '5px 12px', borderRadius: '8px', border: '1px solid rgba(251, 200, 13, 0.3)' }}>
+                <Crown size={14} color="var(--neon-gold, #FBC80D)" />
                 <span style={{ fontWeight: 'bold', color: '#fff', fontSize: '0.85rem' }}>{userProfile?.username || 'Admin'}</span>
               </div>
 
               <button
                 onClick={handleAdminLogout}
                 style={{
-                  background: 'rgba(255, 51, 102, 0.15)',
+                  background: 'rgba(237, 30, 36, 0.15)',
                   border: '1px solid var(--neon-crimson, #ED1E24)',
-                  color: '#ff88aa',
+                  color: '#ff6b8f',
                   padding: '6px 12px',
                   borderRadius: '8px',
                   cursor: 'pointer',
                   fontWeight: 'bold',
                   fontSize: '0.82rem',
-                  fontFamily: 'var(--font-display, "Rajdhani", sans-serif)'
+                  fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)'
                 }}
               >
                 Sign Out
@@ -1178,7 +1178,7 @@ export default function AdminPage() {
                           cursor: 'pointer',
                           fontWeight: isSel ? 'bold' : 'normal',
                           fontSize: '0.9rem',
-                          fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
+                          fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)',
                           letterSpacing: '0.5px'
                         }}
                       >
@@ -1256,19 +1256,19 @@ export default function AdminPage() {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '16px' }}>
                     <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>TOTAL USERS</div>
-                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>{usersList.length}</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#fff', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>{usersList.length}</div>
                     </div>
                     <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(57, 255, 20, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>ACTIVE USERS</div>
-                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#39ff14', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>{usersList.filter(u => !u.is_banned).length}</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#39ff14', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>{usersList.filter(u => !u.is_banned).length}</div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(255, 51, 102, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(237, 30, 36, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>SUSPENDED</div>
-                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#ff88aa', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>{usersList.filter(u => u.is_banned).length}</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#ff6b8f', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>{usersList.filter(u => u.is_banned).length}</div>
                     </div>
-                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(255, 230, 0, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(251, 200, 13, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>CIRCULATING CRYSTALS</div>
-                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: 'var(--neon-gold, #ffe600)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                      <div style={{ fontSize: '1.4rem', fontWeight: '900', color: 'var(--neon-gold, #FBC80D)', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>
                         💎 {usersList.reduce((acc, u) => acc + (u.crystals_collected || 0), 0)}
                       </div>
                     </div>
@@ -1277,7 +1277,7 @@ export default function AdminPage() {
                   {/* Header & Filter Controls */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                     <div>
-                      <h2 style={{ fontSize: '1.35rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px' }}>
+                      <h2 style={{ fontSize: '1.35rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', letterSpacing: '1px' }}>
                         USERS & PLAYERS DIRECTORY
                       </h2>
                       <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>
@@ -1321,7 +1321,7 @@ export default function AdminPage() {
                             cursor: 'pointer',
                             fontWeight: 'bold',
                             fontSize: '0.76rem',
-                            fontFamily: 'var(--font-display, "Rajdhani", sans-serif)'
+                            fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)'
                           }}
                         >
                           {f}
@@ -1373,7 +1373,7 @@ export default function AdminPage() {
                                 alignItems: 'center',
                                 padding: '8px 12px',
                                 borderBottom: '1px solid rgba(255,255,255,0.04)',
-                                background: u.is_banned ? 'rgba(255, 51, 102, 0.04)' : 'transparent',
+                                background: u.is_banned ? 'rgba(237, 30, 36, 0.04)' : 'transparent',
                                 fontSize: '0.82rem',
                                 gap: '8px'
                               }}
@@ -1383,13 +1383,13 @@ export default function AdminPage() {
                                 <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(0, 240, 255, 0.1)', border: '1px solid var(--neon-cyan, #00f0ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', flexShrink: 0 }}>
                                   ⚔️
                                 </div>
-                                <strong style={{ color: '#fff', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                <strong style={{ color: '#fff', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                   {u.username}
                                 </strong>
                               </div>
 
                               {/* Email */}
-                              <div style={{ color: '#94a3b8', fontSize: '0.8rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              <div style={{ color: '#CBD5E1', fontSize: '0.8rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {u.email}
                               </div>
 
@@ -1399,7 +1399,7 @@ export default function AdminPage() {
                               </div>
 
                               {/* Win Rate */}
-                              <div style={{ color: winRate >= 50 ? '#39ff14' : '#ff88aa', fontWeight: 'bold', fontSize: '0.85rem' }}>
+                              <div style={{ color: winRate >= 50 ? '#39ff14' : '#ff6b8f', fontWeight: 'bold', fontSize: '0.85rem' }}>
                                 {winRate}%
                               </div>
 
@@ -1407,8 +1407,8 @@ export default function AdminPage() {
                               <div>
                                 <span
                                   style={{
-                                    background: u.is_banned ? 'rgba(255, 51, 102, 0.15)' : 'rgba(57, 255, 20, 0.15)',
-                                    color: u.is_banned ? '#ff88aa' : '#39ff14',
+                                    background: u.is_banned ? 'rgba(237, 30, 36, 0.15)' : 'rgba(57, 255, 20, 0.15)',
+                                    color: u.is_banned ? '#ff6b8f' : '#39ff14',
                                     padding: '2px 6px',
                                     borderRadius: '3px',
                                     fontSize: '0.65rem',
@@ -1433,8 +1433,8 @@ export default function AdminPage() {
                                   }}
                                   title={u.is_premium ? 'Revoke PRO' : 'Grant PRO'}
                                   style={{
-                                    background: u.is_premium ? 'rgba(255, 230, 0, 0.2)' : 'transparent',
-                                    border: u.is_premium ? '1px solid rgba(255, 215, 0, 0.7)' : '1px solid rgba(255, 215, 0, 0.3)',
+                                    background: u.is_premium ? 'rgba(251, 200, 13, 0.2)' : 'transparent',
+                                    border: u.is_premium ? '1px solid rgba(251, 200, 13, 0.7)' : '1px solid rgba(251, 200, 13, 0.3)',
                                     color: 'var(--neon-gold)',
                                     padding: '3px 6px',
                                     borderRadius: '4px',
@@ -1452,7 +1452,7 @@ export default function AdminPage() {
                                   title="Edit Crystals"
                                   style={{
                                     background: 'transparent',
-                                    border: '1px solid rgba(255, 230, 0, 0.3)',
+                                    border: '1px solid rgba(251, 200, 13, 0.3)',
                                     color: 'var(--neon-gold)',
                                     padding: '3px 6px',
                                     borderRadius: '4px',
@@ -1471,8 +1471,8 @@ export default function AdminPage() {
                                   title={u.is_banned ? 'Reinstate' : 'Suspend'}
                                   style={{
                                     background: 'transparent',
-                                    border: u.is_banned ? '1px solid rgba(57, 255, 20, 0.3)' : '1px solid rgba(255, 51, 102, 0.3)',
-                                    color: u.is_banned ? '#39ff14' : '#ff88aa',
+                                    border: u.is_banned ? '1px solid rgba(57, 255, 20, 0.3)' : '1px solid rgba(237, 30, 36, 0.3)',
+                                    color: u.is_banned ? '#39ff14' : '#ff6b8f',
                                     padding: '3px 6px',
                                     borderRadius: '4px',
                                     cursor: u.id === currentUser?.id ? 'not-allowed' : 'pointer',
@@ -1515,14 +1515,14 @@ export default function AdminPage() {
                   {banModalUser && (
                     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
                       <div style={{ background: 'rgba(14, 22, 42, 0.95)', border: '1.5px solid var(--neon-crimson)', borderRadius: '12px', padding: '20px', maxWidth: '300px', width: '90%' }}>
-                        <h3 style={{ color: '#ff88aa', margin: '0 0 8px 0', fontSize: '1rem' }}>
+                        <h3 style={{ color: '#ff6b8f', margin: '0 0 8px 0', fontSize: '1rem' }}>
                           {banModalUser.is_banned ? 'Reinstate' : 'Suspend'} User?
                         </h3>
                         <p style={{ color: 'rgba(255,255,255,0.7)', margin: '0 0 14px 0', fontSize: '0.9rem' }}>
                           {banModalUser.username}
                         </p>
                         <div style={{ display: 'flex', gap: '8px' }}>
-                          <button onClick={() => handleToggleBan(banModalUser)} style={{ flex: 1, background: banModalUser.is_banned ? 'rgba(57,255,20,0.2)' : 'rgba(255,51,102,0.2)', border: banModalUser.is_banned ? '1px solid #39ff14' : '1px solid var(--neon-crimson)', color: banModalUser.is_banned ? '#39ff14' : '#ff88aa', padding: '8px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
+                          <button onClick={() => handleToggleBan(banModalUser)} style={{ flex: 1, background: banModalUser.is_banned ? 'rgba(57,255,20,0.2)' : 'rgba(237, 30, 36,0.2)', border: banModalUser.is_banned ? '1px solid #39ff14' : '1px solid var(--neon-crimson)', color: banModalUser.is_banned ? '#39ff14' : '#ff6b8f', padding: '8px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
                             {banModalUser.is_banned ? 'Reinstate' : 'Suspend'}
                           </button>
                           <button onClick={() => setBanModalUser(null)} style={{ flex: 1, background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', padding: '8px', borderRadius: '6px', cursor: 'pointer' }}>Cancel</button>
@@ -1565,7 +1565,7 @@ export default function AdminPage() {
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                     <div>
-                      <h2 style={{ fontSize: '1.35rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px' }}>
+                      <h2 style={{ fontSize: '1.35rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', letterSpacing: '1px' }}>
                         RECORDED DUEL OUTCOMES
                       </h2>
                       <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>
@@ -1622,7 +1622,7 @@ export default function AdminPage() {
                               fontSize: '0.82rem'
                             }}
                           >
-                            <span style={{ color: '#94a3b8', fontSize: '0.78rem' }}>
+                            <span style={{ color: '#CBD5E1', fontSize: '0.78rem' }}>
                               {new Date(m.created_at).toLocaleString()}
                             </span>
                             <span style={{ color: 'var(--neon-cyan, #00f0ff)', fontFamily: 'monospace', fontWeight: 'bold' }}>
@@ -1634,8 +1634,8 @@ export default function AdminPage() {
                               </span>
                             </span>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <Crown size={14} color="var(--neon-gold, #ffe600)" />
-                              <strong style={{ color: 'var(--neon-gold, #ffe600)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', fontSize: '0.92rem' }}>
+                              <Crown size={14} color="var(--neon-gold, #FBC80D)" />
+                              <strong style={{ color: 'var(--neon-gold, #FBC80D)', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', fontSize: '0.92rem' }}>
                                 {m.winner_name || 'Unknown / Draw'}
                               </strong>
                             </div>
@@ -1684,7 +1684,7 @@ export default function AdminPage() {
                               background: isSelected ? 'rgba(0, 240, 255, 0.15)' : 'rgba(14, 22, 42, 0.7)',
                               color: isSelected ? 'var(--neon-cyan, #00f0ff)' : 'rgba(255,255,255,0.6)',
                               cursor: 'pointer', fontWeight: 'bold', fontSize: '0.75rem',
-                              fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
+                              fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)',
                               transition: 'all 0.15s ease', whiteSpace: 'nowrap'
                             }}
                           >
@@ -1708,9 +1708,9 @@ export default function AdminPage() {
                       <button onClick={handleOpenEditDocModal} title="Edit Document" style={{ background: 'linear-gradient(90deg,#00f0ff,#0088ff)', border: 'none', color: '#050a18', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Edit2 size={11} /></button>
                       <button onClick={() => handleDownloadDoc(activeDoc)} title="Export" style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.65)', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Download size={11} /></button>
                       {activeDoc?.isMaster ? (
-                        <button onClick={handleResetMasterDoc} title="Reset Master" style={{ background: 'transparent', border: '1px solid rgba(255,230,0,0.3)', color: 'var(--neon-gold, #ffe600)', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RefreshCw size={11} /></button>
+                        <button onClick={handleResetMasterDoc} title="Reset Master" style={{ background: 'transparent', border: '1px solid rgba(255,230,0,0.3)', color: 'var(--neon-gold, #FBC80D)', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RefreshCw size={11} /></button>
                       ) : (
-                        <button onClick={() => handleDeleteDoc(activeDoc?.id)} title="Delete" style={{ background: 'transparent', border: '1px solid rgba(255,42,85,0.3)', color: '#ff88aa', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Trash2 size={11} /></button>
+                        <button onClick={() => handleDeleteDoc(activeDoc?.id)} title="Delete" style={{ background: 'transparent', border: '1px solid rgba(255,42,85,0.3)', color: '#ff6b8f', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Trash2 size={11} /></button>
                       )}
                     </div>
                   </div>
@@ -1799,9 +1799,9 @@ export default function AdminPage() {
                           const isQuestion = line.trim().endsWith('?');
                           const isHighlighted = docSearchQuery && line.toLowerCase().includes(docSearchQuery.toLowerCase());
                           return (
-                            <div key={lIdx} style={{ display: 'flex', background: isHighlighted ? 'rgba(255,230,0,0.12)' : 'transparent', borderLeft: isHighlighted ? '2px solid var(--neon-gold,#ffe600)' : 'none', paddingLeft: isHighlighted ? '6px' : '2px' }}>
+                            <div key={lIdx} style={{ display: 'flex', background: isHighlighted ? 'rgba(255,230,0,0.12)' : 'transparent', borderLeft: isHighlighted ? '2px solid var(--neon-gold,#FBC80D)' : 'none', paddingLeft: isHighlighted ? '6px' : '2px' }}>
                               <span style={{ width: '30px', flexShrink: 0, color: 'rgba(255,255,255,0.2)', userSelect: 'none', textAlign: 'right', paddingRight: '8px', fontSize: '0.7rem' }}>{lIdx + 1}</span>
-                              <span style={{ flex: 1, color: isHeading ? 'var(--neon-gold,#ffe600)' : isQuestion ? 'var(--neon-cyan,#00f0ff)' : '#cbd5e1', fontWeight: isHeading || isQuestion ? 'bold' : 'normal' }}>
+                              <span style={{ flex: 1, color: isHeading ? 'var(--neon-gold,#FBC80D)' : isQuestion ? 'var(--neon-cyan,#00f0ff)' : '#cbd5e1', fontWeight: isHeading || isQuestion ? 'bold' : 'normal' }}>
                                 {line || '\u00A0'}
                               </span>
                             </div>
@@ -1845,7 +1845,7 @@ export default function AdminPage() {
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                     <div>
-                      <h2 style={{ fontSize: '1.35rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px' }}>
+                      <h2 style={{ fontSize: '1.35rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', letterSpacing: '1px' }}>
                         PLAYER QUESTIONS & CONTINUOUS LEARNING
                       </h2>
                       <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>
@@ -1896,7 +1896,7 @@ export default function AdminPage() {
                             <span style={{ fontSize: '0.72rem', background: 'rgba(255, 255, 255, 0.1)', color: 'rgba(255,255,255,0.7)', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
                               USER: {q.user_name || 'Anonymous'}
                             </span>
-                            <span style={{ fontSize: '0.72rem', color: q.user_rating === 'helpful' ? '#39ff14' : q.user_rating === 'unhelpful' ? '#ff88aa' : 'rgba(255,255,255,0.5)' }}>
+                            <span style={{ fontSize: '0.72rem', color: q.user_rating === 'helpful' ? '#39ff14' : q.user_rating === 'unhelpful' ? '#ff6b8f' : 'rgba(255,255,255,0.5)' }}>
                               {q.user_rating === 'helpful' ? '👍 Helpful' : q.user_rating === 'unhelpful' ? '👎 Inaccurate' : 'Unrated'}
                             </span>
                           </div>
@@ -1910,7 +1910,7 @@ export default function AdminPage() {
                           </div>
 
                           {q.user_suggested_answer && (
-                            <div style={{ background: 'rgba(255, 230, 0, 0.08)', borderRadius: '6px', padding: '8px 12px', marginBottom: '8px', borderLeft: '3px solid var(--neon-gold, #ffe600)', fontSize: '0.82rem', color: '#fff' }}>
+                            <div style={{ background: 'rgba(251, 200, 13, 0.08)', borderRadius: '6px', padding: '8px 12px', marginBottom: '8px', borderLeft: '3px solid var(--neon-gold, #FBC80D)', fontSize: '0.82rem', color: '#fff' }}>
                               <strong>Player Correction:</strong> "{q.user_suggested_answer}"
                             </div>
                           )}
@@ -2036,8 +2036,8 @@ export default function AdminPage() {
                             gridTemplateColumns: '1fr auto',
                             gap: '12px',
                             alignItems: 'center',
-                            background: isPremium ? 'rgba(255, 215, 0, 0.06)' : 'rgba(0, 240, 255, 0.04)',
-                            border: `1px solid ${isPremium ? 'rgba(255,215,0,0.3)' : 'rgba(0,240,255,0.15)'}`,
+                            background: isPremium ? 'rgba(251, 200, 13, 0.06)' : 'rgba(0, 240, 255, 0.04)',
+                            border: `1px solid ${isPremium ? 'rgba(251, 200, 13,0.3)' : 'rgba(0,240,255,0.15)'}`,
                             borderRadius: '10px',
                             padding: '12px 14px',
                             transition: 'all 0.2s ease'
@@ -2049,7 +2049,7 @@ export default function AdminPage() {
                                 <div style={{ fontWeight: 'bold', color: '#fff', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                   {label}
                                   {isPremium && (
-                                    <span style={{ fontSize: '0.62rem', fontWeight: 'bold', background: 'rgba(255,215,0,0.15)', color: 'var(--neon-gold)', border: '1px solid rgba(255,215,0,0.4)', borderRadius: '4px', padding: '1px 6px', letterSpacing: '0.5px' }}>
+                                    <span style={{ fontSize: '0.62rem', fontWeight: 'bold', background: 'rgba(251, 200, 13,0.15)', color: 'var(--neon-gold)', border: '1px solid rgba(251, 200, 13,0.4)', borderRadius: '4px', padding: '1px 6px', letterSpacing: '0.5px' }}>
                                       PREMIUM
                                     </span>
                                   )}
@@ -2083,7 +2083,7 @@ export default function AdminPage() {
                                     style={{
                                       width: '52px',
                                       background: 'rgba(0,0,0,0.35)',
-                                      border: '1px solid rgba(255,215,0,0.35)',
+                                      border: '1px solid rgba(251, 200, 13,0.35)',
                                       color: 'var(--neon-gold)',
                                       padding: '4px 6px',
                                       borderRadius: '6px',
@@ -2093,7 +2093,7 @@ export default function AdminPage() {
                                       boxSizing: 'border-box'
                                     }}
                                   />
-                                  <span style={{ fontSize: '0.68rem', color: 'rgba(255,215,0,0.55)', whiteSpace: 'nowrap' }}>/ match</span>
+                                  <span style={{ fontSize: '0.68rem', color: 'rgba(251, 200, 13,0.55)', whiteSpace: 'nowrap' }}>/ match</span>
                                 </div>
                               )}
 
@@ -2113,15 +2113,15 @@ export default function AdminPage() {
                                 title={isPremium ? 'Set to Free' : 'Set to Premium'}
                                 style={{
                                   display: 'flex', alignItems: 'center', gap: '5px',
-                                  background: isPremium ? 'rgba(255,215,0,0.15)' : 'rgba(0,240,255,0.08)',
-                                  border: `1px solid ${isPremium ? 'rgba(255,215,0,0.5)' : 'rgba(0,240,255,0.3)'}`,
+                                  background: isPremium ? 'rgba(251, 200, 13,0.15)' : 'rgba(0,240,255,0.08)',
+                                  border: `1px solid ${isPremium ? 'rgba(251, 200, 13,0.5)' : 'rgba(0,240,255,0.3)'}`,
                                   color: isPremium ? 'var(--neon-gold)' : 'var(--neon-cyan)',
                                   borderRadius: '8px',
                                   padding: '5px 12px',
                                   cursor: 'pointer',
                                   fontSize: '0.75rem',
                                   fontWeight: 'bold',
-                                  fontFamily: 'Rajdhani, sans-serif',
+                                  fontFamily: 'Bebas Neue, sans-serif',
                                   letterSpacing: '0.5px',
                                   whiteSpace: 'nowrap',
                                   transition: 'all 0.2s ease'
@@ -2136,7 +2136,7 @@ export default function AdminPage() {
                     </div>
 
                     {/* PRO bypass notice */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,215,0,0.06)', border: '1px solid rgba(255,215,0,0.2)', borderRadius: '8px', padding: '10px 14px', marginBottom: '14px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(251, 200, 13,0.06)', border: '1px solid rgba(251, 200, 13,0.2)', borderRadius: '8px', padding: '10px 14px', marginBottom: '14px' }}>
                       <Crown size={14} style={{ color: 'var(--neon-gold)', flexShrink: 0 }} />
                       <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>
                         <strong style={{ color: 'var(--neon-gold)' }}>PRO users</strong> always bypass crystal costs on all premium modules. Grant PRO status to a player from the <strong style={{ color: '#fff' }}>Users</strong> tab.
@@ -2215,7 +2215,7 @@ export default function AdminPage() {
                     </div>
 
                     {editingBundle && (
-                      <div style={{ background: 'rgba(0, 0, 0, 0.4)', padding: '12px 16px', borderBottom: '1px solid rgba(255, 230, 0, 0.3)' }}>
+                      <div style={{ background: 'rgba(0, 0, 0, 0.4)', padding: '12px 16px', borderBottom: '1px solid rgba(251, 200, 13, 0.3)' }}>
                         <h3 style={{ color: 'var(--neon-cyan)', fontSize: '0.9rem', margin: '0 0 10px 0', fontWeight: 'bold' }}>
                           {editingBundle.id ? 'Edit Bundle' : 'Create New Bundle'}
                         </h3>
@@ -2320,7 +2320,7 @@ export default function AdminPage() {
                             {!bundle.discount_percent && <div></div>}
                             <div style={{ display: 'flex', gap: '3px', justifyContent: 'flex-end' }}>
                               <button onClick={() => setEditingBundle(bundle)} style={{ background: 'transparent', border: '1px solid rgba(0,240,255,0.3)', color: 'var(--neon-cyan)', padding: '2px 6px', borderRadius: '3px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Edit"><Edit2 size={11} /></button>
-                              <button onClick={async () => { await economyService.deleteStoreBundle(bundle.id); loadEconomyData(); }} style={{ background: 'transparent', border: '1px solid rgba(255,51,102,0.3)', color: '#ff88aa', padding: '2px 6px', borderRadius: '3px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Delete"><Trash2 size={11} /></button>
+                              <button onClick={async () => { await economyService.deleteStoreBundle(bundle.id); loadEconomyData(); }} style={{ background: 'transparent', border: '1px solid rgba(237, 30, 36,0.3)', color: '#ff6b8f', padding: '2px 6px', borderRadius: '3px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Delete"><Trash2 size={11} /></button>
                             </div>
                           </div>
                         ))
@@ -2330,28 +2330,28 @@ export default function AdminPage() {
 
 
                   {/* Redeem Codes - Simple Table */}
-                  <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 215, 0, 0.2)', borderRadius: '12px', overflow: 'hidden' }}>
-                    <div style={{ background: 'rgba(6, 12, 28, 0.95)', borderBottom: '1px solid rgba(255, 215, 0, 0.15)', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(251, 200, 13, 0.2)', borderRadius: '12px', overflow: 'hidden' }}>
+                    <div style={{ background: 'rgba(6, 12, 28, 0.95)', borderBottom: '1px solid rgba(251, 200, 13, 0.15)', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <h2 style={{ color: 'var(--neon-gold)', margin: 0, fontSize: '0.95rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Gem size={16} /> Promo Codes ({redeemCodes.length})
                       </h2>
                       <button
                         onClick={() => setEditingCode({ code: '', crystal_amount: 10, max_uses: 1 })}
-                        style={{ background: 'rgba(255, 215, 0, 0.15)', border: '1px solid var(--neon-gold)', color: 'var(--neon-gold)', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}
+                        style={{ background: 'rgba(251, 200, 13, 0.15)', border: '1px solid var(--neon-gold)', color: 'var(--neon-gold)', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}
                       >
                         <Plus size={12} /> Add
                       </button>
                     </div>
 
                     {editingCode && (
-                      <div style={{ background: 'rgba(0, 0, 0, 0.4)', padding: '12px 16px', borderBottom: '1px solid rgba(255, 215, 0, 0.3)' }}>
+                      <div style={{ background: 'rgba(0, 0, 0, 0.4)', padding: '12px 16px', borderBottom: '1px solid rgba(251, 200, 13, 0.3)' }}>
                         <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
                           <input type="text" placeholder="Code (FREEGEMS)" value={editingCode.code} onChange={e => setEditingCode({...editingCode, code: e.target.value.toUpperCase()})} style={{ flex: 1, background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '6px', borderRadius: '4px', fontSize: '0.8rem', textTransform: 'uppercase' }} />
                           <input type="number" placeholder="Crystals" value={editingCode.crystal_amount} onChange={e => setEditingCode({...editingCode, crystal_amount: parseInt(e.target.value) || 0})} style={{ width: '100px', background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '6px', borderRadius: '4px', fontSize: '0.8rem' }} />
                           <input type="number" placeholder="Max Uses" value={editingCode.max_uses} onChange={e => setEditingCode({...editingCode, max_uses: parseInt(e.target.value) || 1})} style={{ width: '100px', background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '6px', borderRadius: '4px', fontSize: '0.8rem' }} />
                         </div>
                         <div style={{ display: 'flex', gap: '6px' }}>
-                          <button onClick={async () => { const created = await economyService.upsertRedeemCode(editingCode); if(created) { setEditingCode(null); loadEconomyData(); } }} style={{ flex: 1, background: 'rgba(255, 215, 0, 0.15)', border: '1px solid var(--neon-gold)', color: 'var(--neon-gold)', padding: '6px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.75rem' }}>Save</button>
+                          <button onClick={async () => { const created = await economyService.upsertRedeemCode(editingCode); if(created) { setEditingCode(null); loadEconomyData(); } }} style={{ flex: 1, background: 'rgba(251, 200, 13, 0.15)', border: '1px solid var(--neon-gold)', color: 'var(--neon-gold)', padding: '6px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.75rem' }}>Save</button>
                           <button onClick={() => setEditingCode(null)} style={{ flex: 1, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}>Cancel</button>
                         </div>
                       </div>
@@ -2366,12 +2366,12 @@ export default function AdminPage() {
                             <div style={{ color: '#fff', fontFamily: 'monospace', fontWeight: 'bold' }}>{c.code}</div>
                             <div style={{ color: 'var(--neon-cyan)' }}>💎 {c.crystal_amount}</div>
                             <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem' }}>{c.times_used || 0} / {c.max_uses}</div>
-                            <div style={{ color: c.times_used >= c.max_uses ? '#ff88aa' : '#39ff14', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                            <div style={{ color: c.times_used >= c.max_uses ? '#ff6b8f' : '#39ff14', fontSize: '0.75rem', fontWeight: 'bold' }}>
                               {c.times_used >= c.max_uses ? 'EXPIRED' : 'ACTIVE'}
                             </div>
                             <div style={{ display: 'flex', gap: '3px', justifyContent: 'flex-end' }}>
-                              <button onClick={() => setEditingCode(c)} style={{ background: 'transparent', border: '1px solid rgba(255,215,0,0.3)', color: 'var(--neon-gold)', padding: '2px 6px', borderRadius: '3px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Edit"><Edit2 size={11} /></button>
-                              <button onClick={async () => { await economyService.deleteRedeemCode(c.id); loadEconomyData(); }} style={{ background: 'transparent', border: '1px solid rgba(255,51,102,0.3)', color: '#ff88aa', padding: '2px 6px', borderRadius: '3px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Delete"><Trash2 size={11} /></button>
+                              <button onClick={() => setEditingCode(c)} style={{ background: 'transparent', border: '1px solid rgba(251, 200, 13,0.3)', color: 'var(--neon-gold)', padding: '2px 6px', borderRadius: '3px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Edit"><Edit2 size={11} /></button>
+                              <button onClick={async () => { await economyService.deleteRedeemCode(c.id); loadEconomyData(); }} style={{ background: 'transparent', border: '1px solid rgba(237, 30, 36,0.3)', color: '#ff6b8f', padding: '2px 6px', borderRadius: '3px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Delete"><Trash2 size={11} /></button>
                             </div>
                           </div>
                         ))
@@ -2387,7 +2387,7 @@ export default function AdminPage() {
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <div>
-                      <h2 style={{ fontSize: '1.35rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px' }}>
+                      <h2 style={{ fontSize: '1.35rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', letterSpacing: '1px' }}>
                         MUSIC LIBRARY
                       </h2>
                       <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>
@@ -2452,7 +2452,7 @@ export default function AdminPage() {
                     </div>
                     <div className="kpi-card" style={{ background: 'rgba(14, 22, 42, 0.4)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px 14px' }}>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>REJECTED</div>
-                      <div style={{ fontSize: '1.3rem', fontWeight: '600', color: '#ff88aa' }}>{musicTracks.filter(m => m.status === 'rejected').length}</div>
+                      <div style={{ fontSize: '1.3rem', fontWeight: '600', color: '#ff6b8f' }}>{musicTracks.filter(m => m.status === 'rejected').length}</div>
                     </div>
                   </div>
 
@@ -2470,9 +2470,9 @@ export default function AdminPage() {
                     ) : (
                       musicTracks.filter(m => musicFilter === 'all' || m.status === musicFilter).map((track) => {
                         const statusColors = {
-                          pending: { bg: 'rgba(255,215,0,0.15)', color: 'var(--neon-gold)', border: 'rgba(255,215,0,0.4)', label: '⏳ PENDING' },
+                          pending: { bg: 'rgba(251, 200, 13,0.15)', color: 'var(--neon-gold)', border: 'rgba(251, 200, 13,0.4)', label: '⏳ PENDING' },
                           approved: { bg: 'rgba(57,255,20,0.15)', color: '#39ff14', border: 'rgba(57,255,20,0.4)', label: '✓ APPROVED' },
-                          rejected: { bg: 'rgba(255,51,102,0.15)', color: '#ff88aa', border: 'rgba(255,51,102,0.4)', label: '✕ REJECTED' }
+                          rejected: { bg: 'rgba(237, 30, 36,0.15)', color: '#ff6b8f', border: 'rgba(237, 30, 36,0.4)', label: '✕ REJECTED' }
                         };
                         const statusStyle = statusColors[track.status] || statusColors.pending;
                         const submittedDate = new Date(track.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -2596,9 +2596,9 @@ export default function AdminPage() {
                                       }}
                                       title="Reject Track"
                                       style={{
-                                        background: 'rgba(255,51,102,0.12)',
-                                        border: '1px solid rgba(255,51,102,0.4)',
-                                        color: '#ff88aa',
+                                        background: 'rgba(237, 30, 36,0.12)',
+                                        border: '1px solid rgba(237, 30, 36,0.4)',
+                                        color: '#ff6b8f',
                                         padding: '5px 10px',
                                         borderRadius: '6px',
                                         cursor: 'pointer',
@@ -2610,11 +2610,11 @@ export default function AdminPage() {
                                         transition: 'all 0.2s ease'
                                       }}
                                       onMouseOver={e => {
-                                        e.currentTarget.style.background = 'rgba(255,51,102,0.25)';
-                                        e.currentTarget.style.boxShadow = '0 0 10px rgba(255,51,102,0.3)';
+                                        e.currentTarget.style.background = 'rgba(237, 30, 36,0.25)';
+                                        e.currentTarget.style.boxShadow = '0 0 10px rgba(237, 30, 36,0.3)';
                                       }}
                                       onMouseOut={e => {
-                                        e.currentTarget.style.background = 'rgba(255,51,102,0.12)';
+                                        e.currentTarget.style.background = 'rgba(237, 30, 36,0.12)';
                                         e.currentTarget.style.boxShadow = 'none';
                                       }}
                                     >
@@ -2642,9 +2642,9 @@ export default function AdminPage() {
                                   }}
                                   title="Delete Track"
                                   style={{
-                                    background: 'rgba(255,51,102,0.12)',
-                                    border: '1px solid rgba(255,51,102,0.4)',
-                                    color: '#ff88aa',
+                                    background: 'rgba(237, 30, 36,0.12)',
+                                    border: '1px solid rgba(237, 30, 36,0.4)',
+                                    color: '#ff6b8f',
                                     padding: '5px 10px',
                                     borderRadius: '6px',
                                     cursor: 'pointer',
@@ -2656,11 +2656,11 @@ export default function AdminPage() {
                                     transition: 'all 0.2s ease'
                                   }}
                                   onMouseOver={e => {
-                                    e.currentTarget.style.background = 'rgba(255,51,102,0.25)';
-                                    e.currentTarget.style.boxShadow = '0 0 10px rgba(255,51,102,0.3)';
+                                    e.currentTarget.style.background = 'rgba(237, 30, 36,0.25)';
+                                    e.currentTarget.style.boxShadow = '0 0 10px rgba(237, 30, 36,0.3)';
                                   }}
                                   onMouseOut={e => {
-                                    e.currentTarget.style.background = 'rgba(255,51,102,0.12)';
+                                    e.currentTarget.style.background = 'rgba(237, 30, 36,0.12)';
                                     e.currentTarget.style.boxShadow = 'none';
                                   }}
                                 >
@@ -2684,7 +2684,7 @@ export default function AdminPage() {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', marginBottom: '16px' }}>
                     {[
                       { label: 'NEW', value: bugReports.filter(r => r.status === 'new').length, color: '#ff2a55' },
-                      { label: 'INVESTIGATING', value: bugReports.filter(r => r.status === 'investigating').length, color: '#ffe600' },
+                      { label: 'INVESTIGATING', value: bugReports.filter(r => r.status === 'investigating').length, color: '#FBC80D' },
                       { label: 'RESOLVED', value: bugReports.filter(r => r.status === 'resolved').length, color: '#39ff14' },
                       { label: 'DISMISSED', value: bugReports.filter(r => r.status === 'dismissed').length, color: 'rgba(255,255,255,0.35)' },
                       { label: 'TOTAL', value: bugReports.length, color: '#00f0ff' }
@@ -2699,7 +2699,7 @@ export default function AdminPage() {
                   {/* Header + Filter + Refresh */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
                     <div>
-                      <h2 style={{ fontSize: '1.3rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'Rajdhani, sans-serif', letterSpacing: '1px' }}>
+                      <h2 style={{ fontSize: '1.3rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '1px' }}>
                         🐛 BUG REPORTS
                       </h2>
                       <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>
@@ -2746,7 +2746,7 @@ export default function AdminPage() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {bugReports.map(report => {
                         const isExpanded = expandedBugId === report.id;
-                        const statusColors = { new: '#ff2a55', investigating: '#ffe600', resolved: '#39ff14', dismissed: 'rgba(255,255,255,0.35)' };
+                        const statusColors = { new: '#ff2a55', investigating: '#FBC80D', resolved: '#39ff14', dismissed: 'rgba(255,255,255,0.35)' };
                         const typeIcons = { crash: '💥', freeze: '🧊', blackout: '⬛', manual: '✍️', error: '⚠️' };
                         const statusColor = statusColors[report.status] || '#00f0ff';
 
@@ -2833,7 +2833,7 @@ export default function AdminPage() {
                                 {report.game_state && (
                                   <div>
                                     <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)', marginBottom: '4px', fontWeight: 'bold', textTransform: 'uppercase' }}>Game State Snapshot</div>
-                                    <pre style={{ background: 'rgba(0,0,0,0.5)', padding: '10px', borderRadius: '6px', fontSize: '0.7rem', color: '#94a3b8', overflowX: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all', maxHeight: '180px', margin: 0 }}>
+                                    <pre style={{ background: 'rgba(0,0,0,0.5)', padding: '10px', borderRadius: '6px', fontSize: '0.7rem', color: '#CBD5E1', overflowX: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all', maxHeight: '180px', margin: 0 }}>
                                       {JSON.stringify(report.game_state, null, 2)}
                                     </pre>
                                   </div>
@@ -2871,7 +2871,7 @@ export default function AdminPage() {
                                       style={{
                                         background: newStatus === 'resolved' ? 'rgba(57,255,20,0.12)' : newStatus === 'investigating' ? 'rgba(255,230,0,0.12)' : 'rgba(255,255,255,0.06)',
                                         border: newStatus === 'resolved' ? '1px solid rgba(57,255,20,0.4)' : newStatus === 'investigating' ? '1px solid rgba(255,230,0,0.4)' : '1px solid rgba(255,255,255,0.15)',
-                                        color: newStatus === 'resolved' ? '#39ff14' : newStatus === 'investigating' ? '#ffe600' : 'rgba(255,255,255,0.6)',
+                                        color: newStatus === 'resolved' ? '#39ff14' : newStatus === 'investigating' ? '#FBC80D' : 'rgba(255,255,255,0.6)',
                                         padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase'
                                       }}
                                     >
@@ -2920,13 +2920,13 @@ export default function AdminPage() {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', marginBottom: '16px' }}>
                     {[
                       { label: 'NEW', value: supportMessages.filter(s => s.status === 'new').length, color: '#00f0ff' },
-                      { label: 'RESPONDED', value: supportMessages.filter(s => s.status === 'responded').length, color: '#ffe600' },
+                      { label: 'RESPONDED', value: supportMessages.filter(s => s.status === 'responded').length, color: '#FBC80D' },
                       { label: 'RESOLVED', value: supportMessages.filter(s => s.status === 'resolved').length, color: '#39ff14' },
                       { label: 'TOTAL', value: supportMessages.length, color: '#00f0ff' }
                     ].map(stat => (
                       <div key={stat.label} style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
                         <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>{stat.label}</div>
-                        <div style={{ fontSize: '1.4rem', fontWeight: '900', color: stat.color, fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>{stat.value}</div>
+                        <div style={{ fontSize: '1.4rem', fontWeight: '900', color: stat.color, fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>{stat.value}</div>
                       </div>
                     ))}
                   </div>
@@ -2935,7 +2935,7 @@ export default function AdminPage() {
                   <div style={{ background: 'rgba(14, 22, 42, 0.75)', border: '1px solid rgba(0, 240, 255, 0.2)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                       <div>
-                        <h2 style={{ fontSize: '1.3rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'Rajdhani, sans-serif', letterSpacing: '1px' }}>
+                        <h2 style={{ fontSize: '1.3rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '1px' }}>
                           💬 SUPPORT MESSAGES
                         </h2>
                         <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>
@@ -2987,7 +2987,7 @@ export default function AdminPage() {
                       {supportMessages.map((msg) => {
                         const statusColors = {
                           new: { bg: 'rgba(0,200,255,0.1)', color: '#00f0ff', border: 'rgba(0,200,255,0.3)' },
-                          responded: { bg: 'rgba(255,215,0,0.1)', color: 'var(--neon-gold)', border: 'rgba(255,215,0,0.3)' },
+                          responded: { bg: 'rgba(251, 200, 13,0.1)', color: 'var(--neon-gold)', border: 'rgba(251, 200, 13,0.3)' },
                           resolved: { bg: 'rgba(57,255,20,0.1)', color: '#39ff14', border: 'rgba(57,255,20,0.3)' }
                         };
                         const statusStyle = statusColors[msg.status] || statusColors.new;
@@ -3100,7 +3100,7 @@ export default function AdminPage() {
                                           }
                                         });
                                       }}
-                                      style={{ background: 'rgba(255,215,0,0.1)', border: '1px solid rgba(255,215,0,0.3)', color: 'var(--neon-gold)', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 'bold' }}
+                                      style={{ background: 'rgba(251, 200, 13,0.1)', border: '1px solid rgba(251, 200, 13,0.3)', color: 'var(--neon-gold)', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 'bold' }}
                                     >
                                       Mark Responded
                                     </button>
@@ -3184,7 +3184,7 @@ export default function AdminPage() {
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                     <div>
-                      <h2 style={{ fontSize: '1.35rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px' }}>
+                      <h2 style={{ fontSize: '1.35rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', letterSpacing: '1px' }}>
                         TCG APIS & ECOSYSTEM INTEGRATION
                       </h2>
                       <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>
@@ -3244,7 +3244,7 @@ export default function AdminPage() {
                         </span>
                         <span style={{ fontSize: '0.68rem', background: 'rgba(57, 255, 20, 0.15)', color: '#39ff14', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>CONNECTED</span>
                       </div>
-                      <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: '0 0 8px 0', lineHeight: '1.45' }}>
+                      <p style={{ color: '#CBD5E1', fontSize: '0.8rem', margin: '0 0 8px 0', lineHeight: '1.45' }}>
                         Real-time multiplayer duel client. Authenticates users via JWT and logs match outcomes directly to <code>matches</code> table.
                       </p>
                       <code style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)' }}>POST /rest/v1/matches</code>
@@ -3257,7 +3257,7 @@ export default function AdminPage() {
                         </span>
                         <span style={{ fontSize: '0.68rem', background: 'rgba(57, 255, 20, 0.15)', color: '#39ff14', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>CONNECTED</span>
                       </div>
-                      <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: '0 0 8px 0', lineHeight: '1.45' }}>
+                      <p style={{ color: '#CBD5E1', fontSize: '0.8rem', margin: '0 0 8px 0', lineHeight: '1.45' }}>
                         Unity C# client querying active rules and updating stability crystals for victorious players.
                       </p>
                       <code style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)' }}>GET /rest/v1/rules_knowledge</code>
@@ -3270,7 +3270,7 @@ export default function AdminPage() {
                         </span>
                         <span style={{ fontSize: '0.68rem', background: 'rgba(57, 255, 20, 0.15)', color: '#39ff14', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>CONNECTED</span>
                       </div>
-                      <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: '0 0 8px 0', lineHeight: '1.45' }}>
+                      <p style={{ color: '#CBD5E1', fontSize: '0.8rem', margin: '0 0 8px 0', lineHeight: '1.45' }}>
                         Companion app for physical tournaments. Syncs usernames, crystal inventories, and deck stats.
                       </p>
                       <code style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)' }}>GET /rest/v1/profiles</code>
@@ -3283,7 +3283,7 @@ export default function AdminPage() {
                         </span>
                         <span style={{ fontSize: '0.68rem', background: 'rgba(57, 255, 20, 0.15)', color: '#39ff14', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>CONNECTED</span>
                       </div>
-                      <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: '0 0 8px 0', lineHeight: '1.45' }}>
+                      <p style={{ color: '#CBD5E1', fontSize: '0.8rem', margin: '0 0 8px 0', lineHeight: '1.45' }}>
                         Grounded AI rules referee. Logs queries to Questions Inbox and incorporates promoted GM clarifications.
                       </p>
                       <code style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)' }}>POST /rest/v1/user_questions</code>
@@ -3300,8 +3300,8 @@ export default function AdminPage() {
           ========================================================================= */}
           {crystalModalUser && (
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-              <div style={{ width: '100%', maxWidth: '380px', background: 'rgba(14, 22, 42, 0.95)', border: '1.5px solid var(--neon-gold, #ffe600)', borderRadius: '16px', padding: '24px', boxShadow: '0 0 35px rgba(255, 230, 0, 0.25)' }}>
-                <h3 style={{ fontSize: '1.3rem', color: '#fff', margin: '0 0 6px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>Adjust Stability Crystals</h3>
+              <div style={{ width: '100%', maxWidth: '380px', background: 'rgba(14, 22, 42, 0.95)', border: '1.5px solid var(--neon-gold, #FBC80D)', borderRadius: '16px', padding: '24px', boxShadow: '0 0 35px rgba(251, 200, 13, 0.25)' }}>
+                <h3 style={{ fontSize: '1.3rem', color: '#fff', margin: '0 0 6px 0', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>Adjust Stability Crystals</h3>
                 <p style={{ color: '#cbd5e1', fontSize: '0.86rem', margin: '0 0 14px 0' }}>
                   Set balance for <strong>{crystalModalUser.username}</strong>:
                 </p>
@@ -3315,7 +3315,7 @@ export default function AdminPage() {
                     boxSizing: 'border-box',
                     padding: '10px',
                     background: 'rgba(5, 10, 24, 0.85)',
-                    border: '1.5px solid var(--neon-gold, #ffe600)',
+                    border: '1.5px solid var(--neon-gold, #FBC80D)',
                     borderRadius: '8px',
                     color: '#fff',
                     fontSize: '1.2rem',
@@ -3333,7 +3333,7 @@ export default function AdminPage() {
                   </button>
                   <button
                     onClick={handleSaveCrystals}
-                    style={{ padding: '7px 16px', borderRadius: '6px', border: 'none', background: 'linear-gradient(90deg, #ffe600 0%, #ffaa00 100%)', color: '#050a18', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem' }}
+                    style={{ padding: '7px 16px', borderRadius: '6px', border: 'none', background: 'linear-gradient(90deg, #FBC80D 0%, #ffaa00 100%)', color: '#050a18', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem' }}
                   >
                     Save
                   </button>
@@ -3347,8 +3347,8 @@ export default function AdminPage() {
           ========================================================================= */}
           {banModalUser && (
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-              <div style={{ width: '100%', maxWidth: '400px', background: 'rgba(24, 10, 18, 0.95)', border: '1.5px solid var(--neon-crimson, #ff3366)', borderRadius: '16px', padding: '24px', boxShadow: '0 0 35px rgba(255, 51, 102, 0.3)' }}>
-                <h3 style={{ fontSize: '1.3rem', color: '#fff', margin: '0 0 6px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+              <div style={{ width: '100%', maxWidth: '400px', background: 'rgba(24, 10, 18, 0.95)', border: '1.5px solid var(--neon-crimson, #ED1E24)', borderRadius: '16px', padding: '24px', boxShadow: '0 0 35px rgba(237, 30, 36, 0.3)' }}>
+                <h3 style={{ fontSize: '1.3rem', color: '#fff', margin: '0 0 6px 0', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>
                   {banModalUser.is_banned ? 'Reinstate User?' : 'Suspend User?'}
                 </h3>
                 <p style={{ color: '#cbd5e1', fontSize: '0.86rem', lineHeight: '1.5', margin: '0 0 16px 0' }}>
@@ -3391,7 +3391,7 @@ export default function AdminPage() {
               <div style={{ width: '100%', maxWidth: '850px', maxHeight: '92vh', display: 'flex', flexDirection: 'column', background: 'rgba(12, 18, 36, 0.98)', border: '1.5px solid var(--neon-cyan, #00f0ff)', borderRadius: '18px', padding: '24px', boxShadow: '0 0 50px rgba(0, 240, 255, 0.35)', boxSizing: 'border-box' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                   <div>
-                    <h2 style={{ fontSize: '1.35rem', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', letterSpacing: '1px' }}>
+                    <h2 style={{ fontSize: '1.35rem', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', letterSpacing: '1px' }}>
                       EDITING: {activeDoc.filename}
                     </h2>
                     <span style={{ fontSize: '0.76rem', color: 'rgba(255,255,255,0.5)' }}>
@@ -3407,17 +3407,17 @@ export default function AdminPage() {
                 {(() => {
                   const modalMetrics = calculateGroqMetrics(editDocData.content);
                   return (
-                    <div style={{ background: 'rgba(6, 12, 28, 0.9)', border: `1px solid ${modalMetrics.status === 'EXCEEDED' ? '#ff2a55' : modalMetrics.status === 'WARNING' ? '#ffe600' : 'rgba(0, 240, 255, 0.3)'}`, borderRadius: '10px', padding: '10px 14px', marginBottom: '12px' }}>
+                    <div style={{ background: 'rgba(6, 12, 28, 0.9)', border: `1px solid ${modalMetrics.status === 'EXCEEDED' ? '#ff2a55' : modalMetrics.status === 'WARNING' ? '#FBC80D' : 'rgba(0, 240, 255, 0.3)'}`, borderRadius: '10px', padding: '10px 14px', marginBottom: '12px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', fontSize: '0.78rem' }}>
                         <span style={{ color: '#fff', fontWeight: 'bold' }}>
-                          ⚡ Groq Context Rubric: <strong style={{ color: modalMetrics.status === 'EXCEEDED' ? '#ff2a55' : modalMetrics.status === 'WARNING' ? '#ffe600' : '#39ff14' }}>{modalMetrics.charCount.toLocaleString()}</strong> / {GROQ_LIMITS.MAX_CONTEXT_CHARS.toLocaleString()} chars (~{modalMetrics.estimatedTokens.toLocaleString()} tokens)
+                          ⚡ Groq Context Rubric: <strong style={{ color: modalMetrics.status === 'EXCEEDED' ? '#ff2a55' : modalMetrics.status === 'WARNING' ? '#FBC80D' : '#39ff14' }}>{modalMetrics.charCount.toLocaleString()}</strong> / {GROQ_LIMITS.MAX_CONTEXT_CHARS.toLocaleString()} chars (~{modalMetrics.estimatedTokens.toLocaleString()} tokens)
                         </span>
-                        <span style={{ fontSize: '0.72rem', fontWeight: 'bold', color: modalMetrics.status === 'EXCEEDED' ? '#ff2a55' : modalMetrics.status === 'WARNING' ? '#ffe600' : '#39ff14' }}>
+                        <span style={{ fontSize: '0.72rem', fontWeight: 'bold', color: modalMetrics.status === 'EXCEEDED' ? '#ff2a55' : modalMetrics.status === 'WARNING' ? '#FBC80D' : '#39ff14' }}>
                           {modalMetrics.status === 'EXCEEDED' ? '🚨 EXCEEDS GROQ RUBRIC LIMIT' : modalMetrics.status === 'WARNING' ? '⚠️ APPROACHING CONTEXT CEILING' : '✓ SAFE CONTEXT BUDGET'}
                         </span>
                       </div>
                       <div style={{ width: '100%', height: '6px', background: 'rgba(5, 10, 24, 0.8)', borderRadius: '3px', overflow: 'hidden' }}>
-                        <div style={{ width: `${Math.min(100, modalMetrics.utilizationPercent)}%`, height: '100%', background: modalMetrics.status === 'EXCEEDED' ? '#ff2a55' : modalMetrics.status === 'WARNING' ? '#ffe600' : '#39ff14' }} />
+                        <div style={{ width: `${Math.min(100, modalMetrics.utilizationPercent)}%`, height: '100%', background: modalMetrics.status === 'EXCEEDED' ? '#ff2a55' : modalMetrics.status === 'WARNING' ? '#FBC80D' : '#39ff14' }} />
                       </div>
                     </div>
                   );
@@ -3504,7 +3504,7 @@ export default function AdminPage() {
               <div style={{ width: '100%', maxWidth: '620px', maxHeight: '90vh', overflowY: 'auto', background: 'rgba(14, 22, 42, 0.98)', border: '1.5px solid var(--neon-cyan, #00f0ff)', borderRadius: '18px', padding: '24px', boxShadow: '0 0 45px rgba(0, 240, 255, 0.3)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                   <div>
-                    <h2 style={{ fontSize: '1.35rem', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                    <h2 style={{ fontSize: '1.35rem', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>
                       APPEND TO {activeDoc.filename}
                     </h2>
                     <span style={{ fontSize: '0.76rem', color: 'rgba(255,255,255,0.5)' }}>
@@ -3590,7 +3590,7 @@ export default function AdminPage() {
 
                   {/* Formatted Append Preview */}
                   <div style={{ background: 'rgba(5, 10, 24, 0.8)', border: '1px dashed rgba(0, 240, 255, 0.25)', borderRadius: '8px', padding: '10px 12px' }}>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--neon-gold, #ffe600)', fontWeight: 'bold', marginBottom: '4px' }}>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--neon-gold, #FBC80D)', fontWeight: 'bold', marginBottom: '4px' }}>
                       PREVIEW OF APPENDED TEXT:
                     </div>
                     <code style={{ fontSize: '0.76rem', color: '#cbd5e1', whiteSpace: 'pre-wrap', display: 'block', maxHeight: '80px', overflowY: 'auto' }}>
@@ -3630,7 +3630,7 @@ export default function AdminPage() {
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
               <div style={{ width: '100%', maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto', background: 'rgba(14, 22, 42, 0.98)', border: '1.5px solid var(--neon-cyan, #00f0ff)', borderRadius: '18px', padding: '24px', boxShadow: '0 0 45px rgba(0, 240, 255, 0.3)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                  <h2 style={{ fontSize: '1.35rem', color: '#fff', margin: 0, fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                  <h2 style={{ fontSize: '1.35rem', color: '#fff', margin: 0, fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>
                     ADD NEW KNOWLEDGE DOCUMENT
                   </h2>
                   <button onClick={() => setIsNewDocModalOpen(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}>
@@ -3718,7 +3718,7 @@ export default function AdminPage() {
       {/* In-app Confirm Dialog (replaces window.confirm) */}
       {confirmDialog && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}>
-          <div style={{ background: 'rgba(8, 16, 36, 0.98)', border: `2px solid ${confirmDialog.isDanger ? 'var(--neon-crimson)' : 'rgba(0,240,255,0.4)'}`, borderRadius: '16px', padding: '24px', maxWidth: '520px', width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.8)', fontFamily: 'Rajdhani, sans-serif' }}>
+          <div style={{ background: 'rgba(8, 16, 36, 0.98)', border: `2px solid ${confirmDialog.isDanger ? 'var(--neon-crimson)' : 'rgba(0,240,255,0.4)'}`, borderRadius: '16px', padding: '24px', maxWidth: '520px', width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.8)', fontFamily: 'Bebas Neue, sans-serif' }}>
             <h3 style={{ margin: '0 0 12px 0', color: confirmDialog.isDanger ? 'var(--neon-crimson)' : 'var(--neon-cyan)', fontSize: '1.3rem', fontWeight: 'bold', letterSpacing: '1px' }}>{confirmDialog.title}</h3>
             <p style={{ margin: '0 0 20px 0', color: 'rgba(255,255,255,0.85)', fontSize: '0.95rem', lineHeight: '1.5' }}>{confirmDialog.message}</p>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
@@ -3737,4 +3737,7 @@ export default function AdminPage() {
     </>
   );
 }
+
+
+
 

@@ -163,7 +163,7 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
 
         {/* Error Notice */}
         {errorMsg && (
-          <div style={{ background: 'rgba(255, 51, 102, 0.2)', border: '1px solid #ff3366', color: '#ff88aa', padding: '10px 14px', borderRadius: '8px', fontSize: '0.85rem', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
+          <div style={{ background: 'rgba(237, 30, 36, 0.2)', border: '1px solid #ED1E24', color: '#ff6b8f', padding: '10px 14px', borderRadius: '8px', fontSize: '0.85rem', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
             <AlertTriangle size={18} />
             <span>{errorMsg}</span>
           </div>
@@ -245,7 +245,7 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
             {/* VS Badge */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
               <div style={{ background: '#fff', color: '#000', fontWeight: '900', padding: '4px 10px', borderRadius: '20px', fontSize: '0.9rem' }}>VS</div>
-              {kontrolWinner === null && <div style={{ fontSize: '0.8rem', color: '#ffd700', marginTop: '8px', fontWeight: 'bold' }}>ROUND {roundNumber}</div>}
+              {kontrolWinner === null && <div style={{ fontSize: '0.8rem', color: '#FBC80D', marginTop: '8px', fontWeight: 'bold' }}>ROUND {roundNumber}</div>}
             </div>
 
             {/* Defender Stats */}
@@ -317,7 +317,7 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
             </div>
             
             {roundResult === 'tie' && (
-              <div style={{ color: '#ffd700', fontWeight: 'bold', marginBottom: '10px', animation: 'pulse 1s infinite' }}>TIE! RE-ROLL ROUND.</div>
+              <div style={{ color: '#FBC80D', fontWeight: 'bold', marginBottom: '10px', animation: 'pulse 1s infinite' }}>TIE! RE-ROLL ROUND.</div>
             )}
 
             <div style={{ display: 'flex', gap: '10px' }}>
@@ -368,7 +368,7 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
         {/* Winner & Outcome Area */}
         {kontrolWinner !== null && (
           <div style={{ background: 'rgba(0,0,0,0.5)', padding: '16px', borderRadius: '12px', textAlign: 'center' }}>
-            <div style={{ fontSize: '1.4rem', fontWeight: 'bold', color: kontrolWinner === 'attacker' ? '#39ff14' : '#ff3366', marginBottom: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <div style={{ fontSize: '1.4rem', fontWeight: 'bold', color: kontrolWinner === 'attacker' ? '#39ff14' : '#ED1E24', marginBottom: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
               {kontrolWinner === 'attacker' ? <><Trophy size={24} /> KONTROL SUCCESSFUL!</> : <><Shield size={24} /> OPPONENT RESISTED!</>}
             </div>
 
@@ -446,8 +446,8 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
                           key={victim.id}
                           onClick={() => setForceAttackTargetId(victim.id)}
                           style={{
-                            background: forceAttackTargetId === victim.id ? 'rgba(255, 51, 102, 0.2)' : 'rgba(255,255,255,0.1)',
-                            border: forceAttackTargetId === victim.id ? '1.5px solid #ff3366' : '1px solid rgba(255,255,255,0.2)',
+                            background: forceAttackTargetId === victim.id ? 'rgba(237, 30, 36, 0.2)' : 'rgba(255,255,255,0.1)',
+                            border: forceAttackTargetId === victim.id ? '1.5px solid #ED1E24' : '1px solid rgba(255,255,255,0.2)',
                             color: '#fff',
                             padding: '8px 12px',
                             borderRadius: '6px',
@@ -469,9 +469,9 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
                 width: '100%',
                 marginTop: '10px',
                 padding: '14px',
-                background: kontrolWinner === 'attacker' ? 'linear-gradient(90deg, #00f0ff, #0088ff)' : 'rgba(255, 51, 102, 0.2)',
-                color: kontrolWinner === 'attacker' ? '#000' : '#ff3366',
-                border: kontrolWinner === 'attacker' ? 'none' : '1px solid #ff3366',
+                background: kontrolWinner === 'attacker' ? 'linear-gradient(90deg, #00f0ff, #0088ff)' : 'rgba(237, 30, 36, 0.2)',
+                color: kontrolWinner === 'attacker' ? '#000' : '#ED1E24',
+                border: kontrolWinner === 'attacker' ? 'none' : '1px solid #ED1E24',
                 borderRadius: '8px',
                 fontWeight: 'bold',
                 cursor: 'pointer',
@@ -486,3 +486,4 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
     </div>
   );
 }
+

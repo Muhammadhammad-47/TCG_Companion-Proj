@@ -682,7 +682,7 @@ export default function BattleArena({
               <button
                 onClick={handleClaimTurnET}
                 style={{
-                  background: 'linear-gradient(90deg, #ffd700, #ff9900)',
+                  background: 'linear-gradient(90deg, #FBC80D, #ff9900)',
                   border: 'none',
                   borderRadius: '6px',
                   padding: '4px 10px',
@@ -693,7 +693,7 @@ export default function BattleArena({
                   display: 'flex',
                   alignItems: 'center',
                   gap: '4px',
-                  boxShadow: '0 0 10px rgba(255, 215, 0, 0.4)'
+                  boxShadow: '0 0 10px rgba(251, 200, 13, 0.4)'
                 }}
               >
                 <Zap size={13} fill="#000" /> CLAIM +1 ET
@@ -774,7 +774,7 @@ export default function BattleArena({
                       </div>
 
                       <div className="arena-score-val-block">
-                        <span className="arena-lp-number" style={{ color: p.hp < 30 ? '#ff3366' : '#00f0ff' }}>
+                        <span className="arena-lp-number" style={{ color: p.hp < 30 ? '#ED1E24' : '#00f0ff' }}>
                           {p.hp}
                         </span>
                         <span className="arena-lp-tag">HP</span>
@@ -826,7 +826,7 @@ export default function BattleArena({
                   className="effect-chip effect-atk"
                   onClick={() => setSelectedEffectInfo({ name: 'Energy Tokens', desc: 'Fuel used for attacks and action cards. Claim +1 ET at the start of your turn (Max 10).', count: `${activePlayer.energyTokens}` })}
                 >
-                  <Zap size={15} color="#ffd700" />
+                  <Zap size={15} color="#FBC80D" />
                   <span className="effect-name">ET Fuel</span>
                   <span className="effect-count">{activePlayer.energyTokens}</span>
                 </button>
@@ -990,7 +990,7 @@ export default function BattleArena({
                           zIndex: 3
                         }}
                       >
-                        <span style={{ color: '#ffd700', fontWeight: 'bold' }}>⚡{p.energyTokens}</span>
+                        <span style={{ color: '#FBC80D', fontWeight: 'bold' }}>⚡{p.energyTokens}</span>
                         <span style={{ color: '#00f0ff', fontWeight: 'bold' }}>💎{p.crystals}</span>
                         {p.poisonCards > 0 && (
                           <span style={{ color: '#39ff14', fontWeight: 'bold' }}>☠️{p.poisonCards}</span>
@@ -1114,8 +1114,8 @@ export default function BattleArena({
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                     <div
                       style={{
-                        background: 'rgba(255, 51, 102, 0.25)',
-                        border: '1px solid rgba(255, 51, 102, 0.6)',
+                        background: 'rgba(237, 30, 36, 0.25)',
+                        border: '1px solid rgba(237, 30, 36, 0.6)',
                         borderRadius: '8px',
                         padding: '6px 10px',
                         display: 'flex',
@@ -1177,7 +1177,7 @@ export default function BattleArena({
                         }}
                       >
                         <span style={{ fontWeight: 'bold', fontSize: '0.86rem' }}>⚔️ {move.name}</span>
-                        <span style={{ fontSize: '0.8rem', color: '#ffd700', fontWeight: 'bold' }}>
+                        <span style={{ fontSize: '0.8rem', color: '#FBC80D', fontWeight: 'bold' }}>
                           {move.type === 'dice_mult' ? `🎲 × ${move.multiplier}` : `${move.baseAP} AP`} ({move.costET} ET)
                         </span>
                       </button>
@@ -1257,7 +1257,7 @@ export default function BattleArena({
                       setGameState({ ...gameState, players: updated });
                       soundFX.playEnergy();
                     }}
-                    style={{ padding: '12px 10px', fontSize: '0.82rem', background: 'linear-gradient(90deg, #ffd700, #ffaa00)', color: '#000', fontWeight: 'bold', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', whiteSpace: 'nowrap' }}
+                    style={{ padding: '12px 10px', fontSize: '0.82rem', background: 'linear-gradient(90deg, #FBC80D, #ffaa00)', color: '#000', fontWeight: 'bold', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', whiteSpace: 'nowrap' }}
                   >
                     <Zap size={16} />
                     <span>CLAIM 1 ET</span>
@@ -1637,13 +1637,13 @@ export default function BattleArena({
         {/* System Error Modal */}
         {systemError && (
           <div className="arena-modal-backdrop" style={{ zIndex: 9999 }} onClick={() => setSystemError(null)}>
-            <div className="arena-modal-card" style={{ maxWidth: '400px', textAlign: 'center', border: '1px solid #ff3366', boxShadow: '0 0 20px rgba(255, 51, 102, 0.4)' }} onClick={(e) => e.stopPropagation()}>
-              <h3 style={{ color: '#ff3366', marginTop: 0 }}>ACTION FAILED</h3>
+            <div className="arena-modal-card" style={{ maxWidth: '400px', textAlign: 'center', border: '1px solid #ED1E24', boxShadow: '0 0 20px rgba(237, 30, 36, 0.4)' }} onClick={(e) => e.stopPropagation()}>
+              <h3 style={{ color: '#ED1E24', marginTop: 0 }}>ACTION FAILED</h3>
               <p style={{ color: '#fff', fontSize: '0.95rem', margin: '15px 0' }}>{systemError}</p>
               <button
                 className="btn-play-card-cta"
                 onClick={() => setSystemError(null)}
-                style={{ width: '100%', padding: '12px', marginTop: '10px', background: 'linear-gradient(90deg, #ff3366, #ff0055)' }}
+                style={{ width: '100%', padding: '12px', marginTop: '10px', background: 'linear-gradient(90deg, #ED1E24, #ff0055)' }}
               >
                 ACKNOWLEDGE
               </button>
@@ -1667,4 +1667,5 @@ export default function BattleArena({
     </div>
   );
 }
+
 

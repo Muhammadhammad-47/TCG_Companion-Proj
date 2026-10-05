@@ -95,7 +95,7 @@ export default function BugReportButton({
           gap: '8px',
           fontWeight: 'bold',
           transition: 'all 0.3s ease',
-          fontFamily: 'Rajdhani, sans-serif',
+          fontFamily: 'Bebas Neue, sans-serif',
           letterSpacing: '0.5px',
           boxShadow: '0 0 20px rgba(0, 200, 255, 0.4)',
           padding: '10px 18px',
@@ -167,10 +167,10 @@ export default function BugReportButton({
                   <MessageSquare size={24} style={{ color: '#00ccff' }} />
                 </div>
                 <div>
-                  <h3 style={{ color: '#fff', margin: 0, fontSize: '1.5rem', fontWeight: 'bold', fontFamily: 'Rajdhani, sans-serif', letterSpacing: '1px' }}>
+                  <h3 style={{ color: '#fff', margin: 0, fontSize: '1.5rem', fontWeight: 'bold', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '1px' }}>
                     CONTACT SUPPORT
                   </h3>
-                  <p style={{ color: 'rgba(0, 200, 255, 0.8)', margin: '4px 0 0 0', fontSize: '0.85rem', fontFamily: 'Rajdhani, sans-serif' }}>
+                  <p style={{ color: 'rgba(0, 200, 255, 0.8)', margin: '4px 0 0 0', fontSize: '0.85rem', fontFamily: 'Bebas Neue, sans-serif' }}>
                     We're here to help
                   </p>
                 </div>
@@ -202,7 +202,7 @@ export default function BugReportButton({
                   fontSize: '0.9rem',
                   fontWeight: 'bold',
                   marginBottom: '10px',
-                  fontFamily: 'Rajdhani, sans-serif',
+                  fontFamily: 'Bebas Neue, sans-serif',
                   letterSpacing: '0.5px'
                 }}
               >
@@ -242,7 +242,7 @@ export default function BugReportButton({
 
             {/* Screenshot Section */}
             <div style={{ marginBottom: '20px', padding: '16px', background: 'rgba(0, 200, 255, 0.05)', borderRadius: '12px', border: '1px solid rgba(0, 200, 255, 0.15)' }}>
-              <label style={{ display: 'block', color: '#00ccff', fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '12px', fontFamily: 'Rajdhani, sans-serif', letterSpacing: '0.5px' }}>
+              <label style={{ display: 'block', color: '#00ccff', fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '12px', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.5px' }}>
                 📸 SCREENSHOT (Optional)
               </label>
 
@@ -332,7 +332,7 @@ export default function BugReportButton({
                   alignItems: 'center',
                   gap: '10px',
                   fontWeight: 'bold',
-                  fontFamily: 'Rajdhani, sans-serif'
+                  fontFamily: 'Bebas Neue, sans-serif'
                 }}
               >
                 <CheckCircle size={18} />
@@ -354,7 +354,7 @@ export default function BugReportButton({
                   alignItems: 'center',
                   gap: '10px',
                   fontWeight: 'bold',
-                  fontFamily: 'Rajdhani, sans-serif'
+                  fontFamily: 'Bebas Neue, sans-serif'
                 }}
               >
                 <AlertTriangle size={18} />
@@ -377,7 +377,7 @@ export default function BugReportButton({
                   fontWeight: 'bold',
                   cursor: isSubmitting ? 'not-allowed' : 'pointer',
                   opacity: isSubmitting ? 0.5 : 1,
-                  fontFamily: 'Rajdhani, sans-serif',
+                  fontFamily: 'Bebas Neue, sans-serif',
                   letterSpacing: '0.5px',
                   transition: 'all 0.2s ease'
                 }}
@@ -402,7 +402,7 @@ export default function BugReportButton({
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
-                  fontFamily: 'Rajdhani, sans-serif',
+                  fontFamily: 'Bebas Neue, sans-serif',
                   letterSpacing: '0.5px',
                   boxShadow: '0 0 20px rgba(0, 200, 255, 0.4)',
                   transition: 'all 0.2s ease'

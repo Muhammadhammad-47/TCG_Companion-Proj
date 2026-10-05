@@ -73,7 +73,7 @@ export default function BlitzModal({ attacker, allPlayers, onClose, onCompleteBl
 
         {/* Error Notice */}
         {errorNotice && (
-          <div style={{ background: 'rgba(255, 51, 102, 0.2)', border: '1px solid #ff3366', color: '#ff88aa', padding: '10px 14px', borderRadius: '8px', fontSize: '0.85rem', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
+          <div style={{ background: 'rgba(237, 30, 36, 0.2)', border: '1px solid #ED1E24', color: '#ff6b8f', padding: '10px 14px', borderRadius: '8px', fontSize: '0.85rem', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
             <AlertOctagon size={18} />
             <span>{errorNotice}</span>
           </div>
@@ -81,7 +81,7 @@ export default function BlitzModal({ attacker, allPlayers, onClose, onCompleteBl
 
         {/* HP Warning */}
         {attacker.hp >= 50 && (
-          <div style={{ background: 'rgba(255, 51, 102, 0.15)', border: '1px solid #ff3366', color: '#ff3366', padding: '10px', borderRadius: '8px', fontSize: '0.82rem', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ background: 'rgba(237, 30, 36, 0.15)', border: '1px solid #ED1E24', color: '#ED1E24', padding: '10px', borderRadius: '8px', fontSize: '0.82rem', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <AlertOctagon size={16} />
             <span>Cannot unleash: Requires HP &lt; 50 (You have {attacker.hp} HP).</span>
           </div>
@@ -196,3 +196,4 @@ export default function BlitzModal({ attacker, allPlayers, onClose, onCompleteBl
     </div>
   );
 }
+

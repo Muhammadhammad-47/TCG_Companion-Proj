@@ -77,7 +77,7 @@ const renderModuleBadge = (moduleName, moduleSettings, userProfile) => {
           fontWeight: 'bold',
           display: 'flex', alignItems: 'center', gap: '5px',
           fontSize: '0.82rem',
-          fontFamily: 'Rajdhani, sans-serif',
+          fontFamily: 'Bebas Neue, sans-serif',
           letterSpacing: '0.5px',
           boxShadow: '0 0 12px rgba(255,215,0,0.25)',
           pointerEvents: 'none'
@@ -99,7 +99,7 @@ const renderModuleBadge = (moduleName, moduleSettings, userProfile) => {
           fontWeight: 'bold',
           display: 'flex', alignItems: 'center', gap: '5px',
           fontSize: '0.82rem',
-          fontFamily: 'Rajdhani, sans-serif',
+          fontFamily: 'Bebas Neue, sans-serif',
           letterSpacing: '0.5px',
           boxShadow: '0 0 12px rgba(255,215,0,0.25)',
           pointerEvents: 'none'
@@ -1039,7 +1039,7 @@ export function Chat({ onBack, isOverlay = false }) {
               <span className="brand-pill-badge" style={{ fontSize: '0.6rem', padding: '2px 6px' }}>注意!</span>
               <span>TCG Chatbot</span>
               {userProfile?.username && (
-                <span style={{ fontSize: '0.78rem', color: 'var(--neon-gold)', fontWeight: 'bold', background: 'rgba(255, 230, 0, 0.12)', border: '1px solid rgba(255, 230, 0, 0.35)', padding: '2px 8px', borderRadius: '6px', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+                <span style={{ fontSize: '0.78rem', color: 'var(--neon-gold)', fontWeight: 'bold', background: 'rgba(251, 200, 13, 0.12)', border: '1px solid rgba(251, 200, 13, 0.35)', padding: '2px 8px', borderRadius: '6px', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>
                   ⚔️ {userProfile.username}
                 </span>
               )}
@@ -1091,7 +1091,7 @@ export function Chat({ onBack, isOverlay = false }) {
               padding: '6px 12px',
               fontSize: '0.85rem',
               fontWeight: 'bold',
-              fontFamily: 'Rajdhani, sans-serif',
+              fontFamily: 'Bebas Neue, sans-serif',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
               boxShadow: '0 0 12px rgba(0, 240, 255, 0.2)'
@@ -1256,7 +1256,7 @@ export function Chat({ onBack, isOverlay = false }) {
                       onClick={() => setShowCorrectionModal(true)}
                       disabled={userFeedback === 'unhelpful'}
                       style={{
-                        background: userFeedback === 'unhelpful' ? 'rgba(255, 51, 102, 0.3)' : 'rgba(255, 100, 100, 0.1)',
+                        background: userFeedback === 'unhelpful' ? 'rgba(237, 30, 36, 0.3)' : 'rgba(255, 100, 100, 0.1)',
                         border: userFeedback === 'unhelpful' ? '1px solid #ff6688' : '1px solid rgba(255, 100, 100, 0.3)',
                         color: userFeedback === 'unhelpful' ? '#ff6688' : 'rgba(255, 100, 100, 0.8)',
                         padding: '6px 14px',
@@ -1304,8 +1304,8 @@ export function Chat({ onBack, isOverlay = false }) {
                   border: '2px solid var(--neon-gold)',
                   borderRadius: '16px',
                   padding: '24px',
-                  boxShadow: '0 0 40px rgba(255, 215, 0, 0.25)',
-                  fontFamily: 'Rajdhani, sans-serif'
+                  boxShadow: '0 0 40px rgba(251, 200, 13, 0.25)',
+                  fontFamily: 'Bebas Neue, sans-serif'
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
@@ -1351,7 +1351,7 @@ export function Chat({ onBack, isOverlay = false }) {
                       disabled={isSubmittingCorrection || !suggestedAnswer.trim()}
                       style={{
                         padding: '8px 18px',
-                        background: isSubmittingCorrection || !suggestedAnswer.trim() ? 'rgba(255, 215, 0, 0.4)' : 'var(--neon-gold)',
+                        background: isSubmittingCorrection || !suggestedAnswer.trim() ? 'rgba(251, 200, 13, 0.4)' : 'var(--neon-gold)',
                         border: 'none',
                         color: '#050a14',
                         borderRadius: '6px',
@@ -1394,7 +1394,7 @@ export function Chat({ onBack, isOverlay = false }) {
               <button
                 className="send-button"
                 onClick={stopSpeaking}
-                style={{ background: '#ff3366', color: '#fff', boxShadow: '0 0 15px rgba(255, 51, 102, 0.6)', flexShrink: 0 }}
+                style={{ background: '#ED1E24', color: '#fff', boxShadow: '0 0 15px rgba(237, 30, 36, 0.6)', flexShrink: 0 }}
                 title="Stop Speaking"
               >
                 ×
@@ -1521,7 +1521,7 @@ export function Hub() {
               {/* Left: Brand mark */}
               <div style={{
                 display: 'flex', alignItems: 'center', gap: '8px',
-                fontFamily: 'Rajdhani, sans-serif', fontWeight: 'bold',
+                fontFamily: 'Bebas Neue, sans-serif', fontWeight: 'bold',
                 fontSize: '1rem', color: 'rgba(255,255,255,0.4)', letterSpacing: '2px'
               }}>
                 <span className="brand-pill-badge" style={{ fontSize: '0.65rem', padding: '2px 7px', margin: 0 }}>注意!</span>
@@ -1543,7 +1543,7 @@ export function Hub() {
                       padding: '6px 14px',
                       cursor: 'pointer',
                       transition: 'all 0.2s ease',
-                      fontFamily: 'Rajdhani, sans-serif'
+                      fontFamily: 'Bebas Neue, sans-serif'
                     }}
                     onMouseOver={e => e.currentTarget.style.background = 'rgba(0,240,255,0.18)'}
                     onMouseOut={e => e.currentTarget.style.background = 'rgba(0,240,255,0.08)'}
@@ -1569,7 +1569,7 @@ export function Hub() {
                         padding: '6px 14px',
                         fontSize: '0.82rem', fontWeight: 'bold',
                         cursor: 'pointer',
-                        fontFamily: 'Rajdhani, sans-serif', letterSpacing: '0.5px',
+                        fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.5px',
                         transition: 'all 0.2s ease'
                       }}
                       onMouseOver={e => e.currentTarget.style.background = 'rgba(255,215,0,0.22)'}
@@ -1593,7 +1593,7 @@ export function Hub() {
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         cursor: 'pointer',
                         fontSize: '1rem', fontWeight: 'bold',
-                        fontFamily: 'Rajdhani, sans-serif',
+                        fontFamily: 'Bebas Neue, sans-serif',
                         transition: 'all 0.2s ease',
                         boxShadow: isProfileDropdownOpen ? '0 0 14px rgba(0,240,255,0.4)' : 'none'
                       }}
@@ -1621,7 +1621,7 @@ export function Hub() {
                           boxShadow: '0 12px 40px rgba(0,0,0,0.7)',
                           backdropFilter: 'blur(16px)',
                           zIndex: 200,
-                          fontFamily: 'Rajdhani, sans-serif'
+                          fontFamily: 'Bebas Neue, sans-serif'
                         }}>
                           {/* Profile header */}
                           <div style={{ padding: '10px 12px 8px', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: '4px' }}>
@@ -1633,7 +1633,7 @@ export function Hub() {
                           </div>
 
                           {/* Menu items */}
-                          <button onClick={() => { setIsProfileDropdownOpen(false); handleLogout(); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', background: 'transparent', border: 'none', color: '#ff8080', padding: '10px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.88rem', fontWeight: 'bold', fontFamily: 'Rajdhani, sans-serif', letterSpacing: '0.5px', transition: 'background 0.15s' }}
+                          <button onClick={() => { setIsProfileDropdownOpen(false); handleLogout(); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', background: 'transparent', border: 'none', color: '#ff8080', padding: '10px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.88rem', fontWeight: 'bold', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.5px', transition: 'background 0.15s' }}
                             onMouseOver={e => e.currentTarget.style.background = 'rgba(255,60,60,0.12)'}
                             onMouseOut={e => e.currentTarget.style.background = 'transparent'}
                           >
@@ -1656,7 +1656,7 @@ export function Hub() {
                     padding: '8px 20px',
                     fontSize: '0.9rem', fontWeight: 'bold',
                     cursor: 'pointer',
-                    fontFamily: 'Rajdhani, sans-serif', letterSpacing: '0.5px',
+                    fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.5px',
                     transition: 'all 0.2s ease'
                   }}
                   onMouseOver={e => e.currentTarget.style.background = 'rgba(0,240,255,0.22)'}
@@ -1821,7 +1821,7 @@ export function Hub() {
                   fontWeight: 'bold',
                   display: 'flex', alignItems: 'center', gap: '5px',
                   fontSize: '0.75rem',
-                  fontFamily: 'Rajdhani, sans-serif',
+                  fontFamily: 'Bebas Neue, sans-serif',
                   letterSpacing: '0.5px',
                   boxShadow: '0 0 12px rgba(255,215,0,0.25)',
                   pointerEvents: 'none'
@@ -1865,7 +1865,7 @@ export function Hub() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '20px' }}>
           <div style={{ width: '100%', maxWidth: '500px', background: 'rgba(14, 22, 42, 0.98)', border: '2px solid rgba(168, 85, 247, 0.5)', borderRadius: '20px', padding: '32px', boxShadow: '0 0 40px rgba(168,85,247,0.3)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#c084fc', margin: 0, fontFamily: 'Rajdhani, sans-serif', letterSpacing: '1px' }}>
+              <h2 style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#c084fc', margin: 0, fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '1px' }}>
                 <Music size={24} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '10px' }} />
                 Submit Music Track
               </h2>
@@ -1879,13 +1879,13 @@ export function Hub() {
             </p>
 
             {musicNotice && (
-              <div style={{ background: musicNotice.startsWith('✅') ? 'rgba(57,255,20,0.1)' : 'rgba(255,51,102,0.1)', border: `1px solid ${musicNotice.startsWith('✅') ? '#39ff14' : '#ff88aa'}`, color: musicNotice.startsWith('✅') ? '#39ff14' : '#ff88aa', padding: '12px 16px', borderRadius: '10px', marginBottom: '20px', fontSize: '0.9rem', fontWeight: 'bold', fontFamily: 'Rajdhani, sans-serif' }}>
+              <div style={{ background: musicNotice.startsWith('✅') ? 'rgba(57,255,20,0.1)' : 'rgba(255,51,102,0.1)', border: `1px solid ${musicNotice.startsWith('✅') ? '#39ff14' : '#ff6b8f'}`, color: musicNotice.startsWith('✅') ? '#39ff14' : '#ff6b8f', padding: '12px 16px', borderRadius: '10px', marginBottom: '20px', fontSize: '0.9rem', fontWeight: 'bold', fontFamily: 'Bebas Neue, sans-serif' }}>
                 {musicNotice}
               </div>
             )}
 
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', color: '#c084fc', fontSize: '0.9rem', marginBottom: '8px', fontWeight: 'bold', letterSpacing: '0.5px', fontFamily: 'Rajdhani, sans-serif' }}>
+              <label style={{ display: 'block', color: '#c084fc', fontSize: '0.9rem', marginBottom: '8px', fontWeight: 'bold', letterSpacing: '0.5px', fontFamily: 'Bebas Neue, sans-serif' }}>
                 TRACK TITLE *
               </label>
               <input
@@ -1899,7 +1899,7 @@ export function Hub() {
             </div>
 
             <div style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', color: '#c084fc', fontSize: '0.9rem', marginBottom: '8px', fontWeight: 'bold', letterSpacing: '0.5px', fontFamily: 'Rajdhani, sans-serif' }}>
+              <label style={{ display: 'block', color: '#c084fc', fontSize: '0.9rem', marginBottom: '8px', fontWeight: 'bold', letterSpacing: '0.5px', fontFamily: 'Bebas Neue, sans-serif' }}>
                 AUDIO FILE *
               </label>
               <input
@@ -1960,7 +1960,7 @@ export function Hub() {
                 }
               }}
               disabled={musicSubmitting}
-              style={{ width: '100%', padding: '14px', background: musicSubmitting ? 'rgba(168,85,247,0.3)' : 'linear-gradient(90deg, #c084fc 0%, #a855f7 100%)', border: 'none', borderRadius: '12px', color: '#000', fontSize: '1.1rem', fontWeight: 'bold', cursor: musicSubmitting ? 'not-allowed' : 'pointer', fontFamily: 'Rajdhani, sans-serif', letterSpacing: '1px', boxShadow: '0 0 20px rgba(168,85,247,0.4)' }}
+              style={{ width: '100%', padding: '14px', background: musicSubmitting ? 'rgba(168,85,247,0.3)' : 'linear-gradient(90deg, #c084fc 0%, #a855f7 100%)', border: 'none', borderRadius: '12px', color: '#000', fontSize: '1.1rem', fontWeight: 'bold', cursor: musicSubmitting ? 'not-allowed' : 'pointer', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '1px', boxShadow: '0 0 20px rgba(168,85,247,0.4)' }}
             >
               {musicSubmitting ? 'UPLOADING...' : 'UPLOAD & SUBMIT FOR APPROVAL'}
             </button>
@@ -2081,7 +2081,7 @@ function App() {
   const ProtectedRoute = ({ children }) => {
     if (authLoading) {
       return (
-        <div style={{ minHeight: '100vh', background: 'radial-gradient(circle at 50% 20%, #0d1a38 0%, #050a18 70%, #02040c 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--neon-cyan)', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)' }}>
+        <div style={{ minHeight: '100vh', background: 'radial-gradient(circle at 50% 20%, #0d1a38 0%, #050a18 70%, #02040c 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--neon-cyan)', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>
           <div style={{ textAlign: 'center' }}>
             <div className="brand-pill-badge" style={{ margin: '0 auto 12px auto', fontSize: '0.9rem', padding: '3px 12px' }}>注意!</div>
             <div style={{ fontSize: '1.3rem', letterSpacing: '2px', fontWeight: 'bold' }}>VERIFYING ACCESS...</div>
@@ -2091,16 +2091,16 @@ function App() {
     }
     if (userProfile?.is_banned) {
       return (
-        <div style={{ minHeight: '100vh', width: '100vw', background: 'radial-gradient(circle at 50% 20%, #20050d 0%, #0d0205 70%, #000 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ff88aa', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', padding: '20px', boxSizing: 'border-box' }}>
-          <div style={{ maxWidth: '440px', width: '100%', textAlign: 'center', background: 'rgba(30, 8, 14, 0.92)', border: '2px solid var(--neon-crimson, #ff3366)', borderRadius: '20px', padding: '36px 28px', boxShadow: '0 0 40px rgba(255, 42, 85, 0.3)' }}>
-            <div className="brand-pill-badge" style={{ margin: '0 auto 12px auto', fontSize: '0.9rem', padding: '3px 12px', background: 'var(--neon-crimson, #ff3366)', color: '#fff', border: 'none' }}>SUSPENDED</div>
+        <div style={{ minHeight: '100vh', width: '100vw', background: 'radial-gradient(circle at 50% 20%, #20050d 0%, #0d0205 70%, #000 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ff6b8f', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', padding: '20px', boxSizing: 'border-box' }}>
+          <div style={{ maxWidth: '440px', width: '100%', textAlign: 'center', background: 'rgba(30, 8, 14, 0.92)', border: '2px solid var(--neon-crimson, #ED1E24)', borderRadius: '20px', padding: '36px 28px', boxShadow: '0 0 40px rgba(255, 42, 85, 0.3)' }}>
+            <div className="brand-pill-badge" style={{ margin: '0 auto 12px auto', fontSize: '0.9rem', padding: '3px 12px', background: 'var(--neon-crimson, #ED1E24)', color: '#fff', border: 'none' }}>SUSPENDED</div>
             <div style={{ fontSize: '1.8rem', letterSpacing: '2px', fontWeight: '900', color: '#fff', marginBottom: '8px' }}>ACCOUNT SUSPENDED</div>
             <p style={{ color: '#cbd5e1', fontSize: '0.95rem', lineHeight: '1.6', fontFamily: 'var(--font-sub, "Outfit", sans-serif)', marginBottom: '24px' }}>
               Your account (<strong>{userProfile?.username || currentUser?.email}</strong>) has been suspended by the Game Masters due to rule violations or moderation action.
             </p>
             <button
               onClick={() => authService.signOut().then(() => { setCurrentUser(null); setUserProfile(null); })}
-              style={{ padding: '10px 24px', borderRadius: '10px', border: '1px solid #ff3366', background: 'rgba(255,51,102,0.2)', color: '#fff', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', fontSize: '1rem' }}
+              style={{ padding: '10px 24px', borderRadius: '10px', border: '1px solid #ED1E24', background: 'rgba(255,51,102,0.2)', color: '#fff', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', fontSize: '1rem' }}
             >
               Sign Out
             </button>
@@ -2148,4 +2148,5 @@ function App() {
 }
 
 export default App;
+
 

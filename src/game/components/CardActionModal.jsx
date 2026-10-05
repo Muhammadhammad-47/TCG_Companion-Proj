@@ -295,7 +295,7 @@ export default function CardActionModal({
               <button
                 onClick={handlePhysicalPlacementConfirmed}
                 style={{
-                  background: 'linear-gradient(90deg, #ff3366, #ff9900)',
+                  background: 'linear-gradient(90deg, #ED1E24, #ff9900)',
                   border: 'none',
                   borderRadius: '8px',
                   padding: '16px 32px',
@@ -306,7 +306,7 @@ export default function CardActionModal({
                   display: 'flex',
                   alignItems: 'center',
                   gap: '12px',
-                  boxShadow: '0 0 20px rgba(255, 51, 102, 0.5)',
+                  boxShadow: '0 0 20px rgba(237, 30, 36, 0.5)',
                   animation: 'pulse 2s infinite'
                 }}
               >
@@ -382,9 +382,9 @@ export default function CardActionModal({
                           <span
                             style={{
                               fontSize: '0.72rem',
-                              background: 'rgba(255, 215, 0, 0.15)',
-                              border: '1px solid #ffd700',
-                              color: '#ffd700',
+                              background: 'rgba(251, 200, 13, 0.15)',
+                              border: '1px solid #FBC80D',
+                              color: '#FBC80D',
                               padding: '2px 6px',
                               borderRadius: '4px',
                               fontWeight: 'bold',
@@ -393,7 +393,7 @@ export default function CardActionModal({
                               gap: '2px'
                             }}
                           >
-                            <Zap size={10} fill="#ffd700" /> {card.costET} ET
+                            <Zap size={10} fill="#FBC80D" /> {card.costET} ET
                           </span>
                         </div>
                         <strong style={{ fontSize: '0.92rem', color: isSelected ? '#fff' : '#e0e0e0', marginTop: '4px' }}>
@@ -465,8 +465,8 @@ export default function CardActionModal({
                               setSelectedMoveId(move.id);
                             }}
                             style={{
-                              background: isMoveSelected ? 'rgba(255, 51, 102, 0.18)' : 'rgba(255, 255, 255, 0.03)',
-                              border: isMoveSelected ? '1.5px solid #ff3366' : '1px solid rgba(255, 255, 255, 0.08)',
+                              background: isMoveSelected ? 'rgba(237, 30, 36, 0.18)' : 'rgba(255, 255, 255, 0.03)',
+                              border: isMoveSelected ? '1.5px solid #ED1E24' : '1px solid rgba(255, 255, 255, 0.08)',
                               borderRadius: '8px',
                               padding: '10px 12px',
                               cursor: 'pointer',
@@ -482,10 +482,10 @@ export default function CardActionModal({
                               </div>
                             </div>
                             <div style={{ textAlign: 'right' }}>
-                              <span style={{ fontSize: '0.82rem', color: '#ff3366', fontWeight: 'bold' }}>
+                              <span style={{ fontSize: '0.82rem', color: '#ED1E24', fontWeight: 'bold' }}>
                                 {isMult ? `🎲 × ${move.multiplier} AP` : `${move.baseAP} AP`}
                               </span>
-                              <div style={{ fontSize: '0.7rem', color: '#ffd700' }}>Cost: {move.costET || 0} ET</div>
+                              <div style={{ fontSize: '0.7rem', color: '#FBC80D' }}>Cost: {move.costET || 0} ET</div>
                             </div>
                           </div>
                         );
@@ -513,8 +513,8 @@ export default function CardActionModal({
                               setTargetPlayerId(target.id);
                             }}
                             style={{
-                              background: isTargetSelected ? 'rgba(255, 215, 0, 0.18)' : 'rgba(255, 255, 255, 0.03)',
-                              border: isTargetSelected ? '1.5px solid #ffd700' : '1px solid rgba(255, 255, 255, 0.08)',
+                              background: isTargetSelected ? 'rgba(251, 200, 13, 0.18)' : 'rgba(255, 255, 255, 0.03)',
+                              border: isTargetSelected ? '1.5px solid #FBC80D' : '1px solid rgba(255, 255, 255, 0.08)',
                               borderRadius: '8px',
                               padding: '8px 10px',
                               cursor: 'pointer',
@@ -543,7 +543,7 @@ export default function CardActionModal({
 
                 {/* Error message */}
                 {errorMsg && (
-                  <div style={{ color: '#ff3366', background: 'rgba(255, 51, 102, 0.1)', border: '1px solid #ff3366', padding: '8px 12px', borderRadius: '8px', fontSize: '0.85rem', textAlign: 'center', fontWeight: 'bold' }}>
+                  <div style={{ color: '#ED1E24', background: 'rgba(237, 30, 36, 0.1)', border: '1px solid #ED1E24', padding: '8px 12px', borderRadius: '8px', fontSize: '0.85rem', textAlign: 'center', fontWeight: 'bold' }}>
                     ⚠️ {errorMsg}
                   </div>
                 )}
@@ -562,10 +562,10 @@ export default function CardActionModal({
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <Zap size={20} fill="#ffd700" color="#ffd700" />
+                    <Zap size={20} fill="#FBC80D" color="#FBC80D" />
                     <div>
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.6)' }}>TOTAL ENERGY COST</div>
-                      <strong style={{ fontSize: '1.1rem', color: '#ffd700' }}>
+                      <strong style={{ fontSize: '1.1rem', color: '#FBC80D' }}>
                         {totalETCost} ET <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', fontWeight: 'normal' }}>({activePlayer.energyTokens} Available)</span>
                       </strong>
                     </div>

@@ -31,7 +31,7 @@ export default function CardZoneModal({ player, onClose }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid rgba(0,240,255,0.2)', paddingBottom: '12px' }}>
           <div>
             <h2 style={{ fontSize: '1.25rem', margin: 0, fontFamily: 'Orbitron, sans-serif', color: '#00f0ff' }}>YOUR ACTION CARDS ({hand.length}/10)</h2>
-            <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '4px' }}>Privately view the cards in your hand.</div>
+            <div style={{ fontSize: '0.75rem', color: '#CBD5E1', marginTop: '4px' }}>Privately view the cards in your hand.</div>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}><X size={20} /></button>
         </div>
@@ -77,3 +77,4 @@ export default function CardZoneModal({ player, onClose }) {
     </div>
   );
 }
+

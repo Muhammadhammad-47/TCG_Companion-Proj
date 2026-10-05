@@ -118,7 +118,7 @@ export default function MainMenu({
                   isolation: 'isolate',
                   WebkitMaskImage: '-webkit-radial-gradient(white, black)',
                   border: `2.5px solid ${activeChar.themeColor || 'var(--neon-crimson)'}`,
-                  boxShadow: `0 20px 50px rgba(0,0,0,0.9), 0 0 35px ${activeChar.themeColor ? activeChar.themeColor + '55' : 'rgba(255, 51, 102, 0.4)'}`,
+                  boxShadow: `0 20px 50px rgba(0,0,0,0.9), 0 0 35px ${activeChar.themeColor ? activeChar.themeColor + '55' : 'rgba(237, 30, 36, 0.4)'}`,
                   background: 'linear-gradient(180deg, #0f2248 0%, #050b18 100%)',
                   display: 'flex',
                   flexDirection: 'column',
@@ -209,8 +209,8 @@ export default function MainMenu({
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                     <div
                       style={{
-                        background: 'rgba(255, 51, 102, 0.25)',
-                        border: '1px solid rgba(255, 51, 102, 0.6)',
+                        background: 'rgba(237, 30, 36, 0.25)',
+                        border: '1px solid rgba(237, 30, 36, 0.6)',
                         borderRadius: '8px',
                         padding: '5px 8px',
                         display: 'flex',
@@ -259,7 +259,7 @@ export default function MainMenu({
                         }}
                       >
                         <span style={{ fontWeight: 'bold' }}>⚔️ {move.name}</span>
-                        <span style={{ color: '#ffd700', fontWeight: 'bold' }}>
+                        <span style={{ color: '#FBC80D', fontWeight: 'bold' }}>
                           {move.type === 'dice_mult' ? `🎲 × ${move.multiplier}` : `${move.baseAP} AP`} ({move.costET} ET)
                         </span>
                       </div>

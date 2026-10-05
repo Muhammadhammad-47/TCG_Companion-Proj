@@ -7,7 +7,7 @@ import { APP_CONFIG } from '../../config';
 const LOADING_STEPS = [
   { text: 'Loading Tactical Engine...', icon: <Zap size={16} color="var(--neon-cyan)" /> },
   { text: 'Calibrating Red & Gold Dice...', icon: <Dices size={16} color="var(--neon-crimson)" /> },
-  { text: 'Syncing Action Deck & Cards...', icon: <Swords size={16} color="#ffd700" /> },
+  { text: 'Syncing Action Deck & Cards...', icon: <Swords size={16} color="#FBC80D" /> },
   { text: 'Charging Stability Crystals...', icon: <Shield size={16} color="var(--neon-cyan)" /> },
   { text: 'Scanning Zombie Bio-Threats...', icon: <Skull size={16} color="#39ff14" /> },
   { text: 'Battlefield Ready!', icon: <Play size={16} color="#ffffff" /> }
@@ -133,3 +133,4 @@ export default function LoadingScreen({ onComplete }) {
     </div>
   );
 }
+

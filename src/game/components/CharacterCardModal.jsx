@@ -78,9 +78,9 @@ export default function CharacterCardModal({ characterId, onClose }) {
           {currentCard.type === 'profile' ? (
             <div style={{ animation: 'fadeIn 0.3s ease' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', background: 'rgba(0,0,0,0.4)', padding: '12px', borderRadius: '8px' }}>
-                <div style={{ textAlign: 'center' }}><Heart size={16} color="#ff3366" style={{marginBottom:'4px'}}/><div style={{fontSize:'0.75rem', color:'#a1a1aa'}}>HP</div><div style={{fontWeight:'bold'}}>{charData.maxHP}</div></div>
+                <div style={{ textAlign: 'center' }}><Heart size={16} color="#ED1E24" style={{marginBottom:'4px'}}/><div style={{fontSize:'0.75rem', color:'#a1a1aa'}}>HP</div><div style={{fontWeight:'bold'}}>{charData.maxHP}</div></div>
                 <div style={{ textAlign: 'center' }}><Shield size={16} color="#00f0ff" style={{marginBottom:'4px'}}/><div style={{fontSize:'0.75rem', color:'#a1a1aa'}}>DEF DP</div><div style={{fontWeight:'bold'}}>{charData.defaultDP}</div></div>
-                <div style={{ textAlign: 'center' }}><Swords size={16} color="#ffd700" style={{marginBottom:'4px'}}/><div style={{fontSize:'0.75rem', color:'#a1a1aa'}}>MIND</div><div style={{fontWeight:'bold'}}>{charData.mindStrength}</div></div>
+                <div style={{ textAlign: 'center' }}><Swords size={16} color="#FBC80D" style={{marginBottom:'4px'}}/><div style={{fontSize:'0.75rem', color:'#a1a1aa'}}>MIND</div><div style={{fontWeight:'bold'}}>{charData.mindStrength}</div></div>
               </div>
               
               <div style={{ marginBottom: '12px', background: 'rgba(0,0,0,0.4)', padding: '12px', borderRadius: '8px' }}>
@@ -97,12 +97,12 @@ export default function CharacterCardModal({ characterId, onClose }) {
             </div>
           ) : (
             <div style={{ animation: 'fadeIn 0.3s ease', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ background: 'rgba(0,0,0,0.4)', padding: '16px', borderRadius: '8px', border: `1px solid ${currentCard.data.isSuper ? '#ffd700' : 'rgba(255,255,255,0.1)'}` }}>
+              <div style={{ background: 'rgba(0,0,0,0.4)', padding: '16px', borderRadius: '8px', border: `1px solid ${currentCard.data.isSuper ? '#FBC80D' : 'rgba(255,255,255,0.1)'}` }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: currentCard.data.isSuper ? '#ffd700' : '#fff' }}>{currentCard.data.name}</span>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: currentCard.data.isSuper ? '#FBC80D' : '#fff' }}>{currentCard.data.name}</span>
                   <span style={{ fontSize: '0.8rem', background: 'rgba(255,255,255,0.1)', padding: '4px 8px', borderRadius: '4px' }}>⚡ {currentCard.data.costET} ET</span>
                 </div>
-                {currentCard.data.isSuper && <div style={{ fontSize: '0.7rem', color: '#ffd700', marginBottom: '8px', fontWeight: 'bold' }}>SUPER ATTACK</div>}
+                {currentCard.data.isSuper && <div style={{ fontSize: '0.7rem', color: '#FBC80D', marginBottom: '8px', fontWeight: 'bold' }}>SUPER ATTACK</div>}
                 
                 <div style={{ display: 'flex', gap: '12px', marginBottom: '12px', fontSize: '0.85rem' }}>
                   {currentCard.data.baseAP && <div><strong>AP:</strong> {currentCard.data.baseAP}</div>}
@@ -128,3 +128,4 @@ export default function CharacterCardModal({ characterId, onClose }) {
     </div>
   );
 }
+

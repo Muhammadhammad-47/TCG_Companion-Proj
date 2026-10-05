@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { CHARACTERS } from '../data/characters';
 import { soundFX } from '../utils/audio';
 import { Wind, X, Dices, Check } from 'lucide-react';
@@ -139,7 +139,7 @@ export default function RetreatModal({ player, onClose, onCompleteRetreat }) {
             </button>
           ) : (
             <div>
-              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: success ? '#39ff14' : '#ff3366', marginBottom: '12px' }}>
+              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: success ? '#39ff14' : '#ED1E24', marginBottom: '12px' }}>
                 {success ? '💨 RETREAT SUCCESSFUL (ESCAPED)' : '🛑 RETREAT FAILED (MUST STAY & FIGHT)'}
               </div>
 
@@ -165,3 +165,4 @@ export default function RetreatModal({ player, onClose, onCompleteRetreat }) {
     </div>
   );
 }
+

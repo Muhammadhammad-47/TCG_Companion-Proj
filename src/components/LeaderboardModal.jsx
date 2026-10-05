@@ -73,11 +73,11 @@ export const LeaderboardModal = ({ isOpen, onClose }) => {
           width: '100%',
           maxWidth: '560px',
           background: 'rgba(10, 20, 40, 0.95)',
-          border: '2px solid var(--neon-gold, #ffe600)',
+          border: '2px solid var(--neon-gold, #FBC80D)',
           borderRadius: '16px',
           padding: '24px',
-          boxShadow: '0 0 40px rgba(255, 215, 0, 0.25)',
-          fontFamily: 'Rajdhani, sans-serif',
+          boxShadow: '0 0 40px rgba(251, 200, 13, 0.25)',
+          fontFamily: 'Bebas Neue, sans-serif',
           position: 'relative'
         }}
         onClick={(e) => e.stopPropagation()}
@@ -104,8 +104,8 @@ export const LeaderboardModal = ({ isOpen, onClose }) => {
         </button>
 
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <Trophy size={48} color="var(--neon-gold, #ffe600)" style={{ margin: '0 auto 10px auto' }} />
-          <h2 style={{ color: 'var(--neon-gold, #ffe600)', margin: '0 0 4px 0', fontSize: '1.8rem', textTransform: 'uppercase', letterSpacing: '2px' }}>
+          <Trophy size={48} color="var(--neon-gold, #FBC80D)" style={{ margin: '0 auto 10px auto' }} />
+          <h2 style={{ color: 'var(--neon-gold, #FBC80D)', margin: '0 0 4px 0', fontSize: '1.8rem', textTransform: 'uppercase', letterSpacing: '2px' }}>
             HALL OF FAME
           </h2>
           <p style={{ color: 'rgba(255,255,255,0.6)', margin: 0, fontSize: '0.9rem' }}>Top Ranked Kontrola Players</p>
@@ -135,14 +135,14 @@ export const LeaderboardModal = ({ isOpen, onClose }) => {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      background: idx === 0 ? 'rgba(255, 215, 0, 0.1)' : idx === 1 ? 'rgba(192, 192, 192, 0.1)' : idx === 2 ? 'rgba(205, 127, 50, 0.1)' : 'rgba(255,255,255,0.03)',
-                      border: idx === 0 ? '1px solid rgba(255, 215, 0, 0.4)' : idx === 1 ? '1px solid rgba(192, 192, 192, 0.4)' : idx === 2 ? '1px solid rgba(205, 127, 50, 0.4)' : '1px solid rgba(255,255,255,0.05)',
+                      background: idx === 0 ? 'rgba(251, 200, 13, 0.1)' : idx === 1 ? 'rgba(192, 192, 192, 0.1)' : idx === 2 ? 'rgba(205, 127, 50, 0.1)' : 'rgba(255,255,255,0.03)',
+                      border: idx === 0 ? '1px solid rgba(251, 200, 13, 0.4)' : idx === 1 ? '1px solid rgba(192, 192, 192, 0.4)' : idx === 2 ? '1px solid rgba(205, 127, 50, 0.4)' : '1px solid rgba(255,255,255,0.05)',
                       padding: '12px 16px',
                       borderRadius: '12px',
                       boxShadow: idx < 3 ? '0 4px 12px rgba(0,0,0,0.2)' : 'none'
                     }}
                   >
-                    <div style={{ width: '40px', fontSize: '1.2rem', fontWeight: 'bold', color: idx === 0 ? '#ffe600' : idx === 1 ? '#c0c0c0' : idx === 2 ? '#cd7f32' : 'rgba(255,255,255,0.4)' }}>
+                    <div style={{ width: '40px', fontSize: '1.2rem', fontWeight: 'bold', color: idx === 0 ? '#FBC80D' : idx === 1 ? '#c0c0c0' : idx === 2 ? '#cd7f32' : 'rgba(255,255,255,0.4)' }}>
                       #{idx + 1}
                     </div>
                     
@@ -150,7 +150,7 @@ export const LeaderboardModal = ({ isOpen, onClose }) => {
                       <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff' }}>
                         {p.username || 'Anonymous'}
                       </div>
-                      {idx < 3 && <Medal size={16} color={idx === 0 ? '#ffe600' : idx === 1 ? '#c0c0c0' : '#cd7f32'} />}
+                      {idx < 3 && <Medal size={16} color={idx === 0 ? '#FBC80D' : idx === 1 ? '#c0c0c0' : '#cd7f32'} />}
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -173,3 +173,4 @@ export const LeaderboardModal = ({ isOpen, onClose }) => {
     </div>
   );
 };
+

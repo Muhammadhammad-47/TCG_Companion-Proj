@@ -97,7 +97,7 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete })
           borderRadius: '16px',
           padding: '32px',
           boxShadow: '0 0 40px rgba(0, 240, 255, 0.25)',
-          fontFamily: 'Rajdhani, sans-serif',
+          fontFamily: 'Bebas Neue, sans-serif',
           position: 'relative'
         }}
         onClick={(e) => e.stopPropagation()}
@@ -160,8 +160,8 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete })
                   }}
                   onMouseEnter={e => {
                     e.currentTarget.style.transform = 'translateY(-5px)';
-                    e.currentTarget.style.borderColor = 'var(--neon-gold, #ffe600)';
-                    e.currentTarget.style.boxShadow = '0 10px 20px rgba(255, 215, 0, 0.2)';
+                    e.currentTarget.style.borderColor = 'var(--neon-gold, #FBC80D)';
+                    e.currentTarget.style.boxShadow = '0 10px 20px rgba(251, 200, 13, 0.2)';
                   }}
                   onMouseLeave={e => {
                     e.currentTarget.style.transform = 'translateY(0)';
@@ -181,7 +181,7 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete })
                     <div style={{ fontSize: '3rem', marginBottom: '10px', textShadow: '0 0 20px rgba(0, 240, 255, 0.8)' }}>💎</div>
                   )}
                   <div style={{ fontSize: '1.4rem', fontWeight: 'bold', color: '#fff', marginBottom: '4px' }}>{bundle.crystal_amount} Diamonds</div>
-                  <div style={{ fontSize: '0.9rem', color: 'var(--neon-gold, #ffe600)', fontWeight: 'bold', marginBottom: '4px' }}>{bundle.title}</div>
+                  <div style={{ fontSize: '0.9rem', color: 'var(--neon-gold, #FBC80D)', fontWeight: 'bold', marginBottom: '4px' }}>{bundle.title}</div>
                   {bundle.description && (
                     <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', marginBottom: '16px', lineHeight: '1.3' }}>
                       {bundle.description}
@@ -249,3 +249,4 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete })
     </div>
   );
 };
+

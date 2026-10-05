@@ -101,7 +101,7 @@ export default function MusicUploadProgress({ isOpen, title, progress, status, m
             fontWeight: 'bold',
             color: '#fff',
             margin: '0 0 16px 0',
-            fontFamily: 'Rajdhani, sans-serif',
+            fontFamily: 'Bebas Neue, sans-serif',
             letterSpacing: '1px'
           }}
         >
@@ -115,7 +115,7 @@ export default function MusicUploadProgress({ isOpen, title, progress, status, m
             color: statusColors[status],
             fontWeight: 'bold',
             marginBottom: '12px',
-            fontFamily: 'Rajdhani, sans-serif'
+            fontFamily: 'Bebas Neue, sans-serif'
           }}
         >
           {status === 'uploading' ? 'Uploading...' : status === 'success' ? '✓ Complete' : '✗ Failed'}
@@ -148,7 +148,7 @@ export default function MusicUploadProgress({ isOpen, title, progress, status, m
               fontSize: '0.9rem',
               fontWeight: 'bold',
               cursor: 'pointer',
-              fontFamily: 'Rajdhani, sans-serif',
+              fontFamily: 'Bebas Neue, sans-serif',
               letterSpacing: '0.5px',
               boxShadow: '0 0 20px rgba(0, 200, 255, 0.4)',
               transition: 'all 0.2s ease'
@@ -177,3 +177,4 @@ export default function MusicUploadProgress({ isOpen, title, progress, status, m
     </div>
   );
 }
+

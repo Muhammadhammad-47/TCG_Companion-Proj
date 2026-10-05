@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Wifi, Swords, Shield, Skull, Zap, ScrollText, MessageSquare,
@@ -2193,7 +2193,7 @@ export default function KontrolaArena() {
                   gap: '8px',
                   cursor: 'pointer',
                   fontWeight: 'bold',
-                  fontFamily: 'Rajdhani, sans-serif'
+                  fontFamily: 'Bebas Neue, sans-serif'
                 }}
               >
                 <ArrowLeft size={18} /> BACK TO HUB
@@ -2220,13 +2220,13 @@ export default function KontrolaArena() {
             {error && (
               <div
                 style={{
-                  background: 'rgba(255, 51, 102, 0.15)',
+                  background: 'rgba(237, 30, 36, 0.15)',
                   border: '1.5px solid var(--neon-crimson)',
                   borderRadius: '12px',
                   padding: '12px 20px',
                   maxWidth: '700px',
                   margin: '0 auto 16px auto',
-                  color: '#ff88aa',
+                  color: '#ff6b8f',
                   textAlign: 'center',
                   fontWeight: 'bold'
                 }}
@@ -2255,7 +2255,7 @@ export default function KontrolaArena() {
                     <label
                       style={{
                         display: 'block',
-                        fontFamily: 'Rajdhani, sans-serif',
+                        fontFamily: 'Bebas Neue, sans-serif',
                         fontSize: '1.15rem',
                         color: 'var(--neon-cyan)',
                         fontWeight: '900',
@@ -2314,10 +2314,10 @@ export default function KontrolaArena() {
                       padding: '14px 20px',
                       borderRadius: '12px',
                       border: '2px solid var(--neon-gold)',
-                      background: 'linear-gradient(135deg, rgba(255, 230, 0, 0.2) 0%, rgba(255, 200, 0, 0.1) 100%)',
+                      background: 'linear-gradient(135deg, rgba(251, 200, 13, 0.2) 0%, rgba(255, 200, 0, 0.1) 100%)',
                       color: 'var(--neon-gold)',
                       fontWeight: 'bold',
-                      fontFamily: 'Rajdhani, sans-serif',
+                      fontFamily: 'Bebas Neue, sans-serif',
                       fontSize: '1.2rem',
                       cursor: 'pointer',
                       display: 'flex',
@@ -2325,18 +2325,18 @@ export default function KontrolaArena() {
                       justifyContent: 'center',
                       gap: '12px',
                       transition: 'all 0.3s ease',
-                      boxShadow: '0 4px 15px rgba(255, 230, 0, 0.2)',
+                      boxShadow: '0 4px 15px rgba(251, 200, 13, 0.2)',
                       textTransform: 'uppercase',
                       letterSpacing: '1px'
                     }}
                     onMouseOver={(e) => {
-                      e.target.style.background = 'linear-gradient(135deg, rgba(255, 230, 0, 0.3) 0%, rgba(255, 200, 0, 0.2) 100%)';
-                      e.target.style.boxShadow = '0 6px 20px rgba(255, 230, 0, 0.3)';
+                      e.target.style.background = 'linear-gradient(135deg, rgba(251, 200, 13, 0.3) 0%, rgba(255, 200, 0, 0.2) 100%)';
+                      e.target.style.boxShadow = '0 6px 20px rgba(251, 200, 13, 0.3)';
                       e.target.style.transform = 'translateY(-2px)';
                     }}
                     onMouseOut={(e) => {
-                      e.target.style.background = 'linear-gradient(135deg, rgba(255, 230, 0, 0.2) 0%, rgba(255, 200, 0, 0.1) 100%)';
-                      e.target.style.boxShadow = '0 4px 15px rgba(255, 230, 0, 0.2)';
+                      e.target.style.background = 'linear-gradient(135deg, rgba(251, 200, 13, 0.2) 0%, rgba(255, 200, 0, 0.1) 100%)';
+                      e.target.style.boxShadow = '0 4px 15px rgba(251, 200, 13, 0.2)';
                       e.target.style.transform = 'translateY(0)';
                     }}
                   >
@@ -2358,7 +2358,7 @@ export default function KontrolaArena() {
                       background: lobbyTab === 'browse' ? 'rgba(0, 240, 255, 0.15)' : 'rgba(0,0,0,0.4)',
                       color: lobbyTab === 'browse' ? 'var(--neon-cyan)' : '#fff',
                       fontWeight: 'bold',
-                      fontFamily: 'Rajdhani, sans-serif',
+                      fontFamily: 'Bebas Neue, sans-serif',
                       fontSize: '1.05rem',
                       cursor: 'pointer',
                       display: 'flex',
@@ -2382,7 +2382,7 @@ export default function KontrolaArena() {
                       background: lobbyTab === 'create' ? 'rgba(0, 240, 255, 0.15)' : 'rgba(0,0,0,0.4)',
                       color: lobbyTab === 'create' ? 'var(--neon-cyan)' : '#fff',
                       fontWeight: 'bold',
-                      fontFamily: 'Rajdhani, sans-serif',
+                      fontFamily: 'Bebas Neue, sans-serif',
                       fontSize: '1.05rem',
                       cursor: 'pointer',
                       display: 'flex',
@@ -2403,10 +2403,10 @@ export default function KontrolaArena() {
                       padding: '12px',
                       borderRadius: '10px',
                       border: lobbyTab === 'join' ? '1.5px solid var(--neon-gold)' : '1px solid rgba(255,255,255,0.1)',
-                      background: lobbyTab === 'join' ? 'rgba(255, 230, 0, 0.15)' : 'rgba(0,0,0,0.4)',
+                      background: lobbyTab === 'join' ? 'rgba(251, 200, 13, 0.15)' : 'rgba(0,0,0,0.4)',
                       color: lobbyTab === 'join' ? 'var(--neon-gold)' : '#fff',
                       fontWeight: 'bold',
-                      fontFamily: 'Rajdhani, sans-serif',
+                      fontFamily: 'Bebas Neue, sans-serif',
                       fontSize: '1.05rem',
                       cursor: 'pointer',
                       display: 'flex',
@@ -2504,7 +2504,7 @@ export default function KontrolaArena() {
                                   padding: '6px 12px',
                                   fontSize: '1.1rem',
                                   fontWeight: '900',
-                                  fontFamily: 'Rajdhani, sans-serif',
+                                  fontFamily: 'Bebas Neue, sans-serif',
                                   color: 'var(--neon-cyan)',
                                   letterSpacing: '2px'
                                 }}
@@ -2570,7 +2570,7 @@ export default function KontrolaArena() {
                       padding: '24px'
                     }}
                   >
-                    <h3 style={{ margin: '0 0 8px 0', fontSize: '1.4rem', fontFamily: 'Rajdhani, sans-serif', color: 'var(--neon-cyan)' }}>
+                    <h3 style={{ margin: '0 0 8px 0', fontSize: '1.4rem', fontFamily: 'Bebas Neue, sans-serif', color: 'var(--neon-cyan)' }}>
                       HOST A NEW BATTLE ARENA
                     </h3>
                     <p style={{ margin: '0 0 18px 0', fontSize: '0.95rem', color: 'rgba(255,255,255,0.7)' }}>
@@ -2610,12 +2610,12 @@ export default function KontrolaArena() {
                   <div
                     style={{
                       background: 'rgba(14, 22, 42, 0.88)',
-                      border: '1px solid rgba(255, 230, 0, 0.3)',
+                      border: '1px solid rgba(251, 200, 13, 0.3)',
                       borderRadius: '16px',
                       padding: '24px'
                     }}
                   >
-                    <h3 style={{ margin: '0 0 8px 0', fontSize: '1.4rem', fontFamily: 'Rajdhani, sans-serif', color: 'var(--neon-gold)' }}>
+                    <h3 style={{ margin: '0 0 8px 0', fontSize: '1.4rem', fontFamily: 'Bebas Neue, sans-serif', color: 'var(--neon-gold)' }}>
                       JOIN PRIVATE ROOM
                     </h3>
                     <p style={{ margin: '0 0 18px 0', fontSize: '0.95rem', color: 'rgba(255,255,255,0.7)' }}>
@@ -2656,7 +2656,7 @@ export default function KontrolaArena() {
                         cursor: matchId && matchId.length >= 4 ? 'pointer' : 'not-allowed',
                         background:
                           matchId && matchId.length >= 4
-                            ? 'linear-gradient(90deg, #ffd700 0%, #ff9900 100%)'
+                            ? 'linear-gradient(90deg, #FBC80D 0%, #ff9900 100%)'
                             : 'rgba(255,255,255,0.1)',
                         border: 'none',
                         color: matchId && matchId.length >= 4 ? '#000' : 'rgba(255,255,255,0.4)',
@@ -2696,7 +2696,7 @@ export default function KontrolaArena() {
                     fontWeight: '900',
                     color: 'var(--neon-cyan)',
                     letterSpacing: '8px',
-                    fontFamily: 'Rajdhani, sans-serif',
+                    fontFamily: 'Bebas Neue, sans-serif',
                     textShadow: '0 0 20px rgba(0, 240, 255, 0.6)',
                     marginBottom: '20px'
                   }}
@@ -2776,7 +2776,7 @@ export default function KontrolaArena() {
                                   display: 'flex',
                                   alignItems: 'center',
                                   gap: '4px',
-                                  background: 'rgba(255, 230, 0, 0.15)',
+                                  background: 'rgba(251, 200, 13, 0.15)',
                                   border: '1px solid var(--neon-gold)',
                                   color: 'var(--neon-gold)',
                                   borderRadius: '6px',
@@ -2845,9 +2845,9 @@ export default function KontrolaArena() {
                       fontSize: '1.15rem',
                       fontWeight: 'bold',
                       padding: '12px',
-                      background: 'rgba(255, 230, 0, 0.08)',
+                      background: 'rgba(251, 200, 13, 0.08)',
                       borderRadius: '10px',
-                      border: '1px solid rgba(255, 230, 0, 0.2)'
+                      border: '1px solid rgba(251, 200, 13, 0.2)'
                     }}
                   >
                     ⏳ Waiting for Room Host to commence battle...
@@ -2901,10 +2901,10 @@ export default function KontrolaArena() {
                   ? 'linear-gradient(90deg, #ff2a55 0%, #c00028 100%)'
                   : inAppNotice.type === 'info'
                   ? 'linear-gradient(90deg, #00f0ff 0%, #0077ff 100%)'
-                  : 'linear-gradient(90deg, #ffe600 0%, #ff9900 100%)',
+                  : 'linear-gradient(90deg, #FBC80D 0%, #ff9900 100%)',
                 color: '#000',
                 fontWeight: '900',
-                fontFamily: 'Rajdhani, sans-serif',
+                fontFamily: 'Bebas Neue, sans-serif',
                 fontSize: '1.05rem',
                 letterSpacing: '0.5px',
                 boxShadow: '0 8px 30px rgba(0,0,0,0.8), 0 0 20px rgba(0, 240, 255, 0.4)',
@@ -2954,7 +2954,7 @@ export default function KontrolaArena() {
                  boxShadow: '0 5px 15px rgba(0,0,0,0.6)',
                  animation: 'slideInLeft 0.3s ease-out, fadeOut 0.3s ease-in 4.2s forwards'
                }}>
-                 <span style={{ fontSize: '0.75rem', color: toast.type === 'TAUNT' ? '#ffe600' : '#00f0ff', fontWeight: 'bold' }}>
+                 <span style={{ fontSize: '0.75rem', color: toast.type === 'TAUNT' ? '#FBC80D' : '#00f0ff', fontWeight: 'bold' }}>
                    {toast.type === 'TAUNT' ? '🗯️ TAUNT' : '💬 MSG'} • {toast.senderName}
                  </span>
                  <span style={{ fontSize: '0.9rem', fontWeight: '500' }}>
@@ -3027,7 +3027,7 @@ export default function KontrolaArena() {
                 <h1
                   style={{
                     color: 'var(--neon-gold)',
-                    fontFamily: 'Rajdhani, sans-serif',
+                    fontFamily: 'Bebas Neue, sans-serif',
                     fontSize: '2.4rem',
                     margin: '0 0 8px 0',
                     textTransform: 'uppercase'
@@ -3049,10 +3049,10 @@ export default function KontrolaArena() {
                     const cards = gameState?.stats?.cardsPlayed?.[pid] || 0;
                     const turns = gameState?.stats?.turnsTaken?.[pid] || 0;
                     return (
-                      <div key={pid} style={{ background: isWinner ? 'rgba(255, 215, 0, 0.15)' : 'rgba(255,255,255,0.05)', padding: '10px 14px', borderRadius: '8px', marginBottom: '8px', border: isWinner ? '1px solid var(--neon-gold)' : '1px solid transparent' }}>
+                      <div key={pid} style={{ background: isWinner ? 'rgba(251, 200, 13, 0.15)' : 'rgba(255,255,255,0.05)', padding: '10px 14px', borderRadius: '8px', marginBottom: '8px', border: isWinner ? '1px solid var(--neon-gold)' : '1px solid transparent' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <span style={{ fontWeight: 'bold', color: isWinner ? '#ffe600' : '#fff' }}>{idx + 1}. {pName}</span>
+                            <span style={{ fontWeight: 'bold', color: isWinner ? '#FBC80D' : '#fff' }}>{idx + 1}. {pName}</span>
                             <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px' }}>{charState?.name}</span>
                           </div>
                           <div style={{ fontWeight: 'bold', color: charState?.hp > 0 ? '#39ff14' : '#ff4444' }}>
@@ -3109,12 +3109,12 @@ export default function KontrolaArena() {
                   ? 'rgba(0, 240, 255, 0.12)'
                   : isMyTurn
                   ? 'rgba(57, 255, 20, 0.15)'
-                  : 'rgba(255, 51, 102, 0.12)',
+                  : 'rgba(237, 30, 36, 0.12)',
                 border: isSpectator
                   ? '1.5px solid var(--neon-cyan)'
                   : isMyTurn
                   ? '2px solid #39ff14'
-                  : '1.5px solid rgba(255, 51, 102, 0.4)',
+                  : '1.5px solid rgba(237, 30, 36, 0.4)',
                 boxShadow: isMyTurn ? '0 0 20px rgba(57, 255, 20, 0.4)' : 'none'
               }}
             >
@@ -3129,7 +3129,7 @@ export default function KontrolaArena() {
                   <span style={{ fontSize: '0.95rem', letterSpacing: '1px' }}>⚡ YOUR TURN TO STRIKE!</span>
                 </div>
               ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ff88aa', fontWeight: 'bold' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ff6b8f', fontWeight: 'bold' }}>
                   <Clock size={16} />
                   <span>WAITING FOR {activeTurnPlayerName.toUpperCase()}...</span>
                 </div>
@@ -3158,7 +3158,7 @@ export default function KontrolaArena() {
                   borderRadius: '6px',
                   fontSize: '0.82rem',
                   fontWeight: 'bold',
-                  fontFamily: 'Rajdhani, sans-serif'
+                  fontFamily: 'Bebas Neue, sans-serif'
                 }}
                 title="Turn time remaining"
               >
@@ -3171,9 +3171,9 @@ export default function KontrolaArena() {
                 <button
                   onClick={handleForceSkipCurrentPlayer}
                   style={{
-                    background: 'rgba(255, 51, 102, 0.2)',
+                    background: 'rgba(237, 30, 36, 0.2)',
                     border: '1px solid var(--neon-crimson)',
-                    color: '#ff88aa',
+                    color: '#ff6b8f',
                     padding: '4px 10px',
                     borderRadius: '6px',
                     fontSize: '0.78rem',
@@ -3195,7 +3195,7 @@ export default function KontrolaArena() {
                 <button
                   onClick={handleClaimTurnET}
                   style={{
-                    background: 'linear-gradient(90deg, #ffd700, #ff9900)',
+                    background: 'linear-gradient(90deg, #FBC80D, #ff9900)',
                     border: 'none',
                     borderRadius: '6px',
                     padding: '4px 10px',
@@ -3206,7 +3206,7 @@ export default function KontrolaArena() {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '4px',
-                    boxShadow: '0 0 10px rgba(255, 215, 0, 0.4)'
+                    boxShadow: '0 0 10px rgba(251, 200, 13, 0.4)'
                   }}
                 >
                   <Zap size={13} fill="#000" /> CLAIM +1 ET
@@ -3468,7 +3468,7 @@ export default function KontrolaArena() {
                       fontSize: '1.4rem',
                       fontWeight: '900',
                       color: isMyTurn ? '#39ff14' : 'var(--neon-cyan)',
-                      fontFamily: 'Rajdhani, sans-serif',
+                      fontFamily: 'Bebas Neue, sans-serif',
                       letterSpacing: '1px'
                     }}
                   >
@@ -3577,7 +3577,7 @@ export default function KontrolaArena() {
                           }}
                           style={{
                             flex: '1 1 45%',
-                            background: isSelectedTarget ? 'rgba(255, 51, 102, 0.3)' : 'rgba(0, 0, 0, 0.55)',
+                            background: isSelectedTarget ? 'rgba(237, 30, 36, 0.3)' : 'rgba(0, 0, 0, 0.55)',
                             border: isSelectedTarget ? '1.5px solid var(--neon-crimson)' : '1px solid rgba(255, 255, 255, 0.12)',
                             color: isSelectedTarget ? 'var(--neon-crimson)' : '#fff',
                             borderRadius: '8px',
@@ -3612,7 +3612,7 @@ export default function KontrolaArena() {
                                 setSelectedCharacterAttack(atkName);
                               }}
                               style={{
-                                background: isSelectedAtk ? 'rgba(255, 51, 102, 0.25)' : 'rgba(0, 0, 0, 0.45)',
+                                background: isSelectedAtk ? 'rgba(237, 30, 36, 0.25)' : 'rgba(0, 0, 0, 0.45)',
                                 border: isSelectedAtk ? '1.5px solid var(--neon-crimson)' : '1px solid rgba(255, 255, 255, 0.1)',
                                 color: isSelectedAtk ? 'var(--neon-crimson)' : '#fff',
                                 borderRadius: '8px',
@@ -4096,7 +4096,7 @@ export default function KontrolaArena() {
               <div style={{
                 background: 'rgba(0,0,0,0.8)', border: '2px solid var(--neon-gold)', borderRadius: '16px',
                 padding: '40px', display: 'flex', flexDirection: 'column', gap: '20px', minWidth: '400px',
-                boxShadow: '0 0 40px rgba(255, 215, 0, 0.3)'
+                boxShadow: '0 0 40px rgba(251, 200, 13, 0.3)'
               }}>
                 {[...gameState.players].sort((a,b) => (gameState.rollOffs?.[b] || 0) - (gameState.rollOffs?.[a] || 0)).map((pId, idx) => (
                   <div key={pId} style={{
@@ -4341,7 +4341,7 @@ export default function KontrolaArena() {
               zIndex: 9999,
               backdropFilter: 'blur(12px)',
               transition: 'all 0.3s ease',
-              fontFamily: 'Rajdhani, sans-serif'
+              fontFamily: 'Bebas Neue, sans-serif'
             }}>
               {/* Header with toggle */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMusicPlayerOpen ? '12px' : '0' }}>
@@ -4414,7 +4414,7 @@ export default function KontrolaArena() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
                     <button
                       onClick={() => setIsMuted(!isMuted)}
-                      style={{ background: 'none', border: 'none', color: isMuted ? '#ff88aa' : '#c084fc', cursor: 'pointer', padding: '4px' }}
+                      style={{ background: 'none', border: 'none', color: isMuted ? '#ff6b8f' : '#c084fc', cursor: 'pointer', padding: '4px' }}
                       title={isMuted ? 'Unmute' : 'Mute'}
                     >
                       {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
@@ -4456,7 +4456,7 @@ export default function KontrolaArena() {
                           cursor: 'pointer',
                           marginBottom: '4px',
                           fontSize: '0.8rem',
-                          fontFamily: 'Rajdhani, sans-serif',
+                          fontFamily: 'Bebas Neue, sans-serif',
                           transition: 'all 0.2s ease'
                         }}
                         onMouseOver={e => {
@@ -4505,6 +4505,7 @@ export default function KontrolaArena() {
     </div>
   );
 }
+
 
 
 

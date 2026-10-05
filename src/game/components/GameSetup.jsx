@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Swords, Plus, Minus, ArrowLeft, RotateCw, RotateCcw,
   Crown, X, ChevronDown, ChevronUp, Users, Info, GripVertical, Edit2,
@@ -185,10 +185,10 @@ export default function GameSetup({ onStartGame, onBack }) {
         <header className="setup-top-header">
           <h1 className="setup-main-title">
             <span>Game Setup</span>
-            <span className="setup-sparkle-icon">✦</span>
+            <span className="setup-sparkle-icon">?</span>
           </h1>
           <p className="setup-subtitle-bar">
-            <span className="sparkle-cyan">✦</span>
+            <span className="sparkle-cyan">?</span>
             <span>CONFIGURE YOUR DUEL. SET PLAYERS, TURN ORDER, AND STARTING SCORE.</span>
           </p>
         </header>
@@ -401,10 +401,10 @@ export default function GameSetup({ onStartGame, onBack }) {
 
               {firstPlayerRolls && (
                 <div style={{ background: 'rgba(0, 240, 255, 0.08)', border: '1px solid rgba(0, 240, 255, 0.3)', borderRadius: '8px', padding: '6px 10px', marginBottom: '10px', fontSize: '0.75rem', display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
-                  <span style={{ color: 'var(--neon-gold)', fontWeight: 'bold' }}>🎲 Dice Roll-Off:</span>
+                  <span style={{ color: 'var(--neon-gold)', fontWeight: 'bold' }}>?? Dice Roll-Off:</span>
                   {players.map((p, i) => (
                     <span key={i} style={{ color: i === startingPlayerIndex ? '#39ff14' : 'rgba(255,255,255,0.7)', fontWeight: i === startingPlayerIndex ? 'bold' : 'normal' }}>
-                      P{i + 1} ({firstPlayerRolls[i]?.d1}+{firstPlayerRolls[i]?.d2}={firstPlayerRolls[i]?.total}) {i === startingPlayerIndex ? '👑 Winner!' : ''}
+                      P{i + 1} ({firstPlayerRolls[i]?.d1}+{firstPlayerRolls[i]?.d2}={firstPlayerRolls[i]?.total}) {i === startingPlayerIndex ? '?? Winner!' : ''}
                     </span>
                   ))}
                 </div>
@@ -599,7 +599,7 @@ export default function GameSetup({ onStartGame, onBack }) {
                           border: startingLP === preset.val ? '1.5px solid #00f0ff' : '1px solid rgba(255, 255, 255, 0.15)',
                           borderRadius: '8px',
                           padding: '6px 10px',
-                          color: startingLP === preset.val ? '#00f0ff' : '#94a3b8',
+                          color: startingLP === preset.val ? '#00f0ff' : '#CBD5E1',
                           fontSize: '0.74rem',
                           fontWeight: startingLP === preset.val ? 'bold' : 'normal',
                           cursor: 'pointer',
@@ -612,7 +612,7 @@ export default function GameSetup({ onStartGame, onBack }) {
                   </div>
                 </div>
 
-                <div className="score-hint-text" style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>
+                <div className="score-hint-text" style={{ fontSize: '0.72rem', color: '#CBD5E1', marginTop: '2px' }}>
                   Official base HP is 100 (Max 200 HP). Level 2 unlocks at 150+ HP.
                 </div>
               </div>
@@ -640,4 +640,5 @@ export default function GameSetup({ onStartGame, onBack }) {
     </div>
   );
 }
+
 

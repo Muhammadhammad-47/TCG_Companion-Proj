@@ -106,7 +106,7 @@ export default function DocsPage() {
               <td style={{ padding: '9px 14px', color: row[2] === 'Required' ? 'var(--neon-crimson, #ED1E24)' : 'rgba(255,255,255,0.45)', fontSize: '0.8rem', fontWeight: row[2] === 'Required' ? 'bold' : 'normal' }}>
                 {row[2]}
               </td>
-              <td style={{ padding: '9px 14px', color: '#94a3b8', fontSize: '0.84rem' }}>{row[3]}</td>
+              <td style={{ padding: '9px 14px', color: '#CBD5E1', fontSize: '0.84rem' }}>{row[3]}</td>
             </tr>
           ))}
         </tbody>
@@ -118,8 +118,8 @@ export default function DocsPage() {
     switch (method) {
       case 'GET': return `rgba(0, 240, 255, ${alpha})`;
       case 'POST': return `rgba(57, 255, 20, ${alpha})`;
-      case 'PATCH': return `rgba(255, 230, 0, ${alpha})`;
-      case 'DELETE': return `rgba(255, 51, 102, ${alpha})`;
+      case 'PATCH': return `rgba(251, 200, 13, ${alpha})`;
+      case 'DELETE': return `rgba(237, 30, 36, ${alpha})`;
       default: return `rgba(255, 255, 255, ${alpha})`;
     }
   };
@@ -157,7 +157,7 @@ export default function DocsPage() {
         
         {isOpen && (
           <div style={{ padding: '20px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-            <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0 0 16px 0', lineHeight: '1.5' }}>{description}</p>
+            <p style={{ color: '#CBD5E1', fontSize: '0.85rem', margin: '0 0 16px 0', lineHeight: '1.5' }}>{description}</p>
             {parameters && parameters.length > 0 && (
                <>
                  <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#fff', marginBottom: '8px' }}>Parameters</div>
@@ -329,14 +329,14 @@ export default function DocsPage() {
                   padding: '5px 12px',
                   fontSize: '0.85rem',
                   fontWeight: 'bold',
-                  fontFamily: 'var(--font-display, "Rajdhani", sans-serif)',
+                  fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)',
                   cursor: 'pointer'
                 }}
               >
                 <ArrowLeft size={15} /> HUB
               </button>
               <div className="brand-pill-badge" style={{ fontSize: '0.8rem', padding: '2px 8px' }}>注意!</div>
-              <div style={{ fontSize: '1.25rem', fontWeight: '900', letterSpacing: '1.5px', fontFamily: 'var(--font-display, "Rajdhani", sans-serif)', color: '#fff' }}>
+              <div style={{ fontSize: '1.25rem', fontWeight: '900', letterSpacing: '1.5px', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', color: '#fff' }}>
                 OPENAPI PORTAL <span style={{ color: 'var(--neon-cyan, #00f0ff)', fontSize: '0.85rem', fontWeight: 'normal', letterSpacing: '1px' }}>// TCG APIS</span>
               </div>
             </div>
@@ -435,7 +435,7 @@ export default function DocsPage() {
                             <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--neon-cyan, #00f0ff)' }}>{sr.title}</span>
                             <span style={{ fontSize: '0.68rem', background: getMethodColor(sr.method, 0.15), color: getMethodColor(sr.method, 1), padding: '1px 5px', borderRadius: '4px' }}>{sr.method}</span>
                           </div>
-                          <code style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{sr.path}</code>
+                          <code style={{ fontSize: '0.72rem', color: '#CBD5E1' }}>{sr.path}</code>
                         </button>
                       ))
                     )}
@@ -586,3 +586,4 @@ export default function DocsPage() {
     </>
   );
 }
+
