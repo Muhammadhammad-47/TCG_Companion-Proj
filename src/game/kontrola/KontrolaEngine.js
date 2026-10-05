@@ -76,7 +76,7 @@ export const KONTROLA_CHARACTERS = {
     weaknessBonus: 15,
     innateDP: 10,
     retreatSpeed: 1,
-    themeColor: '#a855f7',
+    themeColor: '#FBC80D',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/KAT WILD CARD GOLD.png',
     attacks: {
       'SAVAGE PAWS PER STRIKE': { ap: 5, dice: 1, element: 'Physical', desc: 'Roll 1 Die × 5 AP Paw strikes.' },
@@ -118,7 +118,7 @@ export const KONTROLA_CHARACTERS = {
     weaknessBonus: 10,
     innateDP: 10,
     retreatSpeed: 4,
-    themeColor: '#e0b0ff',
+    themeColor: '#FBC80D',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/QUEENY WILD CARD GOLD.png',
     attacks: {
       'HAIR WHIP PER WHIP': { ap: 4, dice: 1, element: 'Physical', desc: 'Roll 1 Die × 4 AP Hair whip strikes.' },

@@ -269,7 +269,7 @@ export default function MainMenu({
                   <button
                     className="btn-next-turn-ribbon"
                     onClick={handleNextTurn}
-                    style={{ marginTop: '2px', padding: '7px', fontSize: '0.8rem', borderRadius: '6px', background: 'linear-gradient(90deg, #ff0055, #ff5500)', border: 'none', color: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
+                    style={{ marginTop: '2px', padding: '7px', fontSize: '0.8rem', borderRadius: '6px', background: 'linear-gradient(90deg, #FBC80D 0%, #FFD700 100%)', border: '2px solid #FBC80D', color: '#000', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 15px rgba(251, 200, 13, 0.5)' }}
                   >
                     <span>NEXT PLAYER (SWITCH)</span>
                   </button>

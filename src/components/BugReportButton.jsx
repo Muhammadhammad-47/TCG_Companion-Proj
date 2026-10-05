@@ -85,8 +85,8 @@ export default function BugReportButton({
       <button
         onClick={() => setIsOpen(true)}
         style={{
-          background: 'linear-gradient(135deg, #FBC80D 0%, #FFD700 100%)',
-          border: 'none',
+          background: '#39ff14',
+          border: '2px solid #39ff14',
           borderRadius: '12px',
           color: '#000000',
           cursor: 'pointer',
@@ -97,17 +97,17 @@ export default function BugReportButton({
           transition: 'all 0.3s ease',
           fontFamily: 'Bebas Neue, sans-serif',
           letterSpacing: '0.5px',
-          boxShadow: '0 0 20px rgba(251, 200, 13, 0.5)',
+          boxShadow: '0 0 20px rgba(57, 255, 20, 0.8)',
           padding: '10px 18px',
           fontSize: '0.9rem',
           ...style
         }}
         onMouseOver={(e) => {
-          e.currentTarget.style.boxShadow = '0 0 30px rgba(251, 200, 13, 0.8)';
+          e.currentTarget.style.boxShadow = '0 0 30px rgba(57, 255, 20, 1)';
           e.currentTarget.style.transform = 'scale(1.05)';
         }}
         onMouseOut={(e) => {
-          e.currentTarget.style.boxShadow = '0 0 20px rgba(251, 200, 13, 0.5)';
+          e.currentTarget.style.boxShadow = '0 0 20px rgba(57, 255, 20, 0.8)';
           e.currentTarget.style.transform = 'scale(1)';
         }}
       >

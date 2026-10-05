@@ -788,9 +788,9 @@ export default function AdminPage() {
       color = 'var(--neon-gold, #FBC80D)';
       border = 'rgba(251, 200, 13, 0.35)';
     } else if (c === 'characters') {
-      bg = 'rgba(168, 85, 247, 0.12)';
-      color = '#c084fc';
-      border = 'rgba(168, 85, 247, 0.35)';
+      bg = 'rgba(251, 200, 13, 0.12)';
+      color = '#FBC80D';
+      border = 'rgba(251, 200, 13, 0.35)';
     } else if (c === 'lore') {
       bg = 'rgba(57, 255, 20, 0.12)';
       color = '#39ff14';
@@ -971,15 +971,15 @@ export default function AdminPage() {
                   style={{
                     marginTop: '8px',
                     padding: '12px',
-                    background: 'linear-gradient(135deg, #FBC80D 0%, #FFD700 100%)',
-                    border: 'none',
+                    background: 'linear-gradient(180deg, #ED1E24 0%, #b8003a 100%)',
+                    border: '2px solid #ff5c8a',
                     borderRadius: '10px',
-                    color: '#050a18',
+                    color: '#FFFFFF',
                     fontSize: '1.05rem',
                     fontWeight: '900',
                     letterSpacing: '1px',
                     cursor: isLoggingIn ? 'not-allowed' : 'pointer',
-                    boxShadow: '0 0 20px rgba(251, 200, 13, 0.4)'
+                    boxShadow: '0 0 20px rgba(237, 30, 36, 0.6)'
                   }}
                 >
                   {isLoggingIn ? 'AUTHENTICATING...' : 'ENTER COMMAND DECK'}
@@ -1048,7 +1048,7 @@ export default function AdminPage() {
               transition: background-color 0.2s ease, border-color 0.2s ease;
             }
             .data-row:hover {
-              background: rgba(18, 30, 60, 0.75) !important;
+              background: rgba(0, 0, 0, 0.95) !important;
               border-color: rgba(251, 200, 13, 0.35) !important;
             }
             .kpi-card {
@@ -1075,7 +1075,7 @@ export default function AdminPage() {
               justifyContent: 'space-between',
               alignItems: 'center',
               padding: '0 24px',
-              background: 'rgba(10, 20, 45, 0.94)',
+              background: 'rgba(0, 0, 0, 0.98)',
               borderBottom: '1.5px solid rgba(251, 200, 13, 0.25)',
               backdropFilter: 'blur(14px)',
               zIndex: 100,
@@ -1142,7 +1142,7 @@ export default function AdminPage() {
             <aside
               style={{
                 width: '240px',
-                background: 'rgba(8, 14, 30, 0.95)',
+                background: 'rgba(0, 0, 0, 0.95)',
                 borderRight: '1px solid rgba(251, 200, 13, 0.18)',
                 display: 'flex',
                 flexDirection: 'column',
@@ -1190,7 +1190,7 @@ export default function AdminPage() {
                           style={{
                             fontSize: '0.72rem',
                             background: isSel ? 'var(--neon-gold, #FBC80D)' : 'rgba(255, 255, 255, 0.1)',
-                            color: isSel ? '#050a18' : 'rgba(255, 255, 255, 0.6)',
+                            color: isSel ? '#000000' : 'rgba(255, 255, 255, 0.6)',
                             padding: '1px 6px',
                             borderRadius: '10px',
                             fontWeight: 'bold'
@@ -1705,7 +1705,7 @@ export default function AdminPage() {
                     <div style={{ display: 'flex', gap: '3px', flexShrink: 0, flexWrap: 'nowrap' }}>
                       <button onClick={() => setIsNewDocModalOpen(true)} title="New Document" style={{ background: 'transparent', border: '1px solid rgba(0,240,255,0.4)', color: 'var(--neon-gold, #FBC80D)', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Plus size={11} /></button>
                       <button onClick={() => setIsAppendModalOpen(true)} title="Append Q&A" style={{ background: 'transparent', border: '1px solid rgba(57,255,20,0.4)', color: '#39ff14', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FilePlus size={11} /></button>
-                      <button onClick={handleOpenEditDocModal} title="Edit Document" style={{ background: 'linear-gradient(90deg,#FBC80D,#FBC80D)', border: 'none', color: '#050a18', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Edit2 size={11} /></button>
+                      <button onClick={handleOpenEditDocModal} title="Edit Document" style={{ background: 'linear-gradient(90deg,#FBC80D,#FBC80D)', border: 'none', color: '#000000', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Edit2 size={11} /></button>
                       <button onClick={() => handleDownloadDoc(activeDoc)} title="Export" style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.65)', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Download size={11} /></button>
                       {activeDoc?.isMaster ? (
                         <button onClick={handleResetMasterDoc} title="Reset Master" style={{ background: 'transparent', border: '1px solid rgba(251, 200, 13,0.3)', color: 'var(--neon-gold, #FBC80D)', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RefreshCw size={11} /></button>
@@ -3333,7 +3333,7 @@ export default function AdminPage() {
                   </button>
                   <button
                     onClick={handleSaveCrystals}
-                    style={{ padding: '7px 16px', borderRadius: '6px', border: 'none', background: 'linear-gradient(90deg, #FBC80D 0%, #ffaa00 100%)', color: '#050a18', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem' }}
+                    style={{ padding: '7px 16px', borderRadius: '6px', border: 'none', background: 'linear-gradient(90deg, #FBC80D 0%, #ffaa00 100%)', color: '#000000', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem' }}
                   >
                     Save
                   </button>
@@ -3485,7 +3485,7 @@ export default function AdminPage() {
                       <button
                         type="submit"
                         disabled={isSavingDoc}
-                        style={{ padding: '7px 18px', borderRadius: '6px', border: 'none', background: 'linear-gradient(135deg, #FBC80D 0%, #FFD700 100%)', color: '#050a18', fontWeight: 'bold', cursor: isSavingDoc ? 'not-allowed' : 'pointer', fontSize: '0.84rem', opacity: isSavingDoc ? 0.7 : 1 }}
+                        style={{ padding: '7px 18px', borderRadius: '6px', border: 'none', background: 'linear-gradient(135deg, #FBC80D 0%, #FFD700 100%)', color: '#000000', fontWeight: 'bold', cursor: isSavingDoc ? 'not-allowed' : 'pointer', fontSize: '0.84rem', opacity: isSavingDoc ? 0.7 : 1 }}
                       >
                         {isSavingDoc ? 'Saving...' : 'Save Changes'}
                       </button>
@@ -3613,7 +3613,7 @@ export default function AdminPage() {
                     <button
                       type="submit"
                       disabled={isSavingDoc}
-                      style={{ padding: '7px 18px', borderRadius: '6px', border: 'none', background: 'linear-gradient(90deg, #39ff14, #00cc44)', color: '#050a18', fontWeight: 'bold', cursor: isSavingDoc ? 'not-allowed' : 'pointer', fontSize: '0.84rem', opacity: isSavingDoc ? 0.7 : 1 }}
+                      style={{ padding: '7px 18px', borderRadius: '6px', border: 'none', background: 'linear-gradient(90deg, #39ff14, #00cc44)', color: '#000000', fontWeight: 'bold', cursor: isSavingDoc ? 'not-allowed' : 'pointer', fontSize: '0.84rem', opacity: isSavingDoc ? 0.7 : 1 }}
                     >
                       {isSavingDoc ? 'Saving...' : `Append to ${activeDoc.filename}`}
                     </button>
@@ -3702,7 +3702,7 @@ export default function AdminPage() {
                     <button
                       type="submit"
                       disabled={isSavingDoc}
-                      style={{ padding: '7px 18px', borderRadius: '6px', border: 'none', background: 'linear-gradient(135deg, #FBC80D 0%, #FFD700 100%)', color: '#050a18', fontWeight: 'bold', cursor: isSavingDoc ? 'not-allowed' : 'pointer', fontSize: '0.84rem', opacity: isSavingDoc ? 0.7 : 1 }}
+                      style={{ padding: '7px 18px', borderRadius: '6px', border: 'none', background: 'linear-gradient(135deg, #FBC80D 0%, #FFD700 100%)', color: '#000000', fontWeight: 'bold', cursor: isSavingDoc ? 'not-allowed' : 'pointer', fontSize: '0.84rem', opacity: isSavingDoc ? 0.7 : 1 }}
                     >
                       {isSavingDoc ? 'Creating...' : 'Create Document'}
                     </button>

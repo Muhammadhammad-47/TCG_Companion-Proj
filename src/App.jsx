@@ -1025,8 +1025,6 @@ export function Chat({ onBack, isOverlay = false }) {
   const chatContent = (
     <div className="webgl-screen menu-screen" style={{ padding: '0', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%', width: layoutWidth, alignItems: 'stretch', borderRadius: isOverlay ? '0' : undefined }}>
       <div className="menu-bg-elements" style={{ zIndex: 0 }}>
-        <div className="neon-streak-red"></div>
-        <div className="neon-streak-blue"></div>
         <div className="subtle-watermark-card left-wm"></div>
         <div className="subtle-watermark-card right-wm"></div>
       </div>
@@ -1300,7 +1298,7 @@ export function Chat({ onBack, isOverlay = false }) {
                 style={{
                   width: '100%',
                   maxWidth: '460px',
-                  background: '#0a1428',
+                  background: 'rgba(0, 0, 0, 0.9)',
                   border: '2px solid var(--neon-gold)',
                   borderRadius: '16px',
                   padding: '24px',
@@ -1587,9 +1585,9 @@ export function Hub() {
                       style={{
                         width: '40px', height: '40px',
                         borderRadius: '50%',
-                        background: 'linear-gradient(135deg, #0d1a38, #1a2a50)',
-                        border: '2px solid rgba(0,240,255,0.5)',
-                        color: 'var(--neon-cyan)',
+                        background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.95))',
+                        border: '2px solid var(--neon-gold)',
+                        color: 'var(--neon-gold)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         cursor: 'pointer',
                         fontSize: '1rem', fontWeight: 'bold',
@@ -1679,8 +1677,6 @@ export function Hub() {
 
 
             <div className="menu-bg-elements" style={{ width: '100%', height: '100%' }}>
-              <div className="neon-streak-red"></div>
-              <div className="neon-streak-blue"></div>
               <div className="subtle-watermark-card left-wm"></div>
               <div className="subtle-watermark-card right-wm"></div>
             </div>
@@ -1695,11 +1691,11 @@ export function Hub() {
             </div>
 
             <div style={{ display: 'flex', gap: '30px', flexDirection: 'column', width: '100%', maxWidth: '800px', zIndex: 10 }}>
-              <button className="btn-enter-game-cta" onClick={() => navigate('/chat')} style={{ width: '100%', padding: '30px 40px', borderRadius: '24px' }}>
-                <div style={{ marginRight: '20px', display: 'flex', alignItems: 'center' }}><Bot size={48} /></div>
+              <button className="btn-enter-game-cta" onClick={() => navigate('/chat')} style={{ width: '100%', padding: '30px 40px', borderRadius: '24px', background: 'linear-gradient(180deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.95) 100%)', border: '2px solid var(--neon-gold)', color: 'var(--text-main)', cursor: 'pointer', transition: 'all 0.3s ease', display: 'flex', alignItems: 'center' }}>
+                <div style={{ marginRight: '20px', display: 'flex', alignItems: 'center', color: 'var(--neon-gold)' }}><Bot size={48} /></div>
                 <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '8px' }}>TCG Chatbot</div>
-                  <div style={{ fontSize: '1.2rem', opacity: 0.8, fontWeight: 'normal' }}>Chat Companion & Card Knowledge</div>
+                  <div style={{ fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '8px', color: 'var(--text-main)' }}>TCG Chatbot</div>
+                  <div style={{ fontSize: '1.2rem', opacity: 0.8, fontWeight: 'normal', color: 'var(--text-muted)' }}>Chat Companion & Card Knowledge</div>
                 </div>
               </button>
 
@@ -1723,25 +1719,27 @@ export function Hub() {
                   padding: '30px 40px', 
                   borderRadius: '24px', 
                   background: canAccessModule('game', appSettings, userProfile) 
-                    ? 'linear-gradient(90deg, #0d1a38 0%, #050a18 100%)' 
-                    : 'linear-gradient(90deg, rgba(13, 26, 56, 0.3) 0%, var(--bg-card) 100%)',
+                    ? 'linear-gradient(180deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.95) 100%)'
+                    : 'linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.6) 100%)',
                   border: canAccessModule('game', appSettings, userProfile)
-                    ? '2px solid var(--neon-cyan)'
+                    ? '2px solid var(--neon-gold)'
                     : '2px solid rgba(251, 200, 13, 0.2)',
                   color: canAccessModule('game', appSettings, userProfile)
-                    ? 'var(--neon-cyan)'
+                    ? 'var(--text-main)'
                     : 'rgba(251, 200, 13, 0.4)',
                   position: 'relative',
                   cursor: canAccessModule('game', appSettings, userProfile) ? 'pointer' : 'not-allowed',
                   opacity: canAccessModule('game', appSettings, userProfile) ? 1 : 0.6,
-                  transition: 'all 0.3s ease'
+                  transition: 'all 0.3s ease',
+                  display: 'flex',
+                  alignItems: 'center'
                 }}
               >
                 {renderModuleBadge('game', appSettings, userProfile)}
-                <div style={{ marginRight: '20px', display: 'flex', alignItems: 'center' }}><Swords size={48} /></div>
+                <div style={{ marginRight: '20px', display: 'flex', alignItems: 'center', color: 'var(--neon-gold)' }}><Swords size={48} /></div>
                 <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '8px' }}>Score Calculator</div>
-                  <div style={{ fontSize: '1.2rem', opacity: 0.8, fontWeight: 'normal' }}>Interactive Tabletop Simulator</div>
+                  <div style={{ fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '8px', color: 'var(--text-main)' }}>Score Calculator</div>
+                  <div style={{ fontSize: '1.2rem', opacity: 0.8, fontWeight: 'normal', color: 'var(--text-muted)' }}>Interactive Tabletop Simulator</div>
                 </div>
               </button>
 
@@ -1765,25 +1763,27 @@ export function Hub() {
                   padding: '30px 40px', 
                   borderRadius: '24px', 
                   background: canAccessModule('kontrola', appSettings, userProfile)
-                    ? 'linear-gradient(90deg, #2a0845 0%, #6441A5 100%)'
-                    : 'linear-gradient(90deg, rgba(42, 8, 69, 0.3) 0%, rgba(100, 65, 165, 0.3) 100%)',
+                    ? 'linear-gradient(180deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.95) 100%)'
+                    : 'linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.6) 100%)',
                   border: canAccessModule('kontrola', appSettings, userProfile)
-                    ? '2px solid #e0b0ff'
-                    : '2px solid rgba(224, 176, 255, 0.2)',
+                    ? '2px solid var(--neon-gold)'
+                    : '2px solid rgba(251, 200, 13, 0.2)',
                   color: canAccessModule('kontrola', appSettings, userProfile)
-                    ? '#e0b0ff'
-                    : 'rgba(224, 176, 255, 0.4)',
+                    ? 'var(--text-main)'
+                    : 'rgba(251, 200, 13, 0.4)',
                   position: 'relative',
                   cursor: canAccessModule('kontrola', appSettings, userProfile) ? 'pointer' : 'not-allowed',
                   opacity: canAccessModule('kontrola', appSettings, userProfile) ? 1 : 0.6,
-                  transition: 'all 0.3s ease'
+                  transition: 'all 0.3s ease',
+                  display: 'flex',
+                  alignItems: 'center'
                 }}
               >
                 {renderModuleBadge('kontrola', appSettings, userProfile)}
-                <div style={{ marginRight: '20px', display: 'flex', alignItems: 'center' }}><Swords size={48} /></div>
+                <div style={{ marginRight: '20px', display: 'flex', alignItems: 'center', color: 'var(--neon-gold)' }}><Swords size={48} /></div>
                 <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '8px' }}>Kontrola Game</div>
-                  <div style={{ fontSize: '1.2rem', opacity: 0.8, fontWeight: 'normal' }}>Online Multiplayer Card Battles</div>
+                  <div style={{ fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '8px', color: 'var(--text-main)' }}>Kontrola Game</div>
+                  <div style={{ fontSize: '1.2rem', opacity: 0.8, fontWeight: 'normal', color: 'var(--text-muted)' }}>Online Multiplayer Card Battles</div>
                 </div>
               </button>
 
@@ -1799,16 +1799,18 @@ export function Hub() {
                   padding: '25px 40px', 
                   borderRadius: '24px', 
                   background: userProfile?.is_premium 
-                    ? 'linear-gradient(90deg, #1a0f2e 0%, #0f0820 100%)' 
-                    : 'linear-gradient(90deg, rgba(26,15,46,0.3) 0%, rgba(15,8,32,0.3) 100%)', 
+                    ? 'linear-gradient(180deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.95) 100%)' 
+                    : 'linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.6) 100%)', 
                   border: userProfile?.is_premium 
-                    ? '2px solid rgba(168, 85, 247, 0.5)' 
-                    : '2px solid rgba(168, 85, 247, 0.2)', 
-                  color: userProfile?.is_premium ? '#c084fc' : 'rgba(192, 132, 252, 0.4)',
+                    ? '2px solid var(--neon-gold)' 
+                    : '2px solid rgba(251, 200, 13, 0.2)', 
+                  color: userProfile?.is_premium ? 'var(--text-main)' : 'rgba(251, 200, 13, 0.4)',
                   cursor: userProfile?.is_premium ? 'pointer' : 'not-allowed',
                   opacity: userProfile?.is_premium ? 1 : 0.6,
                   transition: 'all 0.3s ease',
                   position: 'relative',
+                  display: 'flex',
+                  alignItems: 'center'
                 }}
               >
                 <div style={{
@@ -1847,10 +1849,10 @@ export function Hub() {
                     <Lock size={24} style={{ color: 'var(--neon-gold)' }} />
                   </div>
                 )}
-                <div style={{ marginRight: '20px', display: 'flex', alignItems: 'center' }}><Music size={48} /></div>
+                <div style={{ marginRight: '20px', display: 'flex', alignItems: 'center', color: 'var(--neon-gold)' }}><Music size={48} /></div>
                 <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '8px' }}>Submit Music</div>
-                  <div style={{ fontSize: '1.2rem', opacity: 0.8, fontWeight: 'normal' }}>
+                  <div style={{ fontSize: '2.2rem', fontWeight: 'bold', marginBottom: '8px', color: 'var(--text-main)' }}>Submit Music</div>
+                  <div style={{ fontSize: '1.2rem', opacity: 0.8, fontWeight: 'normal', color: 'var(--text-muted)' }}>
                     {userProfile?.is_premium ? 'Share Tracks for Gameplay' : 'Upgrade to PRO to Share'}
                   </div>
                 </div>
@@ -1863,9 +1865,9 @@ export function Hub() {
       {/* Music Submission Modal */}
       {isMusicModalOpen && userProfile?.is_premium && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '20px' }}>
-          <div style={{ width: '100%', maxWidth: '500px', background: 'var(--bg-card)', border: '2px solid rgba(168, 85, 247, 0.5)', borderRadius: '20px', padding: '32px', boxShadow: '0 0 40px rgba(168,85,247,0.3)' }}>
+          <div style={{ width: '100%', maxWidth: '500px', background: 'var(--bg-card)', border: '2px solid var(--neon-gold)', borderRadius: '20px', padding: '32px', boxShadow: '0 0 40px rgba(251, 200, 13, 0.3)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#c084fc', margin: 0, fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '1px' }}>
+              <h2 style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'var(--neon-gold)', margin: 0, fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '1px' }}>
                 <Music size={24} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '10px' }} />
                 Submit Music Track
               </h2>
@@ -1885,7 +1887,7 @@ export function Hub() {
             )}
 
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', color: '#c084fc', fontSize: '0.9rem', marginBottom: '8px', fontWeight: 'bold', letterSpacing: '0.5px', fontFamily: 'Bebas Neue, sans-serif' }}>
+              <label style={{ display: 'block', color: 'var(--neon-gold)', fontSize: '0.9rem', marginBottom: '8px', fontWeight: 'bold', letterSpacing: '0.5px', fontFamily: 'Bebas Neue, sans-serif' }}>
                 TRACK TITLE *
               </label>
               <input
@@ -1894,19 +1896,19 @@ export function Hub() {
                 onChange={(e) => setMusicTitle(e.target.value)}
                 placeholder="Epic Battle Theme"
                 maxLength={100}
-                style={{ width: '100%', boxSizing: 'border-box', padding: '12px 16px', background: 'var(--bg-card)', border: '1.5px solid rgba(168,85,247,0.3)', borderRadius: '10px', color: '#fff', fontSize: '1rem', fontFamily: 'Barlow Condensed, sans-serif' }}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '12px 16px', background: 'var(--bg-card)', border: '1.5px solid var(--neon-gold)', borderRadius: '10px', color: '#fff', fontSize: '1rem', fontFamily: 'Barlow Condensed, sans-serif' }}
               />
             </div>
 
             <div style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', color: '#c084fc', fontSize: '0.9rem', marginBottom: '8px', fontWeight: 'bold', letterSpacing: '0.5px', fontFamily: 'Bebas Neue, sans-serif' }}>
+              <label style={{ display: 'block', color: 'var(--neon-gold)', fontSize: '0.9rem', marginBottom: '8px', fontWeight: 'bold', letterSpacing: '0.5px', fontFamily: 'Bebas Neue, sans-serif' }}>
                 AUDIO FILE *
               </label>
               <input
                 type="file"
                 accept="audio/mpeg,audio/mp3,audio/wav,audio/ogg,audio/webm,.mp3,.wav,.ogg"
                 onChange={(e) => setMusicFile(e.target.files[0])}
-                style={{ width: '100%', boxSizing: 'border-box', padding: '12px 16px', background: 'var(--bg-card)', border: '1.5px solid rgba(168,85,247,0.3)', borderRadius: '10px', color: '#fff', fontSize: '1rem', fontFamily: 'Barlow Condensed, sans-serif', cursor: 'pointer' }}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '12px 16px', background: 'var(--bg-card)', border: '1.5px solid var(--neon-gold)', borderRadius: '10px', color: '#fff', fontSize: '1rem', fontFamily: 'Barlow Condensed, sans-serif', cursor: 'pointer' }}
               />
               <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', marginTop: '6px', fontFamily: 'Barlow Condensed, sans-serif' }}>
                 MP3, WAV, or OGG format. Maximum 10MB. {musicFile && `Selected: ${musicFile.name} (${(musicFile.size / 1024 / 1024).toFixed(2)} MB)`}
@@ -1960,7 +1962,7 @@ export function Hub() {
                 }
               }}
               disabled={musicSubmitting}
-              style={{ width: '100%', padding: '14px', background: musicSubmitting ? 'rgba(168,85,247,0.3)' : 'linear-gradient(90deg, #c084fc 0%, #a855f7 100%)', border: 'none', borderRadius: '12px', color: '#000', fontSize: '1.1rem', fontWeight: 'bold', cursor: musicSubmitting ? 'not-allowed' : 'pointer', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '1px', boxShadow: '0 0 20px rgba(168,85,247,0.4)' }}
+              style={{ width: '100%', padding: '14px', background: musicSubmitting ? 'rgba(251, 200, 13, 0.2)' : 'linear-gradient(90deg, #FBC80D 0%, #FFD700 100%)', border: 'none', borderRadius: '12px', color: '#000', fontSize: '1.1rem', fontWeight: 'bold', cursor: musicSubmitting ? 'not-allowed' : 'pointer', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '1px', boxShadow: '0 0 20px rgba(251, 200, 13, 0.4)' }}
             >
               {musicSubmitting ? 'UPLOADING...' : 'UPLOAD & SUBMIT FOR APPROVAL'}
             </button>
@@ -2081,7 +2083,7 @@ function App() {
   const ProtectedRoute = ({ children }) => {
     if (authLoading) {
       return (
-        <div style={{ minHeight: '100vh', background: 'radial-gradient(circle at 50% 20%, #0d1a38 0%, #050a18 70%, #02040c 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--neon-cyan)', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>
+        <div style={{ minHeight: '100vh', background: 'radial-gradient(circle at 50% 20%, #000000 0%, #000000 70%, #000000 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--neon-gold)', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>
           <div style={{ textAlign: 'center' }}>
             <div className="brand-pill-badge" style={{ margin: '0 auto 12px auto', fontSize: '0.9rem', padding: '3px 12px' }}>注意!</div>
             <div style={{ fontSize: '1.3rem', letterSpacing: '2px', fontWeight: 'bold' }}>VERIFYING ACCESS...</div>

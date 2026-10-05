@@ -209,8 +209,8 @@ export default function CardActionModal({
           position: 'absolute',
           top: '40px',
           left: '40px',
-          background: 'linear-gradient(135deg, #1a2a4c 0%, #0d1b38 100%)',
-          border: '3px solid var(--neon-gold)',
+          background: 'linear-gradient(135deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.95) 100%)',
+          border: '3px solid #ED1E24',
           borderRadius: '12px',
           padding: '16px 36px',
           display: 'flex',
@@ -219,7 +219,7 @@ export default function CardActionModal({
           color: '#fff',
           cursor: 'pointer',
           zIndex: 10,
-          boxShadow: '0 8px 28px rgba(0,0,0,0.9), 0 0 28px rgba(251, 200, 13, 0.5)',
+          boxShadow: '0 8px 28px rgba(0,0,0,0.9), 0 0 28px rgba(237, 30, 36, 0.6)',
           fontWeight: 'bold',
           fontFamily: 'Orbitron, sans-serif',
           fontSize: '1.2rem',
@@ -236,7 +236,7 @@ export default function CardActionModal({
         {/* Main modal panel */}
         <div
           style={{
-            background: 'linear-gradient(180deg, #0d1b38 0%, #060e20 100%)',
+            background: 'linear-gradient(180deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.95) 100%)',
             border: '1.5px solid rgba(251, 200, 13, 0.5)',
             borderRadius: '16px',
             boxShadow: '0 20px 60px rgba(0,0,0,0.9), 0 0 35px rgba(251, 200, 13, 0.25)',
@@ -574,9 +574,9 @@ export default function CardActionModal({
                   <button
                     onClick={handleConfirmAction}
                     style={{
-                      background: 'linear-gradient(90deg, #FBC80D, #0077ff)',
+                      background: 'linear-gradient(90deg, #FBC80D 0%, #FFD700 100%)',
                       color: '#000',
-                      border: 'none',
+                      border: '2px solid #FBC80D',
                       borderRadius: '8px',
                       padding: '12px 24px',
                       fontWeight: 'bold',
@@ -585,7 +585,7 @@ export default function CardActionModal({
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px',
-                      boxShadow: '0 0 15px rgba(251, 200, 13, 0.4)'
+                      boxShadow: '0 0 20px rgba(251, 200, 13, 0.6)'
                     }}
                   >
                     <Play size={16} fill="#000" />

@@ -4332,7 +4332,7 @@ export default function KontrolaArena() {
               bottom: '20px',
               right: '20px',
               background: 'var(--bg-card)',
-              border: '2px solid rgba(168, 85, 247, 0.5)',
+              border: '2px solid rgba(251, 200, 13, 0.5)',
               borderRadius: '16px',
               padding: isMusicPlayerOpen ? '16px' : '12px',
               minWidth: isMusicPlayerOpen ? '320px' : '60px',
@@ -4347,7 +4347,7 @@ export default function KontrolaArena() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMusicPlayerOpen ? '12px' : '0' }}>
                 <button
                   onClick={() => setIsMusicPlayerOpen(!isMusicPlayerOpen)}
-                  style={{ background: 'none', border: 'none', color: '#c084fc', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}
+                  style={{ background: 'none', border: 'none', color: '#FBC80D', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}
                 >
                   <Music size={24} />
                   {isMusicPlayerOpen && <span style={{ fontWeight: 'bold', fontSize: '1.1rem', letterSpacing: '0.5px' }}>MUSIC</span>}
@@ -4383,7 +4383,7 @@ export default function KontrolaArena() {
                         setCurrentTrackIndex(newIndex);
                         setIsPlaying(true);
                       }}
-                      style={{ background: 'rgba(168,85,247,0.2)', border: '1px solid rgba(168,85,247,0.4)', color: '#c084fc', padding: '8px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      style={{ background: 'rgba(251,200,13,0.2)', border: '1px solid rgba(251,200,13,0.4)', color: '#FBC80D', padding: '8px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                       title="Previous"
                     >
                       <SkipForward size={18} style={{ transform: 'rotate(180deg)' }} />
@@ -4391,7 +4391,7 @@ export default function KontrolaArena() {
 
                     <button
                       onClick={() => setIsPlaying(!isPlaying)}
-                      style={{ background: 'linear-gradient(135deg, #c084fc, #a855f7)', border: 'none', color: '#000', padding: '12px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 16px rgba(168,85,247,0.4)' }}
+                      style={{ background: 'linear-gradient(135deg, #FBC80D, #FFD700)', border: 'none', color: '#000', padding: '12px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 16px rgba(251,200,13,0.4)' }}
                       title={isPlaying ? 'Pause' : 'Play'}
                     >
                       {isPlaying ? <Pause size={24} /> : <Play size={24} />}
@@ -4403,7 +4403,7 @@ export default function KontrolaArena() {
                         setCurrentTrackIndex(newIndex);
                         setIsPlaying(true);
                       }}
-                      style={{ background: 'rgba(168,85,247,0.2)', border: '1px solid rgba(168,85,247,0.4)', color: '#c084fc', padding: '8px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      style={{ background: 'rgba(251,200,13,0.2)', border: '1px solid rgba(251,200,13,0.4)', color: '#FBC80D', padding: '8px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                       title="Next"
                     >
                       <SkipForward size={18} />
@@ -4414,7 +4414,7 @@ export default function KontrolaArena() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
                     <button
                       onClick={() => setIsMuted(!isMuted)}
-                      style={{ background: 'none', border: 'none', color: isMuted ? '#ff6b8f' : '#c084fc', cursor: 'pointer', padding: '4px' }}
+                      style={{ background: 'none', border: 'none', color: isMuted ? '#ff6b8f' : '#FBC80D', cursor: 'pointer', padding: '4px' }}
                       title={isMuted ? 'Unmute' : 'Mute'}
                     >
                       {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
@@ -4425,7 +4425,7 @@ export default function KontrolaArena() {
                       max="100"
                       value={volume * 100}
                       onChange={(e) => setVolume(parseFloat(e.target.value) / 100)}
-                      style={{ flex: 1, accentColor: '#c084fc' }}
+                      style={{ flex: 1, accentColor: '#FBC80D' }}
                       title="Volume"
                     />
                     <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem', minWidth: '35px' }}>
@@ -4448,9 +4448,9 @@ export default function KontrolaArena() {
                         style={{
                           width: '100%',
                           textAlign: 'left',
-                          background: idx === currentTrackIndex ? 'rgba(168,85,247,0.2)' : 'transparent',
-                          border: idx === currentTrackIndex ? '1px solid rgba(168,85,247,0.4)' : '1px solid transparent',
-                          color: idx === currentTrackIndex ? '#c084fc' : 'rgba(255,255,255,0.7)',
+                          background: idx === currentTrackIndex ? 'rgba(251,200,13,0.2)' : 'transparent',
+                          border: idx === currentTrackIndex ? '1px solid rgba(251,200,13,0.4)' : '1px solid transparent',
+                          color: idx === currentTrackIndex ? '#FBC80D' : 'rgba(255,255,255,0.7)',
                           padding: '8px 10px',
                           borderRadius: '6px',
                           cursor: 'pointer',

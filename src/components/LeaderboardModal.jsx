@@ -72,7 +72,7 @@ export const LeaderboardModal = ({ isOpen, onClose }) => {
         style={{
           width: '100%',
           maxWidth: '560px',
-          background: 'rgba(10, 20, 40, 0.95)',
+          background: 'rgba(0, 0, 0, 0.95)',
           border: '2px solid var(--neon-gold, #FBC80D)',
           borderRadius: '16px',
           padding: '24px',

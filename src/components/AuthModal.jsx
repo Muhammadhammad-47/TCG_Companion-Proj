@@ -80,12 +80,6 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
         if (!preventClose && onClose) onClose();
       }}
     >
-      {/* Ambient Neon Streaks matching App */}
-      <div className="menu-bg-elements" style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
-        <div className="neon-streak-red" style={{ opacity: 0.35 }}></div>
-        <div className="neon-streak-blue" style={{ opacity: 0.35 }}></div>
-      </div>
-
       <div
         style={{
           width: '100%',
@@ -384,15 +378,15 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
               marginTop: '10px',
               padding: '14px',
               borderRadius: '12px',
-              border: 'none',
-              background: 'linear-gradient(135deg, #FBC80D 0%, #FFD700 100%)',
-              color: '#000000',
+              border: '2px solid #ff5c8a',
+              background: 'linear-gradient(180deg, #ED1E24 0%, #b8003a 100%)',
+              color: '#FFFFFF',
               fontWeight: '900',
               fontSize: '1.15rem',
               letterSpacing: '1.5px',
               cursor: loading ? 'not-allowed' : 'pointer',
               opacity: loading ? 0.7 : 1,
-              boxShadow: '0 0 25px rgba(251, 200, 13, 0.5)',
+              boxShadow: '0 0 25px rgba(237, 30, 36, 0.6)',
               transition: 'all 0.2s',
               fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)'
             }}

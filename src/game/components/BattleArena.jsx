@@ -705,7 +705,7 @@ export default function BattleArena({
             <button
               className="btn-hud-undo"
               onClick={() => setShowRulesChatOverlay(true)}
-              style={{ borderColor: 'var(--neon-cyan)', color: 'var(--neon-cyan)' }}
+              style={{ borderColor: 'var(--neon-gold, #FBC80D)', color: 'var(--neon-gold, #FBC80D)' }}
               title="Open Rules AI Assistant"
             >
               <HelpCircle size={16} />
@@ -834,10 +834,10 @@ export default function BattleArena({
                 {activePlayer.hp >= GAME_LIMITS.LEVEL_2_HP && (
                   <button
                     className="effect-chip"
-                    style={{ borderColor: '#a855f7', background: 'rgba(168, 85, 247, 0.15)' }}
+                    style={{ borderColor: '#FBC80D', background: 'rgba(251, 200, 13, 0.15)' }}
                     onClick={() => setSelectedEffectInfo({ name: 'Level 2 Unlocked', desc: 'Having 150+ HP empowers your character with Level 2 advanced attack cards!', count: 'LVL 2' })}
                   >
-                    <Sparkles size={15} color="#a855f7" />
+                    <Sparkles size={15} color="#FBC80D" />
                     <span className="effect-name">Level Up</span>
                     <span className="effect-count">LV 2</span>
                   </button>
@@ -1189,8 +1189,8 @@ export default function BattleArena({
                       marginTop: '12px',
                       width: '100%',
                       padding: '8px',
-                      background: 'linear-gradient(90deg, #a855f7, #6366f1)',
-                      color: '#fff',
+                      background: 'linear-gradient(90deg, #FBC80D, #FFD700)',
+                      color: '#000',
                       border: 'none',
                       borderRadius: '8px',
                       fontWeight: 'bold',

@@ -139,10 +139,10 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
     >
       <div
         style={{
-          background: 'linear-gradient(180deg, #1a0b2e 0%, #0c0517 100%)',
-          border: '1.5px solid #a855f7',
+          background: 'linear-gradient(180deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.95) 100%)',
+          border: '1.5px solid var(--neon-gold)',
           borderRadius: '16px',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.9), 0 0 35px rgba(168, 85, 247, 0.3)',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.9), 0 0 35px rgba(251, 200, 13, 0.3)',
           width: '100%',
           maxWidth: '600px',
           padding: '20px',
@@ -151,9 +151,9 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid rgba(168, 85, 247, 0.2)', paddingBottom: '12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid rgba(251, 200, 13, 0.2)', paddingBottom: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '0.75rem', background: 'rgba(168, 85, 247, 0.2)', border: '1px solid #a855f7', color: '#c084fc', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
+            <span style={{ fontSize: '0.75rem', background: 'rgba(251, 200, 13, 0.2)', border: '1px solid #FBC80D', color: '#FBC80D', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
               🧠 3 ET · MIND KONTROL
             </span>
             <h2 style={{ fontSize: '1.25rem', margin: 0, fontFamily: 'Orbitron, sans-serif' }}>KONTROL CLASH</h2>
@@ -176,7 +176,7 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
         {/* Target Selector */}
         {!kontrolWinner && (
           <div style={{ marginBottom: '14px' }}>
-            <label style={{ fontSize: '0.75rem', color: '#c084fc', fontWeight: 'bold', display: 'block', marginBottom: '6px' }}>SELECT TARGET OPPONENT</label>
+            <label style={{ fontSize: '0.75rem', color: '#FBC80D', fontWeight: 'bold', display: 'block', marginBottom: '6px' }}>SELECT TARGET OPPONENT</label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '8px' }}>
               {allPlayers.filter(p => p.id !== attacker.id).map(target => {
                 const tChar = CHARACTERS[target.characterId] || CHARACTERS.chynaman;
@@ -186,8 +186,8 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
                     key={target.id}
                     onClick={() => resetTarget(target.id)}
                     style={{
-                      background: isSelected ? 'rgba(168, 85, 247, 0.25)' : 'rgba(255,255,255,0.04)',
-                      border: isSelected ? '1.5px solid #a855f7' : '1px solid rgba(255,255,255,0.1)',
+                      background: isSelected ? 'rgba(251, 200, 13, 0.25)' : 'rgba(255,255,255,0.04)',
+                      border: isSelected ? '1.5px solid #FBC80D' : '1px solid rgba(255,255,255,0.1)',
                       borderRadius: '8px',
                       padding: '8px 10px',
                       cursor: 'pointer',
@@ -198,7 +198,7 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
                       pointerEvents: atkWins > 0 || defWins > 0 ? 'none' : 'auto'
                     }}
                   >
-                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', overflow: 'hidden', border: '1px solid #a855f7', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', overflow: 'hidden', border: '1px solid #FBC80D', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }}>
                       <img
                         src={getAssetUrl(tChar.image || 'characters/chynaman.png')}
                         alt={target.name}
@@ -207,7 +207,7 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
                     </div>
                     <div>
                       <strong style={{ fontSize: '0.82rem', display: 'block' }}>{target.name}</strong>
-                      <span style={{ fontSize: '0.72rem', color: '#c084fc' }}>
+                      <span style={{ fontSize: '0.72rem', color: '#FBC80D' }}>
                         {target.isZombie ? 'IMMUNE' : `🧠 Mind: ${tChar.mindStrength}`}
                       </span>
                     </div>
@@ -232,13 +232,13 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
             {/* Attacker Stats */}
             <div style={{ textAlign: 'center' }}>
               <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem', marginBottom: '4px' }}>ATTACKER</div>
-              <strong style={{ fontSize: '1.1rem', display: 'block', color: '#a855f7' }}>{attacker.name}</strong>
-              <div style={{ fontSize: '0.75rem', color: '#c084fc', marginTop: '2px' }}>
+              <strong style={{ fontSize: '1.1rem', display: 'block', color: '#FBC80D' }}>{attacker.name}</strong>
+              <div style={{ fontSize: '0.75rem', color: '#FBC80D', marginTop: '2px' }}>
                 {atkChar.mindAtkBonus ? `+${atkChar.mindAtkBonus} Roll Bonus` : 'No Bonus'}
               </div>
               <div style={{ display: 'flex', justifyContent: 'center', gap: '4px', marginTop: '8px' }}>
-                <div style={{ width: '14px', height: '14px', borderRadius: '50%', background: atkWins >= 1 ? '#a855f7' : 'rgba(255,255,255,0.1)' }} />
-                <div style={{ width: '14px', height: '14px', borderRadius: '50%', background: atkWins >= 2 ? '#a855f7' : 'rgba(255,255,255,0.1)' }} />
+                <div style={{ width: '14px', height: '14px', borderRadius: '50%', background: atkWins >= 1 ? '#FBC80D' : 'rgba(255,255,255,0.1)' }} />
+                <div style={{ width: '14px', height: '14px', borderRadius: '50%', background: atkWins >= 2 ? '#FBC80D' : 'rgba(255,255,255,0.1)' }} />
               </div>
             </div>
 
@@ -273,22 +273,22 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
                   style={{
                     width: '64px',
                     height: '64px',
-                    background: 'linear-gradient(135deg, #a855f7, #6b21a8)',
-                    color: '#fff',
+                    background: 'linear-gradient(135deg, #FBC80D, #FFD700)',
+                    color: '#000',
                     fontSize: '2rem',
                     fontWeight: 'bold',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     borderRadius: '12px',
-                    border: '2px solid #c084fc',
-                    boxShadow: roundResult === 'atk_win' ? '0 0 20px #a855f7' : '0 4px 10px rgba(0,0,0,0.5)',
+                    border: '2px solid #FBC80D',
+                    boxShadow: roundResult === 'atk_win' ? '0 0 20px #FBC80D' : '0 4px 10px rgba(0,0,0,0.5)',
                     transition: 'all 0.3s ease'
                   }}
                 >
                   {currentAtkRoll}
                 </div>
-                {roundResult && <div style={{ fontSize: '0.8rem', marginTop: '8px', color: '#c084fc' }}>Total: {currentAtkRoll + (atkChar.mindAtkBonus || 0)}</div>}
+                {roundResult && <div style={{ fontSize: '0.8rem', marginTop: '8px', color: '#FBC80D' }}>Total: {currentAtkRoll + (atkChar.mindAtkBonus || 0)}</div>}
               </div>
 
               {/* Defender Die */}
@@ -344,8 +344,8 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
                 style={{
                   flex: 1,
                   padding: '14px',
-                  background: 'linear-gradient(90deg, #a855f7, #ec4899)',
-                  color: '#fff',
+                  background: 'linear-gradient(90deg, #FBC80D, #FFD700)',
+                  color: '#000',
                   border: 'none',
                   borderRadius: '8px',
                   fontWeight: 'bold',
@@ -373,13 +373,13 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
             </div>
 
             {kontrolWinner === 'attacker' && (
-              <div style={{ margin: '16px 0', textAlign: 'left', background: 'rgba(168, 85, 247, 0.1)', border: '1px solid #a855f7', padding: '12px', borderRadius: '8px' }}>
-                <label style={{ fontSize: '0.8rem', color: '#c084fc', fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>CHOOSE REWARD ACTION:</label>
+              <div style={{ margin: '16px 0', textAlign: 'left', background: 'rgba(251, 200, 13, 0.1)', border: '1px solid #FBC80D', padding: '12px', borderRadius: '8px' }}>
+                <label style={{ fontSize: '0.8rem', color: '#FBC80D', fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>CHOOSE REWARD ACTION:</label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                   <button
                     onClick={() => setChosenOption('steal_card')}
                     style={{
-                      background: chosenOption === 'steal_card' ? '#a855f7' : 'rgba(255,255,255,0.06)',
+                      background: chosenOption === 'steal_card' ? '#FBC80D' : 'rgba(255,255,255,0.06)',
                       color: chosenOption === 'steal_card' ? '#000' : '#fff',
                       border: chosenOption === 'steal_card' ? 'none' : '1px solid rgba(255,255,255,0.2)',
                       borderRadius: '6px',
@@ -394,7 +394,7 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
                   <button
                     onClick={() => setChosenOption('force_attack')}
                     style={{
-                      background: chosenOption === 'force_attack' ? '#a855f7' : 'rgba(255,255,255,0.06)',
+                      background: chosenOption === 'force_attack' ? '#FBC80D' : 'rgba(255,255,255,0.06)',
                       color: chosenOption === 'force_attack' ? '#000' : '#fff',
                       border: chosenOption === 'force_attack' ? 'none' : '1px solid rgba(255,255,255,0.2)',
                       borderRadius: '6px',
@@ -411,7 +411,7 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
                 {/* Steal Card UI */}
                 {chosenOption === 'steal_card' && targetPlayer.actionCardsHand?.length > 0 && (
                   <div style={{ marginTop: '16px', background: 'rgba(0,0,0,0.5)', padding: '12px', borderRadius: '8px' }}>
-                    <div style={{ fontSize: '0.8rem', color: '#c084fc', marginBottom: '8px' }}>SELECT CARD TO STEAL:</div>
+                    <div style={{ fontSize: '0.8rem', color: '#FBC80D', marginBottom: '8px' }}>SELECT CARD TO STEAL:</div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px' }}>
                       {targetPlayer.actionCardsHand.map(card => (
                         <div
@@ -439,7 +439,7 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
                 {/* Force Attack UI */}
                 {chosenOption === 'force_attack' && (
                   <div style={{ marginTop: '16px', background: 'rgba(0,0,0,0.5)', padding: '12px', borderRadius: '8px' }}>
-                    <div style={{ fontSize: '0.8rem', color: '#c084fc', marginBottom: '8px' }}>SELECT VICTIM TO ATTACK:</div>
+                    <div style={{ fontSize: '0.8rem', color: '#FBC80D', marginBottom: '8px' }}>SELECT VICTIM TO ATTACK:</div>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                       {allPlayers.filter(p => p.id !== targetPlayer.id).map(victim => (
                         <button
