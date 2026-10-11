@@ -25,7 +25,7 @@ export default function GamePage() {
   const [isMuted, setIsMuted] = useState(false);
   const [showNewMatchModal, setShowNewMatchModal] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
-  const [showReconnectModal, setShowReconnectModal] = useState(true); // Show on first load
+  const [showReconnectModal, setShowReconnectModal] = useState(false); // Only show for multiplayer modes
   const hasLoggedWinnerRef = useRef(false);
 
   React.useEffect(() => {
@@ -268,8 +268,8 @@ export default function GamePage() {
         ×
       </button>
       <main className="main-content-viewport" style={{ position: 'absolute', inset: 0 }}>
-        {/* Reconnect Modal (shown on first load) */}
-        {showReconnectModal && (
+        {/* Reconnect Modal (shown only for multiplayer modes) */}
+        {showReconnectModal && (activeTab === 'arena' || activeTab === 'battle') && (
           <ReconnectModal
             onRoomFound={handleReconnectRoom}
             onClose={() => setShowReconnectModal(false)}

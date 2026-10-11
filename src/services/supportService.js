@@ -35,7 +35,17 @@ export const supportService = {
     try {
       let query = supabase
         .from('support_tickets')
-        .select('*, support_replies(count)')
+        .select(`
+          *,
+          support_replies(
+            id,
+            message,
+            sender_type,
+            created_at,
+            admin_id,
+            admin_name
+          )
+        `)
         .order('updated_at', { ascending: false })
         .limit(limit);
 
