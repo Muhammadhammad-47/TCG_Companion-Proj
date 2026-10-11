@@ -118,9 +118,18 @@ export const subscribeToMatch = (matchId, callback, onSubscribe = null, playerId
     callback({ type: 'PLAYER_TAUNT', payload });
   });
 
+  // NOTE: Supabase Presence 'leave' fires on ANY WebSocket interruption — tab switch,
+  // browser minimize, brief network hiccup — not just intentional exits.
+  // We do NOT use this to remove players; removal only happens on explicit PLAYER_LEFT
+  // broadcast (sent on confirmed page unload via beforeunload).
+  // We still emit PLAYER_DISCONNECTED so the UI can show a "waiting…" log, but the
+  // host must NOT start a kick timer based on this alone.
   channel.on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
     if (key && key !== 'spectator') {
-      callback({ type: 'PLAYER_DISCONNECTED', payload: { playerId: key } });
+      // Only fire if the player has actually been gone for >10 s (debounce via timestamp)
+      // Since Supabase doesn't give us a reliable timestamp, we just log it but take no action.
+      // The actual removal happens only via the explicit 'player_left' broadcast.
+      callback({ type: 'PLAYER_PRESENCE_AWAY', payload: { playerId: key } });
     }
   });
 

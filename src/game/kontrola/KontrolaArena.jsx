@@ -150,6 +150,7 @@ export default function KontrolaArena() {
   const [lobbyTab, setLobbyTab] = useState('browse');
   const [openRooms, setOpenRooms] = useState([]);
   const [isRefreshingRooms, setIsRefreshingRooms] = useState(false);
+  const [joinCodeInput, setJoinCodeInput] = useState(''); // separate from matchId to avoid pre-filling from localStorage
 
   const [selectedCharacter, setSelectedCharacter] = useState('chynaman');
   const [isPremium, setIsPremium] = useState(false);
@@ -601,24 +602,28 @@ export default function KontrolaArena() {
 
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && matchIdRef.current && playerIdRef.current && !isHostRef.current) {
-         requestSync(matchIdRef.current, playerIdRef.current);
+      // Tab became visible again → re-sync state from host (in case we missed updates)
+      if (document.visibilityState === 'visible' && matchIdRef.current && playerIdRef.current) {
+        requestSync(matchIdRef.current, playerIdRef.current);
       }
+      // NOTE: Do NOT call broadcastLeave on tab hide/minimize.
+      // visibilitychange and Supabase Presence 'leave' both fire on innocent tab switches.
+      // Players are only removed via the explicit broadcastLeave() on confirmed leave
+      // (Leave button → confirmation dialog) or actual page close (beforeunload).
     };
-    
-    const handleBeforeUnload = (e) => {
+
+    // Only send leave signal on actual page/tab close — not on minimize or tab switch
+    const handleBeforeUnload = () => {
       if (matchIdRef.current && playerIdRef.current) {
-        // We use fetch with keepalive to reliably send the leave signal when the page unloads
-        // But since we rely on Supabase WebSockets, we will try to push it synchronously
         broadcastLeave(matchIdRef.current, playerIdRef.current);
       }
     };
-    
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => {
-       document.removeEventListener('visibilitychange', handleVisibilityChange);
-       window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, []);
   useEffect(() => {
@@ -917,19 +922,15 @@ export default function KontrolaArena() {
           }
         }
         // 12. Player Disconnected (Presence)
-        else if (event.type === 'PLAYER_DISCONNECTED') {
+        else if (event.type === 'PLAYER_DISCONNECTED' || event.type === 'PLAYER_PRESENCE_AWAY') {
+          // PLAYER_PRESENCE_AWAY = Supabase Presence leave (fires on tab switch, minimize, brief network drop)
+          // PLAYER_DISCONNECTED = legacy name, same source
+          // We intentionally do NOT remove the player or start any kick timer here.
+          // Players are only removed when they explicitly broadcast PLAYER_LEFT (leave button)
+          // or when the host receives a PLAYER_LEFT broadcast.
           const { playerId: dId } = event.payload || {};
           if (!dId || dId === playerIdRef.current) return;
-          
-          setGameState(prev => prev ? {
-            ...prev,
-            logs: [`?? ${prev.playerNames?.[dId] || 'A player'} disconnected! Waiting 3 mins for reconnection...`, ...(prev.logs || [])]
-          } : prev);
-
-          // Start a 3-minute timeout to forfeit them
-          if (isHostRef.current) {
-            // User requested no auto-leave. Host must kick manually.
-          }
+          // Silently ignore — no log spam, no kick timer
         }
         // 13. Player Reconnected (Presence)
         else if (event.type === 'PLAYER_RECONNECTED') {
@@ -3034,8 +3035,8 @@ export default function KontrolaArena() {
                     <input
                       type="text"
                       placeholder="ENTER 6-CHARACTER CODE"
-                      value={matchId}
-                      onChange={(e) => setMatchId(e.target.value.toUpperCase())}
+                      value={joinCodeInput}
+                      onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
                       maxLength={6}
                       style={{
                         width: '100%',
@@ -3054,21 +3055,21 @@ export default function KontrolaArena() {
                     />
 
                     <button
-                      onClick={() => handleJoinByCode(matchId)}
-                      disabled={!matchId || matchId.length < 4}
+                      onClick={() => handleJoinByCode(joinCodeInput)}
+                      disabled={!joinCodeInput || joinCodeInput.length < 4}
                       style={{
                         width: '100%',
                         padding: '14px',
                         borderRadius: '12px',
                         fontSize: '1.1rem',
                         fontWeight: 'bold',
-                        cursor: matchId && matchId.length >= 4 ? 'pointer' : 'not-allowed',
+                        cursor: joinCodeInput && joinCodeInput.length >= 4 ? 'pointer' : 'not-allowed',
                         background:
-                          matchId && matchId.length >= 4
+                          joinCodeInput && joinCodeInput.length >= 4
                             ? 'linear-gradient(90deg, #FBC80D 0%, #ff9900 100%)'
                             : 'rgba(255,255,255,0.1)',
                         border: 'none',
-                        color: matchId && matchId.length >= 4 ? '#000' : 'rgba(255,255,255,0.4)',
+                        color: joinCodeInput && joinCodeInput.length >= 4 ? '#000' : 'rgba(255,255,255,0.4)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
