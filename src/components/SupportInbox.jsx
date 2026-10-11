@@ -22,6 +22,25 @@ export default function SupportInbox({ userId, isOpen, onClose }) {
     }
   }, [isOpen, userId]);
 
+  // Polling: Refresh selected ticket every 5 seconds to catch admin replies
+  useEffect(() => {
+    if (!isOpen || !selectedTicket) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const updatedTicket = await supportService.getSupportTicketWithReplies(selectedTicket.id);
+        if (updatedTicket) {
+          setSelectedTicket(updatedTicket);
+          setTickets(prev => prev.map(t => t.id === updatedTicket.id ? updatedTicket : t));
+        }
+      } catch (err) {
+        console.error('Failed to refresh ticket:', err);
+      }
+    }, 5000); // Poll every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [isOpen, selectedTicket?.id]);
+
   const loadTickets = async () => {
     setIsLoading(true);
     try {

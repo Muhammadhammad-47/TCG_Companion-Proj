@@ -8,6 +8,7 @@ import { APP_CONFIG } from '../../config';
 import { CHARACTERS, getAssetUrl } from '../data/characters';
 import { soundFX } from '../utils/audio';
 import SupportInbox from '../../components/SupportInbox';
+import { supportService } from '../../services/supportService';
 
 
 export default function MainMenu({
@@ -29,6 +30,7 @@ export default function MainMenu({
   const [turnCounter, setTurnCounter] = useState(12);
   const [phaseIndex, setPhaseIndex] = useState(0);
   const [showSupportInbox, setShowSupportInbox] = useState(false);
+  const [unreadSupportCount, setUnreadSupportCount] = useState(0);
   const chatScrollRef = useRef(null);
 
   const PHASES = ['Draw Phase', 'Main Phase 1', 'Battle Phase', 'Main Phase 2', 'End Phase'];
@@ -38,6 +40,26 @@ export default function MainMenu({
       chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
     }
   }, [miniChat]);
+
+  // Load unread support ticket count
+  useEffect(() => {
+    const loadUnreadCount = async () => {
+      try {
+        const userId = localStorage.getItem('currentUserId') || 'unknown';
+        if (userId !== 'unknown') {
+          const unreadTickets = await supportService.getPlayerUnreadTickets(userId);
+          setUnreadSupportCount(unreadTickets?.length || 0);
+        }
+      } catch (err) {
+        console.error('Failed to load unread support count:', err);
+      }
+    };
+
+    loadUnreadCount();
+    // Refresh every 30 seconds
+    const interval = setInterval(loadUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const charList = [
     CHARACTERS.chynaman,
@@ -396,14 +418,37 @@ export default function MainMenu({
               playClickSound();
               setShowSupportInbox(true);
             }}
+            style={{ position: 'relative' }}
           >
             <div className="action-btn-icon">
               <MessageSquare size={26} />
             </div>
             <div className="action-btn-text">
-              <strong className="action-btn-title">SUPPORT</strong>
-              <span className="action-btn-subtitle">Contact support team</span>
+              <strong className="action-btn-title">SUPPORT CHAT</strong>
+              <span className="action-btn-subtitle">Talk with support team</span>
             </div>
+            {unreadSupportCount > 0 && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '8px',
+                  right: '8px',
+                  background: '#ff0000',
+                  color: '#fff',
+                  borderRadius: '50%',
+                  width: '24px',
+                  height: '24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.75rem',
+                  fontWeight: 'bold',
+                  border: '2px solid #fff'
+                }}
+              >
+                {unreadSupportCount}
+              </div>
+            )}
           </button>
         </div>
 

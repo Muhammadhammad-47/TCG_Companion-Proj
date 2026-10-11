@@ -64,7 +64,8 @@ export const supportService = {
             message,
             sender_type,
             created_at,
-            admin_id
+            admin_id,
+            admin_name
           )
         `)
         .eq('user_id', userId)
