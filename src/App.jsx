@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { Send, X, Bot, Swords, ArrowLeft, ThumbsUp, ThumbsDown, User, Shield, LogOut, Check, Trophy, Settings, Music, Lock } from 'lucide-react';
+import { Send, X, Bot, Swords, ArrowLeft, ThumbsUp, ThumbsDown, User, Shield, LogOut, Check, Trophy, Settings, Music, Lock, MessageSquare } from 'lucide-react';
 import axios from 'axios';
 import { Groq } from 'groq-sdk';
 import './App.css';
@@ -22,6 +22,7 @@ import { economyService } from './services/economyService.js';
 import { musicService } from './services/musicService.js';
 import { setupGlobalErrorHandlers } from './services/bugReportService.js';
 import BugReportButton from './components/BugReportButton.jsx';
+import SupportInbox from './components/SupportInbox.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { StoreModal } from './components/StoreModal.jsx';
 import MusicUploadProgress from './components/MusicUploadProgress.jsx';
@@ -303,6 +304,7 @@ export function Chat({ onBack, isOverlay = false }) {
   const [suggestedAnswer, setSuggestedAnswer] = useState('');
   const [isSubmittingCorrection, setIsSubmittingCorrection] = useState(false);
   const [feedbackSuccessMsg, setFeedbackSuccessMsg] = useState('');
+  const [chatHistory, setChatHistory] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
 
@@ -2108,9 +2110,8 @@ export function Hub() {
           zIndex: 99,
           animation: 'pulse 2s infinite'
         }}>
-          <BugReportButton 
-            userId={currentUser?.id}
-            username={userProfile?.username || 'Guest'}
+          <button
+            onClick={() => setShowSupportInbox(true)}
             style={{
               background: 'linear-gradient(135deg, #00ff88 0%, #00ffcc 100%)',
               border: 'none',
@@ -2123,10 +2124,27 @@ export function Hub() {
               transition: 'all 0.3s ease',
               whiteSpace: 'nowrap',
               color: '#001a33',
-              textShadow: '0 1px 3px rgba(0,0,0,0.3)'
+              textShadow: '0 1px 3px rgba(0,0,0,0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontFamily: 'Bebas Neue, sans-serif',
+              letterSpacing: '0.5px'
             }}
-          />
+          >
+            <MessageSquare size={18} />
+            SUPPORT CHAT
+          </button>
         </div>
+      )}
+
+      {/* Support Inbox Modal */}
+      {showSupportInbox && (
+        <SupportInbox
+          userId={currentUser?.id || 'guest'}
+          isOpen={showSupportInbox}
+          onClose={() => setShowSupportInbox(false)}
+        />
       )}
     </>
   );
@@ -2138,6 +2156,7 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [showSupportInbox, setShowSupportInbox] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
