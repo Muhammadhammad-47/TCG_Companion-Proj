@@ -107,8 +107,24 @@ export default function KontrolaArena() {
         // Restore last session match ID from DB if not already set
         const currentMatchId = matchIdRef.current;
         if (!currentMatchId) {
-          sessionService.getLastMatchId(user.id).then((savedMatchId) => {
-            if (savedMatchId) setMatchId(savedMatchId);
+          sessionService.getLastMatchId(user.id).then(async (savedMatchId) => {
+            if (savedMatchId) {
+              setMatchId(savedMatchId);
+              // Only show the rejoin banner if the game is still in-progress
+              try {
+                const result = await fetchGameRoom(savedMatchId);
+                // Show rejoin only if room exists and is not ended/finished
+                if (result && !result.error &&
+                    result.gameState?.status !== 'ended' &&
+                    result.gameState?.status !== 'finished' &&
+                    result.gameState?.status !== 'completed' &&
+                    result.gameState?.status !== 'game_over') {
+                  setLastActiveMatchId(savedMatchId);
+                }
+              } catch {
+                // If we can't verify, don't show the rejoin banner — avoid false positives
+              }
+            }
           });
         }
       }
@@ -191,9 +207,11 @@ export default function KontrolaArena() {
   const [showCrystalSplitModal, setShowCrystalSplitModal] = useState(false);
   const [crystalSplitData, setCrystalSplitData] = useState(null);
   
-  // NEW: Room Persistence State
+  // Room Persistence State
   const [roomCode, setRoomCode] = useState(null);
   const [roomPersistenceError, setRoomPersistenceError] = useState(null);
+  // Rejoin: non-null only when a previous in-progress game is detected on load
+  const [lastActiveMatchId, setLastActiveMatchId] = useState(null);
   
   const [countdownNumber, setCountdownNumber] = useState(3);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
@@ -2707,6 +2725,63 @@ export default function KontrolaArena() {
                       padding: '20px'
                     }}
                   >
+                    {/* ── Rejoin banner: only shown when a previous in-progress game is detected ── */}
+                    {lastActiveMatchId && (
+                      <div style={{
+                        background: 'rgba(251,200,13,0.1)',
+                        border: '1.5px solid rgba(251,200,13,0.5)',
+                        borderRadius: '12px',
+                        padding: '14px 18px',
+                        marginBottom: '16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '12px',
+                        flexWrap: 'wrap'
+                      }}>
+                        <div>
+                          <div style={{ color: '#FBC80D', fontWeight: 900, fontFamily: 'Bebas Neue, sans-serif', fontSize: '1rem', letterSpacing: '0.5px' }}>
+                            ⚔️ GAME IN PROGRESS
+                          </div>
+                          <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.82rem', marginTop: '2px' }}>
+                            Room <span style={{ color: '#FBC80D', fontWeight: 700, letterSpacing: '2px' }}>{lastActiveMatchId}</span> is still ongoing
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button
+                            onClick={() => {
+                              setMatchId(lastActiveMatchId);
+                              handleJoinByCode(lastActiveMatchId);
+                              setLastActiveMatchId(null);
+                            }}
+                            style={{
+                              padding: '9px 18px',
+                              background: 'linear-gradient(90deg, #FBC80D 0%, #FFD700 100%)',
+                              border: 'none', borderRadius: '8px',
+                              color: '#000', fontWeight: 900,
+                              fontFamily: 'Bebas Neue, sans-serif',
+                              fontSize: '0.9rem', letterSpacing: '0.5px',
+                              cursor: 'pointer',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            REJOIN NOW
+                          </button>
+                          <button
+                            onClick={() => setLastActiveMatchId(null)}
+                            style={{
+                              padding: '9px 14px',
+                              background: 'rgba(255,255,255,0.07)',
+                              border: '1px solid rgba(255,255,255,0.15)',
+                              borderRadius: '8px', color: 'rgba(255,255,255,0.6)',
+                              cursor: 'pointer', fontSize: '0.8rem'
+                            }}
+                          >
+                            Dismiss
+                          </button>
+                        </div>
+                      </div>
+                    )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                       <span style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.7)' }}>
                         Live ephemeral rooms actively broadcasting across the network
@@ -2891,6 +2966,64 @@ export default function KontrolaArena() {
                       padding: '24px'
                     }}
                   >
+                    {/* ── Rejoin banner: only shown when a previous in-progress game is detected ── */}
+                    {lastActiveMatchId && (
+                      <div style={{
+                        background: 'rgba(251,200,13,0.1)',
+                        border: '1.5px solid rgba(251,200,13,0.5)',
+                        borderRadius: '12px',
+                        padding: '14px 18px',
+                        marginBottom: '20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '12px',
+                        flexWrap: 'wrap'
+                      }}>
+                        <div>
+                          <div style={{ color: '#FBC80D', fontWeight: 900, fontFamily: 'Bebas Neue, sans-serif', fontSize: '1rem', letterSpacing: '0.5px' }}>
+                            ⚔️ GAME IN PROGRESS
+                          </div>
+                          <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.82rem', marginTop: '2px' }}>
+                            Room <span style={{ color: '#FBC80D', fontWeight: 700, letterSpacing: '2px' }}>{lastActiveMatchId}</span> is still ongoing
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button
+                            onClick={() => {
+                              setMatchId(lastActiveMatchId);
+                              handleJoinByCode(lastActiveMatchId);
+                              setLastActiveMatchId(null);
+                            }}
+                            style={{
+                              padding: '9px 18px',
+                              background: 'linear-gradient(90deg, #FBC80D 0%, #FFD700 100%)',
+                              border: 'none', borderRadius: '8px',
+                              color: '#000', fontWeight: 900,
+                              fontFamily: 'Bebas Neue, sans-serif',
+                              fontSize: '0.9rem', letterSpacing: '0.5px',
+                              cursor: 'pointer',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            REJOIN NOW
+                          </button>
+                          <button
+                            onClick={() => setLastActiveMatchId(null)}
+                            style={{
+                              padding: '9px 14px',
+                              background: 'rgba(255,255,255,0.07)',
+                              border: '1px solid rgba(255,255,255,0.15)',
+                              borderRadius: '8px', color: 'rgba(255,255,255,0.6)',
+                              cursor: 'pointer', fontSize: '0.8rem'
+                            }}
+                          >
+                            Dismiss
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     <h3 style={{ margin: '0 0 8px 0', fontSize: '1.4rem', fontFamily: 'Bebas Neue, sans-serif', color: 'var(--neon-gold)' }}>
                       JOIN PRIVATE ROOM
                     </h3>
@@ -4262,20 +4395,6 @@ export default function KontrolaArena() {
               onClose={() => {
                 setShowCrystalSplitModal(false);
                 setCrystalSplitData(null);
-              }}
-            />
-          )}
-
-          {/* Reconnect Modal */}
-          {roomCode && gameState && (
-            <ReconnectModal
-              isOpen={true}
-              roomCode={roomCode}
-              onContinue={() => {
-                // Modal dismissed, game continues
-              }}
-              onError={(error) => {
-                setRoomPersistenceError(error.message);
               }}
             />
           )}

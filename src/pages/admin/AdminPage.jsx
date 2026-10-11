@@ -912,7 +912,7 @@ export default function AdminPage() {
     { id: 'monetization', label: 'Monetization', icon: Coins, badge: 'Eco' },
     { id: 'music', label: 'Music Library', icon: Music, badge: musicTracks.filter(m => m.status === 'pending').length || 0 },
     { id: 'bug_reports', label: 'Bug Reports', icon: Bug, badge: bugReports.filter(r => r.status === 'new' && r.error_type !== 'manual').length || 0 },
-    { id: 'support_messages', label: 'Support Messages', icon: MessageSquare, badge: supportMessages.filter(s => s.status === 'new').length || 0 },
+    { id: 'support_messages', label: 'Support Messages', icon: MessageSquare, badge: supportMessages.filter(s => s.status === 'open' || s.status === 'in_progress').length || 0 },
     { id: 'tcg_apis', label: 'TCG APIs', icon: Server, badge: 'Live' }
   ];
 
