@@ -14,7 +14,8 @@ export default function CardActionModal({
   onOpenBlitz,
   onOpenRetreat,
   onShowLevelRequirement,
-  onDiscardCard
+  onDiscardCard,
+  onOpenSecretAllianceInvite
 }) {
   const [selectedInstanceId, setSelectedInstanceId] = useState(
     activePlayer.actionCardsHand?.[0]?.instanceId || null
@@ -54,6 +55,8 @@ export default function CardActionModal({
       return;
     }
     if (card.id === 'retreat_card') {
+      // RETREAT timing gate: Only available AFTER dice rolled (inCombat phase or later)
+      // For now, we allow retreat anytime. Phase gating will happen in RetreatModal
       onOpenRetreat(activePlayer, card.instanceId);
       return;
     }
@@ -63,7 +66,19 @@ export default function CardActionModal({
     if (!currentAction) return;
 
     if (activePlayer.energyTokens < totalETCost) {
-      setErrorMsg(`Need ${totalETCost} ET � you have ${activePlayer.energyTokens} ET.`);
+      setErrorMsg(`Need ${totalETCost} ET you have ${activePlayer.energyTokens} ET.`);
+      return;
+    }
+
+    // BACK STAB gate: Only works in 3+ player matches
+    if (currentAction.id === 'backstab' && allPlayers.length <= 2) {
+      setErrorMsg('BACK STAB only available in 3+ player matches.');
+      return;
+    }
+
+    // SOUL ALLIANCE gate: Only works in 3+ player matches
+    if (currentAction.id === 'soul_alliance' && allPlayers.length <= 2) {
+      setErrorMsg('SOUL ALLIANCE only available in 3+ player matches.');
       return;
     }
 
@@ -107,7 +122,9 @@ export default function CardActionModal({
         defender: targetPlayer,
         actionCard: currentAction,
         characterMove: currentMove,
-        amplifyBonus: amplifyChoice === 'ap' ? 20 : 0
+        amplifyBonus: amplifyChoice === 'ap' ? 20 : 0,
+        playerCount: allPlayers.length,
+        isBackStab: currentAction.id === 'backstab'
       });
       setAwaitingPhysicalPlacement(true);
       return;
@@ -180,6 +197,52 @@ export default function CardActionModal({
       });
       return;
     }
+
+    // Handle Vitality Cards (V10, V20, V30, V40)
+    if (currentAction.type === 'VITALITY') {
+      onApplyInstantEffect({
+        type: 'vitality',
+        sourcePlayerId: activePlayer.id,
+        targetPlayerId: activePlayer.id, // Apply to self
+        costET: currentAction.costET,
+        cardId: currentAction.id,
+        cardName: currentAction.name, // Pass card name so BattleArena knows V10/V20/V30/V40
+        playedInstanceId: currentAction.instanceId
+      });
+      return;
+    }
+
+    // Handle KONTROL Card
+    if (currentAction.id === 'kontrol_card') {
+      if (activePlayer.energyTokens < totalETCost) {
+        setErrorMsg(`Need ${totalETCost} ET you have ${activePlayer.energyTokens} ET.`);
+        return;
+      }
+      if (!targetPlayer) {
+        setErrorMsg('Please pick a target opponent.');
+        return;
+      }
+      // Call the KONTROL modal handler with target
+      if (onOpenKontrol) {
+        onOpenKontrol(activePlayer, targetPlayer, currentAction.instanceId);
+        onClose();
+      }
+      return;
+    }
+
+    // Handle SOUL ALLIANCE Card
+    if (currentAction.id === 'soul_alliance') {
+      if (!targetPlayer) {
+        setErrorMsg('Please pick a target to ally with.');
+        return;
+      }
+      // FIX #4: Pass target player ID so modal knows who to send invite to
+      if (onOpenSecretAllianceInvite) {
+        onOpenSecretAllianceInvite(currentAction.instanceId, targetPlayer.id);
+        onClose();
+      }
+      return;
+    }
   };
 
   const handlePhysicalPlacementConfirmed = () => {
@@ -206,7 +269,7 @@ export default function CardActionModal({
       }}
       onClick={onClose}
     >
-      {/* Floating BACK button � fixed to top-left of the screen overlay */}
+      {/* Floating BACK button fixed to top-left of the screen overlay */}
       <button
         onClick={onClose}
         style={{
@@ -277,7 +340,7 @@ export default function CardActionModal({
                   TACTICAL COMBAT PLAY
                 </span>
                 <h2 style={{ fontSize: '1.25rem', margin: '2px 0 0 0', fontFamily: 'Orbitron, sans-serif' }}>
-                  {activePlayer.name} � PLAY ACTION CARD
+                  {activePlayer.name} – PLAY ACTION CARD
                 </h2>
               </div>
             </div>
@@ -288,7 +351,7 @@ export default function CardActionModal({
           {awaitingPhysicalPlacement ? (
             <div style={{ padding: '60px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, textAlign: 'center' }}>
               <div style={{ fontSize: '4rem', marginBottom: '20px', animation: 'pulse 1.5s infinite' }}>
-                ??
+                ⚔️
               </div>
               <h2 style={{ fontSize: '1.8rem', color: '#fff', margin: '0 0 16px', fontFamily: 'Orbitron, sans-serif' }}>
                 PHYSICAL PLACEMENT REQUIRED
@@ -453,9 +516,9 @@ export default function CardActionModal({
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
                       {[
-                        { id: 'hp', label: '?? +20 HP', sub: 'Heal' },
-                        { id: 'ap', label: '?? +20 AP', sub: 'Attack' },
-                        { id: 'dp', label: '??? +10 DP', sub: 'Armor' }
+                        { id: 'hp', label: '❤️ +20 HP', sub: 'Heal' },
+                        { id: 'ap', label: '⚔️ +20 AP', sub: 'Attack' },
+                        { id: 'dp', label: '🛡️ +10 DP', sub: 'Armor' }
                       ].map(amp => (
                         <button
                           key={amp.id}
@@ -481,7 +544,7 @@ export default function CardActionModal({
                 )}
 
                 {/* Character Move Selection (For Attacks) */}
-                {(currentAction?.category === 'Attack' || isZombie) && (
+                {(currentAction?.category === 'Attack' || isZombie) && currentAction?.type !== 'VITALITY' && (
                   <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px' }}>
                     <div style={{ fontSize: '0.82rem', color: 'var(--neon-pink)', fontWeight: 'bold', marginBottom: '8px' }}>
                       2. PAIR PLAYER TECHNIQUE
@@ -517,7 +580,7 @@ export default function CardActionModal({
                             </div>
                             <div style={{ textAlign: 'right' }}>
                               <span style={{ fontSize: '0.82rem', color: '#ED1E24', fontWeight: 'bold' }}>
-                                {isMult ? `?? � ${move.multiplier} AP` : `${move.baseAP} AP`}
+                                {isMult ? `🎲 × ${move.multiplier} AP` : `${move.baseAP} AP`}
                               </span>
                               <div style={{ fontSize: '0.7rem', color: '#FBC80D' }}>Cost: {move.costET || 0} ET</div>
                             </div>
@@ -529,7 +592,7 @@ export default function CardActionModal({
                 )}
 
                 {/* Target Opponent Selection */}
-                {(currentAction?.category === 'Attack' || currentAction?.id === 'poison_card' || isZombie) && (
+                {(currentAction?.category === 'Attack' || currentAction?.id === 'poison_card' || isZombie) && currentAction?.type !== 'VITALITY' && (
                   <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px' }}>
                     <div style={{ fontSize: '0.82rem', color: 'var(--neon-gold)', fontWeight: 'bold', marginBottom: '8px' }}>
                       3. SELECT TARGET OPPONENT
@@ -578,7 +641,7 @@ export default function CardActionModal({
                 {/* Error message */}
                 {errorMsg && (
                   <div style={{ color: '#ED1E24', background: 'rgba(237, 30, 36, 0.1)', border: '1px solid #ED1E24', padding: '8px 12px', borderRadius: '8px', fontSize: '0.85rem', textAlign: 'center', fontWeight: 'bold' }}>
-                    ?? {errorMsg}
+                    ⚠️ {errorMsg}
                   </div>
                 )}
 
@@ -634,5 +697,3 @@ export default function CardActionModal({
     </div>
   );
 }
-
-

@@ -139,6 +139,14 @@ export function checkZombieStatus(player) {
  *    - Absorbs incoming damage first before HP takes a hit
  * 7. Elemental Zombie Cleanse:
  *    - If defender is a Zombie and hit by Fire or Lightning, 1 Poison card is removed!
+ * 8. +DEFENCE Card System:
+ *    - If defender uses +DEFENCE card during clash:
+ *      - Priority 1: If defender WINS clash, apply defenseBonus to reduce attacker damage
+ *      - Priority 2: If defender LOSES clash BUT rolls 6+, apply character's defaultDP
+ *      - If neither: card has no effect that round
+ * 9. BACK STAB Bypass:
+ *    - BACK STAB bypasses shield and basic defense, deals fixed 25 AP
+ *    - Only works in 3+ player matches
  */
 export function resolveDiceCombat({
   attacker,
@@ -149,10 +157,33 @@ export function resolveDiceCombat({
   clashWon = true, // Passed from Phase 1
   clashDefSum = 6, // Defender's sum from Phase 1 (for 6+ check)
   amplifyBonus = 0,
-  isSingleDieMultiplier = false
+  isSingleDieMultiplier = false,
+  playerCount = 2, // For BACK STAB and SOUL ALLIANCE gating
+  defenseCard = null, // +DEFENCE card used by defender
+  isBackStab = false // Whether this attack is BACK STAB
 }) {
   const atkChar = attacker.isZombie ? ZOMBIE_PROFILE : (CHARACTERS[attacker.characterId] || CHARACTERS.chynaman);
   const defChar = defender.isZombie ? ZOMBIE_PROFILE : (CHARACTERS[defender.characterId] || CHARACTERS.chynaman);
+
+  // BACK STAB Gate: Only works in 3+ player matches
+  if (isBackStab && playerCount <= 2) {
+    return {
+      rawAP: 0,
+      weaknessTriggered: false,
+      weaknessBonus: 0,
+      defenseActivated: false,
+      innateDP: 0,
+      damageDealt: 0,
+      absorbedByShield: 0,
+      zombiePoisonCured: false,
+      appliesPoison: false,
+      appliesStun: false,
+      burnStacks: 0,
+      revealCards: false,
+      isMiss: true,
+      isBackStabBlocked: true // Flag for blocked BACK STAB
+    };
+  }
 
   // 0. Clash Check
   if (!clashWon) {
@@ -249,18 +280,40 @@ export function resolveDiceCombat({
   const totalOffensiveAP = Math.max(0, rawAP + weaknessBonus);
 
   // 3. Defender 6+ Defense Rule (2 Gold Dice sum >= 6 from Clash)
-  const defenseActivated = clashDefSum >= 6;
-  const innateDP = defenseActivated ? (defChar.defaultDP || 0) + (defender.buffDP || 0) : 0;
+  // +DEFENCE Card Priority: Priority 1 applies if defender wins clash
+  let defenseActivated = clashDefSum >= 6;
+  let innateDP = defenseActivated ? (defChar.defaultDP || 0) + (defender.buffDP || 0) : 0;
+  let defenseCardBonus = 0;
 
-  // 4. Net Damage after DP mitigation
-  const damageAfterDP = Math.max(0, totalOffensiveAP - innateDP);
+  // Apply +DEFENCE card bonus only if defender wins clash OR has 6+ defense
+  if (defenseCard && (clashWon === false || (clashWon === true && defenseActivated))) {
+    defenseCardBonus = defenseCard.defenseBonus || 0;
+    if (clashWon === false && clashDefSum >= 6) {
+      // Priority 2: Defender lost clash but rolled 6+, use innateDP
+      defenseCardBonus = 0;
+    }
+  }
+
+  // 4. BACK STAB bypasses shield and defense
+  let netDamageBeforeShield = totalOffensiveAP - innateDP - defenseCardBonus;
+  
+  if (isBackStab) {
+    // BACK STAB: Fixed 25 AP, bypasses all defenses
+    netDamageBeforeShield = 25;
+  }
+
+  const damageAfterDP = Math.max(0, netDamageBeforeShield);
 
   // 5. Shield absorption
   let currentShield = defender.shield || 0;
   let netHPDamage = damageAfterDP;
   let absorbedByShield = 0;
 
-  if (currentShield > 0) {
+  // BACK STAB bypasses shield
+  if (isBackStab) {
+    absorbedByShield = 0;
+    // No shield reduction for BACK STAB
+  } else if (currentShield > 0) {
     if (currentShield >= netHPDamage) {
       absorbedByShield = netHPDamage;
       currentShield -= netHPDamage;
@@ -308,7 +361,7 @@ export function resolveDiceCombat({
       sleepTurns = 2;
     } else if (cardName.includes('LIGHTNING X1')) {
       sleepTurns = 1;
-    } else if (characterMove?.name?.includes('Golden Mic Lightning') || characterMove?.element === 'Lightning') {
+    } else if (characterMove?.name?.includes('Golden Mic Lightning') || characterMove?.name?.includes('LIGHTNING X2') || characterMove?.name?.includes('LIGHTNING X1') || characterMove?.element === 'Lightning') {
       // Character lightning moves apply 1 sleep turn on success
       sleepTurns = 1;
     }
@@ -329,6 +382,7 @@ export function resolveDiceCombat({
     totalOffensiveAP,
     defenseActivated,
     innateDP,
+    defenseCardBonus,
     damageAfterDP,
     absorbedByShield,
     damageDealt: netHPDamage,
@@ -345,7 +399,8 @@ export function resolveDiceCombat({
     zombiePoisonCured,
     moveElement,
     isAttackSuccessful: totalOffensiveAP > 0,
-    isMiss: !clashWon
+    isMiss: !clashWon,
+    isBackStab
   };
 }
 

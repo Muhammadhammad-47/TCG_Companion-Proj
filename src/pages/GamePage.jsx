@@ -4,6 +4,7 @@ import LoadingScreen from '../game/components/LoadingScreen';
 import MainMenu from '../game/components/MainMenu';
 import GameSetup from '../game/components/GameSetup';
 import BattleArena from '../game/components/BattleArena';
+import ReconnectModal from '../game/components/ReconnectModal';
 import { Chat } from '../App';
 import { createInitialGameState } from '../game/utils/gameEngine';
 import { CHARACTERS } from '../game/data/characters';
@@ -24,6 +25,7 @@ export default function GamePage() {
   const [isMuted, setIsMuted] = useState(false);
   const [showNewMatchModal, setShowNewMatchModal] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [showReconnectModal, setShowReconnectModal] = useState(true); // Show on first load
   const hasLoggedWinnerRef = useRef(false);
 
   React.useEffect(() => {
@@ -207,6 +209,14 @@ export default function GamePage() {
     setActiveTab('menu');
   };
 
+  const handleReconnectRoom = (roomData) => {
+    // Load the fetched game state and set active tab to arena
+    setGameState(roomData.gameState);
+    setHistoryStack([]);
+    setShowReconnectModal(false);
+    setActiveTab('arena');
+  };
+
   // 1. Initial Arcade Game Loading Screen
   if (isLoading) {
     return (
@@ -258,6 +268,14 @@ export default function GamePage() {
         ×
       </button>
       <main className="main-content-viewport" style={{ position: 'absolute', inset: 0 }}>
+        {/* Reconnect Modal (shown on first load) */}
+        {showReconnectModal && (
+          <ReconnectModal
+            onRoomFound={handleReconnectRoom}
+            onClose={() => setShowReconnectModal(false)}
+          />
+        )}
+
         {/* Main Menu Screen (Page 7) */}
         {activeTab === 'menu' && (
           <MainMenu

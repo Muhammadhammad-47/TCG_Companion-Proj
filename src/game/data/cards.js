@@ -101,6 +101,103 @@ export const ACTION_CARDS = [
     icon: '⚡⚡',
     color: '#ffe93d',
     desc: 'Heavy lightning strike dealing damage, removes 1 Poison card, and -2 turn penalty (2 ET).'
+  },
+  {
+    id: 'defence_d10',
+    name: '+DEFENCE D10',
+    type: 'DEFENSE',
+    costET: 0,
+    icon: '🛡️',
+    color: '#3b9dff',
+    defenseBonus: 10,
+    desc: 'Gain +10 Defense bonus. Applies if you win clash or roll 6+ on defense. (0 ET)'
+  },
+  {
+    id: 'defence_d15',
+    name: '+DEFENCE D15',
+    type: 'DEFENSE',
+    costET: 0,
+    icon: '🛡️',
+    color: '#3b9dff',
+    defenseBonus: 15,
+    desc: 'Gain +15 Defense bonus. Applies if you win clash or roll 6+ on defense. (0 ET)'
+  },
+  {
+    id: 'defence_d20',
+    name: '+DEFENCE D20',
+    type: 'DEFENSE',
+    costET: 0,
+    icon: '🛡️',
+    color: '#3b9dff',
+    defenseBonus: 20,
+    desc: 'Gain +20 Defense bonus. Applies if you win clash or roll 6+ on defense. (0 ET)'
+  },
+  {
+    id: 'revive_card',
+    name: 'REVIVE',
+    type: 'HEAL',
+    costET: 0,
+    icon: '💀',
+    color: '#2df6ff',
+    desc: 'If defeated, use to re-enter at 50% HP. (0 ET)'
+  },
+  {
+    id: 'backstab',
+    name: 'BACK STAB',
+    type: 'ATTACK',
+    costET: 1,
+    icon: '🗡️',
+    color: '#ff3b6b',
+    desc: 'Bypass defenses. Deals 25 AP. Only works in 3+ player matches. (1 ET)'
+  },
+  {
+    id: 'vitality_v10',
+    name: 'VITALITY GAIN V10',
+    type: 'VITALITY',
+    costET: 0,
+    icon: '⭐',
+    color: '#ffd700',
+    minLevel: 1,
+    desc: 'Gain vital energy to unlock Level 2 (0 ET). Requires Level 1+.'
+  },
+  {
+    id: 'vitality_v20',
+    name: 'VITALITY GAIN V20',
+    type: 'VITALITY',
+    costET: 0,
+    icon: '⭐⭐',
+    color: '#ffd700',
+    minLevel: 2,
+    desc: 'Gain vital energy to unlock Level 3 (0 ET). Requires Level 2+.'
+  },
+  {
+    id: 'vitality_v30',
+    name: 'VITALITY GAIN V30',
+    type: 'VITALITY',
+    costET: 0,
+    icon: '⭐⭐⭐',
+    color: '#ffd700',
+    minLevel: 3,
+    desc: 'Gain vital energy to unlock Level 4 (0 ET). Requires Level 3+.'
+  },
+  {
+    id: 'vitality_v40',
+    name: 'VITALITY GAIN V40',
+    type: 'VITALITY',
+    costET: 0,
+    icon: '⭐⭐⭐⭐',
+    color: '#ffd700',
+    minLevel: 4,
+    desc: 'Gain vital energy to unlock Level 5 (0 ET). Requires Level 4+.'
+  },
+  {
+    id: 'kontrol_card',
+    name: 'KONTROL',
+    type: 'KONTROL',
+    costET: 2,
+    icon: '🎮',
+    color: '#9d4edd',
+    desc: 'Take direct control of opponent. Swap 1 action card from their hand with one from yours (2 ET). Character ability activation.'
   }
 ];
 

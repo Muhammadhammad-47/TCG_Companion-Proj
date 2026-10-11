@@ -6,7 +6,7 @@ import { Dices, Shield, Swords, Check, Zap, Flame, Skull, X } from 'lucide-react
 import ThreeDiceArena from './ThreeDiceArena';
 
 export default function DiceRollerModal({ combatData, onCombatComplete, onClose }) {
-  const { attacker, defender, actionCard, characterMove, amplifyBonus = 0 } = combatData;
+  const { attacker, defender, actionCard, characterMove, amplifyBonus = 0, playerCount = 2, isBackStab = false } = combatData;
   const defChar = defender.isZombie ? ZOMBIE_PROFILE : (CHARACTERS[defender.characterId] || CHARACTERS.chynaman);
   const atkChar = attacker.isZombie ? ZOMBIE_PROFILE : (CHARACTERS[attacker.characterId] || CHARACTERS.chynaman);
 
@@ -51,7 +51,9 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
       clashWon: true,
       clashDefSum: defSum,
       amplifyBonus,
-      isSingleDieMultiplier: true
+      isSingleDieMultiplier: true,
+      playerCount,
+      isBackStab
     });
 
     pendingResultRef.current = combatResult;
@@ -253,7 +255,7 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
                      const combatResult = resolveDiceCombat({
                        attacker, defender, actionCard, characterMove,
                        attackerRoll: [0, 0], clashWon: true, clashDefSum: defSum,
-                       amplifyBonus, isSingleDieMultiplier: false
+                       amplifyBonus, isSingleDieMultiplier: false, playerCount, isBackStab
                      });
                      setResult(combatResult);
                      setPhase('result');
@@ -261,7 +263,7 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
                    }
                 } else {
                    const combatResult = resolveDiceCombat({
-                     attacker, defender, actionCard, characterMove, clashWon: false
+                     attacker, defender, actionCard, characterMove, clashWon: false, playerCount, isBackStab
                    });
                    setResult(combatResult);
                    setPhase('result');

@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CHARACTERS, ZOMBIE_PROFILE, getAssetUrl } from '../data/characters';
 import { ACTION_CARDS, GAME_LIMITS } from '../data/cards';
 import { resolveDiceCombat, advanceTurn, checkZombieStatus, drawRandomCards } from '../utils/gameEngine';
 import { tradeWithAlly } from '../kontrola/KontrolaEngine';
 import { soundFX } from '../utils/audio';
+import { createGameRoom, updateGameRoom } from '../../services/roomService';
 import WinnerModal from './WinnerModal';
 import DiceRollerModal from './DiceRollerModal';
 import CardActionModal from './CardActionModal';
@@ -18,8 +19,13 @@ import LocalMatchChatModal from './LocalMatchChatModal';
 import ReviveModal from './ReviveModal';
 import XChangeModal from './XChangeModal';
 import SoulAllianceTradeModal from './SoulAllianceTradeModal';
+import SecretAllianceInviteModal from './SecretAllianceInviteModal';
+import AllianceChatModal from './AllianceChatModal';
+import AllianceStatusBadge from './AllianceStatusBadge';
 import LevelDisplay from './LevelDisplay';
 import LevelRequirementModal from './LevelRequirementModal';
+import MusicPlayer from './MusicPlayer';
+import CrystalSplitModal from './CrystalSplitModal';
 import { Chat } from '../../App';
 
 import {
@@ -57,6 +63,10 @@ export default function BattleArena({
   const [showTauntModal, setShowTauntModal] = useState(false);
   const [showCharacterCardModal, setShowCharacterCardModal] = useState(false);
   
+  // NEW: Crystal Split Modal State
+  const [showCrystalSplitModal, setShowCrystalSplitModal] = useState(false);
+  const [crystalSplitData, setCrystalSplitData] = useState(null);
+  
   // NEW: Action Card Modal States
   const [showReviveModal, setShowReviveModal] = useState(false);
   const [reviveModalData, setReviveModalData] = useState({ playerName: '', reviveHP: 50, maxHP: 100, playerId: null });
@@ -86,9 +96,23 @@ export default function BattleArena({
     requiredLevel: 2,
     nextSteps: []
   });
+
+  // NEW: Secret Alliance Modals State
+  const [showSecretAllianceInviteModal, setShowSecretAllianceInviteModal] = useState(false);
+  const [showAllianceChatModal, setShowAllianceChatModal] = useState(false);
+  const [pendingAllianceInvite, setPendingAllianceInvite] = useState(null); // { from, to, createdAt }
+  const [activeAlliance, setActiveAlliance] = useState(null); // { player1, player2, type, terms, chat: [], confirmations: {} }
+  const [allianceChatHistory, setAllianceChatHistory] = useState([]);
+  const [selectedAllianceTerms, setSelectedAllianceTerms] = useState([]);
+  const [allianceConfirmations, setAllianceConfirmations] = useState({ player1: false, player2: false });
+  const [allianceSoulAllianceCardInstanceId, setAllianceSoulAllianceCardInstanceId] = useState(null);
   
   const [activeTauntBubble, setActiveTauntBubble] = useState(null);
   const [systemError, setSystemError] = useState(null);
+  const [roomCode, setRoomCode] = useState(null); // Room code for persistence
+  const [roomPersistenceError, setRoomPersistenceError] = useState(null);
+  const inviteTimeoutRef = useRef(null); // FIX #1: Track alliance invite timeout
+  const [preselectedAllianceTargetId, setPreselectedAllianceTargetId] = useState(null); // FIX #4: Track target from SOUL ALLIANCE card
   const [localChatMessages, setLocalChatMessages] = useState([
     {
       id: 'init_1',
@@ -145,6 +169,38 @@ export default function BattleArena({
       setShowReviveModal(true);
     }
   }, [gameState?.characterStates, gameState?.activePlayerIndex]);
+
+  // EFFECT: Create game room on first load
+  useEffect(() => {
+    if (!roomCode && gameState?.players && gameState.players.length > 0) {
+      const initRoom = async () => {
+        const result = await createGameRoom(gameState);
+        if (result.roomCode) {
+          setRoomCode(result.roomCode);
+          // Show room code to players (optional: can display in UI)
+          console.log('Game room created with code:', result.roomCode);
+        } else if (result.error) {
+          setRoomPersistenceError('Room creation failed: ' + result.error);
+        }
+      };
+      initRoom();
+    }
+  }, []); // Only run once on mount
+
+  // EFFECT: Persist game state to room every 5 seconds
+  useEffect(() => {
+    if (!roomCode || !gameState) return;
+
+    const interval = setInterval(async () => {
+      const result = await updateGameRoom(roomCode, gameState);
+      if (result.error) {
+        console.warn('Failed to persist game state:', result.error);
+        // Don't show error UI every 5 seconds, just log it
+      }
+    }, 5000); // Every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [roomCode, gameState]);
 
   useEffect(() => {
     if (!lastSnapshotTime || historyStack.length === 0) return;
@@ -337,6 +393,189 @@ export default function BattleArena({
     setShowTradeModal(false);
   };
 
+  // ===== SECRET ALLIANCE HANDLERS =====
+  
+  // Open secret alliance invite modal
+  const handleOpenSecretAllianceInvite = (cardInstanceId, targetPlayerId) => {
+    setAllianceSoulAllianceCardInstanceId(cardInstanceId);
+    setPreselectedAllianceTargetId(targetPlayerId || null); // FIX #4: Store target if provided
+    setShowSecretAllianceInviteModal(true);
+  };
+
+  // Send secret alliance invite
+  const handleSendAllianceInvite = (inviteData) => {
+    soundFX.playMenuSelect();
+    
+    // Create pending invite that only recipient can see
+    setPendingAllianceInvite({
+      fromPlayerId: inviteData.fromPlayerId,
+      fromPlayerName: inviteData.fromPlayerName,
+      toPlayerId: inviteData.toPlayerId,
+      toPlayerName: inviteData.toPlayerName,
+      createdAt: Date.now(),
+      expiresAt: Date.now() + (30 * 1000) // 30 second timeout
+    });
+
+    // Hide the invite modal
+    setShowSecretAllianceInviteModal(false);
+
+    // FIX #1: Auto-decline after 30 seconds if no response (cleared on accept)
+    inviteTimeoutRef.current = setTimeout(() => {
+      setPendingAllianceInvite(null);
+    }, 30000);
+  };
+
+  // Recipient accepts the alliance invite
+  const handleAcceptAllianceInvite = () => {
+    if (!pendingAllianceInvite) return;
+
+    soundFX.playMenuSelect();
+
+    // FIX #1: Clear the timeout so it doesn't fire after acceptance
+    if (inviteTimeoutRef.current) {
+      clearTimeout(inviteTimeoutRef.current);
+      inviteTimeoutRef.current = null;
+    }
+
+    // Initialize alliance with both players
+    setActiveAlliance({
+      player1Id: pendingAllianceInvite.fromPlayerId,
+      player1Name: pendingAllianceInvite.fromPlayerName,
+      player2Id: pendingAllianceInvite.toPlayerId,
+      player2Name: pendingAllianceInvite.toPlayerName,
+      type: null, // Will be set when terms are confirmed
+      terms: [],
+      customTerms: '',
+      chat: [],
+      confirmations: { [pendingAllianceInvite.fromPlayerId]: false, [pendingAllianceInvite.toPlayerId]: false },
+      createdTurn: turnNum,
+      expiresAtTurn: turnNum + 1
+    });
+
+    // Open alliance chat modal
+    setShowAllianceChatModal(true);
+    setAllianceChatHistory([]);
+    setSelectedAllianceTerms([]);
+    setAllianceConfirmations({ player1: false, player2: false });
+
+    // Clear pending invite
+    setPendingAllianceInvite(null);
+  };
+
+  // Recipient declines the alliance invite
+  const handleDeclineAllianceInvite = () => {
+    soundFX.playCard();
+    setPendingAllianceInvite(null);
+  };
+
+  // Send message in alliance chat
+  const handleSendAllianceChatMessage = (text) => {
+    if (!activeAlliance || !text.trim()) return;
+
+    const newMessage = {
+      senderId: activePlayer.id,
+      senderName: activePlayer.name,
+      text: text.trim(),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    setAllianceChatHistory(prev => [...prev, newMessage]);
+  };
+
+  // Toggle alliance term selection
+  const handleSelectAllianceTerm = (termType) => {
+    setSelectedAllianceTerms(prev => {
+      if (prev.includes(termType)) {
+        return prev.filter(t => t !== termType);
+      } else {
+        return [...prev, termType];
+      }
+    });
+  };
+
+  // Remove a selected term
+  const handleRemoveAllianceTerm = (termType) => {
+    setSelectedAllianceTerms(prev => prev.filter(t => t !== termType));
+  };
+
+  // Confirm alliance agreement
+  const handleConfirmAllianceAgreement = () => {
+    if (!activeAlliance || selectedAllianceTerms.length === 0) return;
+
+    soundFX.playMenuSelect();
+
+    // Toggle confirmation for current player
+    const playerKey = activePlayer.id === activeAlliance.player1Id ? 'player1' : 'player2';
+    const newConfirmations = { ...allianceConfirmations };
+    newConfirmations[playerKey] = !newConfirmations[playerKey];
+    setAllianceConfirmations(newConfirmations);
+
+    // If both players confirmed, establish the alliance
+    if (newConfirmations.player1 && newConfirmations.player2) {
+      // Determine alliance type from selected terms
+      let allianceType = 'MIXED';
+      if (selectedAllianceTerms.length === 1) {
+        allianceType = selectedAllianceTerms[0];
+      }
+
+      // Update game state with established alliance
+      const establishedAlliance = {
+        ...activeAlliance,
+        type: allianceType,
+        terms: selectedAllianceTerms,
+        status: 'active'
+      };
+
+      // Register in gameState.alliances (for future reference)
+      const updatedGameState = { ...gameState };
+      if (!updatedGameState.alliances) {
+        updatedGameState.alliances = [];
+      }
+      updatedGameState.alliances.push(establishedAlliance);
+
+      // Mark both players as allied
+      const player1Idx = players.findIndex(p => p.id === establishedAlliance.player1Id);
+      const player2Idx = players.findIndex(p => p.id === establishedAlliance.player2Id);
+
+      if (player1Idx >= 0) {
+        updatedGameState.players[player1Idx].allianceId = establishedAlliance.id || `alliance_${Date.now()}`;
+        updatedGameState.players[player1Idx].alliedWith = establishedAlliance.player2Id;
+      }
+      if (player2Idx >= 0) {
+        updatedGameState.players[player2Idx].allianceId = establishedAlliance.id || `alliance_${Date.now()}`;
+        updatedGameState.players[player2Idx].alliedWith = establishedAlliance.player1Id;
+      }
+
+      setGameState(updatedGameState);
+
+      // Add system message to game chat
+      setLocalChatMessages(prev => [...prev, {
+        id: `alliance_${Date.now()}`,
+        senderId: 'system',
+        senderName: 'System',
+        text: `🤝 ${establishedAlliance.player1Name} and ${establishedAlliance.player2Name} have formed a secret alliance!`,
+        time: new Date().toLocaleTimeString()
+      }]);
+
+      // Close the alliance chat after a brief delay
+      setTimeout(() => {
+        setShowAllianceChatModal(false);
+        setActiveAlliance(null);
+      }, 1500);
+    }
+  };
+
+  // Cancel alliance formation
+  const handleCancelAllianceFormation = () => {
+    setPendingAllianceInvite(null);
+    setShowSecretAllianceInviteModal(false);
+    setShowAllianceChatModal(false);
+    setActiveAlliance(null);
+    setAllianceChatHistory([]);
+    setSelectedAllianceTerms([]);
+    setAllianceConfirmations({ player1: false, player2: false });
+  };
+
   // LEVEL REQUIREMENT: Show modal when card requires higher level
   const showLevelRequirementError = (cardName, currentLevel, requiredLevel, steps) => {
     setLevelReqModalData({
@@ -349,9 +588,15 @@ export default function BattleArena({
   };
 
   // Initiate Combat Clash -> Opens DiceRollerModal
-  const handleInitiateCombat = ({ attacker, defender, actionCard, characterMove, amplifyBonus = 0 }) => {
+  const handleInitiateCombat = ({ attacker, defender, actionCard, characterMove, amplifyBonus = 0, playerCount = 2, isBackStab = false }) => {
     setShowCardActionModal(false);
     setShowCardZoneModal(false);
+
+    // FIX #3: Secondary BACK STAB gate (defense-in-depth)
+    if (isBackStab && players.length <= 2) {
+      setSystemError('BACK STAB only available in 3+ player matches.');
+      return;
+    }
 
     // Verify ET cost
     const totalET = (actionCard?.costET || 0) + (characterMove?.costET || 0);
@@ -366,7 +611,9 @@ export default function BattleArena({
       actionCard,
       characterMove,
       amplifyBonus,
-      totalET
+      totalET,
+      playerCount: players.length,
+      isBackStab
     });
   };
 
@@ -442,11 +689,8 @@ export default function BattleArena({
         const isLightningX1 = cardName.includes('LIGHTNING X1') || moveName.includes('LIGHTNING X1');
         const hasLightningSleep = result.sleepTurns > 0;
 
-        let newSleepTurns = p.sleepTurns || 0;
-        if (hasLightningSleep) {
-          // Replace (don't accumulate) — a new Lightning hit resets the counter
-          newSleepTurns = result.sleepTurns;
-        }
+        // FIX 1: Replace sleepTurns (don't accumulate) — a new Lightning hit resets the counter
+        const newSleepTurns = hasLightningSleep ? result.sleepTurns : (p.sleepTurns || 0);
 
         let nextPlayerObj = {
           ...p,
@@ -476,6 +720,32 @@ export default function BattleArena({
 
     const defenderDefeated = updatedPlayers.find(p => p.id === defender.id && p.hp === 0 && !p.isZombie);
 
+    // Check if we should show crystal split modal
+    // Show modal when: 2+ players in game AND opponent defeated AND crystal available
+    const otherPlayers = updatedPlayers.filter(p => p.id !== attacker.id && !p.isDefeated);
+    const defenderStillDefeated = updatedPlayers.find(p => p.id === defender.id && p.hp === 0);
+    const shouldShowCrystalSplitModal = 
+      defenderDefeated && 
+      defender.crystals > 0 && 
+      otherPlayers.length > 0;
+
+    // FIX #2: Validate defender is still defeated before showing crystal split modal
+    if (shouldShowCrystalSplitModal && updatedPlayers.length >= 3 && defenderStillDefeated) {
+      // Store combat data and show modal - defer crystal transfer
+      setCrystalSplitData({
+        attacker,
+        defender,
+        updatedPlayers,
+        combatLog: {
+          characterMove,
+          damage
+        }
+      });
+      setShowCrystalSplitModal(true);
+      return;
+    }
+
+    // Normal crystal transfer (no split needed - single attacker situation or 2 player game)
     const finalPlayers = updatedPlayers.map(p => {
       if (defenderDefeated) {
         if (p.id === defender.id) {
@@ -858,6 +1128,108 @@ export default function BattleArena({
       action: success ? `Successfully retreated from battle!` : `Retreat attempt failed! Must stay and fight.`,
       type: 'retreat',
       amount: success ? 'ESCAPED' : 'FAILED'
+    };
+
+    setGameState({
+      ...gameState,
+      players: updatedPlayers,
+      history: [newLog, ...(gameState.history || [])]
+    });
+  };
+
+  // Complete Crystal Split Negotiation
+  const handleCrystalSplitComplete = (result) => {
+    setShowCrystalSplitModal(false);
+    setCrystalSplitData(null);
+    pushStateSnapshot();
+
+    const { winner, loser, offer, method } = result;
+    
+    // Update game state with crystal and item transfers
+    const updatedPlayers = players.map(p => {
+      if (p.id === winner.id) {
+        // Winner gets the crystal
+        let updatedCards = p.actionCardsHand || [];
+        
+        // FIX #7: Safely access offer (may be null if fight outcome)
+        // If negotiation was accepted, add offered items
+        if (result.accepted && offer) {
+          // Add offered cards from loser
+          if (offer.actionCards && offer.actionCards.length > 0) {
+            updatedCards = [...updatedCards, ...offer.actionCards.map(card => ({
+              ...card,
+              instanceId: `transferred_${Date.now()}_${Math.random()}`
+            }))];
+          }
+        }
+
+        // Check if winner already has 3 crystals (would win game)
+        const newCrystals = p.crystals + 1;
+        const isGameWinner = newCrystals >= 3 && !p.isZombie;
+
+        return {
+          ...p,
+          crystals: newCrystals,
+          energyTokens: (p.energyTokens || 0) + (offer?.energyTokens || 0),
+          actionCardsHand: updatedCards,
+          stats: {
+            ...p.stats,
+            crystalsWon: (p.stats?.crystalsWon || 0) + 1
+          }
+        };
+      }
+
+      if (p.id === loser.id) {
+        // Loser loses the crystal
+        let updatedCards = p.actionCardsHand || [];
+        
+        // If negotiation was accepted, remove offered items
+        if (result.accepted && offer) {
+          if (offer.actionCards && offer.actionCards.length > 0) {
+            const cardIdsToRemove = new Set(offer.actionCards.map(c => c.instanceId));
+            updatedCards = updatedCards.filter(c => !cardIdsToRemove.has(c.instanceId));
+          }
+        }
+
+        return {
+          ...p,
+          crystals: Math.max(0, p.crystals - 1),
+          energyTokens: Math.max(0, (p.energyTokens || 0) - (offer?.energyTokens || 0)),
+          actionCardsHand: updatedCards
+        };
+      }
+
+      return p;
+    });
+
+    // Check if anyone won the game
+    let gameWinner = null;
+    for (const p of updatedPlayers) {
+      if (p.crystals >= 3 && !p.isZombie) {
+        gameWinner = p;
+        break;
+      }
+    }
+
+    if (gameWinner) {
+      setGameState({
+        ...gameState,
+        players: updatedPlayers,
+        phase: 'game_over',
+        winner: gameWinner
+      });
+      soundFX.playVictory?.();
+      return;
+    }
+
+    // Log the crystal split result
+    const methodText = result.accepted ? 'Negotiation' : 'Dice Roll';
+    const newLog = {
+      turn: turnNum,
+      actor: winner.name,
+      action: `Won Stability Crystal via ${methodText} (defeated ${loser.name})`,
+      type: 'crystal_split',
+      amount: '+1 Crystal'
     };
 
     setGameState({
@@ -1808,6 +2180,7 @@ export default function BattleArena({
             onOpenRetreat={(atk) => setActiveRetreatData({ attacker: atk })}
             onShowLevelRequirement={showLevelRequirementError}
             onDiscardCard={(card) => { handleDiscardActionCard(card); setShowCardActionModal(false); }}
+            onOpenSecretAllianceInvite={handleOpenSecretAllianceInvite}
           />
         )}
 
@@ -1889,6 +2262,20 @@ export default function BattleArena({
             player={activeRetreatData.attacker}
             onClose={() => setActiveRetreatData(null)}
             onCompleteRetreat={handleCompleteRetreat}
+          />
+        )}
+
+        {/* Crystal Split Modal */}
+        {showCrystalSplitModal && crystalSplitData && (
+          <CrystalSplitModal
+            isOpen={showCrystalSplitModal}
+            attackers={[crystalSplitData.attacker, ...players.filter(p => p.id !== crystalSplitData.attacker.id && !p.isDefeated)]}
+            defeated={crystalSplitData.defender}
+            onSplitComplete={handleCrystalSplitComplete}
+            onClose={() => {
+              setShowCrystalSplitModal(false);
+              setCrystalSplitData(null);
+            }}
           />
         )}
 
@@ -2157,6 +2544,172 @@ export default function BattleArena({
           nextSteps={levelReqModalData.nextSteps}
           onClose={() => setShowLevelReqModal(false)}
         />
+
+        {/* Secret Alliance Invite Modal - Only shown to potential ally, not to sender */}
+        {pendingAllianceInvite && activePlayer.id === pendingAllianceInvite.toPlayerId && (
+          <div className="alliance-notification-overlay">
+            <div className="alliance-notification-box">
+              <div className="notification-content">
+                <span className="notification-icon">🤝</span>
+                <p className="notification-text">
+                  <strong>{pendingAllianceInvite.fromPlayerName}</strong> sent you a secret alliance invite!
+                </p>
+              </div>
+              <div className="notification-buttons">
+                <button
+                  className="notification-btn decline"
+                  onClick={handleDeclineAllianceInvite}
+                >
+                  Decline
+                </button>
+                <button
+                  className="notification-btn accept"
+                  onClick={handleAcceptAllianceInvite}
+                >
+                  Accept
+                </button>
+              </div>
+
+              <style jsx>{`
+                .alliance-notification-overlay {
+                  position: fixed;
+                  top: 20px;
+                  right: 20px;
+                  z-index: 10000;
+                  animation: slideIn 0.3s ease-out;
+                }
+
+                @keyframes slideIn {
+                  from {
+                    transform: translateX(400px);
+                    opacity: 0;
+                  }
+                  to {
+                    transform: translateX(0);
+                    opacity: 1;
+                  }
+                }
+
+                .alliance-notification-box {
+                  background: linear-gradient(135deg, rgba(157, 78, 221, 0.95) 0%, rgba(157, 78, 221, 0.85) 100%);
+                  border: 2px solid #9d4edd;
+                  border-radius: 10px;
+                  padding: 16px;
+                  box-shadow: 0 0 30px rgba(157, 78, 221, 0.6);
+                  min-width: 300px;
+                  max-width: 350px;
+                }
+
+                .notification-content {
+                  display: flex;
+                  align-items: center;
+                  gap: 12px;
+                  margin-bottom: 12px;
+                  padding-bottom: 12px;
+                  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+                }
+
+                .notification-icon {
+                  font-size: 28px;
+                }
+
+                .notification-text {
+                  margin: 0;
+                  color: #fff;
+                  font-size: 14px;
+                  font-weight: 500;
+                }
+
+                .notification-text strong {
+                  color: #39ff14;
+                }
+
+                .notification-buttons {
+                  display: flex;
+                  gap: 8px;
+                }
+
+                .notification-btn {
+                  flex: 1;
+                  padding: 10px;
+                  border: none;
+                  border-radius: 6px;
+                  font-weight: bold;
+                  cursor: pointer;
+                  transition: all 0.3s ease;
+                  font-size: 13px;
+                  text-transform: uppercase;
+                  letter-spacing: 0.5px;
+                }
+
+                .notification-btn.decline {
+                  background: rgba(255, 255, 255, 0.1);
+                  color: rgba(255, 255, 255, 0.8);
+                  border: 1px solid rgba(255, 255, 255, 0.3);
+                }
+
+                .notification-btn.decline:hover {
+                  background: rgba(255, 255, 255, 0.2);
+                }
+
+                .notification-btn.accept {
+                  background: #39ff14;
+                  color: #000;
+                  border: 1px solid #39ff14;
+                }
+
+                .notification-btn.accept:hover {
+                  box-shadow: 0 0 15px rgba(57, 255, 20, 0.6);
+                }
+              `}</style>
+            </div>
+          </div>
+        )}
+
+        {/* Secret Alliance Invite Modal */}
+        {showSecretAllianceInviteModal && (
+          <SecretAllianceInviteModal
+            isOpen={showSecretAllianceInviteModal}
+            activePlayer={activePlayer}
+            allPlayers={players}
+            onSendInvite={handleSendAllianceInvite}
+            onCancel={() => {
+              setShowSecretAllianceInviteModal(false);
+              setPreselectedAllianceTargetId(null); // FIX #4: Clear preselection on cancel
+            }}
+            existingAlliance={
+              activePlayer.allianceId
+                ? {
+                    id: activePlayer.allianceId,
+                    allyName: players.find(p => p.id === activePlayer.alliedWith)?.name,
+                    turnsRemaining: 1
+                  }
+                : null
+            }
+            preselectedTargetId={preselectedAllianceTargetId}
+          />
+        )}
+
+        {/* Alliance Chat Modal */}
+        {showAllianceChatModal && activeAlliance && (
+          <AllianceChatModal
+            isOpen={showAllianceChatModal}
+            player1={{ id: activeAlliance.player1Id, name: activeAlliance.player1Name }}
+            player2={{ id: activeAlliance.player2Id, name: activeAlliance.player2Name }}
+            currentPlayerId={activePlayer.id}
+            chatHistory={allianceChatHistory}
+            selectedTerms={selectedAllianceTerms}
+            confirmationStatus={allianceConfirmations}
+            onSendMessage={handleSendAllianceChatMessage}
+            onSelectTerm={handleSelectAllianceTerm}
+            onRemoveTerm={handleRemoveAllianceTerm}
+            onConfirmAgreement={handleConfirmAllianceAgreement}
+            onCancel={handleCancelAllianceFormation}
+          />
+        )}
+
+        {/* Music Player */}
+        <MusicPlayer />
       </div>
     </div>
   );
