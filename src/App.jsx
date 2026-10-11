@@ -1550,6 +1550,7 @@ export function Hub() {
   const [musicUploadStatus, setMusicUploadStatus] = useState('uploading'); // 'uploading', 'success', 'error'
   const [musicUploadMessage, setMusicUploadMessage] = useState('');
   const [isMusicProgressOpen, setIsMusicProgressOpen] = useState(false);
+  const [showSupportInbox, setShowSupportInbox] = useState(false);
 
   React.useLayoutEffect(() => {
     try {
@@ -2156,7 +2157,6 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [showSupportInbox, setShowSupportInbox] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
