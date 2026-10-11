@@ -269,7 +269,14 @@ export function Chat({ onBack, isOverlay = false }) {
   const [status, setStatus] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [documentText, setDocumentText] = useState('');
-  const [chatHistory, setChatHistory] = useState([]);
+  const [localQuestions, setLocalQuestions] = useState(() => {
+    try {
+      const stored = localStorage.getItem('tcg_custom_questions');
+      return stored ? JSON.parse(stored) : [...presetQuestions];
+    } catch { return [...presetQuestions]; }
+  });
+  const [editingQuestionIdx, setEditingQuestionIdx] = useState(null);
+  const [editQuestionDraft, setEditQuestionDraft] = useState('');
   const [availableVoices, setAvailableVoices] = useState([]);
   const [selectedVoiceURI, setSelectedVoiceURI] = useState('');
   const [useExactSync, setUseExactSync] = useState(true);
@@ -451,6 +458,31 @@ export function Chat({ onBack, isOverlay = false }) {
           .then(text => setDocumentText(text))
           .catch(e => console.error("Could not load Knowledge Base/AI_Breakdowns.txt", e));
       });
+
+    // Refresh documentText every 2 minutes to pick up newly promoted questions
+    // and also on window focus to ensure fresh data after user returns to tab
+    const refreshInterval = setInterval(() => {
+      knowledgeService.loadActiveKnowledgeText()
+        .then(text => {
+          if (text) setDocumentText(text);
+        })
+        .catch(err => console.warn("Background refresh failed:", err));
+    }, 120000); // 2 minutes
+
+    // Also refresh on window focus for immediate feedback
+    const handleFocus = () => {
+      knowledgeService.loadActiveKnowledgeText()
+        .then(text => {
+          if (text) setDocumentText(text);
+        })
+        .catch(err => console.warn("Focus refresh failed:", err));
+    };
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      clearInterval(refreshInterval);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
   const streamTimer = useRef(null);
   const isCancelledRef = useRef(false);
@@ -646,7 +678,7 @@ export function Chat({ onBack, isOverlay = false }) {
         messages: [
           {
             role: "system",
-            content: "You are the TCG Companion AI, a helpful, conversational, and enthusiastic game guide. Answer questions about the game rules naturally, as if chatting with a friend. In Attention TCG, 'HP' strictly stands for 'Health Points' (NEVER call it 'Horse Power'). 'ET' stands for 'Energy Tokens', 'DP' stands for 'Defense Points', and 'AP' stands for 'Attack Power'. DO NOT sound like a programmed bot and AVOID using long bulleted lists or formatting when possible. Keep it short, punchy, and conversational (1-3 sentences max). NEVER add new rules."
+            content: "You are the TCG Companion AI, a helpful, conversational, and enthusiastic game guide. Answer questions about the game rules naturally, as if chatting with a friend. In Attention TCG, 'HP' strictly stands for 'Health Points' (NEVER call it 'Horse Power'). 'ET' stands for 'Energy Tokens', 'DP' stands for 'Defense Points', and 'AP' stands for 'Attack Power'. DO NOT sound like a programmed bot and AVOID using long bulleted lists or formatting when possible. Keep it short, punchy, and conversational (1-3 sentences max). NEVER add new rules.\n\nCHARACTER LEVELING SYSTEM:\n- Characters can level up from Level 1 to Level 4\n- Chynaman: Level 1=100 HP, Level 2=200 HP, Level 3=300 HP, Level 4=400 HP\n- Kiko/Katsumi: Level 1=100 HP, Level 2=200 HP, Level 3=300 HP, Level 4=400 HP\n- Shroomy: Level 1=65 HP, Level 2=130 HP, Level 3=260 HP, Level 4=320 HP\n- Other characters have similar progression patterns"
           },
           ...recentHistory,
           {
@@ -1111,12 +1143,79 @@ export function Chat({ onBack, isOverlay = false }) {
 
           <div style={{ flex: 1, overflowY: 'auto' }}>
             <ul className="preset-list">
-              {presetQuestions.map((q, idx) => (
-                <li key={idx} onClick={() => handlePresetClick(q)} className="preset-item">
-                  {q}
-                </li>
+              {localQuestions.map((q, idx) => (
+                editingQuestionIdx === idx ? (
+                  <li key={idx} style={{ padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                    <textarea
+                      value={editQuestionDraft}
+                      onChange={(e) => setEditQuestionDraft(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '8px',
+                        background: 'rgba(0,0,0,0.5)',
+                        border: '1px solid rgba(251, 200, 13, 0.3)',
+                        borderRadius: '4px',
+                        color: '#fff',
+                        fontSize: '0.85rem',
+                        fontFamily: 'inherit',
+                        marginBottom: '6px',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                    <div style={{ display: 'flex', gap: '6px', fontSize: '0.75rem' }}>
+                      <button onClick={() => {
+                        const updated = [...localQuestions];
+                        updated[idx] = editQuestionDraft.trim();
+                        setLocalQuestions(updated);
+                        localStorage.setItem('tcg_custom_questions', JSON.stringify(updated));
+                        setEditingQuestionIdx(null);
+                      }} style={{ background: '#39ff14', color: '#000', border: 'none', borderRadius: '4px', padding: '4px 8px', cursor: 'pointer', fontWeight: 'bold' }}>
+                        Save
+                      </button>
+                      <button onClick={() => setEditingQuestionIdx(null)} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', borderRadius: '4px', padding: '4px 8px', cursor: 'pointer' }}>
+                        Cancel
+                      </button>
+                    </div>
+                  </li>
+                ) : (
+                  <li key={idx} onClick={() => handlePresetClick(q)} className="preset-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingRight: '8px' }}>
+                    <span>{q}</span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingQuestionIdx(idx);
+                        setEditQuestionDraft(q);
+                      }}
+                      style={{ background: 'transparent', border: 'none', color: 'rgba(251, 200, 13, 0.6)', cursor: 'pointer', fontSize: '0.8rem', padding: '2px 4px' }}
+                      title="Edit question"
+                    >
+                      ✎
+                    </button>
+                  </li>
+                )
               ))}
             </ul>
+
+            <button
+              onClick={() => {
+                setLocalQuestions([...presetQuestions]);
+                localStorage.removeItem('tcg_custom_questions');
+              }}
+              style={{
+                marginTop: '20px',
+                width: '100%',
+                padding: '8px',
+                background: 'rgba(251, 200, 13, 0.1)',
+                border: '1px solid rgba(251, 200, 13, 0.3)',
+                color: 'var(--neon-gold)',
+                borderRadius: '6px',
+                fontSize: '0.8rem',
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }}
+            >
+              Reset to Defaults
+            </button>
 
             {chatHistory.length > 0 && (
               <div style={{ marginTop: '30px' }}>

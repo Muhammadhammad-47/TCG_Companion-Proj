@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ACTION_CARDS } from '../data/cards';
 import { CHARACTERS, ZOMBIE_PROFILE, getAssetUrl } from '../data/characters';
 import { soundFX } from '../utils/audio';
-import { ArrowLeft, Zap, Shield, Sparkles, Flame, Brain, Skull, Heart, Swords, Target, Play, X } from 'lucide-react';
+import { ArrowLeft, Zap, Shield, Sparkles, Flame, Brain, Skull, Heart, Swords, Target, Play, X, Trash2 } from 'lucide-react';
 
 export default function CardActionModal({
   activePlayer,
@@ -12,7 +12,9 @@ export default function CardActionModal({
   onApplyInstantEffect,
   onOpenKontrol,
   onOpenBlitz,
-  onOpenRetreat
+  onOpenRetreat,
+  onShowLevelRequirement,
+  onDiscardCard
 }) {
   const [selectedInstanceId, setSelectedInstanceId] = useState(
     activePlayer.actionCardsHand?.[0]?.instanceId || null
@@ -47,8 +49,20 @@ export default function CardActionModal({
     soundFX.playCard();
     setSelectedInstanceId(card.instanceId);
 
-    if (card.id === 'kontrol_card' && (activePlayer.kontrolUsesLeft ?? 2) <= 0) {
-      setErrorMsg('No Kontrol uses left this match.');
+    if (card.id === 'kontrol_card') {
+      if ((activePlayer.kontrolUsesLeft ?? 2) <= 0) {
+        setErrorMsg('No Kontrol uses left this match.');
+        return;
+      }
+      if (activePlayer.energyTokens < 3) {
+        setErrorMsg(`Kontrol requires 3 ET. You have ${activePlayer.energyTokens} ET.`);
+        return;
+      }
+      if (activePlayer.kontrolCooldown > 0) {
+        setErrorMsg(`Kontrol is on cooldown for ${activePlayer.kontrolCooldown} more turns.`);
+        return;
+      }
+      onOpenKontrol(activePlayer, targetPlayerId, card.instanceId);
       return;
     }
     if (card.id === 'blitz_card') {
@@ -56,22 +70,23 @@ export default function CardActionModal({
         setErrorMsg('No Blitz uses left this match.');
         return;
       }
-      if (activePlayer.hp > 50) {
-        setErrorMsg('Saigo No Blitz requires HP to be 50 or below.');
+      if (activePlayer.energyTokens < 5) {
+        setErrorMsg(`Saigo No Blitz requires 5 ET. You have ${activePlayer.energyTokens} ET.`);
         return;
       }
+      if (activePlayer.hp >= 50) {
+        setErrorMsg('Saigo No Blitz requires HP to be less than 50.');
+        return;
+      }
+      if (activePlayer.blitzCooldown > 0) {
+        setErrorMsg(`Blitz is on cooldown for ${activePlayer.blitzCooldown} more turns.`);
+        return;
+      }
+      onOpenBlitz(activePlayer, card.instanceId);
+      return;
     }
     if (card.id === 'retreat_card' && activePlayer.retreatedThisTurn) {
       setErrorMsg('Already retreated this turn.');
-      return;
-    }
-
-    if (card.id === 'kontrol_card') {
-      onOpenKontrol(activePlayer, targetPlayerId, card.instanceId);
-      return;
-    }
-    if (card.id === 'blitz_card') {
-      onOpenBlitz(activePlayer, card.instanceId);
       return;
     }
     if (card.id === 'retreat_card') {
@@ -94,6 +109,31 @@ export default function CardActionModal({
 
     // Handle Attacks
     if (currentAction.category === 'Attack' || isZombie) {
+      // CHECK VITALITY LEVEL REQUIREMENTS (before initiating attack)
+      if (currentAction.name && currentAction.name.includes('VITALITY')) {
+        const currentLevel = activePlayer.level || 1;
+        let requiredLevel = 1;
+        let nextSteps = [];
+
+        if (currentAction.name.includes('V20')) {
+          requiredLevel = 2;
+          nextSteps = ['Use VITALITY GAIN V10 to reach Level 2'];
+        } else if (currentAction.name.includes('V30')) {
+          requiredLevel = 3;
+          nextSteps = ['Use VITALITY GAIN V10 to reach Level 2', 'Use VITALITY GAIN V20 to reach Level 3'];
+        } else if (currentAction.name.includes('V40')) {
+          requiredLevel = 4;
+          nextSteps = ['Use VITALITY GAIN V10 to reach Level 2', 'Use VITALITY GAIN V20 to reach Level 3', 'Use VITALITY GAIN V30 to reach Level 4'];
+        }
+
+        if (currentLevel < requiredLevel) {
+          if (onShowLevelRequirement) {
+            onShowLevelRequirement(currentAction.name, currentLevel, requiredLevel, nextSteps);
+          }
+          return;
+        }
+      }
+
       if (!targetPlayer) {
         setErrorMsg('Please pick a target opponent.');
         return;
@@ -402,6 +442,36 @@ export default function CardActionModal({
                         <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)', margin: 0, lineHeight: '1.3' }}>
                           {card.desc}
                         </p>
+                        {/* BUG 8 FIX: DISCARD button inside the card tile */}
+                        {onDiscardCard && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              soundFX.playCard();
+                              onDiscardCard(card);
+                              onClose();
+                            }}
+                            style={{
+                              marginTop: '6px',
+                              background: 'rgba(237, 30, 36, 0.18)',
+                              border: '1px solid rgba(237, 30, 36, 0.5)',
+                              color: '#ED1E24',
+                              borderRadius: '6px',
+                              padding: '4px 8px',
+                              fontSize: '0.72rem',
+                              fontWeight: 'bold',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              width: '100%',
+                              justifyContent: 'center'
+                            }}
+                            title="Discard this card and draw a new one (ends your turn)"
+                          >
+                            <Trash2 size={11} /> DISCARD
+                          </button>
+                        )}
                       </div>
                     );
                   })}

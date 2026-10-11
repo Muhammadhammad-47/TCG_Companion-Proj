@@ -6,6 +6,7 @@ import GameSetup from '../game/components/GameSetup';
 import BattleArena from '../game/components/BattleArena';
 import { Chat } from '../App';
 import { createInitialGameState } from '../game/utils/gameEngine';
+import { CHARACTERS } from '../game/data/characters';
 import { soundFX } from '../game/utils/audio';
 import { useNavigate } from 'react-router-dom';
 import { ScaleWrapper } from '../components/ScaleWrapper';
@@ -143,8 +144,8 @@ export default function GamePage() {
       : (() => { try { return localStorage.getItem('tcg_warrior_username') || 'Player 1'; } catch { return 'Player 1'; } })();
 
     const duelPlayers = [
-      { name: playerName, characterId: 'chynaman', startingHP: 100, startingET: 5, startingCrystals: 2 },
-      { name: 'Player 2', characterId: 'bee', startingHP: 100, startingET: 5, startingCrystals: 2 }
+      { name: playerName, characterId: 'chynaman', startingHP: CHARACTERS['chynaman']?.baseHP || 100, startingET: 5, startingCrystals: 2 },
+      { name: 'Player 2', characterId: 'bee', startingHP: CHARACTERS['bee']?.baseHP || 100, startingET: 5, startingCrystals: 2 }
     ];
     handleStartGame({ players: duelPlayers, direction: 'clockwise', turnTimerDuration: 60 });
   };
@@ -165,7 +166,7 @@ export default function GamePage() {
     const rematchPlayers = gameState.players.map((p) => ({
       name: p.name,
       characterId: p.characterId,
-      startingHP: 100,
+      startingHP: CHARACTERS[p.characterId]?.baseHP || 100,
       startingET: 5,
       startingCrystals: gameState.players.length === 2 ? 2 : 1
     }));
@@ -187,7 +188,7 @@ export default function GamePage() {
     const rematchPlayers = gameState.players.map((p) => ({
       name: p.name,
       characterId: p.characterId,
-      startingHP: 100,
+      startingHP: CHARACTERS[p.characterId]?.baseHP || 100,
       startingET: 5,
       startingCrystals: gameState.players.length === 2 ? 2 : 1
     }));

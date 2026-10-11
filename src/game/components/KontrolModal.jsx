@@ -56,36 +56,37 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
         setIsRolling(false);
 
         const atkBonus = atkChar.mindAtkBonus || 0;
-        const defBonus = targetChar?.mindDefBonus || 0;
+        const defMindStrength = targetChar?.mindStrength || 2;
         const effectiveAtk = finalAtk + atkBonus;
-        const effectiveDef = finalDef + defBonus;
         
         let newAtkWins = atkWins;
         let newDefWins = defWins;
+        let newRoundNumber = roundNumber;
 
-        if (effectiveAtk > effectiveDef) {
+        if (effectiveAtk > defMindStrength) {
           newAtkWins += 1;
           setRoundResult('atk_win');
           soundFX.playEnergy();
-        } else if (effectiveDef > effectiveAtk) {
+          newRoundNumber += 1;
+        } else if (effectiveAtk < defMindStrength) {
           newDefWins += 1;
           setRoundResult('def_win');
           soundFX.playHit();
+          newRoundNumber += 1;
         } else {
+          // TIE — don't increment round or wins, allow re-roll
           setRoundResult('tie');
+          // Do NOT increment newRoundNumber or newAtkWins/newDefWins
         }
 
         setAtkWins(newAtkWins);
         setDefWins(newDefWins);
+        setRoundNumber(newRoundNumber);
 
         if (newAtkWins >= 2) {
           setKontrolWinner('attacker');
         } else if (newDefWins >= 2) {
           setKontrolWinner('defender');
-        } else {
-          if (effectiveAtk !== effectiveDef) {
-            setRoundNumber(r => r + 1);
-          }
         }
       }
     }, 70);
@@ -198,12 +199,33 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
                       pointerEvents: atkWins > 0 || defWins > 0 ? 'none' : 'auto'
                     }}
                   >
-                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', overflow: 'hidden', border: '1px solid #FBC80D', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', overflow: 'visible', border: '1px solid #FBC80D', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', position: 'relative' }}>
                       <img
                         src={getAssetUrl(tChar.image || 'characters/chynaman.png')}
                         alt={target.name}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
                       />
+                      {/* Level Badge */}
+                      <div style={{
+                        position: 'absolute',
+                        top: '-6px',
+                        right: '-6px',
+                        background: 'linear-gradient(135deg, #FBC80D 0%, #FF7700 100%)',
+                        width: '18px',
+                        height: '18px',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '0.55rem',
+                        fontWeight: 'bold',
+                        color: '#000',
+                        border: '1.5px solid rgba(0,0,0,0.8)',
+                        boxShadow: '0 0 6px rgba(255, 215, 0, 0.6)',
+                        zIndex: 10
+                      }}>
+                        {target.level || 1}
+                      </div>
                     </div>
                     <div>
                       <strong style={{ fontSize: '0.82rem', display: 'block' }}>{target.name}</strong>
@@ -234,7 +256,7 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
               <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem', marginBottom: '4px' }}>ATTACKER</div>
               <strong style={{ fontSize: '1.1rem', display: 'block', color: '#FBC80D' }}>{attacker.name}</strong>
               <div style={{ fontSize: '0.75rem', color: '#FBC80D', marginTop: '2px' }}>
-                {atkChar.mindAtkBonus ? `+${atkChar.mindAtkBonus} Roll Bonus` : 'No Bonus'}
+                {atkChar.mindAtkBonus ? `+${atkChar.mindAtkBonus} Roll Bonus` : 'Base Roll'}
               </div>
               <div style={{ display: 'flex', justifyContent: 'center', gap: '4px', marginTop: '8px' }}>
                 <div style={{ width: '14px', height: '14px', borderRadius: '50%', background: atkWins >= 1 ? '#FBC80D' : 'rgba(255,255,255,0.1)' }} />
@@ -253,7 +275,7 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
               <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem', marginBottom: '4px' }}>DEFENDER</div>
               <strong style={{ fontSize: '1.1rem', display: 'block', color: '#3b82f6' }}>{targetPlayer.name}</strong>
               <div style={{ fontSize: '0.75rem', color: '#60a5fa', marginTop: '2px' }}>
-                {targetChar.mindDefBonus ? `+${targetChar.mindDefBonus} Def Bonus` : 'No Bonus'}
+                🧠 Mind Strength: {targetChar.mindStrength}
               </div>
               <div style={{ display: 'flex', justifyContent: 'center', gap: '4px', marginTop: '8px' }}>
                 <div style={{ width: '14px', height: '14px', borderRadius: '50%', background: defWins >= 1 ? '#3b82f6' : 'rgba(255,255,255,0.1)' }} />
@@ -288,10 +310,14 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
                 >
                   {currentAtkRoll}
                 </div>
-                {roundResult && <div style={{ fontSize: '0.8rem', marginTop: '8px', color: '#FBC80D' }}>Total: {currentAtkRoll + (atkChar.mindAtkBonus || 0)}</div>}
+                {roundResult && (
+                  <div style={{ fontSize: '0.8rem', marginTop: '8px', color: '#FBC80D' }}>
+                    Total: {currentAtkRoll + (atkChar.mindAtkBonus || 0)}{atkChar.mindAtkBonus ? ` (+${atkChar.mindAtkBonus})` : ''}
+                  </div>
+                )}
               </div>
 
-              {/* Defender Die */}
+              {/* Defender Mind Strength */}
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <div
                   style={{
@@ -310,15 +336,11 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
                     transition: 'all 0.3s ease'
                   }}
                 >
-                  {currentDefRoll}
+                  {targetChar?.mindStrength || 2}
                 </div>
-                {roundResult && <div style={{ fontSize: '0.8rem', marginTop: '8px', color: '#60a5fa' }}>Total: {currentDefRoll + (targetChar?.mindDefBonus || 0)}</div>}
+                {roundResult && <div style={{ fontSize: '0.8rem', marginTop: '8px', color: '#60a5fa' }}>Mind Strength</div>}
               </div>
             </div>
-            
-            {roundResult === 'tie' && (
-              <div style={{ color: '#FBC80D', fontWeight: 'bold', marginBottom: '10px', animation: 'pulse 1s infinite' }}>TIE! RE-ROLL ROUND.</div>
-            )}
 
             <div style={{ display: 'flex', gap: '10px' }}>
               <button
@@ -359,7 +381,7 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
                 }}
               >
                 <Dices size={20} />
-                {isRolling ? 'ROLLING...' : `ROLL ROUND ${roundNumber}`}
+                {isRolling ? 'ROLLING...' : (roundResult === 'tie' ? `RE-ROLL (TIE)` : `ROLL ROUND ${roundNumber}`)}
               </button>
             </div>
           </div>

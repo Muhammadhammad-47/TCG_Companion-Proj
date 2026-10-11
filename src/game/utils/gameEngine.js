@@ -23,6 +23,7 @@ export function createInitialGameState(playerConfigs) {
       id: `player_${idx + 1}`,
       name: cfg.name || `Player ${idx + 1}`,
       characterId: characterId,
+      level: 1, // NEW: Character level starts at 1
       hp: cfg.startingHP || characterHP,
       maxHp: characterHP,
       preZombieHP: cfg.startingHP || characterHP,
@@ -197,7 +198,16 @@ export function resolveDiceCombat({
 
   if (characterMove) {
     if (characterMove.type === 'dice_mult') {
-      rawAP = multiplierRoll * (characterMove.multiplier || 4);
+      // Base multiplier from character move (e.g., "Fire of Fury" = 5)
+      let charMultiplier = characterMove.multiplier || 4;
+      
+      // ATTACK X2 doubles the multiplier (ATTACK X1 = ×10 AP, ATTACK X2 = ×20 AP)
+      // Check if actionCard is ATTACK X2 to apply the doubling bonus
+      if (actionCard?.name === 'ATTACK X2') {
+        charMultiplier = charMultiplier * 2;
+      }
+      
+      rawAP = multiplierRoll * charMultiplier;
     } else {
       rawAP = characterMove.baseAP || 25;
     }
@@ -277,6 +287,7 @@ export function resolveDiceCombat({
   // 7. Check special effects
   const appliesPoison = characterMove?.appliesPoison || actionCard?.id === 'poison_x1' || actionCard?.id === 'poison_x2' || attacker.isZombie;
   const appliesStun = characterMove?.appliesStun || characterMove?.stun || actionCard?.name?.includes('FREEZE') || false;
+  const healsAttacker = clashWon ? (characterMove?.healsAttacker || 0) : 0;
   
   let burnStacks = 0;
   if (actionCard?.name === 'FIRE FLAME X2') {
@@ -288,12 +299,27 @@ export function resolveDiceCombat({
   const revealCards = characterMove?.revealCards || false;
   const extraTurnGranted = actionCard?.name === 'TIME MACHINE';
 
+  // BUG 5 FIX: Lightning X1 causes defender to lose 1 turn; Lightning X2 causes 2 turns lost.
+  // This is only applied on a successful hit (clashWon is true at this point).
+  let sleepTurns = 0;
+  if (clashWon) {
+    const cardName = actionCard?.name || '';
+    if (cardName.includes('LIGHTNING X2')) {
+      sleepTurns = 2;
+    } else if (cardName.includes('LIGHTNING X1') || cardName.includes('LIGHTNING X1')) {
+      sleepTurns = 1;
+    } else if (characterMove?.name?.includes('Golden Mic Lightning') || characterMove?.element === 'Lightning') {
+      // Character lightning moves apply 1 sleep turn on success
+      sleepTurns = 1;
+    }
+  }
+
   return {
     isTie: false,
     attackerDice: attackerRoll,
-    defenderDice: defenderRoll || [],
+    defenderDice: [],
     attackerDiceSum: attackerRoll.reduce((a, b) => a + b, 0),
-    defenderDiceSum: defenderRoll ? defenderRoll.reduce((a, b) => a + b, 0) : 0,
+    defenderDiceSum: clashDefSum,
     rawAP,
     weaknessTriggered,
     weaknessBonus,
@@ -306,14 +332,17 @@ export function resolveDiceCombat({
     newShield: currentShield,
     appliesPoison,
     appliesStun,
+    healsAttacker,
     burnStacks,
     revealCards,
     extraTurnGranted,
+    sleepTurns,
     isDrain,
     isVampire,
     zombiePoisonCured,
     moveElement,
-    isAttackSuccessful: totalOffensiveAP > 0
+    isAttackSuccessful: totalOffensiveAP > 0,
+    isMiss: !clashWon
   };
 }
 
@@ -331,8 +360,8 @@ export function advanceTurn(state) {
     const candidate = state.players[nextIndex];
     if (candidate.isDefeated) continue;
 
-    // Stunned player forfeits their turn; stun is consumed
-    if (candidate.isStunned && !stunnedSkips.includes(nextIndex)) {
+    // Stunned or sleep-turned player forfeits their turn; status is consumed
+    if ((candidate.isStunned || (candidate.sleepTurns && candidate.sleepTurns > 0)) && !stunnedSkips.includes(nextIndex)) {
       stunnedSkips.push(nextIndex);
       continue;
     }
@@ -408,6 +437,10 @@ export function advanceTurn(state) {
 
     if (stunnedSkips.includes(idx)) {
       updated.isStunned = false;
+      // Also decrement sleepTurns counter
+      if (updated.sleepTurns && updated.sleepTurns > 0) {
+        updated.sleepTurns -= 1;
+      }
     }
 
     const beforeZombie = updated.isZombie;

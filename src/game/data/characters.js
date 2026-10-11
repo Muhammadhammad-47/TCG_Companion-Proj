@@ -190,13 +190,14 @@ export const CHARACTERS = {
       },
       {
         id: 'k_purr',
-        name: 'Shadow Purr',
+        name: 'Shadow Purrr',
         type: 'flat',
         baseAP: 30,
         element: 'Shadow',
         costET: 1,
-        desc: 'Stealth shadow strike dealing 30 AP. On successful hit, defender falls asleep and loses 1 turn.',
-        appliesStun: true
+        desc: 'Stealth shadow strike dealing 30 AP. Heals attacker for 20 HP. On successful hit, defender falls asleep and loses 1 turn.',
+        appliesStun: true,
+        healsAttacker: 20
       },
       {
         id: 'k_fate',

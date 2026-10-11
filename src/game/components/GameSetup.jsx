@@ -19,9 +19,9 @@ export default function GameSetup({ onStartGame, onBack }) {
       const c = CHARACTERS[key] || CHARACTERS.chynaman;
       return {
         id: `p-${idx + 1}`,
-        name: c.name,          // default; updated reactively once auth loads
+        name: c.name,
         characterId: key,
-        startingHP: 100,
+        startingHP: c.baseHP || 100,
         startingET: 5,
         startingCrystals: 1
       };
@@ -72,34 +72,62 @@ export default function GameSetup({ onStartGame, onBack }) {
   const [startingPlayerIndex, setStartingPlayerIndex] = useState(0);
   const [firstPlayerRolls, setFirstPlayerRolls] = useState(null);
   const [isRollingFirst, setIsRollingFirst] = useState(false);
+  const [tieAlert, setTieAlert] = useState(null);
 
   const handleRollForFirstPlayer = () => {
     soundFX.playDiceRoll();
     setIsRollingFirst(true);
-    setTimeout(() => {
+    setTieAlert(null);
+    
+    const performRoll = () => {
       let rolls = {};
       let highestRoll = -1;
-      let winningIdx = 0;
+      let winnersAtHighest = [];
+      
       players.forEach((p, idx) => {
         const d1 = Math.floor(Math.random() * 6) + 1;
         const d2 = Math.floor(Math.random() * 6) + 1;
         const total = d1 + d2;
         rolls[idx] = { d1, d2, total };
+        
         if (total > highestRoll) {
           highestRoll = total;
-          winningIdx = idx;
+          winnersAtHighest = [idx];
+        } else if (total === highestRoll) {
+          winnersAtHighest.push(idx);
         }
       });
+      
       setFirstPlayerRolls(rolls);
-      setStartingPlayerIndex(winningIdx);
-      setIsRollingFirst(false);
+      
+      // If there's a tie, re-roll only the tied players
+      if (winnersAtHighest.length > 1) {
+        const tiedPlayerNames = winnersAtHighest.map(i => `P${i + 1}`).join(' & ');
+        setTieAlert(`TIE between ${tiedPlayerNames} (${highestRoll}) — Re-rolling tied players...`);
+        console.log(`[DICE ROLL] TIE: Players ${winnersAtHighest.map(i => i + 1).join(', ')} all rolled ${highestRoll}. Re-rolling tied players...`);
+        setTimeout(() => {
+          performRoll(); // Recursive re-roll for tied players
+        }, 1200);
+      } else {
+        // Single winner found
+        setStartingPlayerIndex(winnersAtHighest[0]);
+        setIsRollingFirst(false);
+        setTieAlert(null);
+      }
+    };
+    
+    setTimeout(() => {
+      performRoll();
     }, 800);
   };
   const [turnDirection, setTurnDirection] = useState('clockwise');
   const [selectedDeckProfile, setSelectedDeckProfile] = useState('Chynaman');
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
-  const [startingLP, setStartingLP] = useState(100);
+  const [startingLP, setStartingLP] = useState(() => {
+    const firstChar = CHARACTERS[charKeys[0]] || CHARACTERS.chynaman;
+    return firstChar.baseHP || 100;
+  });
 
   const availableChars = Object.values(CHARACTERS);
 
@@ -115,7 +143,7 @@ export default function GameSetup({ onStartGame, onBack }) {
         id: `p-${Date.now()}`,
         name: availableChar.name,
         characterId: availableChar.id,
-        startingHP: startingLP,
+        startingHP: availableChar.baseHP || 100,
         startingET: 5,
         startingCrystals: 1
       }
@@ -204,7 +232,7 @@ export default function GameSetup({ onStartGame, onBack }) {
                 className="profile-selector-card"
                 onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
               >
-                <div className="profile-avatar-holder">
+                <div className="profile-avatar-holder" style={{ position: 'relative' }}>
                   <div className="profile-crown-mini">
                     <Crown size={14} color="var(--neon-crimson)" fill="var(--neon-crimson)" />
                   </div>
@@ -217,6 +245,27 @@ export default function GameSetup({ onStartGame, onBack }) {
                     }}
                   />
                   <span className="profile-emoji-fallback">{primaryProfileChar.avatar}</span>
+                  {/* Level Badge */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '-6px',
+                    right: '-6px',
+                    background: 'linear-gradient(135deg, #FBC80D 0%, #FF7700 100%)',
+                    width: '20px',
+                    height: '20px',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '0.6rem',
+                    fontWeight: 'bold',
+                    color: '#000',
+                    border: '1.5px solid rgba(0,0,0,0.8)',
+                    boxShadow: '0 0 8px rgba(255, 215, 0, 0.6)',
+                    zIndex: 10
+                  }}>
+                    {players[0]?.level || 1}
+                  </div>
                 </div>
 
                 <div className="profile-info-text">
@@ -280,7 +329,7 @@ export default function GameSetup({ onStartGame, onBack }) {
                         {idx + 1}
                       </div>
 
-                      <div className="player-row-avatar" style={{ borderColor: c.themeColor }}>
+                      <div className="player-row-avatar" style={{ borderColor: c.themeColor, position: 'relative' }}>
                         <img
                           src={getAssetUrl(c.image)}
                           alt={c.name}
@@ -290,6 +339,27 @@ export default function GameSetup({ onStartGame, onBack }) {
                           }}
                         />
                         <span className="avatar-emoji-fallback">{c.avatar}</span>
+                        {/* Level Badge */}
+                        <div style={{
+                          position: 'absolute',
+                          top: '-4px',
+                          right: '-4px',
+                          background: 'linear-gradient(135deg, #FBC80D 0%, #FF7700 100%)',
+                          width: '18px',
+                          height: '18px',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.55rem',
+                          fontWeight: 'bold',
+                          color: '#000',
+                          border: '1.5px solid rgba(0,0,0,0.8)',
+                          boxShadow: '0 0 6px rgba(255, 215, 0, 0.6)',
+                          zIndex: 10
+                        }}>
+                          {p.level || 1}
+                        </div>
                       </div>
 
                       <div className="player-name-display" style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, paddingRight: '12px' }}>
@@ -401,12 +471,18 @@ export default function GameSetup({ onStartGame, onBack }) {
 
               {firstPlayerRolls && (
                 <div style={{ background: 'rgba(251, 200, 13, 0.08)', border: '1px solid rgba(251, 200, 13, 0.3)', borderRadius: '8px', padding: '6px 10px', marginBottom: '10px', fontSize: '0.75rem', display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
-                  <span style={{ color: 'var(--neon-gold)', fontWeight: 'bold' }}>?? Dice Roll-Off:</span>
-                  {players.map((p, i) => (
-                    <span key={i} style={{ color: i === startingPlayerIndex ? '#39ff14' : 'rgba(255,255,255,0.7)', fontWeight: i === startingPlayerIndex ? 'bold' : 'normal' }}>
-                      P{i + 1} ({firstPlayerRolls[i]?.d1}+{firstPlayerRolls[i]?.d2}={firstPlayerRolls[i]?.total}) {i === startingPlayerIndex ? '?? Winner!' : ''}
-                    </span>
-                  ))}
+                  {tieAlert ? (
+                    <span style={{ color: 'var(--neon-gold)', fontWeight: 'bold' }}>⚠️ {tieAlert}</span>
+                  ) : (
+                    <>
+                      <span style={{ color: 'var(--neon-gold)', fontWeight: 'bold' }}>?? Dice Roll-Off:</span>
+                      {players.map((p, i) => (
+                        <span key={i} style={{ color: i === startingPlayerIndex ? '#39ff14' : 'rgba(255,255,255,0.7)', fontWeight: i === startingPlayerIndex ? 'bold' : 'normal' }}>
+                          P{i + 1} ({firstPlayerRolls[i]?.d1}+{firstPlayerRolls[i]?.d2}={firstPlayerRolls[i]?.total}) {i === startingPlayerIndex ? '?? Winner!' : ''}
+                        </span>
+                      ))}
+                    </>
+                  )}
                 </div>
               )}
 
@@ -463,13 +539,34 @@ export default function GameSetup({ onStartGame, onBack }) {
                         >
                           <div style={{ position: 'relative' }}>
                             <div className={`orbit-node-pill pill-${i + 1}`} style={{ position: 'absolute', top: '-6px', left: '-6px', zIndex: 10 }}>{i + 1}</div>
-                            <div className="orbit-avatar-ring ring-blue" style={{ borderColor: c.themeColor, overflow: 'hidden', width: '40px', height: '40px', borderRadius: '50%', background: '#071226', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div className="orbit-avatar-ring ring-blue" style={{ borderColor: c.themeColor, overflow: 'visible', width: '40px', height: '40px', borderRadius: '50%', background: '#071226', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                               <img
                                 src={getAssetUrl(c.image || 'characters/chynaman.png')}
                                 alt={`P${i+1}`}
                                 className="orbit-img"
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
                               />
+                              {/* Level Badge */}
+                              <div style={{
+                                position: 'absolute',
+                                top: '-6px',
+                                right: '-6px',
+                                background: 'linear-gradient(135deg, #FBC80D 0%, #FF7700 100%)',
+                                width: '18px',
+                                height: '18px',
+                                borderRadius: '50%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '0.55rem',
+                                fontWeight: 'bold',
+                                color: '#000',
+                                border: '1.5px solid rgba(0,0,0,0.8)',
+                                boxShadow: '0 0 8px rgba(255, 215, 0, 0.7)',
+                                zIndex: 15
+                              }}>
+                                {p.level || 1}
+                              </div>
                             </div>
                           </div>
                           <span className="orbit-label" style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.85)', whiteSpace: 'nowrap', marginTop: '4px', textShadow: '0 2px 4px #000', maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
