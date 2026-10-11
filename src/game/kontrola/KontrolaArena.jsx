@@ -25,6 +25,13 @@ import KontrolaChatModal from './KontrolaChatModal';
 import KontrolaTauntModal from './KontrolaTauntModal';
 import { LeaderboardModal } from '../../components/LeaderboardModal';
 import MusicPlayer from '../components/MusicPlayer';
+import SecretAllianceInviteModal from '../components/SecretAllianceInviteModal';
+import AllianceChatModal from '../components/AllianceChatModal';
+import AllianceStatusBadge from '../components/AllianceStatusBadge';
+import CrystalSplitModal from '../components/CrystalSplitModal';
+import CrystalDiceRoller from '../components/CrystalDiceRoller';
+import ReconnectModal from '../components/ReconnectModal';
+import { createGameRoom, updateGameRoom, fetchGameRoom } from '../../services/roomService';
 
 import '../../pages/GamePage.css';
 
@@ -168,6 +175,26 @@ export default function KontrolaArena() {
   const [volume, setVolume] = useState(0.5);
   const [isMuted, setIsMuted] = useState(false);
   const audioRef = useRef(null);
+  
+  // NEW: Secret Alliance System State
+  const [showSecretAllianceInviteModal, setShowSecretAllianceInviteModal] = useState(false);
+  const [showAllianceChatModal, setShowAllianceChatModal] = useState(false);
+  const [pendingAllianceInvite, setPendingAllianceInvite] = useState(null);
+  const [activeAlliance, setActiveAlliance] = useState(null);
+  const [allianceChatHistory, setAllianceChatHistory] = useState([]);
+  const [selectedAllianceTerms, setSelectedAllianceTerms] = useState([]);
+  const [allianceConfirmations, setAllianceConfirmations] = useState({ player1: false, player2: false });
+  const [preselectedAllianceTargetId, setPreselectedAllianceTargetId] = useState(null);
+  const inviteTimeoutRef = useRef(null);
+  
+  // NEW: Crystal Split System State
+  const [showCrystalSplitModal, setShowCrystalSplitModal] = useState(false);
+  const [crystalSplitData, setCrystalSplitData] = useState(null);
+  
+  // NEW: Room Persistence State
+  const [roomCode, setRoomCode] = useState(null);
+  const [roomPersistenceError, setRoomPersistenceError] = useState(null);
+  
   const [countdownNumber, setCountdownNumber] = useState(3);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
 
@@ -1505,6 +1532,37 @@ export default function KontrolaArena() {
         if (newAttackerState.crystals >= 3) {
           matchWinner = { ...newAttackerState, playerId: actorId };
         }
+
+        // ===== CRYSTAL SPLIT TRIGGER =====
+        // If 3+ players and 2+ attackers involved, trigger crystal split negotiation
+        const defenderStillDefeated = newDefenderState?.isDefeated === true;
+        const playersCount = currentState.players?.length || 0;
+        const livingPlayerIds = currentState.players.filter(
+          (pId) => pId !== targetId && !currentState.characterStates[pId]?.isDefeated
+        );
+        const hasMultipleAttackers = livingPlayerIds.length >= 2; // At least 2 living players besides defender
+
+        if (defenderStillDefeated && playersCount >= 3 && hasMultipleAttackers) {
+          // Build list of attackers (all living players except the defender)
+          const attackersList = livingPlayerIds.map(pId => ({
+            id: pId,
+            name: currentState.characterStates[pId]?.name || 'Unknown',
+            hp: currentState.characterStates[pId]?.hp || 0,
+            crystals: currentState.characterStates[pId]?.crystals || 0,
+            isDefeated: false
+          }));
+
+          // Prepare crystal split data
+          setCrystalSplitData({
+            attacker: { id: actorId, name: newAttackerState.name, crystals: newAttackerState.crystals },
+            defender: { id: targetId, name: newDefenderState.name, crystals: 0 },
+            attackers: attackersList,
+            updatedPlayers: { ...updatedStates }
+          });
+          setShowCrystalSplitModal(true);
+          // Pause combat resolution until crystal split completes
+          return;
+        }
       }
 
       updatedStates = {
@@ -1781,6 +1839,7 @@ export default function KontrolaArena() {
       initialState.playerNames = { [playerId]: finalName };
 
       setMatchId(newMatchId);
+      setRoomCode(newMatchId); // Set room code for reconnect feature
       setGameState(initialState);
       setIsHost(true);
       setIsSpectator(false);
@@ -1836,6 +1895,7 @@ export default function KontrolaArena() {
       const tempState = await joinMatch(cleanId, playerId, selectedCharacter);
       tempState.playerNames = { [playerId]: finalName };
       setGameState(tempState);
+      setRoomCode(cleanId); // Set room code for reconnect feature
       setError(null);
       // Persist session to DB + localStorage
       sessionService.saveSession(cleanId, playerId, 'player', currentUser?.id ?? null);
@@ -2191,6 +2251,189 @@ export default function KontrolaArena() {
       setChatToasts((prev) => [...prev, { ...msg, toastId, type: 'TAUNT' }]);
       setTimeout(() => setChatToasts((prev) => prev.filter(t => t.toastId !== toastId)), 4500);
     }
+  };
+
+  // ==========================================
+  // SECRET ALLIANCE HANDLERS
+  // ==========================================
+  const handleOpenSecretAllianceInvite = (cardInstanceId, targetPlayerId) => {
+    setPreselectedAllianceTargetId(targetPlayerId || null);
+    setShowSecretAllianceInviteModal(true);
+  };
+
+  const handleSendAllianceInvite = (inviteData) => {
+    soundFX.playMenuSelect?.();
+    setPendingAllianceInvite({
+      fromPlayerId: inviteData.fromPlayerId,
+      fromPlayerName: inviteData.fromPlayerName,
+      toPlayerId: inviteData.toPlayerId,
+      toPlayerName: inviteData.toPlayerName,
+      createdAt: Date.now(),
+      expiresAt: Date.now() + (30 * 1000)
+    });
+    setShowSecretAllianceInviteModal(false);
+    
+    inviteTimeoutRef.current = setTimeout(() => {
+      setPendingAllianceInvite(null);
+    }, 30000);
+  };
+
+  const handleAcceptAllianceInvite = () => {
+    if (!pendingAllianceInvite) return;
+    soundFX.playMenuSelect?.();
+    
+    if (inviteTimeoutRef.current) {
+      clearTimeout(inviteTimeoutRef.current);
+      inviteTimeoutRef.current = null;
+    }
+
+    setActiveAlliance({
+      player1Id: pendingAllianceInvite.fromPlayerId,
+      player1Name: pendingAllianceInvite.fromPlayerName,
+      player2Id: pendingAllianceInvite.toPlayerId,
+      player2Name: pendingAllianceInvite.toPlayerName,
+      type: null,
+      terms: [],
+      confirmations: {},
+      createdTurn: gameState?.turnNumber || 1,
+      expiresAtTurn: (gameState?.turnNumber || 1) + 1
+    });
+
+    setShowAllianceChatModal(true);
+    setAllianceChatHistory([]);
+    setSelectedAllianceTerms([]);
+    setAllianceConfirmations({ player1: false, player2: false });
+    setPendingAllianceInvite(null);
+  };
+
+  const handleDeclineAllianceInvite = () => {
+    soundFX.playCard?.();
+    setPendingAllianceInvite(null);
+  };
+
+  const handleSendAllianceChatMessage = (text) => {
+    if (!activeAlliance || !text.trim()) return;
+    const newMessage = {
+      senderId: playerId,
+      senderName: myCharacter?.name || playerName || 'Player',
+      text: text.trim(),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    setAllianceChatHistory(prev => [...prev, newMessage]);
+  };
+
+  const handleSelectAllianceTerm = (termType) => {
+    setSelectedAllianceTerms(prev => {
+      if (prev.includes(termType)) {
+        return prev.filter(t => t !== termType);
+      } else {
+        return [...prev, termType];
+      }
+    });
+  };
+
+  const handleRemoveAllianceTerm = (termType) => {
+    setSelectedAllianceTerms(prev => prev.filter(t => t !== termType));
+  };
+
+  const handleConfirmAllianceAgreement = () => {
+    if (!activeAlliance || selectedAllianceTerms.length === 0) return;
+    soundFX.playMenuSelect?.();
+
+    const playerKey = playerId === activeAlliance.player1Id ? 'player1' : 'player2';
+    const newConfirmations = { ...allianceConfirmations };
+    newConfirmations[playerKey] = !newConfirmations[playerKey];
+    setAllianceConfirmations(newConfirmations);
+
+    if (newConfirmations.player1 && newConfirmations.player2) {
+      let allianceType = 'MIXED';
+      if (selectedAllianceTerms.length === 1) {
+        allianceType = selectedAllianceTerms[0];
+      }
+
+      const establishedAlliance = {
+        player1Id: activeAlliance.player1Id,
+        player1Name: activeAlliance.player1Name,
+        player2Id: activeAlliance.player2Id,
+        player2Name: activeAlliance.player2Name,
+        type: allianceType,
+        terms: selectedAllianceTerms,
+        status: 'active',
+        createdTurn: gameState?.turnNumber || 1,
+        expiresAtTurn: (gameState?.turnNumber || 1) + 1
+      };
+
+      setGameState(prev => ({
+        ...prev,
+        alliances: [...(prev?.alliances || []), establishedAlliance]
+      }));
+
+      setChatMessages(prev => [...prev, {
+        id: `alliance_${Date.now()}`,
+        senderId: 'system',
+        senderName: 'System',
+        text: `🤝 ${establishedAlliance.player1Name} and ${establishedAlliance.player2Name} have formed a secret alliance!`,
+        time: new Date().toLocaleTimeString()
+      }]);
+
+      setTimeout(() => {
+        setShowAllianceChatModal(false);
+        setActiveAlliance(null);
+      }, 1500);
+    }
+  };
+
+  const handleCancelAllianceFormation = () => {
+    setPendingAllianceInvite(null);
+    setShowSecretAllianceInviteModal(false);
+    setShowAllianceChatModal(false);
+    setActiveAlliance(null);
+    setAllianceChatHistory([]);
+    setSelectedAllianceTerms([]);
+    setAllianceConfirmations({ player1: false, player2: false });
+  };
+
+  // ==========================================
+  // CRYSTAL SPLIT HANDLERS
+  // ==========================================
+  const handleCrystalSplitComplete = (result) => {
+    setShowCrystalSplitModal(false);
+    setCrystalSplitData(null);
+
+    const { winner, loser, offer, method } = result;
+    
+    setGameState(prev => {
+      if (!prev) return prev;
+      const updatedPlayers = { ...prev.characterStates };
+
+      if (updatedPlayers[winner.id]) {
+        const newCrystals = (updatedPlayers[winner.id].crystals || 0) + 1;
+        updatedPlayers[winner.id] = {
+          ...updatedPlayers[winner.id],
+          crystals: newCrystals
+        };
+
+        if (newCrystals >= 3) {
+          return { ...prev, characterStates: updatedPlayers, status: 'finished', winner: { ...updatedPlayers[winner.id], playerId: winner.id } };
+        }
+      }
+
+      if (updatedPlayers[loser.id]) {
+        updatedPlayers[loser.id] = {
+          ...updatedPlayers[loser.id],
+          crystals: Math.max(0, (updatedPlayers[loser.id].crystals || 0) - 1)
+        };
+      }
+
+      const methodText = result.accepted ? 'Negotiation' : 'Dice Roll';
+      const newLog = `💎 ${winner.name} won crystal via ${methodText} (defeated ${loser.name})`;
+
+      return {
+        ...prev,
+        characterStates: updatedPlayers,
+        logs: [newLog, ...(prev.logs || [])]
+      };
+    });
   };
 
   // ==========================================
@@ -3919,6 +4162,121 @@ export default function KontrolaArena() {
               activePlayerName={myCharacter?.name || playerName || 'Player'}
               onClose={() => setShowTaunt(false)}
               onTaunt={handleSendTaunt}
+            />
+          )}
+
+          {/* Secret Alliance Invite Modal */}
+          {showSecretAllianceInviteModal && (
+            <SecretAllianceInviteModal
+              isOpen={showSecretAllianceInviteModal}
+              activePlayer={{ id: playerId, name: myCharacter?.name || playerName || 'Player' }}
+              allPlayers={gameState?.players?.map(pid => ({
+                id: pid,
+                name: gameState?.playerNames?.[pid] || gameState?.characterStates?.[pid]?.name || 'Player',
+                isDefeated: gameState?.characterStates?.[pid]?.isDefeated || false
+              })) || []}
+              onSendInvite={handleSendAllianceInvite}
+              onCancel={() => setShowSecretAllianceInviteModal(false)}
+              preselectedTargetId={preselectedAllianceTargetId}
+            />
+          )}
+
+          {/* Alliance Chat Modal */}
+          {showAllianceChatModal && activeAlliance && (
+            <AllianceChatModal
+              isOpen={showAllianceChatModal}
+              player1={{ id: activeAlliance.player1Id, name: activeAlliance.player1Name }}
+              player2={{ id: activeAlliance.player2Id, name: activeAlliance.player2Name }}
+              currentPlayerId={playerId}
+              chatHistory={allianceChatHistory}
+              selectedTerms={selectedAllianceTerms}
+              confirmationStatus={allianceConfirmations}
+              onSendMessage={handleSendAllianceChatMessage}
+              onSelectTerm={handleSelectAllianceTerm}
+              onRemoveTerm={handleRemoveAllianceTerm}
+              onConfirmAgreement={handleConfirmAllianceAgreement}
+              onCancel={handleCancelAllianceFormation}
+            />
+          )}
+
+          {/* Pending Alliance Invite Notification */}
+          {pendingAllianceInvite && playerId === pendingAllianceInvite.toPlayerId && (
+            <div className="alliance-notification-overlay" style={{
+              position: 'fixed',
+              top: '20px',
+              right: '20px',
+              zIndex: 10000,
+              background: 'linear-gradient(135deg, rgba(157, 78, 221, 0.95) 0%, rgba(157, 78, 221, 0.85) 100%)',
+              border: '2px solid #9d4edd',
+              borderRadius: '10px',
+              padding: '16px',
+              minWidth: '300px',
+              maxWidth: '350px',
+              boxShadow: '0 0 30px rgba(157, 78, 221, 0.6)'
+            }}>
+              <div style={{ color: '#fff', marginBottom: '12px' }}>
+                <strong>{pendingAllianceInvite.fromPlayerName}</strong> sent you a secret alliance invite!
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={handleDeclineAllianceInvite}
+                  style={{
+                    flex: 1,
+                    padding: '8px',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    border: '1px solid rgba(255, 255, 255, 0.3)',
+                    color: '#fff',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Decline
+                </button>
+                <button
+                  onClick={handleAcceptAllianceInvite}
+                  style={{
+                    flex: 1,
+                    padding: '8px',
+                    background: '#39ff14',
+                    border: '1px solid #39ff14',
+                    color: '#000',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Accept
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Crystal Split Modal */}
+          {showCrystalSplitModal && crystalSplitData && (
+            <CrystalSplitModal
+              isOpen={showCrystalSplitModal}
+              attackers={[crystalSplitData.attacker, ...(gameState?.players?.filter(p => p !== crystalSplitData.attacker.id && gameState?.characterStates?.[p]?.isDefeated === false) || []).map(pid => gameState?.characterStates?.[pid]) || []]}
+              defeated={crystalSplitData.defender}
+              onSplitComplete={handleCrystalSplitComplete}
+              onClose={() => {
+                setShowCrystalSplitModal(false);
+                setCrystalSplitData(null);
+              }}
+            />
+          )}
+
+          {/* Reconnect Modal */}
+          {roomCode && gameState && (
+            <ReconnectModal
+              isOpen={true}
+              roomCode={roomCode}
+              onContinue={() => {
+                // Modal dismissed, game continues
+              }}
+              onError={(error) => {
+                setRoomPersistenceError(error.message);
+              }}
             />
           )}
 
