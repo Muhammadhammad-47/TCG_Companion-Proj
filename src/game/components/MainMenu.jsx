@@ -2,11 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Swords, HelpCircle, UserPlus, Cast, Send, Crown, Sparkles, ChevronRight,
   RotateCw, Bot, Volume2, VolumeX, Maximize2, Minimize2,
-  Play, FileText, Crosshair, Users, Coins, Shield, Zap
+  Play, FileText, Crosshair, Users, Coins, Shield, Zap, MessageSquare
 } from 'lucide-react';
 import { APP_CONFIG } from '../../config';
 import { CHARACTERS, getAssetUrl } from '../data/characters';
 import { soundFX } from '../utils/audio';
+import SupportInbox from '../../components/SupportInbox';
 
 
 export default function MainMenu({
@@ -27,6 +28,7 @@ export default function MainMenu({
   ]);
   const [turnCounter, setTurnCounter] = useState(12);
   const [phaseIndex, setPhaseIndex] = useState(0);
+  const [showSupportInbox, setShowSupportInbox] = useState(false);
   const chatScrollRef = useRef(null);
 
   const PHASES = ['Draw Phase', 'Main Phase 1', 'Battle Phase', 'Main Phase 2', 'End Phase'];
@@ -386,6 +388,23 @@ export default function MainMenu({
               <span className="action-btn-subtitle">Share to another device</span>
             </div>
           </button>
+
+          {/* 5. Support Inbox */}
+          <button 
+            className="menu-action-btn btn-support" 
+            onClick={() => {
+              playClickSound();
+              setShowSupportInbox(true);
+            }}
+          >
+            <div className="action-btn-icon">
+              <MessageSquare size={26} />
+            </div>
+            <div className="action-btn-text">
+              <strong className="action-btn-title">SUPPORT</strong>
+              <span className="action-btn-subtitle">Contact support team</span>
+            </div>
+          </button>
         </div>
 
         {/* Bottom Footer Info */}
@@ -394,7 +413,13 @@ export default function MainMenu({
           <div className="version-info">{APP_CONFIG.version}</div>
         </div>
       </div>
-      
+
+      {/* Support Inbox Modal */}
+      <SupportInbox 
+        userId={localStorage.getItem('currentUserId') || 'unknown'}
+        isOpen={showSupportInbox}
+        onClose={() => setShowSupportInbox(false)}
+      />
     </div>
   );
 }

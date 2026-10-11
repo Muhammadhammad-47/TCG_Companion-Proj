@@ -356,14 +356,20 @@ body {
 
 .chat-textarea {
   flex: 1;
-  background: transparent;
-  border: none;
-  color: #fff;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(251, 200, 13, 0.3);
+  color: #ffffff;
   font-size: 1.5rem;
   resize: none;
   outline: none;
-  padding: 10px;
+  padding: 10px 12px;
   max-height: 100px;
+  border-radius: 6px;
+}
+
+.chat-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 1.3rem;
 }
 
 .send-button {

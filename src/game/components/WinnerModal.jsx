@@ -146,7 +146,7 @@ export default function WinnerModal({ winner, players, turnNumber, gameStats = {
             </div>
 
             {/* Champion Art Frame */}
-            <div className="champ-character-art-frame">
+            <div className="champ-character-art-frame" style={{ position: 'relative' }}>
               <img
                 src={getAssetUrl(winnerChar.image)}
                 alt={winnerChar.name}
@@ -154,6 +154,27 @@ export default function WinnerModal({ winner, players, turnNumber, gameStats = {
                 onError={(e) => { e.target.style.display = 'none'; }}
               />
               <div className="champ-emoji-large">{winnerChar.avatar}</div>
+              {/* Level Badge - Champion */}
+              <div style={{
+                position: 'absolute',
+                bottom: '20px',
+                right: '20px',
+                background: 'linear-gradient(135deg, #FBC80D 0%, #FF7700 100%)',
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.75rem',
+                fontWeight: 'bold',
+                color: '#000',
+                border: '2px solid rgba(0,0,0,0.8)',
+                boxShadow: '0 0 12px rgba(255, 215, 0, 0.8)',
+                zIndex: 10
+              }}>
+                {winner.level || 1}
+              </div>
               <div className="champ-aura-glow"></div>
             </div>
           </div>
@@ -168,7 +189,7 @@ export default function WinnerModal({ winner, players, turnNumber, gameStats = {
                 </div>
               </div>
 
-              <div className="podium-avatar-holder" style={{ borderColor: char1.themeColor }}>
+              <div className="podium-avatar-holder" style={{ borderColor: char1.themeColor, position: 'relative' }}>
                 <img
                   src={getAssetUrl(char1.image)}
                   alt={char1.name}
@@ -176,6 +197,27 @@ export default function WinnerModal({ winner, players, turnNumber, gameStats = {
                   onError={(e) => { e.target.style.display = 'none'; }}
                 />
                 <span className="podium-emoji">{char1.avatar}</span>
+                {/* Level Badge - Rank 2 */}
+                <div style={{
+                  position: 'absolute',
+                  top: '-8px',
+                  right: '-8px',
+                  background: 'linear-gradient(135deg, #FBC80D 0%, #FF7700 100%)',
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.65rem',
+                  fontWeight: 'bold',
+                  color: '#000',
+                  border: '2px solid rgba(0,0,0,0.8)',
+                  boxShadow: '0 0 10px rgba(255, 215, 0, 0.7)',
+                  zIndex: 10
+                }}>
+                  {runnerUp1.level || 1}
+                </div>
               </div>
 
               <div className="podium-info-block">
@@ -200,7 +242,7 @@ export default function WinnerModal({ winner, players, turnNumber, gameStats = {
                 </div>
               </div>
 
-              <div className="podium-avatar-holder" style={{ borderColor: char2.themeColor }}>
+              <div className="podium-avatar-holder" style={{ borderColor: char2.themeColor, position: 'relative' }}>
                 <img
                   src={getAssetUrl(char2.image)}
                   alt={char2.name}
@@ -208,6 +250,27 @@ export default function WinnerModal({ winner, players, turnNumber, gameStats = {
                   onError={(e) => { e.target.style.display = 'none'; }}
                 />
                 <span className="podium-emoji">{char2.avatar}</span>
+                {/* Level Badge - Rank 3 */}
+                <div style={{
+                  position: 'absolute',
+                  top: '-8px',
+                  right: '-8px',
+                  background: 'linear-gradient(135deg, #FBC80D 0%, #FF7700 100%)',
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.65rem',
+                  fontWeight: 'bold',
+                  color: '#000',
+                  border: '2px solid rgba(0,0,0,0.8)',
+                  boxShadow: '0 0 10px rgba(255, 215, 0, 0.7)',
+                  zIndex: 10
+                }}>
+                  {runnerUp2.level || 1}
+                </div>
               </div>
 
               <div className="podium-info-block">

@@ -49,42 +49,6 @@ export default function CardActionModal({
     soundFX.playCard();
     setSelectedInstanceId(card.instanceId);
 
-    if (card.id === 'kontrol_card') {
-      if ((activePlayer.kontrolUsesLeft ?? 2) <= 0) {
-        setErrorMsg('No Kontrol uses left this match.');
-        return;
-      }
-      if (activePlayer.energyTokens < 3) {
-        setErrorMsg(`Kontrol requires 3 ET. You have ${activePlayer.energyTokens} ET.`);
-        return;
-      }
-      if (activePlayer.kontrolCooldown > 0) {
-        setErrorMsg(`Kontrol is on cooldown for ${activePlayer.kontrolCooldown} more turns.`);
-        return;
-      }
-      onOpenKontrol(activePlayer, targetPlayerId, card.instanceId);
-      return;
-    }
-    if (card.id === 'blitz_card') {
-      if ((activePlayer.blitzUsesLeft ?? 2) <= 0) {
-        setErrorMsg('No Blitz uses left this match.');
-        return;
-      }
-      if (activePlayer.energyTokens < 5) {
-        setErrorMsg(`Saigo No Blitz requires 5 ET. You have ${activePlayer.energyTokens} ET.`);
-        return;
-      }
-      if (activePlayer.hp >= 50) {
-        setErrorMsg('Saigo No Blitz requires HP to be less than 50.');
-        return;
-      }
-      if (activePlayer.blitzCooldown > 0) {
-        setErrorMsg(`Blitz is on cooldown for ${activePlayer.blitzCooldown} more turns.`);
-        return;
-      }
-      onOpenBlitz(activePlayer, card.instanceId);
-      return;
-    }
     if (card.id === 'retreat_card' && activePlayer.retreatedThisTurn) {
       setErrorMsg('Already retreated this turn.');
       return;
@@ -397,7 +361,7 @@ export default function CardActionModal({
                 >
                   {(activePlayer.actionCardsHand || []).map(card => {
                     const isSelected = selectedInstanceId === card.instanceId;
-                    const disabledForZombie = isZombie && (card.id === 'kontrol_card' || card.id === 'blitz_card');
+                    const disabledForZombie = false; // Kontrol/Blitz are character abilities, not action cards
 
                     return (
                       <div

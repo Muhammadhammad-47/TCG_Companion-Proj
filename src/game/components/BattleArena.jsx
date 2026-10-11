@@ -434,6 +434,20 @@ export default function BattleArena({
         const nextRawHP = Math.max(0, p.hp - damage);
         let nextPoison = Math.max(0, (p.poisonCards || 0) + targetPoisonChange);
         let nextBurn = Math.max(0, (p.burnCount || 0) + targetBurnChange);
+        // FIX 1: Lightning X2 → sleepTurns:2, Lightning X1 → sleepTurns:1 (replaces, not stacks).
+        // If sleepTurns > 0, do NOT also set isStunned to prevent double-consuming.
+        const moveName = characterMove?.name || '';
+        const cardName = actionCard?.name || '';
+        const isLightningX2 = cardName.includes('LIGHTNING X2') || moveName.includes('LIGHTNING X2');
+        const isLightningX1 = cardName.includes('LIGHTNING X1') || moveName.includes('LIGHTNING X1');
+        const hasLightningSleep = result.sleepTurns > 0;
+
+        let newSleepTurns = p.sleepTurns || 0;
+        if (hasLightningSleep) {
+          // Replace (don't accumulate) — a new Lightning hit resets the counter
+          newSleepTurns = result.sleepTurns;
+        }
+
         let nextPlayerObj = {
           ...p,
           hp: Math.max(0, nextRawHP - stolenHP),
@@ -441,8 +455,9 @@ export default function BattleArena({
           shield: result.newShield,
           poisonCards: nextPoison,
           burnCount: nextBurn,
-          isStunned: result.appliesStun ? true : p.isStunned,
-          sleepTurns: result.sleepTurns > 0 ? (p.sleepTurns || 0) + result.sleepTurns : p.sleepTurns,
+          // Only set isStunned when sleepTurns is NOT handling it (avoids double-skip)
+          isStunned: hasLightningSleep ? false : (result.appliesStun ? true : p.isStunned),
+          sleepTurns: newSleepTurns,
           stats: {
             ...p.stats,
             damageTaken: (p.stats?.damageTaken || 0) + damage

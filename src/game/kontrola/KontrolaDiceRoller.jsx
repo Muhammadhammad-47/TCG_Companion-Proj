@@ -260,8 +260,19 @@ export default function KontrolaDiceRoller({
 
   function handleReRoll() {
     if (isAttackerRolling || isDefenderRolling) return;
+    // Reset internal state for re-rolling on tie
+    setHasAttackerRolled(false);
+    setHasDefenderRolled(false);
+    setClashAtkDice([1, 1]);
+    setClashDefDice([1, 1]);
+    setIsAttackerRolling(false);
+    setIsDefenderRolling(false);
+    setShowRerollOption(false);
+    setAttackerFateCard(false);
+    setDefenderFateCard(false);
+    
     if (onTriggerRoll) {
-      onTriggerRoll(null, true); // Signal reroll reset
+      onTriggerRoll(null, true); // Signal reroll reset to parent
     }
   }
 
@@ -398,12 +409,20 @@ export default function KontrolaDiceRoller({
 
   // Sync rolls when precalculatedRolls updates from peer
   useEffect(() => {
-    if (!precalculatedRolls || Object.keys(precalculatedRolls).length === 0) {
+    // Check if we have NO DICE ROLLS (either precalculated doesn't exist or has no attack/defense rolls)
+    const hasNoDiceRolls = !precalculatedRolls || 
+      (!precalculatedRolls.attackerRoll?.rolls && !precalculatedRolls.defenderRoll?.rolls);
+    
+    if (hasNoDiceRolls) {
+      // Re-roll scenario: reset all dice-related state to allow new rolls
       setHasAttackerRolled(false);
       setHasDefenderRolled(false);
+      setClashAtkDice([1, 1]);
+      setClashDefDice([1, 1]);
       setPhase('clash');
       return;
     }
+    
     if (precalculatedRolls) {
       if (precalculatedRolls.attackerRoll?.rolls && !hasAttackerRolled && !isAttackerRolling) {
         if (!isAttacker) {

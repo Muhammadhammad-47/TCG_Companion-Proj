@@ -35,9 +35,30 @@ export default function PlayerCard({
 
       {/* Card Header */}
       <div className="card-top-row">
-        <div className="player-avatar-box">
+        <div className="player-avatar-box" style={{ position: 'relative' }}>
           <span className="avatar-emoji">{isZombie ? '🧟‍♂️' : char.avatar}</span>
           {isZombie && <span className="zombie-tag-overlay">ZOMBIE</span>}
+          {/* Level Badge */}
+          <div style={{
+            position: 'absolute',
+            top: '-6px',
+            right: '-6px',
+            background: 'linear-gradient(135deg, #FBC80D 0%, #FF7700 100%)',
+            width: '24px',
+            height: '24px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '0.7rem',
+            fontWeight: 'bold',
+            color: '#000',
+            border: '2px solid rgba(0,0,0,0.8)',
+            boxShadow: '0 0 10px rgba(255, 215, 0, 0.7)',
+            zIndex: 10
+          }}>
+            {player.level || 1}
+          </div>
         </div>
 
         <div className="player-meta-box">

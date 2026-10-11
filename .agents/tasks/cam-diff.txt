@@ -1,0 +1,106 @@
+﻿diff --git a/src/game/components/CardActionModal.jsx b/src/game/components/CardActionModal.jsx
+index 7089385..2dbf4a3 100644
+--- a/src/game/components/CardActionModal.jsx
++++ b/src/game/components/CardActionModal.jsx
+@@ -12,7 +12,8 @@ export default function CardActionModal({
+   onApplyInstantEffect,
+   onOpenKontrol,
+   onOpenBlitz,
+-  onOpenRetreat
++  onOpenRetreat,
++  onShowLevelRequirement
+ }) {
+   const [selectedInstanceId, setSelectedInstanceId] = useState(
+     activePlayer.actionCardsHand?.[0]?.instanceId || null
+@@ -47,8 +48,20 @@ export default function CardActionModal({
+     soundFX.playCard();
+     setSelectedInstanceId(card.instanceId);
+ 
+-    if (card.id === 'kontrol_card' && (activePlayer.kontrolUsesLeft ?? 2) <= 0) {
+-      setErrorMsg('No Kontrol uses left this match.');
++    if (card.id === 'kontrol_card') {
++      if ((activePlayer.kontrolUsesLeft ?? 2) <= 0) {
++        setErrorMsg('No Kontrol uses left this match.');
++        return;
++      }
++      if (activePlayer.energyTokens < 3) {
++        setErrorMsg(`Kontrol requires 3 ET. You have ${activePlayer.energyTokens} ET.`);
++        return;
++      }
++      if (activePlayer.kontrolCooldown > 0) {
++        setErrorMsg(`Kontrol is on cooldown for ${activePlayer.kontrolCooldown} more turns.`);
++        return;
++      }
++      onOpenKontrol(activePlayer, targetPlayerId, card.instanceId);
+       return;
+     }
+     if (card.id === 'blitz_card') {
+@@ -56,24 +69,25 @@ export default function CardActionModal({
+         setErrorMsg('No Blitz uses left this match.');
+         return;
+       }
+-      if (activePlayer.hp > 50) {
+-        setErrorMsg('Saigo No Blitz requires HP to be 50 or below.');
++      if (activePlayer.energyTokens < 5) {
++        setErrorMsg(`Saigo No Blitz requires 5 ET. You have ${activePlayer.energyTokens} ET.`);
++        return;
++      }
++      if (activePlayer.hp >= 50) {
++        setErrorMsg('Saigo No Blitz requires HP to be less than 50.');
+         return;
+       }
++      if (activePlayer.blitzCooldown > 0) {
++        setErrorMsg(`Blitz is on cooldown for ${activePlayer.blitzCooldown} more turns.`);
++        return;
++      }
++      onOpenBlitz(activePlayer, card.instanceId);
++      return;
+     }
+     if (card.id === 'retreat_card' && activePlayer.retreatedThisTurn) {
+       setErrorMsg('Already retreated this turn.');
+       return;
+     }
+-
+-    if (card.id === 'kontrol_card') {
+-      onOpenKontrol(activePlayer, targetPlayerId, card.instanceId);
+-      return;
+-    }
+-    if (card.id === 'blitz_card') {
+-      onOpenBlitz(activePlayer, card.instanceId);
+-      return;
+-    }
+     if (card.id === 'retreat_card') {
+       onOpenRetreat(activePlayer, card.instanceId);
+       return;
+@@ -94,6 +108,31 @@ export default function CardActionModal({
+ 
+     // Handle Attacks
+     if (currentAction.category === 'Attack' || isZombie) {
++      // CHECK VITALITY LEVEL REQUIREMENTS (before initiating attack)
++      if (currentAction.name && currentAction.name.includes('VITALITY')) {
++        const currentLevel = activePlayer.level || 1;
++        let requiredLevel = 1;
++        let nextSteps = [];
++
++        if (currentAction.name.includes('V20')) {
++          requiredLevel = 2;
++          nextSteps = ['Use VITALITY GAIN V10 to reach Level 2'];
++        } else if (currentAction.name.includes('V30')) {
++          requiredLevel = 3;
++          nextSteps = ['Use VITALITY GAIN V10 to reach Level 2', 'Use VITALITY GAIN V20 to reach Level 3'];
++        } else if (currentAction.name.includes('V40')) {
++          requiredLevel = 4;
++          nextSteps = ['Use VITALITY GAIN V10 to reach Level 2', 'Use VITALITY GAIN V20 to reach Level 3', 'Use VITALITY GAIN V30 to reach Level 4'];
++        }
++
++        if (currentLevel < requiredLevel) {
++          if (onShowLevelRequirement) {
++            onShowLevelRequirement(currentAction.name, currentLevel, requiredLevel, nextSteps);
++          }
++          return;
++        }
++      }
++
+       if (!targetPlayer) {
+         setErrorMsg('Please pick a target opponent.');
+         return;

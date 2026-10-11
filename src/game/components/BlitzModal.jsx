@@ -10,7 +10,9 @@ export default function BlitzModal({ attacker, allPlayers, onClose, onCompleteBl
   );
   const [errorNotice, setErrorNotice] = useState('');
 
-  const canUseBlitz = attacker.hp < 50 && attacker.energyTokens >= 5;
+  // FIX 4: enforce blitzUsesLeft in addition to HP/ET requirements
+  const blitzUsesLeft = attacker.blitzUsesLeft ?? 2;
+  const canUseBlitz = attacker.hp < 50 && attacker.energyTokens >= 5 && blitzUsesLeft > 0;
   const opponents = allPlayers.filter(p => p.id !== attacker.id && !p.isDefeated);
   const splitDamagePerOpponent = Math.floor(200 / Math.max(1, opponents.length));
 
@@ -84,6 +86,14 @@ export default function BlitzModal({ attacker, allPlayers, onClose, onCompleteBl
           <div style={{ background: 'rgba(237, 30, 36, 0.15)', border: '1px solid #ED1E24', color: '#ED1E24', padding: '10px', borderRadius: '8px', fontSize: '0.82rem', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <AlertOctagon size={16} />
             <span>Cannot unleash: Requires HP &lt; 50 (You have {attacker.hp} HP).</span>
+          </div>
+        )}
+
+        {/* FIX 4: Blitz uses exhausted warning */}
+        {blitzUsesLeft === 0 && (
+          <div style={{ background: 'rgba(237, 30, 36, 0.15)', border: '1px solid #ED1E24', color: '#ED1E24', padding: '10px', borderRadius: '8px', fontSize: '0.82rem', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <AlertOctagon size={16} />
+            <span>Saigo No Blitz has been used 2/2 times this match.</span>
           </div>
         )}
 

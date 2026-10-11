@@ -18,6 +18,9 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
   const [currentDefRoll, setCurrentDefRoll] = useState(6);
   const [roundResult, setRoundResult] = useState(''); // 'atk_win', 'def_win', 'tie'
 
+  // FIX 3: Fate Card mode — defender rolls their own die against a Mind Strength threshold
+  const [useFateCard, setUseFateCard] = useState(false);
+
   const [kontrolWinner, setKontrolWinner] = useState(null); // 'attacker' | 'defender'
   const [chosenOption, setChosenOption] = useState('steal_card'); // 'steal_card' | 'force_attack'
   const [selectedStolenCardId, setSelectedStolenCardId] = useState(null);
@@ -29,6 +32,10 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
   const atkChar = CHARACTERS[attacker.characterId] || CHARACTERS.chynaman;
 
   const isTargetZombie = targetPlayer?.isZombie;
+
+  // FIX 3: Fate Card threshold table — MS1→need 5+, MS2→4+, MS3→3+, MS4→2+, MS5→1+
+  const defMindStrength = targetChar?.mindStrength || 1;
+  const fateCardThreshold = Math.max(1, 6 - defMindStrength);
 
   const handleRoll = () => {
     if (isTargetZombie) {
@@ -56,27 +63,45 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
         setIsRolling(false);
 
         const atkBonus = atkChar.mindAtkBonus || 0;
-        const defMindStrength = targetChar?.mindStrength || 2;
-        const effectiveAtk = finalAtk + atkBonus;
         
         let newAtkWins = atkWins;
         let newDefWins = defWins;
         let newRoundNumber = roundNumber;
 
-        if (effectiveAtk > defMindStrength) {
-          newAtkWins += 1;
-          setRoundResult('atk_win');
-          soundFX.playEnergy();
-          newRoundNumber += 1;
-        } else if (effectiveAtk < defMindStrength) {
-          newDefWins += 1;
-          setRoundResult('def_win');
-          soundFX.playHit();
-          newRoundNumber += 1;
+        if (useFateCard) {
+          // FIX 3: Fate Card mode — defender rolls only. Must meet threshold to avoid control.
+          if (finalDef >= fateCardThreshold) {
+            // Defender resists — defender wins this round
+            newDefWins += 1;
+            setRoundResult('def_win');
+            soundFX.playHit();
+            newRoundNumber += 1;
+          } else {
+            // Defender fails to resist — attacker wins this round
+            newAtkWins += 1;
+            setRoundResult('atk_win');
+            soundFX.playEnergy();
+            newRoundNumber += 1;
+          }
         } else {
-          // TIE — don't increment round or wins, allow re-roll
-          setRoundResult('tie');
-          // Do NOT increment newRoundNumber or newAtkWins/newDefWins
+          // FIX 3: Standard mode — both roll one die. Higher total wins. Tie → re-roll (no freeze).
+          const atkTotal = finalAtk + atkBonus;
+          const defTotal = finalDef;
+
+          if (atkTotal > defTotal) {
+            newAtkWins += 1;
+            setRoundResult('atk_win');
+            soundFX.playEnergy();
+            newRoundNumber += 1;
+          } else if (atkTotal < defTotal) {
+            newDefWins += 1;
+            setRoundResult('def_win');
+            soundFX.playHit();
+            newRoundNumber += 1;
+          } else {
+            // TIE — don't increment round or wins; allow re-roll without freeze
+            setRoundResult('tie');
+          }
         }
 
         setAtkWins(newAtkWins);
@@ -171,8 +196,31 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
         )}
 
         <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.75)', margin: '0 0 14px 0' }}>
-          <strong>Best of 3 Dice Roll Battle!</strong> Both players roll a die simultaneously. The first to win 2 rounds wins the Kontrol.
+          <strong>Best of 3 Dice Roll Battle!</strong> Both players roll a die simultaneously. Higher roll wins the round. Ties re-roll. First to 2 wins takes the Kontrol.
         </p>
+
+        {/* FIX 3: Fate Card toggle — only available before rolling starts */}
+        {!(atkWins > 0 || defWins > 0) && !kontrolWinner && (
+          <div style={{ marginBottom: '14px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '8px', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <input
+              type="checkbox"
+              id="fateCardToggle"
+              checked={useFateCard}
+              onChange={(e) => setUseFateCard(e.target.checked)}
+              style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#3b82f6' }}
+            />
+            <label htmlFor="fateCardToggle" style={{ cursor: 'pointer', fontSize: '0.85rem', color: '#93c5fd', fontWeight: 'bold' }}>
+              🃏 Defender uses Fate Card (roll to resist mind control)?
+            </label>
+          </div>
+        )}
+
+        {/* Fate Card mode info banner */}
+        {useFateCard && !(atkWins > 0 || defWins > 0) && targetChar && (
+          <div style={{ marginBottom: '14px', background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '8px', padding: '10px 14px', fontSize: '0.82rem', color: '#93c5fd' }}>
+            <strong>Fate Card Mode:</strong> Defender rolls their own die to resist. Mind Strength {defMindStrength} → must roll <strong>{fateCardThreshold}+</strong> to avoid control.
+          </div>
+        )}
 
         {/* Target Selector */}
         {!kontrolWinner && (
@@ -275,7 +323,7 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
               <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem', marginBottom: '4px' }}>DEFENDER</div>
               <strong style={{ fontSize: '1.1rem', display: 'block', color: '#3b82f6' }}>{targetPlayer.name}</strong>
               <div style={{ fontSize: '0.75rem', color: '#60a5fa', marginTop: '2px' }}>
-                🧠 Mind Strength: {targetChar.mindStrength}
+                🧠 Mind Strength: {defMindStrength}
               </div>
               <div style={{ display: 'flex', justifyContent: 'center', gap: '4px', marginTop: '8px' }}>
                 <div style={{ width: '14px', height: '14px', borderRadius: '50%', background: defWins >= 1 ? '#3b82f6' : 'rgba(255,255,255,0.1)' }} />
@@ -305,19 +353,23 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
                     borderRadius: '12px',
                     border: '2px solid #FBC80D',
                     boxShadow: roundResult === 'atk_win' ? '0 0 20px #FBC80D' : '0 4px 10px rgba(0,0,0,0.5)',
-                    transition: 'all 0.3s ease'
+                    transition: 'all 0.3s ease',
+                    opacity: useFateCard ? 0.3 : 1
                   }}
                 >
-                  {currentAtkRoll}
+                  {useFateCard ? '—' : currentAtkRoll}
                 </div>
-                {roundResult && (
+                {!useFateCard && roundResult && (
                   <div style={{ fontSize: '0.8rem', marginTop: '8px', color: '#FBC80D' }}>
                     Total: {currentAtkRoll + (atkChar.mindAtkBonus || 0)}{atkChar.mindAtkBonus ? ` (+${atkChar.mindAtkBonus})` : ''}
                   </div>
                 )}
+                <div style={{ fontSize: '0.72rem', marginTop: '4px', color: 'rgba(255,255,255,0.5)' }}>
+                  {useFateCard ? '(Not used)' : 'Attacker'}
+                </div>
               </div>
 
-              {/* Defender Mind Strength */}
+              {/* Defender Die */}
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <div
                   style={{
@@ -336,9 +388,16 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
                     transition: 'all 0.3s ease'
                   }}
                 >
-                  {targetChar?.mindStrength || 2}
+                  {currentDefRoll}
                 </div>
-                {roundResult && <div style={{ fontSize: '0.8rem', marginTop: '8px', color: '#60a5fa' }}>Mind Strength</div>}
+                {roundResult && (
+                  <div style={{ fontSize: '0.8rem', marginTop: '8px', color: '#60a5fa' }}>
+                    {useFateCard ? `Need ${fateCardThreshold}+` : 'Rolled'}
+                  </div>
+                )}
+                <div style={{ fontSize: '0.72rem', marginTop: '4px', color: 'rgba(255,255,255,0.5)' }}>
+                  {useFateCard ? `Fate Card (${fateCardThreshold}+)` : 'Defender'}
+                </div>
               </div>
             </div>
 
@@ -381,7 +440,7 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
                 }}
               >
                 <Dices size={20} />
-                {isRolling ? 'ROLLING...' : (roundResult === 'tie' ? `RE-ROLL (TIE)` : `ROLL ROUND ${roundNumber}`)}
+                {isRolling ? 'ROLLING...' : (roundResult === 'tie' ? 'RE-ROLL (TIE)' : `ROLL ROUND ${roundNumber}`)}
               </button>
             </div>
           </div>
@@ -508,5 +567,3 @@ export default function KontrolModal({ attacker, allPlayers, initialTargetId, on
     </div>
   );
 }
-
-

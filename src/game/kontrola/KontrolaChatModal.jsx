@@ -156,13 +156,38 @@ export default function KontrolaChatModal({
                   width: '26px',
                   height: '26px',
                   borderRadius: '50%',
-                  overflow: 'hidden',
+                  overflow: 'visible',
                   border: `1.5px solid ${msgChar.themeColor || '#FBC80D'}`,
                   flexShrink: 0,
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.6)'
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.6)',
+                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }}
               >
-                <img src={getAssetUrl(msgChar.image)} alt={msg.senderName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={getAssetUrl(msgChar.image)} alt={msg.senderName} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                {/* Level Badge */}
+                <div style={{
+                  position: 'absolute',
+                  top: '-5px',
+                  right: '-5px',
+                  background: 'linear-gradient(135deg, #FBC80D 0%, #FF7700 100%)',
+                  width: '14px',
+                  height: '14px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.45rem',
+                  fontWeight: 'bold',
+                  color: '#000',
+                  border: '1px solid rgba(0,0,0,0.8)',
+                  boxShadow: '0 0 4px rgba(255, 215, 0, 0.6)',
+                  zIndex: 10
+                }}>
+                  {msg.senderLevel || 1}
+                </div>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>

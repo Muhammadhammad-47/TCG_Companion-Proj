@@ -306,13 +306,16 @@ export function resolveDiceCombat({
     const cardName = actionCard?.name || '';
     if (cardName.includes('LIGHTNING X2')) {
       sleepTurns = 2;
-    } else if (cardName.includes('LIGHTNING X1') || cardName.includes('LIGHTNING X1')) {
+    } else if (cardName.includes('LIGHTNING X1')) {
       sleepTurns = 1;
     } else if (characterMove?.name?.includes('Golden Mic Lightning') || characterMove?.element === 'Lightning') {
       // Character lightning moves apply 1 sleep turn on success
       sleepTurns = 1;
     }
   }
+
+  // When sleepTurns handles skip duration, disable appliesStun to prevent double-skip via isStunned
+  const effectiveAppliesStun = sleepTurns > 0 ? false : appliesStun;
 
   return {
     isTie: false,
@@ -331,7 +334,7 @@ export function resolveDiceCombat({
     damageDealt: netHPDamage,
     newShield: currentShield,
     appliesPoison,
-    appliesStun,
+    appliesStun: effectiveAppliesStun,
     healsAttacker,
     burnStacks,
     revealCards,

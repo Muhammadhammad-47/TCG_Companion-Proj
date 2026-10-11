@@ -92,6 +92,15 @@ export const ACTION_CARDS = [
     icon: '⚡',
     color: '#ffe93d',
     desc: 'Lightning strike dealing damage and -1 turn penalty (1 ET).'
+  },
+  {
+    id: 'lightning_x2',
+    name: 'LIGHTNING X2',
+    type: 'ATTACK',
+    costET: 2,
+    icon: '⚡⚡',
+    color: '#ffe93d',
+    desc: 'Heavy lightning strike dealing damage, removes 1 Poison card, and -2 turn penalty (2 ET).'
   }
 ];
 

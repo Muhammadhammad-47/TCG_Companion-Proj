@@ -1,0 +1,635 @@
+﻿diff --git a/src/pages/admin/AdminPage.jsx b/src/pages/admin/AdminPage.jsx
+index 4d3e471..02871cd 100644
+--- a/src/pages/admin/AdminPage.jsx
++++ b/src/pages/admin/AdminPage.jsx
+@@ -15,6 +15,8 @@ import { knowledgeService, calculateGroqMetrics, GROQ_LIMITS } from '../../servi
+ import { economyService } from '../../services/economyService';
+ import { musicService } from '../../services/musicService';
+ import { bugReportService } from '../../services/bugReportService';
++import { supportService } from '../../services/supportService';
++import AdminSupportPanel from '../../components/AdminSupportPanel';
+ import MusicPlayer from '../../components/MusicPlayer';
+ import MusicUploadProgress from '../../components/MusicUploadProgress';
+ 
+@@ -101,6 +103,10 @@ export default function AdminPage() {
+     is_active: true
+   });
+ 
++  // Promoted Rules Management State
++  const [isEditingPromotedRule, setIsEditingPromotedRule] = useState(null);
++  const [promotedRuleEditData, setPromotedRuleEditData] = useState(null);
++
+   // Questions
+   const [questions, setQuestions] = useState([]);
+   const [questionsLoading, setQuestionsLoading] = useState(false);
+@@ -137,9 +143,10 @@ export default function AdminPage() {
+   // Support Messages State (Contact Support)
+   const [supportMessages, setSupportMessages] = useState([]);
+   const [supportMessagesLoading, setSupportMessagesLoading] = useState(false);
+-  const [supportFilter, setSupportFilter] = useState('new'); // 'new' | 'responded' | 'resolved' | 'all'
+-  const [expandedSupportId, setExpandedSupportId] = useState(null);
+-  const [supportAdminNotes, setSupportAdminNotes] = useState({});
++  const [supportFilter, setSupportFilter] = useState('open'); // 'open' | 'in_progress' | 'resolved' | 'closed' | 'all'
++  const [selectedSupportTicket, setSelectedSupportTicket] = useState(null);
++  const [supportReplyText, setSupportReplyText] = useState({});
++  const [isSendingReply, setIsSendingReply] = useState({});
+ 
+   // Quick Copy
+   const [copiedKey, setCopiedKey] = useState('');
+@@ -233,10 +240,8 @@ export default function AdminPage() {
+   const loadSupportMessages = async (statusFilter = null) => {
+     setSupportMessagesLoading(true);
+     try {
+-      const reports = await bugReportService.fetchBugReports({ status: statusFilter, limit: 150 });
+-      // Filter to only contact support messages (error_type='manual' with no error_stack)
+-      const supportOnly = (reports || []).filter(r => r.error_type === 'manual' && !r.error_stack);
+-      setSupportMessages(supportOnly);
++      const tickets = await supportService.getAllSupportTickets(statusFilter, 150);
++      setSupportMessages(tickets);
+     } catch (e) {
+       console.warn('Failed to load support messages:', e);
+     } finally {
+@@ -703,6 +708,30 @@ export default function AdminPage() {
+     }
+   };
+ 
++  const handleUpdateQuestion = async (q) => {
++    if (!editQuestionText.trim() || editQuestionText === (q.user_suggested_answer || q.ai_answer)) {
++      setEditingQuestionId(null);
++      return; // No changes made
++    }
++    try {
++      console.log('Updating question:', q.id);
++      await knowledgeService.updateQuestionStatus(q.id, 'pending', editQuestionText.trim());
++      setPromotedSuccess('Question updated successfully!');
++      // Update local state
++      setQuestions((prev) =>
++        prev.map((item) =>
++          item.id === q.id ? { ...item, user_suggested_answer: editQuestionText.trim() } : item
++        )
++      );
++      setEditingQuestionId(null);
++      setTimeout(() => setPromotedSuccess(''), 4000);
++    } catch (e) {
++      console.error('Update error:', e);
++      setPromotedSuccess(`Error updating: ${e.message}`);
++      setTimeout(() => setPromotedSuccess(''), 4000);
++    }
++  };
++
+   const handlePromoteQuestion = async (q, overrideAnswer = null) => {
+     const finalAnswer = overrideAnswer !== null ? overrideAnswer : (q.user_suggested_answer || q.ai_answer || '');
+     const newRule = {
+@@ -752,6 +781,76 @@ export default function AdminPage() {
+     setTimeout(() => setCopiedKey(''), 2500);
+   };
+ 
++  // ========= PROMOTED RULES HANDLERS =========
++  const handleOpenEditPromotedRule = (rule) => {
++    setIsEditingPromotedRule(rule.id);
++    setPromotedRuleEditData({
++      topic: rule.topic || '',
++      category: rule.category || 'Combat',
++      keywords: Array.isArray(rule.keywords) ? rule.keywords.join(', ') : '',
++      short_answer: rule.short_answer || '',
++      details: rule.details || ''
++    });
++  };
++
++  const handleSavePromotedRuleEdit = async () => {
++    if (!isEditingPromotedRule || !promotedRuleEditData) return;
++    try {
++      const keywords = promotedRuleEditData.keywords
++        .split(',')
++        .map(k => k.trim())
++        .filter(Boolean);
++      
++      await knowledgeService.updateRule(isEditingPromotedRule, {
++        topic: promotedRuleEditData.topic.trim(),
++        category: promotedRuleEditData.category,
++        keywords: keywords,
++        short_answer: promotedRuleEditData.short_answer.trim(),
++        details: promotedRuleEditData.details.trim()
++      });
++
++      setRules((prev) =>
++        prev.map((r) =>
++          r.id === isEditingPromotedRule
++            ? {
++                ...r,
++                topic: promotedRuleEditData.topic.trim(),
++                category: promotedRuleEditData.category,
++                keywords: keywords,
++                short_answer: promotedRuleEditData.short_answer.trim(),
++                details: promotedRuleEditData.details.trim()
++              }
++            : r
++        )
++      );
++
++      setModNotice('Promoted rule updated successfully!');
++      setIsEditingPromotedRule(null);
++      setPromotedRuleEditData(null);
++      setTimeout(() => setModNotice(''), 4000);
++    } catch (err) {
++      showError('Failed to update promoted rule: ' + err.message);
++    }
++  };
++
++  const handleDeletePromotedRule = (rule) => {
++    showConfirm(
++      'Delete Promoted Rule',
++      `Delete "${rule.topic}" from the knowledge base? This will remove it from active gameplay.`,
++      async () => {
++        try {
++          await knowledgeService.deleteRule(rule.id);
++          setRules((prev) => prev.filter((r) => r.id !== rule.id));
++          setModNotice('Promoted rule deleted successfully!');
++          setTimeout(() => setModNotice(''), 4000);
++        } catch (err) {
++          showError('Failed to delete promoted rule: ' + err.message);
++        }
++      },
++      { confirmLabel: 'Delete', isDanger: true }
++    );
++  };
++
+   // Filter Users
+   const filteredUsers = usersList.filter((u) => {
+     if (userFilter === 'ACTIVE') return !u.is_banned;
+@@ -1929,6 +2028,12 @@ export default function AdminPage() {
+                                 >
+                                   Cancel
+                                 </button>
++                                <button
++                                  onClick={() => handleUpdateQuestion(q)}
++                                  style={{ background: 'rgba(0, 200, 255, 0.15)', border: '1px solid rgba(0, 200, 255, 0.3)', color: '#00d4ff', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '5px' }}
++                                >
++                                  <Save size={13} /> Save
++                                </button>
+                                 <button
+                                   onClick={() => {
+                                     handlePromoteQuestion(q, editQuestionText);
+@@ -2005,6 +2110,208 @@ export default function AdminPage() {
+                       ))
+                     )}
+                   </div>
++
++                  {/* PROMOTED RULES MANAGEMENT SECTION */}
++                  <div style={{ marginTop: '32px', paddingTop: '20px', borderTop: '1px solid rgba(251, 200, 13, 0.15)' }}>
++                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
++                      <div>
++                        <h2 style={{ fontSize: '1.35rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', letterSpacing: '1px' }}>
++                          PROMOTED RULES
++                        </h2>
++                        <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>
++                          Edit or delete rules that were promoted from player corrections
++                        </span>
++                      </div>
++                      <div style={{ fontSize: '1.4rem', fontWeight: '600', color: '#fff', background: 'rgba(251, 200, 13, 0.15)', padding: '8px 14px', borderRadius: '8px', border: '1px solid rgba(251, 200, 13, 0.3)' }}>
++                        {rules.length}
++                      </div>
++                    </div>
++
++                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
++                      {rules.length === 0 ? (
++                        <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', padding: '36px', textAlign: 'center', color: 'rgba(255,255,255,0.4)' }}>
++                          No promoted rules yet. Promote player corrections to create rules.
++                        </div>
++                      ) : (
++                        rules.map((r) => (
++                          <div
++                            key={r.id}
++                            style={{
++                              background: 'var(--bg-card)',
++                              border: '1px solid rgba(251, 200, 13, 0.2)',
++                              borderRadius: '8px',
++                              padding: '14px',
++                              transition: 'all 0.2s ease'
++                            }}
++                          >
++                            {isEditingPromotedRule === r.id ? (
++                              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
++                                <div>
++                                  <label style={{ display: 'block', fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)', marginBottom: '4px', fontWeight: 'bold' }}>TOPIC</label>
++                                  <input
++                                    type="text"
++                                    value={promotedRuleEditData?.topic || ''}
++                                    onChange={(e) => setPromotedRuleEditData({ ...promotedRuleEditData, topic: e.target.value })}
++                                    style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '8px', borderRadius: '6px', fontSize: '0.85rem' }}
++                                  />
++                                </div>
++                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
++                                  <div>
++                                    <label style={{ display: 'block', fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)', marginBottom: '4px', fontWeight: 'bold' }}>CATEGORY</label>
++                                    <select
++                                      value={promotedRuleEditData?.category || 'Combat'}
++                                      onChange={(e) => setPromotedRuleEditData({ ...promotedRuleEditData, category: e.target.value })}
++                                      style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '8px', borderRadius: '6px', fontSize: '0.85rem' }}
++                                    >
++                                      <option>Combat</option>
++                                      <option>Energy</option>
++                                      <option>Characters</option>
++                                      <option>Lore</option>
++                                    </select>
++                                  </div>
++                                  <div>
++                                    <label style={{ display: 'block', fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)', marginBottom: '4px', fontWeight: 'bold' }}>KEYWORDS (comma-separated)</label>
++                                    <input
++                                      type="text"
++                                      value={promotedRuleEditData?.keywords || ''}
++                                      onChange={(e) => setPromotedRuleEditData({ ...promotedRuleEditData, keywords: e.target.value })}
++                                      style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '8px', borderRadius: '6px', fontSize: '0.85rem' }}
++                                    />
++                                  </div>
++                                </div>
++                                <div>
++                                  <label style={{ display: 'block', fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)', marginBottom: '4px', fontWeight: 'bold' }}>SHORT ANSWER</label>
++                                  <textarea
++                                    value={promotedRuleEditData?.short_answer || ''}
++                                    onChange={(e) => setPromotedRuleEditData({ ...promotedRuleEditData, short_answer: e.target.value })}
++                                    style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '8px', borderRadius: '6px', fontSize: '0.82rem', minHeight: '60px', fontFamily: 'inherit', resize: 'vertical' }}
++                                  />
++                                </div>
++                                <div>
++                                  <label style={{ display: 'block', fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)', marginBottom: '4px', fontWeight: 'bold' }}>DETAILS</label>
++                                  <textarea
++                                    value={promotedRuleEditData?.details || ''}
++                                    onChange={(e) => setPromotedRuleEditData({ ...promotedRuleEditData, details: e.target.value })}
++                                    style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '8px', borderRadius: '6px', fontSize: '0.82rem', minHeight: '80px', fontFamily: 'inherit', resize: 'vertical' }}
++                                  />
++                                </div>
++                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
++                                  <button
++                                    onClick={() => {
++                                      setIsEditingPromotedRule(null);
++                                      setPromotedRuleEditData(null);
++                                    }}
++                                    style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 'bold' }}
++                                  >
++                                    Cancel
++                                  </button>
++                                  <button
++                                    onClick={handleSavePromotedRuleEdit}
++                                    style={{ background: 'rgba(0, 200, 255, 0.15)', border: '1px solid rgba(0, 200, 255, 0.3)', color: '#00d4ff', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '5px' }}
++                                  >
++                                    <Save size={13} /> Save Changes
++                                  </button>
++                                </div>
++                              </div>
++                            ) : (
++                              <>
++                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
++                                  <div style={{ flex: 1 }}>
++                                    <div style={{ fontSize: '1rem', color: '#fff', fontWeight: 'bold', marginBottom: '4px' }}>
++                                      {r.topic}
++                                    </div>
++                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
++                                      {getCategoryBadge(r.category)}
++                                      {r.is_active ? (
++                                        <span style={{ fontSize: '0.72rem', background: 'rgba(57, 255, 20, 0.15)', color: '#39ff14', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
++                                          Γ£ô ACTIVE
++                                        </span>
++                                      ) : (
++                                        <span style={{ fontSize: '0.72rem', background: 'rgba(255, 77, 0, 0.15)', color: '#ff4d00', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
++                                          Γ£ù INACTIVE
++                                        </span>
++                                      )}
++                                    </div>
++                                  </div>
++                                </div>
++
++                                <div style={{ background: 'rgba(255, 255, 255, 0.05)', borderRadius: '6px', padding: '8px 12px', marginBottom: '8px', borderLeft: '3px solid rgba(251,200,13,0.3)', fontSize: '0.82rem', color: '#cbd5e1' }}>
++                                  <strong>Answer:</strong> {r.short_answer || r.details}
++                                </div>
++
++                                {r.keywords && r.keywords.length > 0 && (
++                                  <div style={{ marginBottom: '8px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
++                                    {r.keywords.map((kw, idx) => (
++                                      <span key={idx} style={{ fontSize: '0.7rem', background: 'rgba(251, 200, 13, 0.15)', color: 'var(--neon-gold)', border: '1px solid rgba(251, 200, 13, 0.3)', padding: '2px 6px', borderRadius: '4px' }}>
++                                        {kw}
++                                      </span>
++                                    ))}
++                                  </div>
++                                )}
++
++                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
++                                  <button
++                                    onClick={() => handleToggleRuleActive(r)}
++                                    style={{
++                                      background: r.is_active ? 'rgba(255, 77, 0, 0.15)' : 'rgba(57, 255, 20, 0.15)',
++                                      border: r.is_active ? '1px solid rgba(255, 77, 0, 0.3)' : '1px solid rgba(57, 255, 20, 0.3)',
++                                      color: r.is_active ? '#ff4d00' : '#39ff14',
++                                      padding: '5px 12px',
++                                      borderRadius: '6px',
++                                      cursor: 'pointer',
++                                      fontWeight: '600',
++                                      fontSize: '0.78rem',
++                                      display: 'flex',
++                                      alignItems: 'center',
++                                      gap: '5px'
++                                    }}
++                                  >
++                                    {r.is_active ? <> <ZapOff size={13} /> Deactivate</> : <> <Zap size={13} /> Activate</>}
++                                  </button>
++                                  <button
++                                    onClick={() => handleOpenEditPromotedRule(r)}
++                                    style={{
++                                      background: 'rgba(255, 255, 255, 0.1)',
++                                      border: '1px solid rgba(255, 255, 255, 0.2)',
++                                      color: '#fff',
++                                      padding: '5px 12px',
++                                      borderRadius: '6px',
++                                      cursor: 'pointer',
++                                      fontWeight: '600',
++                                      fontSize: '0.78rem',
++                                      display: 'flex',
++                                      alignItems: 'center',
++                                      gap: '5px'
++                                    }}
++                                  >
++                                    <Edit2 size={13} /> Edit
++                                  </button>
++                                  <button
++                                    onClick={() => handleDeletePromotedRule(r)}
++                                    style={{
++                                      background: 'rgba(255, 77, 0, 0.15)',
++                                      border: '1px solid rgba(255, 77, 0, 0.3)',
++                                      color: '#ff4d00',
++                                      padding: '5px 12px',
++                                      borderRadius: '6px',
++                                      cursor: 'pointer',
++                                      fontWeight: '600',
++                                      fontSize: '0.78rem',
++                                      display: 'flex',
++                                      alignItems: 'center',
++                                      gap: '5px'
++                                    }}
++                                  >
++                                    <Trash2 size={13} /> Delete
++                                  </button>
++                                </div>
++                              </>
++                            )}
++                          </div>
++                        ))
++                      )}
++                    </div>
++                  </div>
+                 </div>
+               )}
+               {/* =========================================================================
+@@ -2912,251 +3219,10 @@ export default function AdminPage() {
+                 </div>
+               )}
+               {/* =========================================================================
+-                  PAGE 9: SUPPORT MESSAGES
++                  PAGE 9: SUPPORT MESSAGES (NEW TWO-WAY SYSTEM)
+               ========================================================================= */}
+               {activeTab === 'support_messages' && (
+-                <div>
+-                  {/* KPI Bar */}
+-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', marginBottom: '16px' }}>
+-                    {[
+-                      { label: 'NEW', value: supportMessages.filter(s => s.status === 'new').length, color: '#FBC80D' },
+-                      { label: 'RESPONDED', value: supportMessages.filter(s => s.status === 'responded').length, color: '#FBC80D' },
+-                      { label: 'RESOLVED', value: supportMessages.filter(s => s.status === 'resolved').length, color: '#39ff14' },
+-                      { label: 'TOTAL', value: supportMessages.length, color: '#FBC80D' }
+-                    ].map(stat => (
+-                      <div key={stat.label} style={{ background: 'var(--bg-card)', border: '1px solid rgba(251, 200, 13, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+-                        <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontWeight: 'bold' }}>{stat.label}</div>
+-                        <div style={{ fontSize: '1.4rem', fontWeight: '900', color: stat.color, fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)' }}>{stat.value}</div>
+-                      </div>
+-                    ))}
+-                  </div>
+-
+-                  {/* Header with Filters */}
+-                  <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(251, 200, 13, 0.2)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+-                      <div>
+-                        <h2 style={{ fontSize: '1.3rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '1px' }}>
+-                          ?? SUPPORT MESSAGES
+-                        </h2>
+-                        <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>
+-                          Player support requests & feedback
+-                        </span>
+-                      </div>
+-                    </div>
+-
+-                    {/* Filter Buttons */}
+-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+-                      {['new', 'responded', 'resolved', 'all'].map((f) => (
+-                        <button
+-                          key={f}
+-                          onClick={() => {
+-                            setSupportFilter(f);
+-                            loadSupportMessages(f === 'all' ? null : f);
+-                          }}
+-                          style={{
+-                            background: supportFilter === f ? 'rgba(0,240,255,0.15)' : 'rgba(255,255,255,0.05)',
+-                            border: supportFilter === f ? '1px solid rgba(0,240,255,0.6)' : '1px solid rgba(255,255,255,0.1)',
+-                            color: supportFilter === f ? '#FBC80D' : 'rgba(255,255,255,0.6)',
+-                            padding: '5px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 'bold', textTransform: 'uppercase'
+-                          }}
+-                        >
+-                          {f}
+-                        </button>
+-                      ))}
+-                      <button
+-                        onClick={() => loadSupportMessages(supportFilter === 'all' ? null : supportFilter)}
+-                        title="Refresh"
+-                        style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.78rem' }}
+-                      >
+-                        <RefreshCw size={13} /> Refresh
+-                      </button>
+-                    </div>
+-                  </div>
+-
+-                  {/* Messages List */}
+-                  {supportMessagesLoading ? (
+-                    <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.4)', padding: '40px', fontSize: '0.9rem' }}>Loading support messages...</div>
+-                  ) : supportMessages.length === 0 ? (
+-                    <div style={{ textAlign: 'center', padding: '60px 20px', color: 'rgba(255,255,255,0.3)' }}>
+-                      <MessageSquare size={40} style={{ marginBottom: '12px', opacity: 0.4 }} />
+-                      <div style={{ fontSize: '1rem', fontWeight: 'bold' }}>No support messages found</div>
+-                      <div style={{ fontSize: '0.8rem', marginTop: '6px' }}>Players can submit support requests via the Contact Support button</div>
+-                    </div>
+-                  ) : (
+-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+-                      {supportMessages.map((msg) => {
+-                        const statusColors = {
+-                          new: { bg: 'rgba(0,200,255,0.1)', color: '#FBC80D', border: 'rgba(0,200,255,0.3)' },
+-                          responded: { bg: 'rgba(251, 200, 13,0.1)', color: 'var(--neon-gold)', border: 'rgba(251, 200, 13,0.3)' },
+-                          resolved: { bg: 'rgba(57,255,20,0.1)', color: '#39ff14', border: 'rgba(57,255,20,0.3)' }
+-                        };
+-                        const statusStyle = statusColors[msg.status] || statusColors.new;
+-                        const createdDate = new Date(msg.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+-
+-                        return (
+-                          <div
+-                            key={msg.id}
+-                            style={{
+-                              background: 'linear-gradient(135deg, rgba(13, 26, 56, 0.8) 0%, var(--bg-card) 100%)',
+-                              border: '1px solid rgba(251, 200, 13, 0.2)',
+-                              borderRadius: '12px',
+-                              padding: '16px',
+-                              cursor: 'pointer',
+-                              transition: 'all 0.2s ease',
+-                              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)'
+-                            }}
+-                            onClick={() => setExpandedSupportId(expandedSupportId === msg.id ? null : msg.id)}
+-                            onMouseOver={e => e.currentTarget.style.borderColor = 'rgba(251, 200, 13, 0.4)'}
+-                            onMouseOut={e => e.currentTarget.style.borderColor = 'rgba(251, 200, 13, 0.2)'}
+-                          >
+-                            {/* Header */}
+-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+-                              <div>
+-                                <div style={{ color: '#fff', fontWeight: 'bold', fontSize: '0.95rem' }}>
+-                                  From: <span style={{ color: 'var(--neon-gold)' }}>{msg.username || 'Guest'}</span>
+-                                </div>
+-                                <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginTop: '2px' }}>
+-                                  {createdDate}
+-                                </div>
+-                              </div>
+-                              <span style={{
+-                                fontSize: '0.65rem',
+-                                fontWeight: 'bold',
+-                                background: statusStyle.bg,
+-                                color: statusStyle.color,
+-                                border: `1px solid ${statusStyle.border}`,
+-                                padding: '4px 10px',
+-                                borderRadius: '4px',
+-                                textTransform: 'uppercase',
+-                                letterSpacing: '0.5px'
+-                              }}>
+-                                {msg.status}
+-                              </span>
+-                            </div>
+-
+-                            {/* Message Preview */}
+-                            <div style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.8)', lineHeight: '1.4', marginBottom: '10px' }}>
+-                              {msg.error_message?.substring(0, expandedSupportId === msg.id ? undefined : 150)}
+-                              {!expandedSupportId && msg.error_message?.length > 150 && '...'}
+-                            </div>
+-
+-                            {/* Screenshot if available */}
+-                            {msg.screenshot_url && (
+-                              <div style={{ marginBottom: '10px' }}>
+-                                <img
+-                                  src={msg.screenshot_url}
+-                                  alt="screenshot"
+-                                  style={{
+-                                    maxWidth: '100%',
+-                                    maxHeight: '200px',
+-                                    borderRadius: '8px',
+-                                    border: '1px solid rgba(0,200,255,0.2)',
+-                                    cursor: 'pointer'
+-                                  }}
+-                                  onClick={(e) => {
+-                                    e.stopPropagation();
+-                                    window.open(msg.screenshot_url, '_blank');
+-                                  }}
+-                                />
+-                              </div>
+-                            )}
+-
+-                            {/* Expanded: Admin Notes & Actions */}
+-                            {expandedSupportId === msg.id && (
+-                              <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(0,200,255,0.15)' }}>
+-                                {/* Admin Notes */}
+-                                <textarea
+-                                  value={supportAdminNotes[msg.id] || ''}
+-                                  onChange={(e) => setSupportAdminNotes(prev => ({ ...prev, [msg.id]: e.target.value }))}
+-                                  placeholder="Add admin notes..."
+-                                  style={{
+-                                    width: '100%',
+-                                    boxSizing: 'border-box',
+-                                    background: 'rgba(0,0,0,0.3)',
+-                                    border: '1px solid rgba(0,200,255,0.2)',
+-                                    color: '#fff',
+-                                    padding: '8px',
+-                                    borderRadius: '6px',
+-                                    fontSize: '0.85rem',
+-                                    marginBottom: '10px',
+-                                    fontFamily: 'monospace',
+-                                    minHeight: '60px'
+-                                  }}
+-                                />
+-
+-                                {/* Action Buttons */}
+-                                <div style={{ display: 'flex', gap: '6px' }}>
+-                                  {msg.status !== 'responded' && (
+-                                    <button
+-                                      onClick={(e) => {
+-                                        e.stopPropagation();
+-                                        bugReportService.updateBugReportStatus(msg.id, 'responded', supportAdminNotes[msg.id] || null).then((ok) => {
+-                                          if (ok) {
+-                                            setModNotice('? Marked as responded');
+-                                            setTimeout(() => setModNotice(''), 3000);
+-                                            loadSupportMessages(supportFilter === 'all' ? null : supportFilter);
+-                                          } else {
+-                                            showError('Failed to update status.');
+-                                          }
+-                                        });
+-                                      }}
+-                                      style={{ background: 'rgba(251, 200, 13,0.1)', border: '1px solid rgba(251, 200, 13,0.3)', color: 'var(--neon-gold)', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 'bold' }}
+-                                    >
+-                                      Mark Responded
+-                                    </button>
+-                                  )}
+-                                  {msg.status !== 'resolved' && (
+-                                    <button
+-                                      onClick={(e) => {
+-                                        e.stopPropagation();
+-                                        bugReportService.updateBugReportStatus(msg.id, 'resolved', supportAdminNotes[msg.id] || null).then((ok) => {
+-                                          if (ok) {
+-                                            setModNotice('? Marked as resolved');
+-                                            setTimeout(() => setModNotice(''), 3000);
+-                                            loadSupportMessages(supportFilter === 'all' ? null : supportFilter);
+-                                          } else {
+-                                            showError('Failed to update status.');
+-                                          }
+-                                        });
+-                                      }}
+-                                      style={{ background: 'rgba(57,255,20,0.1)', border: '1px solid rgba(57,255,20,0.3)', color: '#39ff14', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 'bold' }}
+-                                    >
+-                                      Mark Resolved
+-                                    </button>
+-                                  )}
+-                                  <button
+-                                    onClick={(e) => {
+-                                      e.stopPropagation();
+-                                      showConfirm(
+-                                        'Delete Support Message',
+-                                        'Permanently delete this support message?',
+-                                        async () => {
+-                                          const ok = await bugReportService.deleteBugReport(msg.id);
+-                                          if (ok) {
+-                                            setModNotice('??? Support message deleted');
+-                                            setTimeout(() => setModNotice(''), 3000);
+-                                            loadSupportMessages(supportFilter === 'all' ? null : supportFilter);
+-                                            setExpandedSupportId(null);
+-                                          } else {
+-                                            showError('Failed to delete support message.');
+-                                          }
+-                                        },
+-                                        { confirmLabel: 'Delete', isDanger: true }
+-                                      );
+-                                    }}
+-                                    style={{ background: 'rgba(255,42,85,0.1)', border: '1px solid rgba(255,42,85,0.35)', color: '#ff2a55', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 'bold' }}
+-                                  >
+-                                    Delete
+-                                  </button>
+-                                </div>
+-                              </div>
+-                            )}
+-                          </div>
+-                        );
+-                      })}
+-                    </div>
+-                  )}
+-                </div>
++                <AdminSupportPanel onRefresh={() => loadSupportMessages(supportFilter === 'all' ? null : supportFilter)} />
+               )}
+               {/* =========================================================================
+                   PAGE 10: TCG APIS (CLEAN DEDICATED VIEW)

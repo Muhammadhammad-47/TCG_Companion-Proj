@@ -80,7 +80,7 @@ export const KONTROLA_CHARACTERS = {
     image: 'Kontrolla_Data/Graphics/WILD CARDS/KAT WILD CARD GOLD.png',
     attacks: {
       'SAVAGE PAWS PER STRIKE': { ap: 5, dice: 1, element: 'Physical', desc: 'Roll 1 Die × 5 AP Paw strikes.' },
-      'SHADOW PURR': { ap: 20, dice: 0, element: 'Shadow', desc: 'Shadow illusion dealing 20 AP.' },
+      'SHADOW PURR': { ap: 30, dice: 0, element: 'Shadow', healsAttacker: 15, appliesSleep: true, desc: 'Restores +15 HP to attacker and puts opponent to sleep for 1 turn.' },
       'CLAW OF FATE': { ap: 35, dice: 0, element: 'Shadow', desc: 'Critical shadow slash dealing 35 AP.' },
       'KONTROL': { ap: 0, dice: 1, element: 'Psychic', isKontrol: true, desc: 'Roll 1d6 > target Mind Strength. Force attack alternate or steal 1 card (Rare, Max 2/match, 5-turn cooldown).' },
       'SAIGO NO BLITZ': { ap: 200, dice: 0, element: 'Energy', isBlitz: true, desc: 'Requires HP < 50. Sacrifice 50% HP to deal 200 AP AoE (Rare, Max 2/match).' }
@@ -224,6 +224,57 @@ export function shuffle(array) {
   return arr;
 }
 
+// Trading system for Soul Alliance
+export const tradeWithAlly = (traderState, recipientState, tradeData) => {
+  if (!traderState.allianceId || traderState.allianceId !== recipientState.id) {
+    return { success: false, log: 'No Soul Alliance exists between these players.' };
+  }
+
+  if (!tradeData) {
+    return { success: false, log: 'Invalid trade data.' };
+  }
+
+  let log = '';
+  const updatedTrader = { ...traderState };
+  const updatedRecipient = { ...recipientState };
+
+  // Trade REVIVE card
+  if (tradeData.type === 'REVIVE') {
+    // Check if trader has REVIVE card in hand
+    const reviveIndex = updatedTrader.actionCardsHand?.findIndex(c => c.name.includes('REVIVE'));
+    if (reviveIndex === -1 || reviveIndex === undefined) {
+      return { success: false, log: `${updatedTrader.name} does not have a REVIVE card to trade.` };
+    }
+
+    // Transfer REVIVE card from trader to recipient
+    const reviveCard = updatedTrader.actionCardsHand[reviveIndex];
+    updatedTrader.actionCardsHand.splice(reviveIndex, 1);
+    updatedRecipient.actionCardsHand = updatedRecipient.actionCardsHand || [];
+    updatedRecipient.actionCardsHand.push(reviveCard);
+
+    log = `🤝 REVIVE TRADE: ${updatedTrader.name} traded REVIVE card to ${updatedRecipient.name}!`;
+    return { success: true, log, updatedTrader, updatedRecipient };
+  }
+
+  // Trade Energy Tokens
+  if (tradeData.type === 'ENERGY_TOKENS' && typeof tradeData.amount === 'number') {
+    const amount = Math.max(0, tradeData.amount);
+
+    if (updatedTrader.energyTokens < amount) {
+      return { success: false, log: `${updatedTrader.name} does not have ${amount} Energy Tokens to trade.` };
+    }
+
+    // Transfer Energy Tokens
+    updatedTrader.energyTokens -= amount;
+    updatedRecipient.energyTokens = (updatedRecipient.energyTokens || 0) + amount;
+
+    log = `⚡ ENERGY TOKEN TRADE: ${updatedTrader.name} traded ${amount} Energy Token${amount !== 1 ? 's' : ''} to ${updatedRecipient.name}!`;
+    return { success: true, log, updatedTrader, updatedRecipient };
+  }
+
+  return { success: false, log: 'Invalid trade type.' };
+};
+
 export const generateDeck = (isPremium = false) => {
   const blueprint = isPremium ? ACTION_CARDS_PREMIUM : ACTION_CARDS_BASIC;
   let deck = [];
@@ -260,7 +311,7 @@ export const rollDice = (count = 1) => {
 };
 
 // Authoritative turn resolution
-export const resolveTurn = (actionCard, attackerChar, attackerState, defenderState, attackSelectionName = null, precalculatedRolls = null) => {
+export const resolveTurn = (actionCard, attackerChar, attackerState, defenderState, attackSelectionName = null, precalculatedRolls = null, gameState = null) => {
   if (!actionCard) {
     return { log: 'Combat error: no action card provided.', newAttackerState: attackerState, newDefenderState: defenderState };
   }
@@ -350,25 +401,62 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     }
 
     if (isDefenderZombie) {
-      log += ` Kontrol fails! Zombies are mindless and cannot be controlled.`;
+      log += ` ⏸️ Kontrol fails! Zombies are mindless and cannot be controlled.`;
+      newAttackerState.kontrolUsesLeft = Math.max(0, newAttackerState.kontrolUsesLeft - 1);
+      newAttackerState.kontrolCooldown = 5;
+      return { newAttackerState, newDefenderState, log };
     } else {
+      // Official Rule: Controller rolls 1d6 and must roll HIGHER than opponent's Mind Strength
+      // If tie, re-roll (best of 3)
+      // Queeny has +2 bonus to rolls, Magical creatures have +1 to their Mind Strength defense
+      
       let controllerRoll = kRoll.total;
-      if (newAttackerState.id === 'queeny') controllerRoll += 2; // Queeny +2 psychic bonus
-      let targetMind = newDefenderState.mind || 3;
-      if (['kiko', 'poochi', 'shroomy'].includes(newDefenderState.id)) targetMind += 1; // Magical defense +1
-
-      if (controllerRoll > targetMind) {
-        log += ` Kontrol SUCCESS! Roll ${controllerRoll} beat Mind Strength ${targetMind}! Target is mind-controlled.`;
+      let targetMindStrength = newDefenderState.mind || 3;
+      
+      // Apply Queeny +2 psychic bonus if attacker is Queeny
+      if (newAttackerState.characterId === 'queeny') {
+        controllerRoll += 2;
+        log += ` 🧠 Queeny's +2 Psychic Bonus applied!`;
+      }
+      
+      // Apply +1 Mind defense for magical creatures
+      if (['kiko', 'poochi', 'shroomy'].includes(newDefenderState.characterId)) {
+        targetMindStrength += 1;
+        log += ` 🧠 Magical creature +1 Mind defense applied!`;
+      }
+      
+      let rollCount = 1;
+      let success = false;
+      let finalRoll = controllerRoll;
+      
+      log += ` 🎲 Kontrol Roll ${rollCount}: Controller rolled ${controllerRoll} vs Mind Strength ${targetMindStrength}.`;
+      
+      // Handle ties with re-rolls (best of 3)
+      while (rollCount < 3 && controllerRoll === targetMindStrength) {
+        log += ` 🎲 TIE detected! Re-rolling...`;
+        rollCount++;
+        const newKRoll = rollDice(1);
+        controllerRoll = newKRoll.total;
+        if (newAttackerState.characterId === 'queeny') controllerRoll += 2;
+        finalRoll = controllerRoll;
+        log += ` 🎲 Kontrol Roll ${rollCount}: Controller rolled ${controllerRoll} vs Mind Strength ${targetMindStrength}.`;
+      }
+      
+      // Check if controller won (rolled higher than Mind Strength)
+      if (finalRoll > targetMindStrength) {
+        log += ` ✅ Kontrol SUCCESS! ${controllerRoll} > ${targetMindStrength}! ${newDefenderState.name} is mind-controlled!`;
+        success = true;
       } else {
-        log += ` Kontrol FAILED! Roll ${controllerRoll} did not beat Mind Strength ${targetMind}.`;
+        log += ` ❌ Kontrol FAILED! ${controllerRoll} ≤ ${targetMindStrength}. ${newDefenderState.name} resisted mind control!`;
+        success = false;
       }
 
-      // Decrement usage counter and set cooldown
+      // Decrement usage counter and set cooldown (always, even on failure)
       newAttackerState.kontrolUsesLeft = Math.max(0, newAttackerState.kontrolUsesLeft - 1);
-      newAttackerState.kontrolCooldown = 5; // 5-turn cooldown per documentation
+      newAttackerState.kontrolCooldown = 5; // 5-turn cooldown per official rules
       
-      // KONTROL Choice: Random option A or B
-      if (controllerRoll > targetMind) {
+      // KONTROL Options: Choose to force alternate target OR steal 1 action card (only if successful)
+      if (success) {
         const choice = Math.random() > 0.5 ? 'A' : 'B';
         if (choice === 'A') {
           // Option A: Opponent must attack another player next turn
@@ -384,46 +472,66 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
             newAttackerState.actionCardsHand.push(stolenCard);
             log += ` 🧠 KONTROL OPTION B: ${newAttackerState.name} stole "${stolenCard.name}" from ${newDefenderState.name}!`;
           } else {
-            log += ` 🧠 KONTROL OPTION B selected but ${newDefenderState.name} has no cards to steal!`;
+            log += ` 🧠 KONTROL OPTION B: ${newDefenderState.name} has no Action Cards to steal!`;
           }
         }
       }
     }
+    
+    // Return early since Kontrol doesn't deal damage
+    return { newAttackerState, newDefenderState, log };
   }
   // 2. SAIGO NO BLITZ (200 AP)
   else if (cardName.includes('BLITZ')) {
+    // Official Rule: Requires HP < 50 AND 5 Energy Tokens
+    
     // Check cooldown
     if (newAttackerState.blitzCooldown > 0) {
       log += ` ⚡ BLITZ on cooldown! ${newAttackerState.blitzCooldown} more turn(s) before available.`;
       return { newAttackerState, newDefenderState, log };
     }
 
-    // Check usage limit
+    // Check usage limit (Max 2 per match)
     if (newAttackerState.blitzUsesLeft <= 0) {
       log += ` ⚡ BLITZ limit reached for this match (Max 2/match)!`;
       return { newAttackerState, newDefenderState, log };
     }
 
+    // Check HP requirement (must be < 50)
     if (newAttackerState.hp >= 50) {
-      log += ` Blitz requires HP < 50! Cannot activate.`;
+      log += ` ⚡ BLITZ requires HP < 50! Current HP: ${newAttackerState.hp}. Cannot activate.`;
+      return { newAttackerState, newDefenderState, log };
+    }
+
+    // Check ET requirement (requires 5 ET)
+    if (newAttackerState.energyTokens < 5) {
+      log += ` ⚡ BLITZ requires 5 Energy Tokens! You have ${newAttackerState.energyTokens} ET. Cannot activate.`;
+      return { newAttackerState, newDefenderState, log };
+    }
+
+    // Deduct 5 ET cost
+    newAttackerState.energyTokens = Math.max(0, newAttackerState.energyTokens - 5);
+    
+    // Sacrifice 50% of current HP
+    const selfSacrifice = Math.floor(newAttackerState.hp * 0.5);
+    newAttackerState.hp = Math.max(1, newAttackerState.hp - selfSacrifice);
+    
+    // Blitz deals 200 AP damage
+    const blitzDamage = 200;
+    
+    // Decrement usage counter (limited to 2 uses per match)
+    newAttackerState.blitzUsesLeft = Math.max(0, newAttackerState.blitzUsesLeft - 1);
+    // No cooldown per official rules, but limited to 2 uses total per match
+    
+    if (newDefenderState) {
+      // One vs. One: Single target takes full 200 AP
+      newDefenderState.hp = Math.max(0, newDefenderState.hp - blitzDamage);
+      log += ` ⚡ SAIGO NO BLITZ unleashed! ${newAttackerState.name} sacrificed ${selfSacrifice} HP and dealt 200 AP to ${newDefenderState.name}!`;
     } else {
-      const selfSacrifice = Math.floor(newAttackerState.hp * 0.5);
-      newAttackerState.hp = Math.max(1, newAttackerState.hp - selfSacrifice);
-      damage = 200;
-      
-      // Decrement usage counter and set cooldown
-      newAttackerState.blitzUsesLeft = Math.max(0, newAttackerState.blitzUsesLeft - 1);
-      newAttackerState.blitzCooldown = 0; // No cooldown, but limited to 2 uses
-      
-      if (newDefenderState) {
-        newDefenderState.hp = Math.max(0, newDefenderState.hp - damage);
-        log += ` SAIGO NO BLITZ hit ${newDefenderState.name} for 200 AP devastation! (${newAttackerState.name} sacrificed ${selfSacrifice} HP)`;
-      } else {
-        // 1vAll: Split 200 AP equally among all defending players
-        log += ` SAIGO NO BLITZ unleashed 200 AP Area-of-Effect blast!`;
-        aoeDamage = 200; // Send to UI with splitting flag
-        aoeSplitDamage = true; // Flag to indicate damage should be split
-      }
+      // One vs. All: 200 AP is split equally among all defending players
+      log += ` ⚡ SAIGO NO BLITZ unleashed! ${newAttackerState.name} sacrificed ${selfSacrifice} HP and released 200 AP Area-of-Effect blast!`;
+      aoeDamage = 200; // Send to UI with splitting flag
+      aoeSplitDamage = true; // Flag to indicate damage should be split equally
     }
   }
   // 3. ATTACK CARDS (With Character Combat Moves or Standalone Elemental Spells)
@@ -531,7 +639,15 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         }
         finalDamage = 0; // Handled directly above
       } else if (cardName === 'BACK STAB') {
-        // BACK STAB bypasses shields and basic defenses
+        // BACK STAB: Only available in 3+ player mode with Soul Alliance active
+        // Per official rules: "Back Stab is only used when Soul Alliance is available 3+ players"
+        const playerCount = gameState?.players?.length || 2;
+        if (playerCount <= 2) {
+          log += ` ⚔️ BACK STAB cannot be used! This card is only available in 3+ player matches (currently ${playerCount} players).`;
+          return { newAttackerState, newDefenderState, log, cardBlocked: true };
+        }
+        
+        // Back stab bypasses shields and basic defenses
         if (newDefenderState) {
           newDefenderState.shield = 0; // Bypass shield
           newDefenderState.hasDefendBasic = false; // Bypass basic defense
@@ -539,6 +655,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           log += ` ⚔️ BACK STAB hit! Bypassed all defenses for ${finalDamage} AP damage!`;
         }
       } else if (cardName === 'VAMPIRE LIFE STEAL') {
+        // VAMPIRE LIFE STEAL: Per official rules, steals 1 ET + 10 HP for 3 turns, but only 1 attack per card use
         if (newDefenderState) {
           const stolenHp = Math.min(10, newDefenderState.hp);
           const stolenEt = Math.min(1, newDefenderState.energyTokens || 0);
@@ -546,12 +663,13 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           newDefenderState.energyTokens = Math.max(0, (newDefenderState.energyTokens || 0) - stolenEt);
           newAttackerState.hp = Math.min(newAttackerState.maxHp || 100, newAttackerState.hp + stolenHp);
           newAttackerState.energyTokens = (newAttackerState.energyTokens || 0) + stolenEt;
-          log += ` VAMPIRE LIFE STEAL hit! Stole ${stolenHp} HP and ${stolenEt} ET.`;
+          log += ` 🧛 VAMPIRE LIFE STEAL hit! Stole ${stolenHp} HP and ${stolenEt} ET.`;
           
-          // Apply 3-turn duration to defender for continued drain
+          // Apply 3-turn duration to defender for continued drain effect (not additional attacks)
           newDefenderState.vampireStealStack = (newDefenderState.vampireStealStack || 0) + 1;
           newDefenderState.vampireStealTurnsLeft = 3;
-          log += ` 🧛 VAMPIRE effect applied for 3 turns! Each turn: -10 HP, -1 ET to ${newDefenderState.name}.`;
+          newDefenderState.vampireStealActivated = true; // Flag to prevent multiple hits
+          log += ` 🧛 VAMPIRE effect applied for 3 turns! Attacker gains +10 HP/turn and +1 ET/turn.`;
         }
         finalDamage = 0; // Handled directly above
       } else if (cardName === 'FIRE INFERNO LOCK') {
@@ -648,38 +766,38 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         }
       }
 
-      // Innate Defense: Defender rolled total of 6 or higher -> innate DP applies
-      if (defenderRoll.total >= 6) {
+      // +DEFENCE PRIORITY: These cards should be FIRST priority per official rules
+      // If defender has +DEFENCE card, apply its bonus BEFORE innate DP
+      if (newDefenderState?.shield > 0) {
+        const absorbed = Math.min(newDefenderState.shield, finalDamage);
+        newDefenderState.shield -= absorbed;
+        finalDamage -= absorbed;
+        log += ` +DEFENCE CARD ACTIVE! Shield absorbed ${absorbed} damage.`;
+      }
+
+      // Innate Defense: Only applies if defender rolled 6+ AND no +DEFENCE card was used
+      // Per official rules: "+DEFENCE Cards should be FIRST priority. Whatever the card says is what you go by, if the defender wins.
+      // If the defender does not win, but receives 6+ on their dice roll. This will activate their Basic Defense available."
+      if (defenderRoll.total >= 6 && !newDefenderState?.hasDefendBasic) {
         const innateDP = newDefenderState?.innateDP ?? newDefenderState?.defaultDP ?? 10;
         finalDamage = Math.max(0, finalDamage - innateDP);
         log += ` Defender rolled ${defenderRoll.total} (6+)! Innate DP reduced damage by ${innateDP}!`;
       }
 
-      // Shield Absorption
-      if (newDefenderState?.shield > 0) {
+      // Shield Absorption (Standard shield - only if no +DEFENCE was used above)
+      // This is now handled by the +DEFENCE priority section above
+      // Keeping this check only for shields that weren't set as +DEFENCE
+      if (newDefenderState?.shield > 0 && !newDefenderState?.hasDefendBasic) {
         const absorbed = Math.min(newDefenderState.shield, finalDamage);
         newDefenderState.shield -= absorbed;
         finalDamage -= absorbed;
-        log += ` Shield absorbed ${absorbed} damage.`;
+        log += ` Additional shield absorbed ${absorbed} damage.`;
       }
 
       // Apply damage to defender
       if (newDefenderState) {
         newDefenderState.hp = Math.max(0, newDefenderState.hp - finalDamage);
         log += ` Attack lands! ${newDefenderState.name} takes ${finalDamage} damage.`;
-
-        // Lightning effect: shocks defender causing them to lose turns AND removes poison card
-        if (cardName.includes('LIGHTNING')) {
-          const skipTurns = cardName.includes('X2') ? 2 : 1;
-          newDefenderState.sleepTurns = (newDefenderState.sleepTurns || 0) + skipTurns;
-          log += ` Lightning shock! ${newDefenderState.name} loses ${skipTurns} turn(s)!`;
-          
-          // LIGHTNING X1 / X2 removes 1 poison card from defender per official rules
-          if (newDefenderState.poisonCount > 0) {
-            newDefenderState.poisonCount = Math.max(0, newDefenderState.poisonCount - 1);
-            log += ` ⚡ Lightning cleansed 1 Poison card from ${newDefenderState.name}!`;
-          }
-        }
 
         // If Zombie is hit by Fire or Lightning -> removes 1 poison card
         if (isDefenderZombie && ['Fire', 'Lightning'].includes(attackElement)) {
@@ -708,6 +826,27 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       } else {
         log += ` Defender blocked or dodged the attack! 0 damage taken.`;
       }
+    }
+
+    // Lightning effect: ALWAYS applies whether attack succeeds or not per official rules
+    // "This action occurs when the attack is successful and not successful"
+    if (cardName.includes('LIGHTNING') && newDefenderState) {
+      const skipTurns = cardName.includes('X2') ? 2 : 1;
+      newDefenderState.sleepTurns = (newDefenderState.sleepTurns || 0) + skipTurns;
+      log += ` ⚡ Lightning shock! ${newDefenderState.name} loses ${skipTurns} turn(s)!`;
+      
+      // LIGHTNING X1 / X2 removes 1 poison card from defender per official rules
+      if (newDefenderState.poisonCount > 0) {
+        newDefenderState.poisonCount = Math.max(0, newDefenderState.poisonCount - 1);
+        log += ` ⚡ Lightning cleansed 1 Poison card from ${newDefenderState.name}!`;
+      }
+    }
+
+    // Shadow Purr: Heals attacker + puts defender to sleep (only on successful hit)
+    if (attackSelectionName === 'SHADOW PURR' && atkWin && newDefenderState) {
+      newAttackerState.hp = Math.min(newAttackerState.maxHp || 100, newAttackerState.hp + 15);
+      newDefenderState.sleepTurns = (newDefenderState.sleepTurns || 0) + 1;
+      log += ` 😻 SHADOW PURR! ${newAttackerState.name} restored +15 HP and ${newDefenderState.name} falls asleep for 1 turn!`;
     }
   }
   // 4. POISON CARDS
@@ -756,28 +895,45 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       log += ` Zombies cannot gain Vitality! The card has no effect on undead forms.`;
     } else {
       let vitAmount = 10;
-      if (cardName.includes('V20')) {
-        if ((newAttackerState.level || 1) < 2) {
-          log += ` VITALITY GAIN V20 requires Character Level 2! (Current Level: ${newAttackerState.level || 1}).`;
-          return { newAttackerState, newDefenderState, log };
-        }
+      let requiredLevel = 1;
+      let nextLevel = null;
+
+      if (cardName.includes('V10')) {
+        vitAmount = 10;
+        requiredLevel = 1;
+        nextLevel = 2;
+      } else if (cardName.includes('V20')) {
         vitAmount = 20;
+        requiredLevel = 2;
+        nextLevel = 3;
+        if ((newAttackerState.level || 1) < requiredLevel) {
+          log += ` ⚠️ VITALITY GAIN V20 requires Character Level ${requiredLevel}! (Current Level: ${newAttackerState.level || 1}). You must use VITALITY GAIN V10 to reach Level 2 first.`;
+          return { newAttackerState, newDefenderState, log };
+        }
       } else if (cardName.includes('V30')) {
-        if ((newAttackerState.level || 1) < 3) {
-          log += ` VITALITY GAIN V30 requires Character Level 3! (Current Level: ${newAttackerState.level || 1}).`;
-          return { newAttackerState, newDefenderState, log };
-        }
         vitAmount = 30;
-      } else if (cardName.includes('V40')) {
-        if ((newAttackerState.level || 1) < 4) {
-          log += ` VITALITY GAIN V40 requires Character Level 4! (Current Level: ${newAttackerState.level || 1}).`;
+        requiredLevel = 3;
+        nextLevel = 4;
+        if ((newAttackerState.level || 1) < requiredLevel) {
+          log += ` ⚠️ VITALITY GAIN V30 requires Character Level ${requiredLevel}! (Current Level: ${newAttackerState.level || 1}). You must use VITALITY GAIN V10 or V20 to reach Level 3 first.`;
           return { newAttackerState, newDefenderState, log };
         }
+      } else if (cardName.includes('V40')) {
         vitAmount = 40;
+        requiredLevel = 4;
+        nextLevel = 5;
+        if ((newAttackerState.level || 1) < requiredLevel) {
+          log += ` ⚠️ VITALITY GAIN V40 requires Character Level ${requiredLevel}! (Current Level: ${newAttackerState.level || 1}). You must use VITALITY GAIN V20 to V30 to reach Level 4 first.`;
+          return { newAttackerState, newDefenderState, log };
+        }
       }
+
+      // Apply vitality gain and level up
       newAttackerState.maxHp = (newAttackerState.maxHp || 100) + vitAmount;
       newAttackerState.hp += vitAmount;
-      log += ` Vitality expanded Max HP by +${vitAmount}! (Current HP: ${newAttackerState.hp}/${newAttackerState.maxHp})`;
+      newAttackerState.level = (newAttackerState.level || 1) + 1;
+      
+      log += ` 🌟 Vitality expanded! Max HP +${vitAmount}. ${newAttackerState.name} leveled up to Level ${newAttackerState.level}! (Current HP: ${newAttackerState.hp}/${newAttackerState.maxHp})`;
     }
   }
   // 6c. REVIVE CARD (Bring defeated player back into game)
@@ -856,6 +1012,9 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   }
   // 11b. RETREAT CARD
   else if (cardName === 'RETREAT') {
+    // Per official rules: Available for attacker after they have rolled their dice, and available for defender after the attacker rolls their dice
+    // Requires character's Retreat Speed stat - must roll >= that value on 1d6
+    
     // Get attacker's character to check retreat speed
     const attackerCharData = attackerChar || KONTROLA_CHARACTERS[newAttackerState.characterId || 'chynaman'];
     const retreatSpeedReq = attackerCharData?.retreatSpeed || 1;
@@ -865,7 +1024,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     const retreatSuccess = retreatRoll.total >= retreatSpeedReq;
     
     if (retreatSuccess) {
-      log += ` 💨 RETREAT SUCCESS! ${newAttackerState.name} rolled ${retreatRoll.total} (${retreatSpeedReq}+) and escaped combat!`;
+      log += ` 💨 RETREAT SUCCESS! ${newAttackerState.name} rolled ${retreatRoll.total} (${retreatSpeedReq}+) and escaped combat without taking damage!`;
       newAttackerState.retreatedThisTurn = true;
       return { newAttackerState, newDefenderState, log, retreatSuccess: true };
     } else {
@@ -875,17 +1034,40 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   }
   // 12. X-CHANGE
   else if (cardName === 'X-CHANGE X1' || cardName.includes('X-CHANGE')) {
-    log += ` 🔄 X-CHANGE activated! Traded 1 Action Card with ${newDefenderState?.name || 'opponent'}.`;
+    // X-CHANGE X1: Exchange 1 card with 1 opponent (30 second limit)
+    // X-CHANGE FULL: Exchange cards with all opponents
+    const isFullExchange = cardName.includes('FULL');
+    log += ` 🔄 X-CHANGE activated! ${newAttackerState.name} can select cards to exchange with ${isFullExchange ? 'all opponents' : 'an opponent'}.`;
+    
+    // Signal UI to show X-CHANGE modal
+    return {
+      newAttackerState,
+      newDefenderState,
+      log,
+      triggerXChangeModal: true,
+      xChangeType: isFullExchange ? 'FULL' : 'X1',
+      xChangeInitiator: newAttackerState.id
+    };
   }
   // 13. SOUL ALLIANCE & ABANDON
   else if (cardName === 'SOUL ALLIANCE') {
+    // Per official rules: "SOUL ALLIANCE: This card should not be available in two player mode, but available 3+ players."
+    const playerCount = gameState?.players?.length || 2;
+    if (playerCount <= 2) {
+      log += ` 🤝 SOUL ALLIANCE cannot be used! This card is only available in 3+ player matches (currently ${playerCount} players).`;
+      return { newAttackerState, newDefenderState, log, cardBlocked: true };
+    }
+    
     if (newDefenderState) {
       newAttackerState.allianceId = newDefenderState.id;
       newDefenderState.allianceId = newAttackerState.id;
-      log += ` 🤝 Soul Alliance formed between ${newAttackerState.name} and ${newDefenderState.name}.`;
+      newAttackerState.canTradeWithAlliance = true;  // Enable trading with ally
+      newDefenderState.canTradeWithAlliance = true;  // Enable trading with ally
+      log += ` 🤝 Soul Alliance formed between ${newAttackerState.name} and ${newDefenderState.name}! Energy Tokens and REVIVE cards can now be traded.`;
     }
   } else if (cardName === 'ABANDON') {
     newAttackerState.allianceId = null;
+    newAttackerState.canTradeWithAlliance = false;  // Disable trading
     log += ` 💔 ${newAttackerState.name} abandoned all alliances!`;
   }
 
@@ -917,7 +1099,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     newDefenderState,
     log,
     extraTurnGranted: cardName === 'TIME MACHINE',
-    triggerAttackX2SecondHit: cardName === 'ATTACK X2',
+    triggerAttackX2SecondHit: cardName.includes('ATTACK X2'), // Trigger second attack regardless of first outcome
     triggerXChange: false, // Handled in Arena UI now
     aoeDamage,
     aoeSplitDamage: aoeSplitDamage || false // Flag for 1vAll damage splitting

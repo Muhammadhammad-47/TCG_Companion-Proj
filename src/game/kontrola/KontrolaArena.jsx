@@ -441,6 +441,28 @@ export default function KontrolaArena() {
   // ==========================================
   const [rollingOffPlayers, setRollingOffPlayers] = useState({});
 
+  // Clear rolling animation when tiebreak is detected
+  useEffect(() => {
+    if (gameState?.tiebreakPool && gameState.tiebreakPool.length > 0) {
+      // Clear rolling state for tied players so they can re-roll
+      const tiedPlayerIds = gameState.tiebreakPool;
+      setRollingOffPlayers(prev => {
+        const updated = { ...prev };
+        tiedPlayerIds.forEach(pId => {
+          delete updated[pId];
+        });
+        return updated;
+      });
+    }
+  }, [gameState?.tiebreakPool]);
+
+  // Also clear isProcessingAction when tie is detected to unlock the button
+  useEffect(() => {
+    if (gameState?.tiebreakPool && gameState.tiebreakPool.includes(playerId)) {
+      setIsProcessingAction(false);
+    }
+  }, [gameState?.tiebreakPool, playerId]);
+
   const handleRollOff = async () => {
     if (isProcessingAction || rollingOffPlayers[playerId]) return;
     
@@ -1137,7 +1159,8 @@ export default function KontrolaArena() {
                 ...template,
                 name: customName || template.name,
                 playerId: pId,
-                hp: template.maxHp,
+                hp: template.baseHP || 100,  // Use correct starting HP from character baseHP
+                maxHp: template.maxHP || 200,  // Keep maxHP for reference
                 shield: 0,
                 energyTokens: 5,
                 crystals: startingCrystals,
@@ -1352,7 +1375,8 @@ export default function KontrolaArena() {
           newAttackerState,
           newDefenderState,
           attackSelectionName,
-          precalculatedRolls
+          precalculatedRolls,
+          currentState // Pass gameState for player count validation
         );
 
         // If the engine signals a tie, do NOT commit the result � the DiceRoller
@@ -1489,21 +1513,25 @@ export default function KontrolaArena() {
       if (targetId && targetId !== 'ALL' && newDefenderState) {
         updatedStates[targetId] = newDefenderState;
       } else if (targetId === 'ALL' && resolved.aoeDamage) {
-        currentState.players.forEach(pId => {
-          if (pId !== actorId && !currentState.characterStates[pId]?.isDefeated) {
-            const char = { ...currentState.characterStates[pId] };
-            char.hp = Math.max(0, char.hp - resolved.aoeDamage);
-            if (char.hp <= 0 && !char.isDefeated) {
-              char.isDefeated = true;
-              newAttackerState.crystals = (newAttackerState.crystals || 1) + (char.crystals || 1);
-              char.crystals = 0;
-              log += ` ?? ${char.name} was defeated by AoE! ${newAttackerState.name} claimed their Crystals.`;
-              if (newAttackerState.crystals >= 3) {
-                matchWinner = { ...newAttackerState, playerId: actorId };
-              }
+        // Count active defenders for AoE damage splitting
+        const activeDefenders = currentState.players.filter(pId => 
+          pId !== actorId && !currentState.characterStates[pId]?.isDefeated
+        );
+        const damagePerDefender = Math.ceil(resolved.aoeDamage / Math.max(1, activeDefenders.length));
+        
+        activeDefenders.forEach(pId => {
+          const char = { ...currentState.characterStates[pId] };
+          char.hp = Math.max(0, char.hp - damagePerDefender);
+          if (char.hp <= 0 && !char.isDefeated) {
+            char.isDefeated = true;
+            newAttackerState.crystals = (newAttackerState.crystals || 1) + (char.crystals || 1);
+            char.crystals = 0;
+            log += ` ?? ${char.name} was defeated by AoE! ${newAttackerState.name} claimed their Crystals.`;
+            if (newAttackerState.crystals >= 3) {
+              matchWinner = { ...newAttackerState, playerId: actorId };
             }
-            updatedStates[pId] = char;
           }
+          updatedStates[pId] = char;
         });
         updatedStates[actorId] = newAttackerState; // ensure attacker crystals update is saved
       }
@@ -1681,12 +1709,16 @@ export default function KontrolaArena() {
            const prevDefHP = (currentState.characterStates?.[targetId]?.hp) ?? 0;
            totalTurnDmg = Math.max(0, prevDefHP - newDefenderState.hp);
         } else if (targetId === 'ALL' && resolved.aoeDamage) {
-           currentState.players.forEach(pId => {
-              if (pId !== actorId && !currentState.characterStates[pId]?.isDefeated) {
-                 const prevHp = currentState.characterStates[pId].hp;
-                 const newHp = Math.max(0, prevHp - resolved.aoeDamage);
-                 totalTurnDmg += Math.max(0, prevHp - newHp);
-              }
+           // Calculate split damage per defender for AoE attacks
+           const activeDefenders = currentState.players.filter(pId => 
+             pId !== actorId && !currentState.characterStates[pId]?.isDefeated
+           );
+           const damagePerDefender = Math.ceil(resolved.aoeDamage / Math.max(1, activeDefenders.length));
+           
+           activeDefenders.forEach(pId => {
+              const prevHp = currentState.characterStates[pId].hp;
+              const newHp = Math.max(0, prevHp - damagePerDefender);
+              totalTurnDmg += Math.max(0, prevHp - newHp);
            });
         }
         updatedStats.damageDealt[actorId] = (updatedStats.damageDealt[actorId] || 0) + totalTurnDmg;
@@ -2749,15 +2781,40 @@ export default function KontrolaArena() {
                                 width: '38px',
                                 height: '38px',
                                 borderRadius: '50%',
-                                overflow: 'hidden',
-                                border: `2px solid ${charData.themeColor}`
+                                overflow: 'visible',
+                                border: `2px solid ${charData.themeColor}`,
+                                position: 'relative',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
                               }}
                             >
                               <img
                                 src={getAssetUrl(charData.image)}
                                 alt={charData.name}
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
                               />
+                              {/* Level Badge */}
+                              <div style={{
+                                position: 'absolute',
+                                top: '-6px',
+                                right: '-6px',
+                                background: 'linear-gradient(135deg, #FBC80D 0%, #FF7700 100%)',
+                                width: '20px',
+                                height: '20px',
+                                borderRadius: '50%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '0.6rem',
+                                fontWeight: 'bold',
+                                color: '#000',
+                                border: '1.5px solid rgba(0,0,0,0.8)',
+                                boxShadow: '0 0 8px rgba(255, 215, 0, 0.6)',
+                                zIndex: 10
+                              }}>
+                                {gameState.characterStates?.[pId]?.level || 1}
+                              </div>
                             </div>
                             <div>
                               <div style={{ fontWeight: 'bold', color: '#fff', fontSize: '0.95rem' }}>
@@ -3333,21 +3390,43 @@ export default function KontrolaArena() {
                           className="arena-score-avatar"
                           style={{
                             borderColor: pChar.themeColor || 'var(--neon-cyan)',
-                            overflow: 'hidden',
+                            overflow: 'visible',
                             width: '38px',
                             height: '38px',
                             borderRadius: '50%',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            background: 'rgba(0,0,0,0.5)'
+                            background: 'rgba(0,0,0,0.5)',
+                            position: 'relative'
                           }}
                         >
                           <img
                             src={getAssetUrl(pChar.image)}
                             alt={pChar.name}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
                           />
+                          {/* Level Badge - Top Right Corner */}
+                          <div style={{
+                            position: 'absolute',
+                            top: '-6px',
+                            right: '-6px',
+                            background: 'linear-gradient(135deg, #FBC80D 0%, #FF7700 100%)',
+                            width: '22px',
+                            height: '22px',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.65rem',
+                            fontWeight: 'bold',
+                            color: '#000',
+                            border: '2px solid rgba(0,0,0,0.8)',
+                            boxShadow: '0 0 10px rgba(255, 215, 0, 0.7)',
+                            zIndex: 10
+                          }}>
+                            {pChar.level || 1}
+                          </div>
                         </div>
 
                         <div className="arena-score-meta" style={{ flex: 1, minWidth: 0 }}>
@@ -3449,17 +3528,42 @@ export default function KontrolaArena() {
                         width: '74px',
                         height: '74px',
                         borderRadius: '50%',
-                        overflow: 'hidden',
+                        overflow: 'visible',
                         border: `2.5px solid ${activeTurnChar.themeColor || 'var(--neon-cyan)'}`,
                         boxShadow: `0 0 20px ${activeTurnChar.themeColor || 'var(--neon-cyan)'}`,
-                        marginBottom: '10px'
+                        marginBottom: '10px',
+                        position: 'relative',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                       }}
                     >
                       <img
                         src={getAssetUrl(activeTurnChar.image)}
                         alt={activeTurnChar.name}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
                       />
+                      {/* Level Badge - Active Turn Character */}
+                      <div style={{
+                        position: 'absolute',
+                        top: '-10px',
+                        right: '-10px',
+                        background: 'linear-gradient(135deg, #FBC80D 0%, #FF7700 100%)',
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '0.75rem',
+                        fontWeight: 'bold',
+                        color: '#000',
+                        border: '2px solid rgba(0,0,0,0.8)',
+                        boxShadow: '0 0 12px rgba(255, 215, 0, 0.8)',
+                        zIndex: 15
+                      }}>
+                        {activeTurnChar.level || 1}
+                      </div>
                     </div>
                   )}
 
@@ -3537,8 +3641,29 @@ export default function KontrolaArena() {
               {/* Phase 2: Active Character Profile */}
               {myCharacter && !isSpectator && (
                 <div className="phase2-active-profile">
-                  <div className="phase2-profile-avatar" style={{ borderColor: myCharacter.themeColor || 'var(--neon-cyan)' }}>
+                  <div className="phase2-profile-avatar" style={{ borderColor: myCharacter.themeColor || 'var(--neon-cyan)', position: 'relative' }}>
                     <img src={getAssetUrl(myCharacter.image)} alt={myCharacter.name} />
+                    {/* Level Badge */}
+                    <div style={{
+                      position: 'absolute',
+                      top: '-8px',
+                      right: '-8px',
+                      background: 'linear-gradient(135deg, #FBC80D 0%, #FF7700 100%)',
+                      width: '26px',
+                      height: '26px',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.7rem',
+                      fontWeight: 'bold',
+                      color: '#000',
+                      border: '2px solid rgba(0,0,0,0.8)',
+                      boxShadow: '0 0 10px rgba(255, 215, 0, 0.7)',
+                      zIndex: 10
+                    }}>
+                      {myCharacter.level || 1}
+                    </div>
                   </div>
                   <div className="phase2-profile-stats">
                     <div className="phase2-profile-name">{myCharacter.name} (You)</div>
@@ -4232,7 +4357,30 @@ export default function KontrolaArena() {
                               {ownerName}
                             </div>
                           )}
-                          <img src={getAssetUrl(char.image)} alt={char.name} style={{ width: '85px', height: '85px', borderRadius: '50%', border: `2px solid ${char.themeColor}` }} />
+                          <div style={{ position: 'relative', display: 'inline-block' }}>
+                            <img src={getAssetUrl(char.image)} alt={char.name} style={{ width: '85px', height: '85px', borderRadius: '50%', border: `2px solid ${char.themeColor}` }} />
+                            {/* Level Badge */}
+                            <div style={{
+                              position: 'absolute',
+                              top: '-8px',
+                              right: '-8px',
+                              background: 'linear-gradient(135deg, #FBC80D 0%, #FF7700 100%)',
+                              width: '24px',
+                              height: '24px',
+                              borderRadius: '50%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '0.65rem',
+                              fontWeight: 'bold',
+                              color: '#000',
+                              border: '2px solid rgba(0,0,0,0.8)',
+                              boxShadow: '0 0 10px rgba(255, 215, 0, 0.7)',
+                              zIndex: 10
+                            }}>
+                              1
+                            </div>
+                          </div>
                           <div style={{ fontWeight: 'bold', marginTop: '10px' }}>{char.name}</div>
                           <div style={{ fontSize: '0.8rem', color: char.themeColor }}>{char.element}</div>
                         </div>

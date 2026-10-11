@@ -1,0 +1,647 @@
+﻿diff --git a/src/game/components/BattleArena.jsx b/src/game/components/BattleArena.jsx
+index 10d4db7..d44cc2b 100644
+--- a/src/game/components/BattleArena.jsx
++++ b/src/game/components/BattleArena.jsx
+@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
+ import { CHARACTERS, ZOMBIE_PROFILE, getAssetUrl } from '../data/characters';
+ import { ACTION_CARDS, GAME_LIMITS } from '../data/cards';
+ import { resolveDiceCombat, advanceTurn, checkZombieStatus, drawRandomCards } from '../utils/gameEngine';
++import { tradeWithAlly } from '../kontrola/KontrolaEngine';
+ import { soundFX } from '../utils/audio';
+ import WinnerModal from './WinnerModal';
+ import DiceRollerModal from './DiceRollerModal';
+@@ -14,6 +15,11 @@ import CharacterCardModal from './CharacterCardModal';
+ import CardZoneModal from './CardZoneModal';
+ import ZombieBanner from './ZombieBanner';
+ import LocalMatchChatModal from './LocalMatchChatModal';
++import ReviveModal from './ReviveModal';
++import XChangeModal from './XChangeModal';
++import SoulAllianceTradeModal from './SoulAllianceTradeModal';
++import LevelDisplay from './LevelDisplay';
++import LevelRequirementModal from './LevelRequirementModal';
+ import { Chat } from '../../App';
+ 
+ import {
+@@ -21,7 +27,7 @@ import {
+   Clock, Play, Heart, Trophy, Crown, Dices,
+   MessageSquare, Eye, Layers, ScrollText, FlaskConical,
+   Maximize2, Minimize2, Sparkles, ChevronRight, Activity,
+-  X, Send, CheckCircle2, Flame, RefreshCw, AlertTriangle, HelpCircle
++  X, Send, CheckCircle2, Flame, RefreshCw, AlertTriangle, HelpCircle, Trash2
+ } from 'lucide-react';
+ 
+ export default function BattleArena({
+@@ -43,12 +49,44 @@ export default function BattleArena({
+   // Modals state
+   const [showCardActionModal, setShowCardActionModal] = useState(false);
+   const [showCardZoneModal, setShowCardZoneModal] = useState(false);
++  const [showDiscardModal, setShowDiscardModal] = useState(false);
+   const [showFullHistoryModal, setShowFullHistoryModal] = useState(false);
+   const [showInGameMenu, setShowInGameMenu] = useState(false);
+   const [showRulesChatOverlay, setShowRulesChatOverlay] = useState(false);
+   const [showLocalChat, setShowLocalChat] = useState(false);
+   const [showTauntModal, setShowTauntModal] = useState(false);
+   const [showCharacterCardModal, setShowCharacterCardModal] = useState(false);
++  
++  // NEW: Action Card Modal States
++  const [showReviveModal, setShowReviveModal] = useState(false);
++  const [reviveModalData, setReviveModalData] = useState({ playerName: '', reviveHP: 50, maxHP: 100, playerId: null });
++  
++  const [showXChangeModal, setShowXChangeModal] = useState(false);
++  const [xChangeModalData, setXChangeModalData] = useState({
++    xChangeType: 'X1',
++    attackerHand: [],
++    defenderHand: [],
++    defenderName: '',
++    initiatorId: null
++  });
++  
++  const [showTradeModal, setShowTradeModal] = useState(false);
++  const [tradeModalData, setTradeModalData] = useState({
++    playerName: '',
++    allyName: '',
++    playerHand: [],
++    playerEnergyTokens: 0
++  });
++  
++  // NEW: Level Requirement Modal State
++  const [showLevelReqModal, setShowLevelReqModal] = useState(false);
++  const [levelReqModalData, setLevelReqModalData] = useState({
++    cardName: '',
++    currentLevel: 1,
++    requiredLevel: 2,
++    nextSteps: []
++  });
++  
+   const [activeTauntBubble, setActiveTauntBubble] = useState(null);
+   const [systemError, setSystemError] = useState(null);
+   const [localChatMessages, setLocalChatMessages] = useState([
+@@ -87,23 +125,53 @@ export default function BattleArena({
+   const targetChar = defaultTarget?.isZombie ? ZOMBIE_PROFILE : (CHARACTERS[defaultTarget?.characterId] || CHARACTERS.bee);
+ 
+   const [lastSnapshotTime, setLastSnapshotTime] = useState(null);
++  const [warnIdleCleanup, setWarnIdleCleanup] = useState(false);
++
++  // EFFECT: Monitor for defeated players and show REVIVE modal
++  useEffect(() => {
++    if (!gameState?.characterStates) return;
++    
++    const activePlayerId = gameState.players?.[gameState.activePlayerIndex];
++    const charState = gameState.characterStates?.[activePlayerId];
++    
++    if (charState?.hp <= 0 && charState?.isDefeated && !charState?.reviveUsed && !showReviveModal) {
++      const reviveHP = Math.floor((charState.maxHp || 100) * 0.5);
++      setReviveModalData({
++        playerName: charState.name,
++        reviveHP: reviveHP,
++        maxHP: charState.maxHp || 100,
++        playerId: activePlayerId
++      });
++      setShowReviveModal(true);
++    }
++  }, [gameState?.characterStates, gameState?.activePlayerIndex]);
+ 
+   useEffect(() => {
+     if (!lastSnapshotTime || historyStack.length === 0) return;
+ 
+     const interval = setInterval(() => {
+-      if (Date.now() - lastSnapshotTime >= 15000) {
++      const idleTime = Date.now() - lastSnapshotTime;
++      
++      // Warn at 9 minutes (540000 ms)
++      if (idleTime >= 540000 && !warnIdleCleanup) {
++        setWarnIdleCleanup(true);
++      }
++      
++      // Clear at 10 minutes (600000 ms)
++      if (idleTime >= 600000) {
+         setHistoryStack([]);
+         setLastSnapshotTime(null);
++        setWarnIdleCleanup(false);
+       }
+     }, 1000);
+ 
+     return () => clearInterval(interval);
+-  }, [lastSnapshotTime, historyStack]);
++  }, [lastSnapshotTime, historyStack, warnIdleCleanup]);
+ 
+   const pushStateSnapshot = () => {
+     setHistoryStack(prev => [...prev, JSON.parse(JSON.stringify(gameState))]);
+     setLastSnapshotTime(Date.now());
++    setWarnIdleCleanup(false);
+   };
+ 
+   const handleUndo = () => {
+@@ -150,6 +218,136 @@ export default function BattleArena({
+     });
+   };
+ 
++  // REVIVE MODAL: Handle accept revive
++  const handleReviveAccept = () => {
++    if (!reviveModalData.playerId) return;
++    
++    const updatedStates = { ...gameState.characterStates };
++    const charState = updatedStates[reviveModalData.playerId];
++    
++    if (charState) {
++      charState.isDefeated = false;
++      charState.reviveUsed = true;
++      charState.hp = reviveModalData.reviveHP;
++    }
++    
++    setGameState({ ...gameState, characterStates: updatedStates });
++    setShowReviveModal(false);
++    
++    const log = `${reviveModalData.playerName} used REVIVE and re-entered the game!`;
++    setLocalChatMessages(prev => [...prev, {
++      id: `revive_${Date.now()}`,
++      senderId: 'system',
++      senderName: 'System',
++      text: `≡ƒÆÇ ${log}`,
++      time: new Date().toLocaleTimeString()
++    }]);
++  };
++
++  // REVIVE MODAL: Handle reject revive
++  const handleReviveReject = () => {
++    setShowReviveModal(false);
++    setLocalChatMessages(prev => [...prev, {
++      id: `revive_reject_${Date.now()}`,
++      senderId: 'system',
++      senderName: 'System',
++      text: `≡ƒÆö ${reviveModalData.playerName} declined REVIVE and was eliminated.`,
++      time: new Date().toLocaleTimeString()
++    }]);
++  };
++
++  // X-CHANGE MODAL: Handle card exchange
++  const handleXChangeConfirm = (exchangeData) => {
++    if (!exchangeData.attackerCard || !exchangeData.defenderCard) return;
++    
++    const updatedStates = { ...gameState.characterStates };
++    const attacker = updatedStates[xChangeModalData.initiatorId];
++    const defender = Object.values(gameState.characterStates).find(c => 
++      c.id !== xChangeModalData.initiatorId && c.actionCardsHand?.length > 0
++    );
++    
++    if (attacker && defender) {
++      const attackerCardIdx = attacker.actionCardsHand.findIndex(c => c.id === exchangeData.attackerCard.id);
++      const defenderCardIdx = defender.actionCardsHand.findIndex(c => c.id === exchangeData.defenderCard.id);
++      
++      if (attackerCardIdx !== -1 && defenderCardIdx !== -1) {
++        const [attackerCardToGive] = attacker.actionCardsHand.splice(attackerCardIdx, 1);
++        const [defenderCardToGive] = defender.actionCardsHand.splice(defenderCardIdx, 1);
++        
++        attacker.actionCardsHand.push(defenderCardToGive);
++        defender.actionCardsHand.push(attackerCardToGive);
++        
++        setGameState({ ...gameState, characterStates: updatedStates });
++        
++        setLocalChatMessages(prev => [...prev, {
++          id: `xchange_${Date.now()}`,
++          senderId: 'system',
++          senderName: 'System',
++          text: `≡ƒöä X-CHANGE: ${attacker.name} traded "${attackerCardToGive.name}" for "${defenderCardToGive.name}"`,
++          time: new Date().toLocaleTimeString()
++        }]);
++      }
++    }
++    
++    setShowXChangeModal(false);
++  };
++
++  // X-CHANGE MODAL: Handle cancel
++  const handleXChangeCancel = () => {
++    setShowXChangeModal(false);
++  };
++
++  // SOUL ALLIANCE TRADE: Handle trade confirmation
++  const handleTradeConfirm = (tradeData) => {
++    const traderPlayerId = Object.keys(gameState.characterStates).find(id => 
++      gameState.characterStates[id].name === tradeModalData.playerName
++    );
++    const allyPlayerId = Object.keys(gameState.characterStates).find(id => 
++      gameState.characterStates[id].name === tradeModalData.allyName
++    );
++    
++    if (!traderPlayerId || !allyPlayerId) return;
++    
++    const traderState = gameState.characterStates[traderPlayerId];
++    const allyState = gameState.characterStates[allyPlayerId];
++    
++    const result = tradeWithAlly(traderState, allyState, tradeData);
++    
++    if (result.success) {
++      const updatedStates = { ...gameState.characterStates };
++      updatedStates[traderPlayerId] = result.updatedTrader;
++      updatedStates[allyPlayerId] = result.updatedRecipient;
++      
++      setGameState({ ...gameState, characterStates: updatedStates });
++      
++      setLocalChatMessages(prev => [...prev, {
++        id: `trade_${Date.now()}`,
++        senderId: 'system',
++        senderName: 'System',
++        text: `≡ƒñ¥ ${result.log}`,
++        time: new Date().toLocaleTimeString()
++      }]);
++    }
++    
++    setShowTradeModal(false);
++  };
++
++  // SOUL ALLIANCE TRADE: Handle cancel
++  const handleTradeCancel = () => {
++    setShowTradeModal(false);
++  };
++
++  // LEVEL REQUIREMENT: Show modal when card requires higher level
++  const showLevelRequirementError = (cardName, currentLevel, requiredLevel, steps) => {
++    setLevelReqModalData({
++      cardName,
++      currentLevel,
++      requiredLevel,
++      nextSteps: steps
++    });
++    setShowLevelReqModal(true);
++  };
++
+   // Initiate Combat Clash -> Opens DiceRollerModal
+   const handleInitiateCombat = ({ attacker, defender, actionCard, characterMove, amplifyBonus = 0 }) => {
+     setShowCardActionModal(false);
+@@ -177,7 +375,7 @@ export default function BattleArena({
+     pushStateSnapshot();
+     setActiveDiceCombatData(null);
+ 
+-    const { attacker, defender, characterMove, totalET } = combatData;
++    const { attacker, defender, actionCard, characterMove, totalET } = combatData;
+     const damage = result.damageDealt;
+     const isTargetZombie = defender.isZombie;
+ 
+@@ -221,8 +419,8 @@ export default function BattleArena({
+         return {
+           ...p,
+           energyTokens: Math.max(0, p.energyTokens - totalET) + stolenET,
+-          hp: Math.min(p.maxHp || 100, p.hp + stolenHP),
+-          turnActionCompleted: result.extraTurnGranted ? false : true,
++          hp: Math.min(p.maxHp || 100, p.hp + stolenHP + (result.isMiss ? 0 : (result.healsAttacker || 0))),
++          turnActionCompleted: (characterMove?.name?.includes('LIGHTNING') || !result.extraTurnGranted) ? true : false,
+           actionCardsHand: newHand,
+           stats: {
+             ...p.stats,
+@@ -299,6 +497,28 @@ export default function BattleArena({
+       amount: `-${damage} HP`
+     });
+ 
++    // Log healing if the move heals the attacker
++    if (result.healsAttacker > 0) {
++      newLogs.push({
++        turn: turnNum,
++        actor: attacker.name,
++        action: `${characterMove?.name} healed ${attacker.name}!`,
++        type: 'heal',
++        amount: `+${result.healsAttacker} HP`
++      });
++    }
++
++    // Log stun if applied
++    if (result.appliesStun) {
++      newLogs.push({
++        turn: turnNum,
++        actor: attacker.name,
++        action: `${defender.name} was put to sleep by ${characterMove?.name}!`,
++        type: 'stun',
++        amount: 'Loses 1 turn'
++      });
++    }
++
+     if (didTransferCrystal) {
+       newLogs.push({
+         turn: turnNum,
+@@ -317,8 +537,8 @@ export default function BattleArena({
+     });
+   };
+ 
+-  // Instant card effect (Heal, Shield, Antidote, Poison, Amplify)
+-  const handleApplyInstantEffect = ({ type, sourcePlayerId, targetPlayerId, costET = 0, amount = 0, amplifyChoice = null, playedInstanceId }) => {
++  // Instant card effect (Heal, Shield, Antidote, Poison, Amplify, VITALITY)
++  const handleApplyInstantEffect = ({ type, sourcePlayerId, targetPlayerId, costET = 0, amount = 0, amplifyChoice = null, cardName = null, playedInstanceId }) => {
+     pushStateSnapshot();
+     setShowCardActionModal(false);
+     setShowCardZoneModal(false);
+@@ -384,6 +604,20 @@ export default function BattleArena({
+             logText = `Amplify Surge: +10 DP defense armor`;
+             logAmount = `+10 DP`;
+           }
++        } else if (type === 'vitality') {
++          // VITALITY GAIN cards - increase max HP and apply level up
++          const vitAmount = cardName?.includes('V10') ? 10 : 
++                            cardName?.includes('V20') ? 20 : 
++                            cardName?.includes('V30') ? 30 : 
++                            cardName?.includes('V40') ? 40 : 10;
++          
++          updated.maxHP = (updated.maxHP || 100) + vitAmount;
++          updated.hp = Math.min(updated.maxHP, updated.hp + vitAmount);
++          updated.level = (updated.level || 1) + 1;
++          
++          soundFX.playHeal();
++          logText = `${updated.name} used ${cardName}!`;
++          logAmount = `+${vitAmount} Max HP, Lv.${updated.level}`;
+         }
+       }
+ 
+@@ -444,6 +678,7 @@ export default function BattleArena({
+         updated.turnActionCompleted = true;
+         updated.actionCardsHand = newHand;
+         updated.kontrolUsesLeft = Math.max(0, (updated.kontrolUsesLeft ?? 2) - 1);
++        updated.kontrolCooldown = 5; // 5-turn cooldown after Kontrol use
+       }
+       
+       // Target penalties
+@@ -515,7 +750,8 @@ export default function BattleArena({
+           energyTokens: Math.max(0, p.energyTokens - 5),
+           turnActionCompleted: true,
+           actionCardsHand: newHand,
+-          blitzUsesLeft: Math.max(0, (p.blitzUsesLeft ?? 2) - 1)
++          blitzUsesLeft: Math.max(0, (p.blitzUsesLeft ?? 2) - 1),
++          blitzCooldown: 5 // 5-turn cooldown after Blitz use
+         };
+       }
+       if (mode === 'one_vs_one' && p.id === targetId) {
+@@ -582,6 +818,46 @@ export default function BattleArena({
+     });
+   };
+ 
++  // Discard Action Card
++  const handleDiscardActionCard = (cardToDiscard) => {
++    soundFX.playCard();
++    pushStateSnapshot();
++
++    const player = players.find(p => p.id === activePlayer.id);
++    if (!player || !cardToDiscard) return;
++
++    const updatedPlayers = players.map(p => {
++      if (p.id === activePlayer.id) {
++        let newHand = p.actionCardsHand || [];
++        // Remove the discarded card
++        newHand = newHand.filter(c => c.instanceId !== cardToDiscard.instanceId);
++        // Draw a new card
++        newHand.push(...drawRandomCards(1));
++        
++        return {
++          ...p,
++          actionCardsHand: newHand,
++          turnActionCompleted: true // Action is done, turn can end
++        };
++      }
++      return p;
++    });
++
++    const newLog = {
++      turn: turnNum,
++      actor: player.name,
++      action: `Discarded ${cardToDiscard.name} and drew a new card.`,
++      type: 'discard',
++      amount: cardToDiscard.name
++    };
++
++    setGameState({
++      ...gameState,
++      players: updatedPlayers,
++      history: [newLog, ...(gameState.history || [])]
++    });
++  };
++
+   // End Turn
+   const handleEndTurn = () => {
+     soundFX.playMenuHover();
+@@ -635,6 +911,15 @@ export default function BattleArena({
+           </div>
+         )}
+ 
++        {/* Idle Cleanup Warning */}
++        {warnIdleCleanup && (
++          <div style={{ position: 'fixed', bottom: '80px', left: '50%', transform: 'translateX(-50%)',
++            background: 'rgba(251,200,13,0.95)', color: '#000', padding: '8px 20px',
++            borderRadius: '8px', fontWeight: 'bold', zIndex: 9999 }}>
++            ΓÜá∩╕Å Undo history will clear in 1 minute due to inactivity.
++          </div>
++        )}
++
+         {/* Zombie Transformation Alert */}
+         {gameState.zombieTransformationAlert && (
+           <div className="arena-modal-backdrop" onClick={() => setGameState({ ...gameState, zombieTransformationAlert: null })}>
+@@ -756,12 +1041,33 @@ export default function BattleArena({
+                         {idx + 1}
+                       </div>
+ 
+-                      <div className="arena-score-avatar" style={{ borderColor: c.themeColor, overflow: 'hidden', width: '38px', height: '38px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }}>
++                      <div className="arena-score-avatar" style={{ borderColor: c.themeColor, overflow: 'visible', width: '38px', height: '38px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', position: 'relative' }}>
+                         <img
+                           src={getAssetUrl(c.image || 'characters/chynaman.png')}
+                           alt={c.name}
+-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
++                          style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                         />
++                        {/* Level Badge - Top Right Corner */}
++                        <div style={{
++                          position: 'absolute',
++                          top: '-6px',
++                          right: '-6px',
++                          background: 'linear-gradient(135deg, #FBC80D 0%, #FF7700 100%)',
++                          width: '22px',
++                          height: '22px',
++                          borderRadius: '50%',
++                          display: 'flex',
++                          alignItems: 'center',
++                          justifyContent: 'center',
++                          fontSize: '0.65rem',
++                          fontWeight: 'bold',
++                          color: '#000',
++                          border: '2px solid rgba(0,0,0,0.8)',
++                          boxShadow: '0 0 10px rgba(255, 215, 0, 0.7)',
++                          zIndex: 10
++                        }}>
++                          {p.level || 1}
++                        </div>
+                       </div>
+ 
+                       <div className="arena-score-meta" style={{ flex: 1, minWidth: 0 }}>
+@@ -1131,6 +1437,22 @@ export default function BattleArena({
+                       <strong style={{ fontSize: '0.95rem', color: '#fff' }}>{activePlayer.hp} / {activePlayer.maxHP}</strong>
+                     </div>
+ 
++                    {/* Level Display */}
++                    <div
++                      style={{
++                        background: 'rgba(251, 200, 13, 0.15)',
++                        border: '1px solid rgba(251, 200, 13, 0.4)',
++                        borderRadius: '8px',
++                        padding: '6px 10px',
++                        display: 'flex',
++                        alignItems: 'center',
++                        gap: '6px'
++                      }}
++                    >
++                      <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 'bold' }}>Level</span>
++                      <strong style={{ fontSize: '0.95rem', color: '#fbc80d' }}>Lv.{activePlayer.level || 1}</strong>
++                    </div>
++
+                     <div
+                       style={{
+                         background: 'rgba(251, 200, 13, 0.2)',
+@@ -1243,6 +1565,16 @@ export default function BattleArena({
+                   <span>ROLL COMBAT DICE</span>
+                 </button>
+ 
++                <button
++                  className="btn-play-card-cta"
++                  disabled={activePlayer.turnActionCompleted}
++                  onClick={() => setShowDiscardModal(true)}
++                  style={{ opacity: activePlayer.turnActionCompleted ? 0.4 : 1, cursor: activePlayer.turnActionCompleted ? 'not-allowed' : 'pointer', padding: '12px 10px', fontSize: '0.82rem', background: 'linear-gradient(90deg, #999999, #666666)', color: '#fff', fontWeight: 'bold', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', whiteSpace: 'nowrap' }}
++                >
++                  <Trash2 size={16} />
++                  <span>DISCARD CARD</span>
++                </button>
++
+                 {!activePlayer.claimedTurnET && (
+                   <button
+                     className="btn-play-card-cta"
+@@ -1422,9 +1754,10 @@ export default function BattleArena({
+             onClose={() => setShowCardActionModal(false)}
+             onInitiateCombat={handleInitiateCombat}
+             onApplyInstantEffect={handleApplyInstantEffect}
+-            onOpenKontrol={(atk, targetId) => setActiveKontrolData({ attacker: atk, initialTargetId: targetId })}
+-            onOpenBlitz={(atk) => setActiveBlitzData({ attacker: atk })}
++            onOpenKontrol={(atk, targetId, playedInstanceId) => setActiveKontrolData({ attacker: atk, initialTargetId: targetId, playedInstanceId })}
++            onOpenBlitz={(atk, playedInstanceId) => setActiveBlitzData({ attacker: atk, playedInstanceId })}
+             onOpenRetreat={(atk) => setActiveRetreatData({ attacker: atk })}
++            onShowLevelRequirement={showLevelRequirementError}
+           />
+         )}
+ 
+@@ -1563,6 +1896,75 @@ export default function BattleArena({
+             onClose={() => setShowCardZoneModal(false)}
+           />
+         )}
++
++        {/* Discard Modal */}
++        {showDiscardModal && (
++          <div className="arena-modal-backdrop" onClick={() => setShowDiscardModal(false)}>
++            <div className="arena-modal-card card-zone-full-modal" onClick={(e) => e.stopPropagation()}>
++              <div className="modal-header-row">
++                <div className="modal-title-wrap">
++                  <Trash2 size={20} color="var(--neon-gold)" />
++                  <h3>DISCARD ACTION CARD</h3>
++                </div>
++                <button className="btn-close-modal" onClick={() => setShowDiscardModal(false)}>
++                  <X size={18} />
++                </button>
++              </div>
++
++              <div style={{ padding: '16px', color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem', textAlign: 'center', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
++                <p>Select a card to discard. You will draw a new card to replace it, and your turn will end.</p>
++              </div>
++
++              <div className="modal-cards-grid-10">
++                {(activePlayer.actionCardsHand || []).map(card => (
++                  <div
++                    key={card.instanceId}
++                    className="modal-card-item"
++                    style={{ borderColor: card.color || 'var(--neon-cyan)', cursor: 'pointer', transition: 'all 0.2s ease' }}
++                    onClick={() => {
++                      handleDiscardActionCard(card);
++                      setShowDiscardModal(false);
++                    }}
++                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.08)'}
++                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
++                  >
++                    <div className="card-icon" style={{ fontSize: '2rem', marginBottom: '8px' }}>
++                      {card.icon}
++                    </div>
++                    <div className="card-name" style={{ fontWeight: 'bold', marginBottom: '4px', fontSize: '0.9rem' }}>
++                      {card.name}
++                    </div>
++                    <div className="card-cost" style={{ fontSize: '0.75rem', color: 'var(--neon-gold)' }}>
++                      {card.costET || 0} ET
++                    </div>
++                    <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.6)', marginTop: '6px', fontStyle: 'italic' }}>
++                      Click to Discard
++                    </div>
++                  </div>
++                ))}
++              </div>
++
++              <div style={{ padding: '12px', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: '16px' }}>
++                <button
++                  onClick={() => setShowDiscardModal(false)}
++                  style={{
++                    background: 'transparent',
++                    border: '1px solid rgba(255,255,255,0.3)',
++                    color: '#fff',
++                    padding: '8px 16px',
++                    borderRadius: '6px',
++                    cursor: 'pointer',
++                    fontSize: '0.85rem',
++                    fontWeight: 'bold'
++                  }}
++                >
++                  CANCEL
++                </button>
++              </div>
++            </div>
++          </div>
++        )}
++
+         {showTauntModal && (
+           <TauntModal
+             activePlayerName={activePlayer.name}
+@@ -1663,6 +2065,48 @@ export default function BattleArena({
+             onContinue={() => setGameState({ ...gameState, winner: null })}
+           />
+         )}
++
++        {/* REVIVE Modal */}
++        <ReviveModal
++          isOpen={showReviveModal}
++          playerName={reviveModalData.playerName}
++          reviveHP={reviveModalData.reviveHP}
++          maxHP={reviveModalData.maxHP}
++          onAccept={handleReviveAccept}
++          onReject={handleReviveReject}
++        />
++
++        {/* X-CHANGE Modal */}
++        <XChangeModal
++          isOpen={showXChangeModal}
++          xChangeType={xChangeModalData.xChangeType}
++          attackerHand={xChangeModalData.attackerHand}
++          defenderHand={xChangeModalData.defenderHand}
++          defenderName={xChangeModalData.defenderName}
++          onConfirm={handleXChangeConfirm}
++          onCancel={handleXChangeCancel}
++        />
++
++        {/* Soul Alliance Trade Modal */}
++        <SoulAllianceTradeModal
++          isOpen={showTradeModal}
++          playerName={tradeModalData.playerName}
++          allyName={tradeModalData.allyName}
++          playerHand={tradeModalData.playerHand}
++          playerEnergyTokens={tradeModalData.playerEnergyTokens}
++          onTrade={handleTradeConfirm}
++          onCancel={handleTradeCancel}
++        />
++
++        {/* Level Requirement Modal */}
++        <LevelRequirementModal
++          isOpen={showLevelReqModal}
++          cardName={levelReqModalData.cardName}
++          currentLevel={levelReqModalData.currentLevel}
++          requiredLevel={levelReqModalData.requiredLevel}
++          nextSteps={levelReqModalData.nextSteps}
++          onClose={() => setShowLevelReqModal(false)}
++        />
+       </div>
+     </div>
+   );
