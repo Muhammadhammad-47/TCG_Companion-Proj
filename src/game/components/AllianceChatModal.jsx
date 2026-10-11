@@ -25,17 +25,17 @@ const TERM_SUGGESTIONS = [
 
 export default function AllianceChatModal({
   isOpen,
-  player1,
-  player2,
+  player1 = {},
+  player2 = {},
   currentPlayerId,
   chatHistory = [],
   selectedTerms = [],
   confirmationStatus = { player1: false, player2: false },
-  onSendMessage,
-  onSelectTerm,
-  onRemoveTerm,
-  onConfirmAgreement,
-  onCancel
+  onSendMessage = () => {},
+  onSelectTerm = () => {},
+  onRemoveTerm = () => {},
+  onConfirmAgreement = () => {},
+  onCancel = () => {}
 }) {
   const [messageInput, setMessageInput] = useState('');
   const chatListRef = useRef(null);
@@ -44,7 +44,7 @@ export default function AllianceChatModal({
 
   // Auto-scroll to bottom when messages update
   useEffect(() => {
-    if (chatListRef.current) {
+    if (chatListRef.current && Array.isArray(chatHistory)) {
       setTimeout(() => {
         chatListRef.current.scrollTop = chatListRef.current.scrollHeight;
       }, 0);
@@ -106,7 +106,7 @@ export default function AllianceChatModal({
           {/* Chat Messages */}
           <div className="chat-messages-container">
             <div className="chat-messages-list" ref={chatListRef}>
-              {chatHistory.length === 0 ? (
+              {!chatHistory || chatHistory.length === 0 ? (
                 <div className="chat-empty-state">
                   <p>Start negotiating your alliance terms</p>
                   <p className="chat-empty-hint">Only you and {allyName} can see this chat</p>
