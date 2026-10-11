@@ -1,6 +1,6 @@
 // Support Messaging Service
 // Handles two-way communication between players and admins
-import { supabase } from './supabaseClient';
+import { supabase, supabaseAdmin } from './supabaseClient';
 
 export const supportService = {
   // Create a support ticket (player submits issue)
@@ -116,9 +116,13 @@ export const supportService = {
       throw new Error('Not authenticated. Please log in as admin before sending replies.');
     }
 
+    // Use the service-role client for admin writes to bypass RLS when available;
+    // fall back to the anon client (relies on RLS policy granting the admin insert).
+    const insertClient = (senderType === 'admin' && supabaseAdmin) ? supabaseAdmin : supabase;
+
     try {
       // Add reply
-      const { data: reply, error: replyError } = await supabase
+      const { data: reply, error: replyError } = await insertClient
         .from('support_replies')
         .insert([
           {
