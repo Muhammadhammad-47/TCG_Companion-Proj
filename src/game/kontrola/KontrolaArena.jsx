@@ -857,10 +857,13 @@ export default function KontrolaArena() {
         }
         // 8. Synchronized Dice Screen Close
         else if (event.type === 'DICE_SCREEN_CLOSE') {
+          const { resolved, combatData, precalculatedRolls } = event.payload || {};
           setActiveCombat(null);
           setIsDiceRollingSync(false);
-          // NOTE: The host handles RESOLVE_COMBAT directly in handleCloseDiceScreen().
-          // Do NOT call enqueueHostAction here � that would double-execute combat resolution.
+          // If a non-host client finished combat, the host must execute RESOLVE_COMBAT
+          if (resolved && isHostRef.current && combatData) {
+            enqueueHostAction({ ...combatData, actionType: 'RESOLVE_COMBAT' }, precalculatedRolls);
+          }
         }
         // 9. Client Action received by Host
         else if (event.type === 'PLAYER_ACTION') {
@@ -1216,7 +1219,7 @@ export default function KontrolaArena() {
         // Has everyone picked?
         if (Object.keys(newSelections).length === currentState.players.length) {
             // Everyone picked! Initialize game state.
-            const deck = generateDeck(currentState.isPremium);
+            const deck = generateDeck(currentState.isPremium, currentState.players?.length || 2);
             const { updatedDeck, hands } = dealInitialHands(deck, currentState.players);
             const startingCrystals = currentState.players.length === 2 ? 2 : 1;
 

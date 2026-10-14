@@ -275,8 +275,15 @@ export const tradeWithAlly = (traderState, recipientState, tradeData) => {
   return { success: false, log: 'Invalid trade type.' };
 };
 
-export const generateDeck = (isPremium = false) => {
-  const blueprint = isPremium ? ACTION_CARDS_PREMIUM : ACTION_CARDS_BASIC;
+export const generateDeck = (isPremium = false, playerCount = 2) => {
+  const baseBlueprint = isPremium ? ACTION_CARDS_PREMIUM : ACTION_CARDS_BASIC;
+  // Per official rules: SOUL ALLIANCE is only available in 3+ player matches.
+  // ABANDON can only be used when in a Soul Alliance, so both are excluded in 2-player games.
+  const isTwoPlayer = Number(playerCount) <= 2;
+  const blueprint = isTwoPlayer
+    ? baseBlueprint.filter(card => card.name !== 'SOUL ALLIANCE' && card.name !== 'ABANDON')
+    : baseBlueprint;
+
   let deck = [];
   blueprint.forEach(card => {
     const count = card.count || 1;

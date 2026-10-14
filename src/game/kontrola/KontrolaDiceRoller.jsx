@@ -261,6 +261,7 @@ export default function KontrolaDiceRoller({
   function handleReRoll() {
     if (isAttackerRolling || isDefenderRolling) return;
     // Reset internal state for re-rolling on tie
+    setPhase('clash');
     setHasAttackerRolled(false);
     setHasDefenderRolled(false);
     setClashAtkDice([1, 1]);
@@ -412,10 +413,11 @@ export default function KontrolaDiceRoller({
   }, [phase]);
 
   // Sync rolls when precalculatedRolls updates from peer broadcast
-  // ─── This is the RPC receive path ──────────────────────────────────────────
-  // When a player broadcasts their roll, ALL clients receive it here.
-  // The roller already finished their local animation and applied the value.
-  // Remote clients: start animation NOW, apply the received value when it ends.
+  // ─── RPC receive path ──────────────────────────────────────────────────────
+  // Each player generates + broadcasts their own roll.
+  // LOCAL player: animation already started in handleRollAttacker/Defender —
+  //               ignore own echo completely (animation + value already applied).
+  // REMOTE players: receive the broadcast → play animation → land on same number.
   useEffect(() => {
     const hasNoDiceRolls = !precalculatedRolls ||
       (!precalculatedRolls.attackerRoll?.rolls && !precalculatedRolls.defenderRoll?.rolls);
@@ -430,14 +432,17 @@ export default function KontrolaDiceRoller({
       return;
     }
 
+    // Attacker roll arrived via broadcast
     if (precalculatedRolls?.attackerRoll?.rolls && !hasAttackerRolled && !isAttackerRolling) {
       const rolls = precalculatedRolls.attackerRoll.rolls;
+
       if (isAttacker) {
-        // Own echo — animation already running locally; just confirm the value is set
-        setClashAtkDice(rolls);
-        setHasAttackerRolled(true);
+        // Own echo — animation is already running in handleRollAttacker's setTimeout.
+        // Do NOT interrupt it. The setTimeout will apply the value when it finishes.
+        // We only need to guard hasAttackerRolled so this branch doesn't re-fire.
+        // (hasAttackerRolled will be set true inside that setTimeout — nothing to do here)
       } else {
-        // Remote client: start animation, then land on the received value
+        // Remote client: start animation, then reveal the received value
         setIsAttackerRolling(true);
         if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
         setTimeout(() => {
@@ -448,14 +453,15 @@ export default function KontrolaDiceRoller({
       }
     }
 
+    // Defender roll arrived via broadcast
     if (precalculatedRolls?.defenderRoll?.rolls && !hasDefenderRolled && !isDefenderRolling) {
       const rolls = precalculatedRolls.defenderRoll.rolls;
+
       if (isDefender) {
-        // Own echo — animation already running locally; confirm the value
-        setClashDefDice(rolls);
-        setHasDefenderRolled(true);
+        // Own echo — animation already running in handleRollDefender's setTimeout.
+        // Do NOT interrupt. Nothing to do here.
       } else {
-        // Remote client: start animation, land on received value
+        // Remote client: start animation, then reveal the received value
         setIsDefenderRolling(true);
         if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
         setTimeout(() => {
