@@ -829,13 +829,21 @@ export default function KontrolaArena() {
         // 7. Synchronized Dice Screen Roll
         else if (event.type === 'DICE_SCREEN_ROLLED') {
           if (event.payload?.isReroll) {
-            // Preserve defenseCard when re-rolling on a tie � only reset the dice rolls
+            // Preserve defenseCard when re-rolling on a tie — only reset the dice rolls
             setActiveCombat((prev) => {
               const kept = { defenseCard: prev?.precalculatedRolls?.defenseCard ?? null };
               return prev ? { ...prev, precalculatedRolls: kept } : prev;
             });
           } else if (event.payload?.precalculatedRolls) {
-            setActiveCombat((prev) => prev ? { ...prev, precalculatedRolls: { ...(prev.precalculatedRolls || {}), ...event.payload.precalculatedRolls } } : prev);
+            // Merge the incoming rolls into activeCombat.
+            // NOTE: We always merge — the sync guard in KontrolaDiceRoller's useEffect
+            // (hasAttackerRolled / hasDefenderRolled checks) prevents overwriting local
+            // dice values that have already been committed, so the attacker's own echo
+            // arriving here is harmless.
+            setActiveCombat((prev) => prev ? {
+              ...prev,
+              precalculatedRolls: { ...(prev.precalculatedRolls || {}), ...event.payload.precalculatedRolls }
+            } : prev);
           }
           setIsDiceRollingSync(true);
         }
@@ -2186,20 +2194,24 @@ export default function KontrolaArena() {
       if (newRolls.defenderDouble) {
         console.log('[Fate Card] Defender rolled doubles!', { rolls: newRolls.defenderRoll });
       }
-      
+
       setActiveCombat((prev) => prev ? { ...prev, precalculatedRolls: { ...(prev.precalculatedRolls || {}), ...newRolls } } : prev);
       await broadcastUIEvent(matchId, 'dice_screen_rolled', { timestamp: Date.now(), precalculatedRolls: newRolls });
+      // Set sync flag AFTER broadcast, not before — prevents re-render race where
+      // hasAttackerRolled state hasn't committed yet when the sync useEffect re-runs
+      setIsDiceRollingSync(true);
     } else if (isReroll) {
-      // Preserve defenseCard when re-rolling on a tie � only reset the dice rolls
+      // Preserve defenseCard when re-rolling on a tie — only reset the dice rolls
       setActiveCombat((prev) => {
         const kept = { defenseCard: prev?.precalculatedRolls?.defenseCard ?? null };
         return prev ? { ...prev, precalculatedRolls: kept } : prev;
       });
       await broadcastUIEvent(matchId, 'dice_screen_rolled', { timestamp: Date.now(), isReroll: true });
+      setIsDiceRollingSync(true);
     } else {
       await broadcastUIEvent(matchId, 'dice_screen_rolled', { timestamp: Date.now() });
+      setIsDiceRollingSync(true);
     }
-    setIsDiceRollingSync(true);
   };
 
   // Triggered when dice screen is closed or finished

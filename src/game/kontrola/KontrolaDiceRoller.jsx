@@ -410,46 +410,57 @@ export default function KontrolaDiceRoller({
   // Sync rolls when precalculatedRolls updates from peer
   useEffect(() => {
     // Check if we have NO DICE ROLLS (either precalculated doesn't exist or has no attack/defense rolls)
-    const hasNoDiceRolls = !precalculatedRolls || 
+    const hasNoDiceRolls = !precalculatedRolls ||
       (!precalculatedRolls.attackerRoll?.rolls && !precalculatedRolls.defenderRoll?.rolls);
-    
+
     if (hasNoDiceRolls) {
-      // Re-roll scenario: reset all dice-related state to allow new rolls
-      setHasAttackerRolled(false);
-      setHasDefenderRolled(false);
-      setClashAtkDice([1, 1]);
-      setClashDefDice([1, 1]);
-      setPhase('clash');
+      // Re-roll scenario: ONLY reset if the player hasn't already rolled locally.
+      // Guards against the race where the broadcast echo arrives with {defenseCard:null}
+      // while the attacker's local roll (hasAttackerRolled=true) is already committed.
+      if (!hasAttackerRolled && !hasDefenderRolled) {
+        setClashAtkDice([1, 1]);
+        setClashDefDice([1, 1]);
+        setPhase('clash');
+      }
       return;
     }
-    
+
     if (precalculatedRolls) {
-      if (precalculatedRolls.attackerRoll?.rolls && !hasAttackerRolled && !isAttackerRolling) {
-        if (!isAttacker) {
-          setIsAttackerRolling(true);
-          if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
-          setTimeout(() => {
+      if (precalculatedRolls.attackerRoll?.rolls) {
+        if (!hasAttackerRolled && !isAttackerRolling) {
+          if (!isAttacker) {
+            // Non-attacker: animate the received roll
+            setIsAttackerRolling(true);
+            if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
+            setTimeout(() => {
+              setClashAtkDice(precalculatedRolls.attackerRoll.rolls);
+              setIsAttackerRolling(false);
+              setHasAttackerRolled(true);
+            }, 900);
+          } else {
+            // Attacker: echo came back from Supabase — we already rolled locally,
+            // only apply if we truly haven't set the dice yet
             setClashAtkDice(precalculatedRolls.attackerRoll.rolls);
-            setIsAttackerRolling(false);
             setHasAttackerRolled(true);
-          }, 900);
-        } else {
-          setClashAtkDice(precalculatedRolls.attackerRoll.rolls);
-          setHasAttackerRolled(true);
+          }
         }
+        // If hasAttackerRolled is already true (local roll committed), do NOT overwrite clashAtkDice.
+        // This is the key guard that prevents the race condition resetting the display to [1,1].
       }
-      if (precalculatedRolls.defenderRoll?.rolls && !hasDefenderRolled && !isDefenderRolling) {
-        if (!isDefender) {
-          setIsDefenderRolling(true);
-          if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
-          setTimeout(() => {
+      if (precalculatedRolls.defenderRoll?.rolls) {
+        if (!hasDefenderRolled && !isDefenderRolling) {
+          if (!isDefender) {
+            setIsDefenderRolling(true);
+            if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
+            setTimeout(() => {
+              setClashDefDice(precalculatedRolls.defenderRoll.rolls);
+              setIsDefenderRolling(false);
+              setHasDefenderRolled(true);
+            }, 900);
+          } else {
             setClashDefDice(precalculatedRolls.defenderRoll.rolls);
-            setIsDefenderRolling(false);
             setHasDefenderRolled(true);
-          }, 900);
-        } else {
-          setClashDefDice(precalculatedRolls.defenderRoll.rolls);
-          setHasDefenderRolled(true);
+          }
         }
       }
       if (precalculatedRolls.dRoll?.total && !hasRolledMultiplier && !isRollingMultiplier) {
