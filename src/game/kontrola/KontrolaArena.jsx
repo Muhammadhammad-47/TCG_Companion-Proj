@@ -300,11 +300,19 @@ export default function KontrolaArena() {
   // Action resolution queue on Host to prevent race conditions
   const actionQueueRef = useRef([]);
   const isProcessingQueueRef = useRef(false);
+  // Tracks the most-recently-committed game state so queue items always see fresh state
+  // even when React batches multiple setGameState calls in the same render cycle.
+  const pendingStateRef = useRef(null);
   const prevTurnRef = useRef(null);
 
   // Persistent refs to prevent WebSocket reconnection loops on state changes
   const gameStateRef = useRef(gameState);
   gameStateRef.current = gameState;
+  // Clear pending state ref once React commits the real state — prevents stale pending state
+  // leaking into future unrelated action resolutions
+  if (pendingStateRef.current && gameState === pendingStateRef.current) {
+    pendingStateRef.current = null;
+  }
   const isHostRef = useRef(isHost);
   isHostRef.current = isHost;
   const playerIdRef = useRef(playerId);
@@ -1089,8 +1097,12 @@ export default function KontrolaArena() {
 
   const executeActionResolution = (payload, precalculatedRollsParam = null) => {
     setGameState((currentState) => {
-      if (!currentState) return currentState;
-      if (!['ROLL_OFF', 'CHARACTER_SELECT', 'RESOLVE_COMBAT'].includes(payload.actionType) && !currentState.characterStates) return currentState;
+      // Always use the most-recently-computed pending state when available.
+      // This prevents the React batching bug where two sequential setGameState calls
+      // in the same queue flush both receive the original stale currentState snapshot.
+      const state = pendingStateRef.current || currentState;
+      if (!state) return currentState;
+      if (!['ROLL_OFF', 'CHARACTER_SELECT', 'RESOLVE_COMBAT'].includes(payload.actionType) && !state.characterStates) return currentState;
 
       // For RESOLVE_COMBAT, use rolls from payload.precalculatedRolls (set by dice screen)
       // or fallback to the parameter
@@ -1107,11 +1119,11 @@ export default function KontrolaArena() {
       }
 
       if (payload.actionType === 'ROLL_OFF') {
-        const updatedRollOffs = { ...(currentState.rollOffs || {}), [payload.actorId]: payload.total };
-        const updatedRollOffDice = { ...(currentState.rollOffDice || {}), [payload.actorId]: payload.dice };
+        const updatedRollOffs = { ...(state.rollOffs || {}), [payload.actorId]: payload.total };
+        const updatedRollOffDice = { ...(state.rollOffDice || {}), [payload.actorId]: payload.dice };
         // tiebreakPool: if set, only players in this list need to re-roll
-        const activePlayers = currentState.tiebreakPool || currentState.players;
-        let nextState = { ...currentState, rollOffs: updatedRollOffs, rollOffDice: updatedRollOffDice };
+        const activePlayers = state.tiebreakPool || state.players;
+        let nextState = { ...state, rollOffs: updatedRollOffs, rollOffDice: updatedRollOffDice };
 
         const allActiveRolled = activePlayers.every(pId => updatedRollOffs[pId] !== undefined);
 
@@ -1125,21 +1137,21 @@ export default function KontrolaArena() {
           const tiedPlayers = activePlayers.filter(pId => updatedRollOffs[pId] === maxTotal);
 
           if (tiedPlayers.length > 1) {
-            // TIE � reset only the tied players and keep everyone else's rolls
+            // TIE — reset only the tied players and keep everyone else's rolls
             const resetRollOffs = { ...updatedRollOffs };
             const resetRollOffDice = { ...updatedRollOffDice };
             tiedPlayers.forEach(pId => {
               delete resetRollOffs[pId];
               delete resetRollOffDice[pId];
             });
-            const tiedNames = tiedPlayers.map(pId => currentState.playerNames?.[pId] || 'Player').join(' & ');
+            const tiedNames = tiedPlayers.map(pId => state.playerNames?.[pId] || 'Player').join(' & ');
             nextState.status = 'roll_off'; // back to rolling
             nextState.tiebreakPool = tiedPlayers; // only these players re-roll
             nextState.rollOffs = resetRollOffs;
             nextState.rollOffDice = resetRollOffDice;
             nextState.logs = [
-              `?? TIE BREAKER! ${tiedNames} both rolled ${maxTotal}! Re-roll to determine who goes first!`,
-              ...(currentState.logs || [])
+              `🔄 TIE BREAKER! ${tiedNames} both rolled ${maxTotal}! Re-roll to determine who goes first!`,
+              ...(state.logs || [])
             ];
           } else {
             // Clear winner
@@ -1147,7 +1159,7 @@ export default function KontrolaArena() {
             nextState.status = 'roll_off_complete';
             nextState.tiebreakPool = null;
             nextState.rollOffWinner = winnerId;
-            nextState.logs = [`?? Roll-off complete! ${currentState.playerNames?.[winnerId] || 'Player'} won with a ${maxTotal} and gets first pick! Transitioning in 3s...`, ...(currentState.logs || [])];
+            nextState.logs = [`🏆 Roll-off complete! ${state.playerNames?.[winnerId] || 'Player'} won with a ${maxTotal} and gets first pick! Transitioning in 3s...`, ...(state.logs || [])];
 
             if (isHostRef.current) {
               setTimeout(() => {
@@ -1156,13 +1168,14 @@ export default function KontrolaArena() {
             }
           }
         } else {
-          nextState.logs = [`?? ${currentState.playerNames?.[payload.actorId] || 'Player'} rolled a ${payload.total}.`, ...(currentState.logs || [])];
+          nextState.logs = [`🎲 ${state.playerNames?.[payload.actorId] || 'Player'} rolled a ${payload.total}.`, ...(state.logs || [])];
         }
+        pendingStateRef.current = nextState;
         broadcastState(matchIdRef.current, nextState);
         return nextState;
       }
       if (payload.actionType === 'SHOW_LEADERBOARD') {
-        let nextState = { ...currentState };
+        let nextState = { ...state };
         nextState.status = 'roll_off_leaderboard';
         nextState.turn = payload.winnerId;
         
@@ -1171,21 +1184,23 @@ export default function KontrolaArena() {
                 enqueueHostAction({ actionType: 'START_CHARACTER_SELECT', winnerId: payload.winnerId });
              }, 4000); // show leaderboard for 4 seconds
         }
+        pendingStateRef.current = nextState;
         broadcastState(matchIdRef.current, nextState);
         return nextState;
       }
       if (payload.actionType === 'START_CHARACTER_SELECT') {
-        let nextState = { ...currentState };
+        let nextState = { ...state };
         
         // Sort players array based on rollOffs (highest first)
-        nextState.players = [...currentState.players].sort((a, b) => {
-          return (currentState.rollOffs?.[b] || 0) - (currentState.rollOffs?.[a] || 0);
+        nextState.players = [...state.players].sort((a, b) => {
+          return (state.rollOffs?.[b] || 0) - (state.rollOffs?.[a] || 0);
         });
         
         nextState.status = 'character_select';
         nextState.turn = payload.winnerId;
         nextState.turnDirection = 'clockwise';
-        nextState.logs = [`The Character Selection phase has begun!`, ...(currentState.logs || [])];
+        nextState.logs = [`The Character Selection phase has begun!`, ...(state.logs || [])];
+        pendingStateRef.current = nextState;
         broadcastState(matchIdRef.current, nextState);
         return nextState;
       }
