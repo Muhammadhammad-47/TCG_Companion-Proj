@@ -290,63 +290,50 @@ export default function KontrolaDiceRoller({
   function handleRollAttacker() {
     if (isAttackerRolling || hasAttackerRolled) return;
     const atkRolls = [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
-    setClashAtkDice(atkRolls);
-    setIsAttackerRolling(true);
-    if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
-
-    setTimeout(() => {
-      setIsAttackerRolling(false);
-      setHasAttackerRolled(true);
-
-      // Check for doubles
-      const hasDouble = handleDoubleDetection(atkRolls[0], atkRolls[1]);
-      if (hasDouble) {
-        setAttackerFateCard(true);
-        setShowRerollOption(true);
-      }
-
-      if (onTriggerRoll) {
-        onTriggerRoll({
-          attackerRoll: { rolls: atkRolls, total: atkRolls[0] + atkRolls[1] },
-          attackerDouble: hasDouble
-        });
-      }
-
-      // Auto-trigger defender roll if defender is Bot/AI or single-player mode
-      if (!isSpectator && !combatData?.targetId) {
-        setTimeout(() => {
-          handleRollDefender();
-        }, 900);
-      }
-    }, 900);
-  }
-
-  // Defender rolls their 2 authentic dice
-  function handleRollDefender() {
-    if (isDefenderRolling || hasDefenderRolled) return;
+    // ALSO generate defender rolls now so BOTH are seeded from the same client at the same moment.
+    // Attacker broadcasts both sets — defender only displays what it receives, never self-generates.
     const defRolls = [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
+
+    setClashAtkDice(atkRolls);
     setClashDefDice(defRolls);
+    setIsAttackerRolling(true);
     setIsDefenderRolling(true);
     if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
 
     setTimeout(() => {
+      setIsAttackerRolling(false);
       setIsDefenderRolling(false);
+      setHasAttackerRolled(true);
       setHasDefenderRolled(true);
 
       // Check for doubles
-      const hasDouble = handleDoubleDetection(defRolls[0], defRolls[1]);
-      if (hasDouble) {
-        setDefenderFateCard(true);
-        setShowRerollOption(true);
-      }
+      const atkDouble = handleDoubleDetection(atkRolls[0], atkRolls[1]);
+      const defDouble = handleDoubleDetection(defRolls[0], defRolls[1]);
+      if (atkDouble) { setAttackerFateCard(true); setShowRerollOption(true); }
+      if (defDouble) { setDefenderFateCard(true); setShowRerollOption(true); }
 
       if (onTriggerRoll) {
+        // Broadcast BOTH rolls together in one message — single source of truth
         onTriggerRoll({
+          attackerRoll: { rolls: atkRolls, total: atkRolls[0] + atkRolls[1] },
           defenderRoll: { rolls: defRolls, total: defRolls[0] + defRolls[1] },
-          defenderDouble: hasDouble
+          attackerDouble: atkDouble,
+          defenderDouble: defDouble
         });
       }
     }, 900);
+  }
+
+  // Defender NO LONGER generates their own rolls — attacker is the sole source.
+  // This function is kept for the auto-roll timeout fallback only.
+  function handleRollDefender() {
+    // Defender dice are always seeded by the attacker and synced via broadcast.
+    // If we reach here via auto-timeout and still have no defender rolls,
+    // the attacker must have not rolled yet — do nothing.
+    if (hasDefenderRolled) return;
+    // If attacker already rolled (hasAttackerRolled) but defender hasn't received sync yet,
+    // the sync useEffect will handle it once the broadcast arrives. No local generation.
+    return;
   }
 
   // Interactive 2nd-stage multiplier die roll for "PER" character moves
@@ -389,8 +376,9 @@ export default function KontrolaDiceRoller({
           const refs = autoRollRef.current;
           
           if (refs.phase === 'clash') {
+            // Only the attacker (or host standing in) rolls — attacker seeds both dice sets
             if (!refs.hasAttackerRolled && (refs.isAttacker || refs.isHost)) refs.handleRollAttacker();
-            else if (!refs.hasDefenderRolled && (refs.isDefender || refs.isHost)) refs.handleRollDefender();
+            // Defender never self-rolls; if attacker timed out too, host steps in above
           } else if (refs.phase === 'clash_summary') {
             if (refs.isAttacker || refs.isHost) {
               if (refs.isTie) refs.handleReRoll();
@@ -409,14 +397,12 @@ export default function KontrolaDiceRoller({
 
   // Sync rolls when precalculatedRolls updates from peer
   useEffect(() => {
-    // Check if we have NO DICE ROLLS (either precalculated doesn't exist or has no attack/defense rolls)
+    // Check if we have NO DICE ROLLS
     const hasNoDiceRolls = !precalculatedRolls ||
       (!precalculatedRolls.attackerRoll?.rolls && !precalculatedRolls.defenderRoll?.rolls);
 
     if (hasNoDiceRolls) {
-      // Re-roll scenario: ONLY reset if the player hasn't already rolled locally.
-      // Guards against the race where the broadcast echo arrives with {defenseCard:null}
-      // while the attacker's local roll (hasAttackerRolled=true) is already committed.
+      // Re-roll scenario: only reset if neither side has rolled yet locally
       if (!hasAttackerRolled && !hasDefenderRolled) {
         setClashAtkDice([1, 1]);
         setClashDefDice([1, 1]);
@@ -426,43 +412,40 @@ export default function KontrolaDiceRoller({
     }
 
     if (precalculatedRolls) {
-      if (precalculatedRolls.attackerRoll?.rolls) {
-        if (!hasAttackerRolled && !isAttackerRolling) {
-          if (!isAttacker) {
-            // Non-attacker: animate the received roll
-            setIsAttackerRolling(true);
-            if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
-            setTimeout(() => {
-              setClashAtkDice(precalculatedRolls.attackerRoll.rolls);
-              setIsAttackerRolling(false);
-              setHasAttackerRolled(true);
-            }, 900);
-          } else {
-            // Attacker: echo came back from Supabase — we already rolled locally,
-            // only apply if we truly haven't set the dice yet
+      // Attacker roll received — animate on non-attacker clients
+      if (precalculatedRolls.attackerRoll?.rolls && !hasAttackerRolled && !isAttackerRolling) {
+        if (!isAttacker) {
+          setIsAttackerRolling(true);
+          if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
+          setTimeout(() => {
             setClashAtkDice(precalculatedRolls.attackerRoll.rolls);
+            setIsAttackerRolling(false);
             setHasAttackerRolled(true);
-          }
+          }, 900);
+        } else {
+          // Own echo — just confirm the values we already set locally
+          setClashAtkDice(precalculatedRolls.attackerRoll.rolls);
+          setHasAttackerRolled(true);
         }
-        // If hasAttackerRolled is already true (local roll committed), do NOT overwrite clashAtkDice.
-        // This is the key guard that prevents the race condition resetting the display to [1,1].
       }
-      if (precalculatedRolls.defenderRoll?.rolls) {
-        if (!hasDefenderRolled && !isDefenderRolling) {
-          if (!isDefender) {
-            setIsDefenderRolling(true);
-            if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
-            setTimeout(() => {
-              setClashDefDice(precalculatedRolls.defenderRoll.rolls);
-              setIsDefenderRolling(false);
-              setHasDefenderRolled(true);
-            }, 900);
-          } else {
+
+      // Defender roll received — ALWAYS sync from broadcast, never self-generate
+      if (precalculatedRolls.defenderRoll?.rolls && !hasDefenderRolled && !isDefenderRolling) {
+        if (!isAttacker) {
+          // Defender/spectator: animate the received rolls
+          setIsDefenderRolling(true);
+          setTimeout(() => {
             setClashDefDice(precalculatedRolls.defenderRoll.rolls);
+            setIsDefenderRolling(false);
             setHasDefenderRolled(true);
-          }
+          }, 900);
+        } else {
+          // Attacker: confirm defender rolls we just broadcast
+          setClashDefDice(precalculatedRolls.defenderRoll.rolls);
+          setHasDefenderRolled(true);
         }
       }
+
       if (precalculatedRolls.dRoll?.total && !hasRolledMultiplier && !isRollingMultiplier) {
         setMultiplierDie(precalculatedRolls.dRoll.total);
         setHasRolledMultiplier(true);
@@ -887,53 +870,26 @@ export default function KontrolaDiceRoller({
                 )
               )}
 
-              {/* Step 2: Attacker has rolled, Defender rolls */}
+              {/* Step 2: Attacker has rolled — defender dice sync from broadcast automatically */}
               {hasAttackerRolled && !hasDefenderRolled && (
-                isDefender ? (
-                  <button
-                    onClick={handleRollDefender}
-                    disabled={isDefenderRolling}
-                    style={{
-                      background: 'linear-gradient(90deg, #FBC80D 0%, #ff9900 100%)',
-                      border: 'none',
-                      color: '#000',
-                      padding: '16px 44px',
-                      borderRadius: '12px',
-                      fontSize: '1.25rem',
-                      fontWeight: '900',
-                      cursor: isDefenderRolling ? 'wait' : 'pointer',
-                      boxShadow: '0 0 30px rgba(251, 200, 13, 0.6)',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '14px',
-                      fontFamily: 'Bebas Neue, sans-serif',
-                      letterSpacing: '1px',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    <Shield size={26} />
-                    <span>{isDefenderRolling ? 'ROLLING DEFENSE DICE...' : '??? ROLL DEFENSE DICE'}</span>
-                  </button>
-                ) : (
-                  <div
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      padding: '14px 28px',
-                      borderRadius: '12px',
-                      background: 'rgba(251, 200, 13, 0.08)',
-                      border: '1.5px solid rgba(251, 200, 13, 0.3)',
-                      color: 'var(--neon-gold)',
-                      fontSize: '1.1rem',
-                      fontFamily: 'Bebas Neue, sans-serif',
-                      letterSpacing: '1px'
-                    }}
-                  >
-                    <Shield size={22} />
-                    <span>? Attacker rolled {atkSum}! Waiting for {defChar.name} to roll defense...</span>
-                  </div>
-                )
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '14px 28px',
+                    borderRadius: '12px',
+                    background: 'rgba(251, 200, 13, 0.08)',
+                    border: '1.5px solid rgba(251, 200, 13, 0.3)',
+                    color: 'var(--neon-gold)',
+                    fontSize: '1.1rem',
+                    fontFamily: 'Bebas Neue, sans-serif',
+                    letterSpacing: '1px'
+                  }}
+                >
+                  <Shield size={22} />
+                  <span>⚡ Syncing dice results across all players...</span>
+                </div>
               )}
             </div>
           )}
