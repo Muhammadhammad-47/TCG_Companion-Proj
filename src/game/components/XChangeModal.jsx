@@ -17,7 +17,7 @@ export default function XChangeModal({
   const [showWarning, setShowWarning] = useState(false);
 
   const isX1 = xChangeType === 'X1';
-  const availableDefenderCards = isX1 ? (defenderHand || []).slice(0, 1) : (defenderHand || []);
+  const availableDefenderCards = defenderHand || [];
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -65,7 +65,7 @@ export default function XChangeModal({
         <h2 className="xchange-modal-title">🔄 X-CHANGE EXCHANGE</h2>
         <div className="xchange-modal-subtitle">
           {isX1 
-            ? `Choose 1 card from your hand and 1 from ${defenderName}'s revealed card.`
+            ? `Choose 1 card from your hand to give, and 1 card from ${defenderName}'s hand to take.`
             : `Exchange action cards with ${defenderName}!`
           }
         </div>

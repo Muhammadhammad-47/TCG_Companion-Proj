@@ -31,6 +31,8 @@ import AllianceStatusBadge from '../components/AllianceStatusBadge';
 import CrystalSplitModal from '../components/CrystalSplitModal';
 import CrystalDiceRoller from '../components/CrystalDiceRoller';
 import ReconnectModal from '../components/ReconnectModal';
+import XChangeModal from '../components/XChangeModal';
+import SoulAllianceTradeModal from '../components/SoulAllianceTradeModal';
 import { createGameRoom, updateGameRoom, fetchGameRoom } from '../../services/roomService';
 
 import '../../pages/GamePage.css';
@@ -207,6 +209,11 @@ export default function KontrolaArena() {
   // NEW: Crystal Split System State
   const [showCrystalSplitModal, setShowCrystalSplitModal] = useState(false);
   const [crystalSplitData, setCrystalSplitData] = useState(null);
+
+  // Interactive Card & Combat Modals
+  const [xChangeModalData, setXChangeModalData] = useState(null); // { xChangeType, attackerHand, defenderHand, defenderName, targetId, actorId }
+  const [soulAllianceTradeData, setSoulAllianceTradeData] = useState(null); // { allyId, allyName }
+  const [pendingRevivePrompt, setPendingRevivePrompt] = useState(null); // { playerId, playerName, maxHp }
   
   // Room Persistence State
   const [roomCode, setRoomCode] = useState(null);
@@ -901,11 +908,21 @@ export default function KontrolaArena() {
         }
         // 11. Action Effects (Syncs Vision, Shakes, Sounds, Damage Popups)
         else if (event.type === 'ACTION_EFFECT') {
-          const { actionType, actionName, dmgDealt, healDelta, visionData } = event.payload || {};
+          const { actionType, actionName, dmgDealt, healDelta, visionData, triggerXChange, triggerRevivePrompt } = event.payload || {};
 
           // Handle Vision Reveal for the player who played it
           if (visionData && visionData.actorId === playerIdRef.current) {
             setRevealedVision(visionData);
+          }
+
+          // Handle interactive X-Change Modal for the actor who played it
+          if (triggerXChange && triggerXChange.actorId === playerIdRef.current) {
+            setXChangeModalData(triggerXChange);
+          }
+
+          // Handle Revive Prompt for the player who was defeated
+          if (triggerRevivePrompt && triggerRevivePrompt.victimId === playerIdRef.current) {
+            setPendingRevivePrompt(triggerRevivePrompt);
           }
 
           // Visual shake + contextual sound effects + damage number popup
@@ -1286,6 +1303,125 @@ export default function KontrolaArena() {
         broadcastState(matchIdRef.current, nextState);
         return nextState;
       }
+      if (payload.actionType === 'EXECUTE_XCHANGE') {
+        const { actorId, targetId, giveCard, takeCard } = payload;
+        const actorHand = [...(currentState.hands?.[actorId] || [])];
+        const targetHand = [...(currentState.hands?.[targetId] || [])];
+        const actorChar = currentState.characterStates?.[actorId];
+        const targetChar = currentState.characterStates?.[targetId];
+
+        // Remove giveCard from actor and add to target
+        const giveIdx = actorHand.findIndex(c => c.id === giveCard?.id || c.name === giveCard?.name);
+        const takeIdx = targetHand.findIndex(c => c.id === takeCard?.id || c.name === takeCard?.name);
+
+        if (giveIdx !== -1 && takeIdx !== -1) {
+          const [cardGiven] = actorHand.splice(giveIdx, 1);
+          const [cardTaken] = targetHand.splice(takeIdx, 1);
+          actorHand.push(cardTaken);
+          targetHand.push(cardGiven);
+
+          const nextState = {
+            ...currentState,
+            hands: {
+              ...(currentState.hands || {}),
+              [actorId]: actorHand,
+              [targetId]: targetHand
+            },
+            logs: [
+              `🔄 X-CHANGE: ${actorChar?.name || 'Player'} exchanged "${cardGiven.name}" with ${targetChar?.name || 'Opponent'}'s "${cardTaken.name}"!`,
+              ...(currentState.logs || [])
+            ]
+          };
+          broadcastState(matchIdRef.current, nextState);
+          return nextState;
+        }
+        return currentState;
+      }
+
+      if (payload.actionType === 'EXECUTE_REVIVE') {
+        const { victimId } = payload;
+        const victimChar = currentState.characterStates?.[victimId];
+        if (!victimChar) return currentState;
+
+        const victimHand = [...(currentState.hands?.[victimId] || [])];
+        const reviveIdx = victimHand.findIndex(c => c.name?.includes('REVIVE'));
+        if (reviveIdx !== -1) {
+          victimHand.splice(reviveIdx, 1);
+          // Draw replacement from deck if available
+          let deck = [...(currentState.deck || [])];
+          if (deck.length > 0) {
+            victimHand.push(deck.shift());
+          }
+        }
+
+        const restoredHp = Math.max(1, Math.floor((victimChar.maxHp || 100) * 0.5));
+        const updatedVictim = {
+          ...victimChar,
+          hp: restoredHp,
+          isDefeated: false,
+          crystals: Math.max(1, victimChar.crystals || 1)
+        };
+
+        const nextState = {
+          ...currentState,
+          deck: currentState.deck ? [...(currentState.deck || [])] : currentState.deck,
+          hands: {
+            ...(currentState.hands || {}),
+            [victimId]: victimHand
+          },
+          characterStates: {
+            ...currentState.characterStates,
+            [victimId]: updatedVictim
+          },
+          logs: [
+            `✨ REVIVE USED! ${victimChar.name} consumed their REVIVE card and re-entered the arena with ${restoredHp} HP (50%)!`,
+            ...(currentState.logs || [])
+          ]
+        };
+        broadcastState(matchIdRef.current, nextState);
+        return nextState;
+      }
+
+      if (payload.actionType === 'EXECUTE_ALLIANCE_TRADE') {
+        const { traderId, recipientId, tradeType, card, amount } = payload;
+        const traderHand = [...(currentState.hands?.[traderId] || [])];
+        const recipientHand = [...(currentState.hands?.[recipientId] || [])];
+        const traderChar = { ...(currentState.characterStates?.[traderId] || {}) };
+        const recipientChar = { ...(currentState.characterStates?.[recipientId] || {}) };
+
+        let tradeLog = '';
+        if (tradeType === 'REVIVE' && card) {
+          const rIdx = traderHand.findIndex(c => c.id === card.id || c.name === card.name);
+          if (rIdx !== -1) {
+            const [tradedCard] = traderHand.splice(rIdx, 1);
+            recipientHand.push(tradedCard);
+            tradeLog = `🤝 SOUL ALLIANCE TRADE: ${traderChar.name} traded REVIVE card to ${recipientChar.name}!`;
+          }
+        } else if (tradeType === 'ENERGY_TOKENS' && amount > 0) {
+          const actualAmount = Math.min(amount, traderChar.energyTokens || 0);
+          traderChar.energyTokens = Math.max(0, (traderChar.energyTokens || 0) - actualAmount);
+          recipientChar.energyTokens = Math.min(10, (recipientChar.energyTokens || 0) + actualAmount);
+          tradeLog = `🤝 SOUL ALLIANCE TRADE: ${traderChar.name} sent ${actualAmount} Energy Token(s) to ${recipientChar.name}!`;
+        }
+
+        const nextState = {
+          ...currentState,
+          hands: {
+            ...(currentState.hands || {}),
+            [traderId]: traderHand,
+            [recipientId]: recipientHand
+          },
+          characterStates: {
+            ...currentState.characterStates,
+            [traderId]: traderChar,
+            [recipientId]: recipientChar
+          },
+          logs: [tradeLog, ...(currentState.logs || [])]
+        };
+        broadcastState(matchIdRef.current, nextState);
+        return nextState;
+      }
+
       if (payload.actionType === 'CLAIM_ET') {
         const char = currentState.characterStates[payload.actorId];
         if (!char || char.claimedTurnET) return currentState;
@@ -1521,12 +1657,39 @@ export default function KontrolaArena() {
              healDelta = Math.max(0, newAtkHP - prevAtkHP);
           }
 
+          let triggerXChange = null;
+          if (actionCard.name.includes('X-CHANGE') && targetId && targetId !== 'ALL') {
+            triggerXChange = {
+              xChangeType: actionCard.name.includes('FULL') ? 'FULL' : 'X1',
+              actorId,
+              targetId,
+              defenderName: defenderChar?.name || 'Opponent',
+              attackerHand: newHand,
+              defenderHand: newDefenderHand
+            };
+          }
+
+          let triggerRevivePrompt = null;
+          if (newDefenderState && newDefenderState.hp <= 0) {
+            // Check if defender holds REVIVE card
+            const hasRevive = (newDefenderHand || []).some(c => c.name?.includes('REVIVE'));
+            if (hasRevive) {
+              triggerRevivePrompt = {
+                victimId: targetId,
+                victimName: newDefenderState.name,
+                maxHp: newDefenderState.maxHp || 100
+              };
+            }
+          }
+
           broadcastUIEvent(matchIdRef.current, 'action_effect', {
             actionType: actionCard?.type,
             actionName: actionCard?.name,
             dmgDealt,
             healDelta,
-            visionData
+            visionData,
+            triggerXChange,
+            triggerRevivePrompt
           });
         }, 100);
 
@@ -2233,16 +2396,17 @@ export default function KontrolaArena() {
   };
 
   // Triggered when dice screen is closed or finished
-  const handleCloseDiceScreen = async (resolved = false) => {
+  const handleCloseDiceScreen = async (resolved = false, finalRolls = null) => {
+    const rollsToApply = finalRolls || activeCombat?.precalculatedRolls || {};
     await broadcastUIEvent(matchId, 'dice_screen_close', {
       resolved,
       combatData: activeCombat,
-      precalculatedRolls: activeCombat?.precalculatedRolls
+      precalculatedRolls: rollsToApply
     });
     setActiveCombat(null);
     setIsDiceRollingSync(false);
     if (resolved && isHost && activeCombat) {
-      enqueueHostAction({ ...activeCombat, actionType: 'RESOLVE_COMBAT' }, activeCombat.precalculatedRolls);
+      enqueueHostAction({ ...activeCombat, actionType: 'RESOLVE_COMBAT' }, rollsToApply);
     }
   };
 
@@ -2436,10 +2600,68 @@ export default function KontrolaArena() {
     setPendingAllianceInvite(null);
     setShowSecretAllianceInviteModal(false);
     setShowAllianceChatModal(false);
-    setActiveAlliance(null);
     setAllianceChatHistory([]);
     setSelectedAllianceTerms([]);
     setAllianceConfirmations({ player1: false, player2: false });
+  };
+
+  // ==========================================
+  // X-CHANGE, REVIVE & ALLIANCE TRADE HANDLERS
+  // ==========================================
+  const handleConfirmXChange = ({ attackerCard, defenderCard }) => {
+    if (!xChangeModalData) return;
+    soundFX.playCard?.();
+    const payload = {
+      actionType: 'EXECUTE_XCHANGE',
+      actorId: xChangeModalData.actorId,
+      targetId: xChangeModalData.targetId,
+      giveCard: attackerCard,
+      takeCard: defenderCard
+    };
+    if (isHostRef.current) {
+      enqueueHostAction(payload);
+    } else {
+      takeTurn(matchIdRef.current, { type: 'PLAYER_ACTION', payload });
+    }
+    setXChangeModalData(null);
+  };
+
+  const handleConfirmRevive = () => {
+    if (!pendingRevivePrompt) return;
+    soundFX.playHeal?.();
+    const payload = {
+      actionType: 'EXECUTE_REVIVE',
+      victimId: pendingRevivePrompt.victimId
+    };
+    if (isHostRef.current) {
+      enqueueHostAction(payload);
+    } else {
+      takeTurn(matchIdRef.current, { type: 'PLAYER_ACTION', payload });
+    }
+    setPendingRevivePrompt(null);
+  };
+
+  const handleDeclineRevive = () => {
+    setPendingRevivePrompt(null);
+  };
+
+  const handleConfirmAllianceTrade = (tradeData) => {
+    if (!soulAllianceTradeData) return;
+    soundFX.playMenuSelect?.();
+    const payload = {
+      actionType: 'EXECUTE_ALLIANCE_TRADE',
+      traderId: playerId,
+      recipientId: soulAllianceTradeData.allyId,
+      tradeType: tradeData.type,
+      card: tradeData.card || null,
+      amount: tradeData.amount || 0
+    };
+    if (isHostRef.current) {
+      enqueueHostAction(payload);
+    } else {
+      takeTurn(matchIdRef.current, { type: 'PLAYER_ACTION', payload });
+    }
+    setSoulAllianceTradeData(null);
   };
 
   // ==========================================
@@ -4299,6 +4521,28 @@ export default function KontrolaArena() {
                   <span>TAUNT</span>
                 </button>
               )}
+              {!isSpectator && gameState?.alliances && gameState.alliances.length > 0 && (() => {
+                const myAlliance = gameState.alliances.find(a => 
+                  a.status === 'active' && (a.player1Id === playerId || a.player2Id === playerId)
+                );
+                if (!myAlliance) return null;
+                const allyId = myAlliance.player1Id === playerId ? myAlliance.player2Id : myAlliance.player1Id;
+                const allyName = myAlliance.player1Id === playerId ? myAlliance.player2Name : myAlliance.player1Name;
+                return (
+                  <button
+                    className="btn-arena-chat"
+                    onClick={() => {
+                      playClick();
+                      setSoulAllianceTradeData({ allyId, allyName });
+                    }}
+                    style={{ borderColor: '#9d4edd', color: '#9d4edd' }}
+                    title="Trade REVIVE cards or Energy Tokens with your Soul Alliance partner"
+                  >
+                    <span>🤝</span>
+                    <span>ALLIANCE TRADE</span>
+                  </button>
+                );
+              })()}
             </div>
 
               {/* Action buttons moved to arena-col-right above */}
@@ -4428,6 +4672,113 @@ export default function KontrolaArena() {
                 setCrystalSplitData(null);
               }}
             />
+          )}
+
+          {/* Interactive X-CHANGE Modal */}
+          {xChangeModalData && (
+            <XChangeModal
+              isOpen={Boolean(xChangeModalData)}
+              xChangeType={xChangeModalData.xChangeType || 'X1'}
+              attackerHand={xChangeModalData.attackerHand || myHand}
+              defenderHand={xChangeModalData.defenderHand || []}
+              defenderName={xChangeModalData.defenderName || 'Opponent'}
+              onConfirm={handleConfirmXChange}
+              onCancel={() => setXChangeModalData(null)}
+              timeLimit={30}
+            />
+          )}
+
+          {/* Soul Alliance Trade Modal */}
+          {soulAllianceTradeData && (
+            <SoulAllianceTradeModal
+              isOpen={Boolean(soulAllianceTradeData)}
+              playerName={myCharacter?.name || playerName || 'Player'}
+              allyName={soulAllianceTradeData.allyName || 'Ally'}
+              playerHand={myHand}
+              playerEnergyTokens={myCharacter?.energyTokens || 0}
+              onTrade={handleConfirmAllianceTrade}
+              onCancel={() => setSoulAllianceTradeData(null)}
+            />
+          )}
+
+          {/* REVIVE Prompt Modal */}
+          {pendingRevivePrompt && (
+            <div style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 11000,
+              background: 'rgba(5, 10, 25, 0.92)',
+              backdropFilter: 'blur(12px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '20px'
+            }}>
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(20, 30, 60, 0.98) 0%, rgba(10, 15, 35, 0.99) 100%)',
+                border: '2px solid #39ff14',
+                borderRadius: '16px',
+                padding: '32px 36px',
+                maxWidth: '460px',
+                width: '100%',
+                textAlign: 'center',
+                boxShadow: '0 0 50px rgba(57, 255, 20, 0.45)',
+                fontFamily: 'Barlow Condensed, sans-serif',
+                animation: 'fadeIn 0.25s ease'
+              }}>
+                <div style={{ fontSize: '3rem', marginBottom: '8px' }}>✨</div>
+                <h2 style={{
+                  color: '#39ff14',
+                  fontSize: '2rem',
+                  fontFamily: 'Bebas Neue, sans-serif',
+                  letterSpacing: '1.5px',
+                  margin: '0 0 8px 0',
+                  textShadow: '0 0 20px rgba(57, 255, 20, 0.6)'
+                }}>
+                  USE REVIVE CARD?
+                </h2>
+                <p style={{ color: '#fff', fontSize: '1.1rem', margin: '0 0 16px 0', lineHeight: 1.5 }}>
+                  You have fallen in battle! Would you like to consume your <strong>REVIVE</strong> card to re-enter the game at <strong>50% HP ({Math.floor((pendingRevivePrompt.maxHp || 100) * 0.5)} HP)</strong>?
+                </p>
+                <div style={{ display: 'flex', gap: '14px', justifyContent: 'center' }}>
+                  <button
+                    onClick={handleDeclineRevive}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      border: '1px solid rgba(255, 255, 255, 0.3)',
+                      color: '#fff',
+                      padding: '12px 24px',
+                      borderRadius: '8px',
+                      fontSize: '1rem',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      fontFamily: 'Bebas Neue, sans-serif',
+                      letterSpacing: '1px'
+                    }}
+                  >
+                    NO, ACCEPT DEFEAT
+                  </button>
+                  <button
+                    onClick={handleConfirmRevive}
+                    style={{
+                      background: '#39ff14',
+                      border: 'none',
+                      color: '#000',
+                      padding: '12px 28px',
+                      borderRadius: '8px',
+                      fontSize: '1.1rem',
+                      fontWeight: '900',
+                      cursor: 'pointer',
+                      fontFamily: 'Bebas Neue, sans-serif',
+                      letterSpacing: '1px',
+                      boxShadow: '0 0 25px rgba(57, 255, 20, 0.6)'
+                    }}
+                  >
+                    YES, REVIVE (50% HP)
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* ROLL-OFF MODAL */}
@@ -4978,7 +5329,7 @@ export default function KontrolaArena() {
               onTriggerRoll={handleTriggerDiceRoll}
               onClose={async () => await handleCloseDiceScreen(false)}
               onForceClose={async () => await handleCloseDiceScreen(false)}
-              onCombatComplete={async () => await handleCloseDiceScreen(true)}
+              onCombatComplete={async (finalRolls) => await handleCloseDiceScreen(true, finalRolls)}
             />
           )}
 

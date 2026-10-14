@@ -582,18 +582,22 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     } else if (isAttackerZombie) {
       baseAP = 20; // Zombie Venom Strike
       attackElement = 'Poison';
-    } else if (attackSelectionName && attackerChar?.attacks?.[attackSelectionName]) {
-      const atk = attackerChar.attacks[attackSelectionName];
-      attackElement = atk.element || 'Physical';
-      if (atk.dice > 0 && (cardName.includes('ATTACK X1') || cardName.includes('ATTACK X2'))) {
-        const actionCardAP = cardName.includes('X2') ? 20 : 10;
-        baseAP = dRoll.total * actionCardAP;
-        log += ` [${attackSelectionName} with ${cardName}: ${dRoll.total} × ${actionCardAP} AP = ${baseAP} AP]`;
-      } else if (atk.dice > 0) {
-        baseAP = dRoll.total * atk.ap;
-        log += ` [${attackSelectionName}: ${dRoll.total} × ${atk.ap} AP = ${baseAP} AP]`;
-      } else {
-        baseAP = atk.ap;
+    } else if (attackSelectionName) {
+      const charKey = attackerChar?.id || attackerState?.id || 'chynaman';
+      const template = KONTROLA_CHARACTERS[charKey] || Object.values(KONTROLA_CHARACTERS).find(c => c.name?.toLowerCase() === attackerChar?.name?.toLowerCase());
+      const atk = attackerChar?.attacks?.[attackSelectionName] || template?.attacks?.[attackSelectionName];
+      if (atk) {
+        attackElement = atk.element || 'Physical';
+        if (atk.dice > 0 && (cardName.includes('ATTACK X1') || cardName.includes('ATTACK X2'))) {
+          const actionCardAP = cardName.includes('X2') ? 20 : 10;
+          baseAP = (dRoll?.total || 1) * actionCardAP;
+          log += ` [${attackSelectionName} with ${cardName}: ${dRoll?.total || 1} × ${actionCardAP} AP = ${baseAP} AP]`;
+        } else if (atk.dice > 0) {
+          baseAP = (dRoll?.total || 1) * atk.ap;
+          log += ` [${attackSelectionName}: ${dRoll?.total || 1} × ${atk.ap} AP = ${baseAP} AP]`;
+        } else {
+          baseAP = atk.ap;
+        }
       }
     }
 

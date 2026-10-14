@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { soundFX } from '../utils/audio';
 import { Dices, Shield, Swords, Check, Zap, X, Sparkles, AlertCircle, Clock, Eye, RotateCcw } from 'lucide-react';
 import { getCardGraphicUrl, getCharacterAttackGraphicUrl } from './kontrolaAssets';
+import { KONTROLA_CHARACTERS } from './KontrolaEngine';
 
 // Helper to draw authentic dice face texture matching ThreeDiceArena.jsx exactly
 function drawDiceFaceToCanvas(canvas, value, theme) {
@@ -255,8 +256,24 @@ export default function KontrolaDiceRoller({
   const isTie = atkSum === defSum;
   const atkWon = !isTie && atkSum > defSum;
   const defWon = !isTie && defSum > atkSum;
-  const selectedAttackInfo = atkChar?.attacks?.[attackSelectionName];
-  const hasMultiplierDie = selectedAttackInfo && selectedAttackInfo.dice > 0;
+
+  // Robust attack info lookup with character template fallback
+  const charKey = atkChar?.id || combatData?.attackerId || combatData?.actorId || 'chynaman';
+  const charTemplate = KONTROLA_CHARACTERS[charKey] || Object.values(KONTROLA_CHARACTERS).find(c => c.name?.toLowerCase() === atkChar?.name?.toLowerCase());
+  const selectedAttackInfo = atkChar?.attacks?.[attackSelectionName] || charTemplate?.attacks?.[attackSelectionName];
+  const hasMultiplierDie = Boolean(selectedAttackInfo && selectedAttackInfo.dice > 0);
+
+  const handleFinishCombat = () => {
+    const finalRolls = {
+      attackerRoll: { rolls: clashAtkDice, total: atkSum },
+      defenderRoll: { rolls: clashDefDice, total: defSum },
+      dRoll: hasMultiplierDie ? { rolls: [multiplierDie], total: multiplierDie } : undefined,
+      defenseCard: combatData?.defenseCard || precalculatedRolls?.defenseCard || null
+    };
+    if (typeof onCombatComplete === 'function') {
+      onCombatComplete(finalRolls);
+    }
+  };
 
   function handleReRoll() {
     if (isAttackerRolling || isDefenderRolling) return;
@@ -380,10 +397,10 @@ export default function KontrolaDiceRoller({
     autoRollRef.current = {
       isAttacker, hasAttackerRolled, handleRollAttacker,
       isDefender, hasDefenderRolled, handleRollDefender,
-      phase, hasRolledMultiplier, handleRollMultiplierDie, onCombatComplete,
+      phase, hasRolledMultiplier, handleRollMultiplierDie, handleFinishCombat,
       isHost, isTie, handleReRoll
     };
-  }, [isAttacker, hasAttackerRolled, handleRollAttacker, isDefender, hasDefenderRolled, handleRollDefender, phase, hasRolledMultiplier, handleRollMultiplierDie, onCombatComplete, isHost, isTie, handleReRoll]);
+  }, [isAttacker, hasAttackerRolled, handleRollAttacker, isDefender, hasDefenderRolled, handleRollDefender, phase, hasRolledMultiplier, handleRollMultiplierDie, handleFinishCombat, isHost, isTie, handleReRoll]);
 
   useEffect(() => {
     setSecondsRemaining(15);
@@ -400,7 +417,7 @@ export default function KontrolaDiceRoller({
             if (refs.isAttacker || refs.isHost) {
               if (refs.isTie) refs.handleReRoll();
               else if (refs.hasRolledMultiplier === false) refs.handleRollMultiplierDie();
-              else if (typeof refs.onCombatComplete === 'function') refs.onCombatComplete();
+              else if (typeof refs.handleFinishCombat === 'function') refs.handleFinishCombat();
             }
           }
           return 0;
@@ -1137,9 +1154,51 @@ export default function KontrolaDiceRoller({
                       <span>? Stalemate! Waiting for Attacker to re-roll...</span>
                     </div>
                   )
+                ) : (atkWon && hasMultiplierDie && !hasRolledMultiplier) ? (
+                  isAttacker ? (
+                    <button
+                      onClick={handleRollMultiplierDie}
+                      disabled={isRollingMultiplier}
+                      style={{
+                        background: 'linear-gradient(135deg, #FBC80D, #ff8800)',
+                        color: '#000',
+                        border: 'none',
+                        padding: '14px 38px',
+                        borderRadius: '12px',
+                        fontSize: '1.15rem',
+                        fontWeight: '900',
+                        cursor: isRollingMultiplier ? 'wait' : 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        fontFamily: 'Bebas Neue, sans-serif',
+                        letterSpacing: '1px',
+                        boxShadow: '0 0 25px rgba(251, 200, 13, 0.55)',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <Sparkles size={22} />
+                      <span>{isRollingMultiplier ? 'ROLLING MULTIPLIER DIE...' : 'ROLL 1 MULTIPLIER DIE'}</span>
+                    </button>
+                  ) : (
+                    <div
+                      style={{
+                        color: '#FBC80D',
+                        fontStyle: 'italic',
+                        fontSize: '1rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <Clock size={18} />
+                      <span>Attacker won clash! Waiting for attacker to roll multiplier die...</span>
+                    </div>
+                  )
                 ) : (
                   <button
-                    onClick={onCombatComplete}
+                    onClick={handleFinishCombat}
                     style={{
                       background: '#39ff14',
                       color: '#000',
