@@ -865,11 +865,15 @@ export default function KontrolaArena() {
         // 8. Synchronized Dice Screen Close
         else if (event.type === 'DICE_SCREEN_CLOSE') {
           const { resolved, combatData, precalculatedRolls } = event.payload || {};
+          const mergedRolls = {
+            ...(activeCombat?.precalculatedRolls || {}),
+            ...(precalculatedRolls || {})
+          };
           setActiveCombat(null);
           setIsDiceRollingSync(false);
           // If a non-host client finished combat, the host must execute RESOLVE_COMBAT
           if (resolved && isHostRef.current && combatData) {
-            enqueueHostAction({ ...combatData, actionType: 'RESOLVE_COMBAT' }, precalculatedRolls);
+            enqueueHostAction({ ...combatData, actionType: 'RESOLVE_COMBAT' }, mergedRolls);
           }
         }
         // 9. Client Action received by Host
@@ -1820,12 +1824,13 @@ export default function KontrolaArena() {
         nextTurnPlayerId = livingPlayers[0] || actorId;
       } else {
         // STATUS/HEAL/OTHERS/TACTICAL/DEFENSE cards must ALWAYS advance the turn � never stay on same player
-        // Exception: TIME MACHINE (OTHERS) is explicitly allowed to grant an extra turn
-        const grantExtraTurn = !isStatusOrHealCard && (resolved.extraTurnGranted || resolved.triggerAttackX2SecondHit);
+        const isAlreadySecondHit = currentState.pendingAttackX2For === actorId || actionCard?.id === 'attack_x2_2nd' || actionCard?.name?.includes('2ND HIT');
+        const triggerSecondHit = !isAlreadySecondHit && Boolean(resolved.triggerAttackX2SecondHit);
+        const grantExtraTurn = !isStatusOrHealCard && (resolved.extraTurnGranted || triggerSecondHit);
 
         if (grantExtraTurn) {
           nextTurnPlayerId = actorId;
-          if (resolved.triggerAttackX2SecondHit) pendingAttackX2For = actorId;
+          pendingAttackX2For = triggerSecondHit ? actorId : null;
         } else {
           pendingAttackX2For = null;
           const currentIdx = livingPlayers.indexOf(actorId);
@@ -1893,14 +1898,24 @@ export default function KontrolaArena() {
         }
         // Check Vampire drain effect (-10 HP, -1 ET per turn for 3 turns)
         if (incomingChar && typeof incomingChar.vampireStealTurnsLeft === 'number' && incomingChar.vampireStealTurnsLeft > 0 && !incomingChar.isDefeated) {
-          const vampireDrain = 10;
-          const vampireETDrain = 1;
+          const vampireDrain = Math.min(10, incomingChar.hp);
+          const vampireETDrain = Math.min(1, incomingChar.energyTokens || 0);
           incomingChar.hp = Math.max(0, incomingChar.hp - vampireDrain);
           incomingChar.energyTokens = Math.max(0, (incomingChar.energyTokens || 0) - vampireETDrain);
-          turnLogs.unshift(`?? ${incomingChar.name} suffered ${vampireDrain} HP and ${vampireETDrain} ET drain from Vampire curse! (${incomingChar.vampireStealTurnsLeft} turn${incomingChar.vampireStealTurnsLeft > 1 ? 's' : ''} remaining)`);
+          incomingChar.vampireStealTurnsLeft -= 1;
+
+          // Transfer drained HP and Energy Token back to the Vampire attacker if present
+          const vAttackerId = incomingChar.vampireAttackerId;
+          if (vAttackerId && updatedStates[vAttackerId] && !updatedStates[vAttackerId].isDefeated) {
+            const vAttacker = updatedStates[vAttackerId];
+            vAttacker.hp = Math.min(vAttacker.maxHp || 100, (vAttacker.hp || 0) + vampireDrain);
+            vAttacker.energyTokens = Math.min(10, (vAttacker.energyTokens || 0) + vampireETDrain);
+          }
+
+          turnLogs.unshift(`🧛 ${incomingChar.name} suffered ${vampireDrain} HP and ${vampireETDrain} ET drain from Vampire curse! (${incomingChar.vampireStealTurnsLeft} turn${incomingChar.vampireStealTurnsLeft === 1 ? '' : 's'} remaining)`);
           if (incomingChar.hp <= 0) {
             incomingChar.isDefeated = true;
-            turnLogs.unshift(`?? ${incomingChar.name} was drained to death by Vampire curse and eliminated!`);
+            turnLogs.unshift(`💀 ${incomingChar.name} was drained to death by Vampire curse and eliminated!`);
             const remainingLiving = currentState.players.filter((pId) => !updatedStates[pId]?.isDefeated);
             if (remainingLiving.length === 1) {
               matchWinner = updatedStates[remainingLiving[0]] ? { ...updatedStates[remainingLiving[0]], playerId: remainingLiving[0] } : null;
@@ -1924,31 +1939,7 @@ export default function KontrolaArena() {
         updatedHands[targetId] = newDefenderHand;
       }
 
-      // X-CHANGE Resolution logic
-      if (resolved.triggerXChange) {
-        let discardId = actionPayload.discardCardId;
-        const currentHand = [...newHand];
-        let discardedCard;
-        
-        if (discardId) {
-           const idx = currentHand.findIndex(c => c.id === discardId);
-           if (idx !== -1) discardedCard = currentHand.splice(idx, 1)[0];
-        }
-        // Fallback to random discard if timeout or invalid
-        if (!discardedCard && currentHand.length > 0) {
-           const idx = Math.floor(Math.random() * currentHand.length);
-           discardedCard = currentHand.splice(idx, 1)[0];
-        }
-        
-        if (updatedDeck.length > 0 && discardedCard) {
-           const drawnCard = updatedDeck.shift();
-           currentHand.push(drawnCard);
-           updatedHands[actorId] = currentHand;
-           turnLogs.unshift(`?? ${newAttackerState.name} used X-CHANGE! Discarded 1 card and drew a new one.`);
-        } else {
-           turnLogs.unshift(`?? The X-CHANGE fizzled! Deck is empty or hand is empty.`);
-        }
-      }
+// X-CHANGE is handled interactively via EXECUTE_XCHANGE modal
 
 
       // Absolute maximum hand size limit for all players (Global Enforcer)
@@ -2249,6 +2240,7 @@ export default function KontrolaArena() {
     const isAoE = selectedActionCard.name.includes('BLITZ');
     const isLightning = selectedActionCard.name.includes('LIGHTNING');
     const isFireFlame = selectedActionCard.name.includes('FIRE FLAME');
+    const isVampire = selectedActionCard.name.includes('VAMPIRE');
 
     console.log('[playTurn] Card type analysis:', {
       cardName: selectedActionCard.name,
@@ -2256,7 +2248,8 @@ export default function KontrolaArena() {
       isAttack,
       isAoE,
       isLightning,
-      isFireFlame
+      isFireFlame,
+      isVampire
     });
 
     // Level check for Vitality Gain V20
@@ -2279,7 +2272,7 @@ export default function KontrolaArena() {
       return;
     }
 
-    if (isAttack && !isAoE && !isLightning && !isFireFlame && !selectedCharacterAttack) {
+    if (isAttack && !isAoE && !isLightning && !isFireFlame && !isVampire && !selectedCharacterAttack) {
       console.log('[playTurn] VALIDATION FAILED: Attack requires character move selection');
       showNotice('Please select a character attack move to strike with!', 'warning');
       return;
@@ -2288,7 +2281,7 @@ export default function KontrolaArena() {
     const payload = {
       actorId: playerId,
       actionCard: selectedActionCard,
-      attackSelectionName: (isLightning || isFireFlame) ? null : selectedCharacterAttack,
+      attackSelectionName: (isLightning || isFireFlame || isVampire) ? null : selectedCharacterAttack,
       targetId: isAoE ? 'ALL' : selectedTargetId
     };
 
@@ -2397,7 +2390,10 @@ export default function KontrolaArena() {
 
   // Triggered when dice screen is closed or finished
   const handleCloseDiceScreen = async (resolved = false, finalRolls = null) => {
-    const rollsToApply = finalRolls || activeCombat?.precalculatedRolls || {};
+    const rollsToApply = {
+      ...(activeCombat?.precalculatedRolls || {}),
+      ...(finalRolls || {})
+    };
     await broadcastUIEvent(matchId, 'dice_screen_close', {
       resolved,
       combatData: activeCombat,
@@ -4350,7 +4346,7 @@ export default function KontrolaArena() {
                     })}
                   </div>
 
-                  {selectedActionCard?.type === 'ATTACK' && !selectedActionCard?.name?.includes('LIGHTNING') && !selectedActionCard?.name?.includes('FIRE FLAME') && !selectedActionCard?.name?.includes('BLITZ') && (
+                  {selectedActionCard?.type === 'ATTACK' && !selectedActionCard?.name?.includes('LIGHTNING') && !selectedActionCard?.name?.includes('FIRE FLAME') && !selectedActionCard?.name?.includes('VAMPIRE') && !selectedActionCard?.name?.includes('BLITZ') && (
                     <>
                       <div className="panel-title-bar" style={{ marginBottom: '8px' }}>
                         <span className="panel-kicker" style={{ color: 'var(--neon-crimson)' }}>2. SELECT CHARACTER MOVE</span>
@@ -4448,7 +4444,9 @@ export default function KontrolaArena() {
                           !selectedActionCard.name.includes('BLITZ') &&
                           !selectedActionCard.name.includes('LIGHTNING') &&
                           !selectedActionCard.name.includes('FIRE FLAME') &&
+                          !selectedActionCard.name.includes('VAMPIRE') &&
                           (!selectedCharacterAttack || !selectedTargetId)) ||
+                        (selectedActionCard.name?.includes('VAMPIRE') && !selectedTargetId) ||
                         (['POISON', 'SLEEPY', 'FREEZE', 'X-CHANGE', 'KONTROL', 'SOUL ALLIANCE'].some(kw => selectedActionCard.name.includes(kw)) && !selectedTargetId) ||
                         (selectedActionCard.name.includes('VISION') && !selectedActionCard.name.includes('FULL') && !selectedTargetId) ||
                         (selectedActionCard.name.includes('VITALITY GAIN V20') &&
@@ -5274,42 +5272,103 @@ export default function KontrolaArena() {
              </div>
           )}
 
-          {/* VISION X1 REVEAL MODAL */}
+          {/* VISION REVEAL MODAL */}
           {revealedVision && (
             <div
               style={{
-                position: 'absolute',
-                top: '72px',
+                position: 'fixed',
+                top: '80px',
                 right: '32px',
-                width: '360px',
-                maxHeight: '400px',
-                background: 'rgba(10, 20, 40, 0.96)',
+                width: '420px',
+                maxHeight: '80vh',
+                background: 'rgba(10, 18, 36, 0.98)',
                 border: '2px solid var(--neon-cyan)',
-                borderRadius: '14px',
+                borderRadius: '16px',
                 padding: '16px',
-                zIndex: 1500,
-                boxShadow: '0 0 30px rgba(251, 200, 13, 0.35)',
+                zIndex: 10000,
+                boxShadow: '0 0 35px rgba(0, 240, 255, 0.45)',
                 fontFamily: 'Barlow Condensed, sans-serif',
-                animation: 'fadeIn 0.2s ease'
+                animation: 'fadeIn 0.2s ease',
+                display: 'flex',
+                flexDirection: 'column',
+                backdropFilter: 'blur(8px)'
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(0,240,255,0.25)', paddingBottom: '8px', marginBottom: '10px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--neon-cyan)', fontWeight: 'bold' }}>
-                  <Eye size={18} />
-                  <span>{revealedVision.isXChange ? 'X-CHANGE X1 REVEAL' : 'VISION X1 REVEAL'} ({revealedVision.targetName})</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(0,240,255,0.3)', paddingBottom: '10px', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--neon-cyan)', fontWeight: 'bold', fontSize: '1.1rem' }}>
+                  <Eye size={22} />
+                  <span>{revealedVision.isFull ? 'VISION FULL REVEAL' : 'VISION X1 REVEAL'} ({revealedVision.targetName})</span>
                 </div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--neon-gold)', fontWeight: 'bold' }}>
-                  {Math.max(0, Math.ceil((revealedVision.expiresAt - Date.now()) / 1000))}s left
-                </div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', maxHeight: '290px', overflowY: 'auto' }}>
-                {revealedVision.cards.map((c, i) => (
-                  <div key={i} style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '8px', fontSize: '0.78rem' }}>
-                    <div style={{ fontWeight: 'bold', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--neon-cyan)', marginTop: '2px' }}>{c.type} � ?{c.costET || 0}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--neon-gold)', fontWeight: 'bold', background: 'rgba(251, 200, 13, 0.15)', padding: '3px 8px', borderRadius: '6px', border: '1px solid rgba(251, 200, 13, 0.4)' }}>
+                    {visionSecondsLeft}s left
                   </div>
-                ))}
+                  <button
+                    onClick={() => setRevealedVision(null)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'rgba(255,255,255,0.6)',
+                      cursor: 'pointer',
+                      fontSize: '1.2rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: 0
+                    }}
+                    title="Dismiss Vision"
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
+
+              {(!revealedVision.cards || revealedVision.cards.length === 0) ? (
+                <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.5)', padding: '24px 0', fontSize: '0.95rem' }}>
+                  Opponent has no Action Cards in hand!
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', overflowY: 'auto', maxHeight: '55vh', paddingRight: '4px' }}>
+                  {revealedVision.cards.map((c, i) => {
+                    const cardImgUrl = getCardGraphicUrl(c.name);
+                    return (
+                      <div
+                        key={i}
+                        style={{
+                          background: 'linear-gradient(135deg, rgba(20, 25, 45, 0.95) 0%, rgba(10, 15, 30, 0.95) 100%)',
+                          border: '1.5px solid rgba(0, 240, 255, 0.25)',
+                          borderRadius: '10px',
+                          padding: '8px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '6px'
+                        }}
+                      >
+                        {cardImgUrl && (
+                          <div style={{ width: '100%', height: '90px', borderRadius: '6px', overflow: 'hidden', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <img
+                              src={cardImgUrl}
+                              alt={c.name}
+                              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            />
+                          </div>
+                        )}
+                        <div>
+                          <div style={{ fontWeight: 'bold', color: '#fff', fontSize: '0.85rem', lineHeight: 1.2 }}>
+                            {c.name}
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', fontSize: '0.72rem' }}>
+                            <span style={{ color: 'var(--neon-cyan)' }}>{c.type || 'ACTION'}</span>
+                            {c.ownerName && (
+                              <span style={{ color: 'var(--neon-gold)', opacity: 0.9 }}>{c.ownerName}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 

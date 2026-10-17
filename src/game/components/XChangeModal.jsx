@@ -11,13 +11,18 @@ export default function XChangeModal({
   onCancel,
   timeLimit = 30
 }) {
-  const [selectedAttackerCard, setSelectedAttackerCard] = useState(null);
-  const [selectedDefenderCard, setSelectedDefenderCard] = useState(null);
+  // Track selections by index for reliable matching even without unique IDs
+  const [selectedAttackerIdx, setSelectedAttackerIdx] = useState(null);
+  const [selectedDefenderIdx, setSelectedDefenderIdx] = useState(null);
   const [timeLeft, setTimeLeft] = useState(timeLimit);
   const [showWarning, setShowWarning] = useState(false);
 
   const isX1 = xChangeType === 'X1';
   const availableDefenderCards = defenderHand || [];
+  const myCards = attackerHand || [];
+
+  const selectedAttackerCard = selectedAttackerIdx !== null ? myCards[selectedAttackerIdx] : null;
+  const selectedDefenderCard = selectedDefenderIdx !== null ? availableDefenderCards[selectedDefenderIdx] : null;
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -53,7 +58,9 @@ export default function XChangeModal({
     
     onConfirm({
       attackerCard: selectedAttackerCard,
-      defenderCard: selectedDefenderCard
+      defenderCard: selectedDefenderCard,
+      attackerCardIdx: selectedAttackerIdx,
+      defenderCardIdx: selectedDefenderIdx
     });
   };
 
@@ -62,77 +69,106 @@ export default function XChangeModal({
   return (
     <div className="xchange-modal-overlay">
       <div className="xchange-modal-container">
-        <h2 className="xchange-modal-title">🔄 X-CHANGE EXCHANGE</h2>
+        <h2 className="xchange-modal-title">🔄 X-CHANGE CARD EXCHANGE</h2>
         <div className="xchange-modal-subtitle">
-          {isX1 
-            ? `Choose 1 card from your hand to give, and 1 card from ${defenderName}'s hand to take.`
-            : `Exchange action cards with ${defenderName}!`
-          }
+          View all of {defenderName}&apos;s cards. Select 1 card to take and 1 card from your Action Card deck to discard/give.
         </div>
 
         {/* Timer */}
         <div className={`xchange-timer ${showWarning ? 'warning' : ''}`}>
           <Clock size={20} />
-          <span>{timeLeft}s</span>
+          <span>{timeLeft}s remaining</span>
         </div>
 
         <div className="xchange-modal-content">
           {/* Attacker's Hand (Card Selection) */}
           <div className="xchange-section">
-            <h3 className="xchange-section-title">YOUR ACTION CARDS</h3>
+            <h3 className="xchange-section-title">YOUR ACTION CARDS (SELECT 1 TO GIVE)</h3>
             <div className="xchange-card-grid">
-              {(attackerHand || []).map((card, idx) => (
-                <div
-                  key={idx}
-                  className={`xchange-card-option ${selectedAttackerCard?.id === card.id ? 'selected' : ''}`}
-                  onClick={() => setSelectedAttackerCard(card)}
-                >
-                  <div className="xchange-card-name">{card.name}</div>
-                  <div className="xchange-card-type">{card.type}</div>
-                  {selectedAttackerCard?.id === card.id && (
-                    <div className="xchange-card-check">✓</div>
-                  )}
+              {myCards.length === 0 ? (
+                <div style={{ color: 'rgba(255,255,255,0.5)', gridColumn: '1 / -1', padding: '12px' }}>
+                  No action cards available in hand
                 </div>
-              ))}
+              ) : (
+                myCards.map((card, idx) => {
+                  const isSelected = selectedAttackerIdx === idx;
+                  return (
+                    <div
+                      key={`my-${card.id || idx}-${idx}`}
+                      className={`xchange-card-option ${isSelected ? 'selected' : ''}`}
+                      onClick={() => {
+                        setSelectedAttackerIdx(idx);
+                        setShowWarning(false);
+                      }}
+                    >
+                      <div className="xchange-card-name">{card.name}</div>
+                      <div className="xchange-card-type">{card.type}</div>
+                      {isSelected && (
+                        <div className="xchange-card-check">✓</div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
 
-          {/* Defender's Hand (Card Selection) - Limited visibility for X1 */}
+          {/* Defender's Hand (Card Selection) */}
           <div className="xchange-section">
             <h3 className="xchange-section-title">
-              {isX1 ? `${defenderName}'S REVEALED CARD` : `${defenderName}'S ACTION CARDS`}
+              {defenderName.toUpperCase()}&apos;S ACTION CARDS (SELECT 1 TO TAKE)
             </h3>
             <div className="xchange-card-grid">
-              {availableDefenderCards.map((card, idx) => (
-                <div
-                  key={idx}
-                  className={`xchange-card-option opponent-card ${selectedDefenderCard?.id === card.id ? 'selected' : ''}`}
-                  onClick={() => setSelectedDefenderCard(card)}
-                >
-                  <div className="xchange-card-name">{card.name}</div>
-                  <div className="xchange-card-type">{card.type}</div>
-                  {selectedDefenderCard?.id === card.id && (
-                    <div className="xchange-card-check">✓</div>
-                  )}
+              {availableDefenderCards.length === 0 ? (
+                <div style={{ color: 'rgba(255,255,255,0.5)', gridColumn: '1 / -1', padding: '12px' }}>
+                  Opponent has no action cards in hand
                 </div>
-              ))}
+              ) : (
+                availableDefenderCards.map((card, idx) => {
+                  const isSelected = selectedDefenderIdx === idx;
+                  return (
+                    <div
+                      key={`opp-${card.id || idx}-${idx}`}
+                      className={`xchange-card-option opponent-card ${isSelected ? 'selected' : ''}`}
+                      onClick={() => {
+                        setSelectedDefenderIdx(idx);
+                        setShowWarning(false);
+                      }}
+                    >
+                      <div className="xchange-card-name">{card.name}</div>
+                      <div className="xchange-card-type">{card.type}</div>
+                      {isSelected && (
+                        <div className="xchange-card-check">✓</div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
 
         {/* Selection Confirmation */}
         <div className="xchange-modal-selection">
-          {selectedAttackerCard && selectedDefenderCard && (
+          {selectedAttackerCard && selectedDefenderCard ? (
             <div className="xchange-selection-info">
               <div className="selection-item">
-                <span className="selection-label">Giving:</span>
-                <span className="selection-value">{selectedAttackerCard.name}</span>
+                <span className="selection-label">Giving / Discarding:</span>
+                <span className="selection-value" style={{ color: '#ff8899' }}>{selectedAttackerCard.name}</span>
               </div>
-              <div className="selection-arrow">→</div>
+              <div className="selection-arrow">🔄</div>
               <div className="selection-item">
-                <span className="selection-label">Receiving:</span>
-                <span className="selection-value">{selectedDefenderCard.name}</span>
+                <span className="selection-label">Taking from Opponent:</span>
+                <span className="selection-value" style={{ color: '#39ff14' }}>{selectedDefenderCard.name}</span>
               </div>
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.6)', fontSize: '13px' }}>
+              {!selectedAttackerCard && !selectedDefenderCard
+                ? '👉 Click 1 card from your hand to give, and 1 card from opponent to take.'
+                : !selectedAttackerCard
+                ? '👉 Click 1 card from your hand to give.'
+                : '👉 Click 1 card from opponent hand to take.'}
             </div>
           )}
         </div>

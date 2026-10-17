@@ -14,12 +14,12 @@ function drawDiceFaceToCanvas(canvas, value, theme) {
 
   const isRed = theme === 'red';
 
-  // Base background radial gradient
-  const bgGrad = ctx.createRadialGradient(128, 128, 20, 128, 128, 160);
+  // Base background radial gradient - rich, saturated jewel-tone to avoid center bloom blowout
+  const bgGrad = ctx.createRadialGradient(128, 128, 15, 128, 128, 160);
   if (isRed) {
-    bgGrad.addColorStop(0, '#ff2a55');
-    bgGrad.addColorStop(0.7, '#c00028');
-    bgGrad.addColorStop(1, '#660015');
+    bgGrad.addColorStop(0, '#e01840');
+    bgGrad.addColorStop(0.5, '#b00024');
+    bgGrad.addColorStop(1, '#500010');
   } else {
     bgGrad.addColorStop(0, '#ffe066');
     bgGrad.addColorStop(0.7, '#d4a017');
@@ -35,9 +35,14 @@ function drawDiceFaceToCanvas(canvas, value, theme) {
   ctx.strokeRect(7, 7, 242, 242);
 
   // Inner subtle border
-  ctx.strokeStyle = isRed ? 'rgba(0, 0, 0, 0.3)' : 'rgba(100, 70, 0, 0.3)';
+  ctx.strokeStyle = isRed ? 'rgba(0, 0, 0, 0.35)' : 'rgba(100, 70, 0, 0.3)';
   ctx.lineWidth = 4;
   ctx.strokeRect(18, 18, 220, 220);
+
+  // If unrolled (e.g. 0 or null), draw an elegant blank dice face
+  if (!value || value < 1) {
+    return;
+  }
 
   // Pip drawing helper with authentic drop shadow & gradient
   const drawPip = (x, y) => {
@@ -48,8 +53,8 @@ function drawDiceFaceToCanvas(canvas, value, theme) {
     const pipGrad = ctx.createRadialGradient(x - 5, y - 5, 2, x, y, 22);
     if (isRed) {
       pipGrad.addColorStop(0, '#ffffff');
-      pipGrad.addColorStop(0.8, '#f0f0f0');
-      pipGrad.addColorStop(1, '#d0d0d0');
+      pipGrad.addColorStop(0.7, '#f5f5f5');
+      pipGrad.addColorStop(1, '#e0e0e0');
     } else {
       pipGrad.addColorStop(0, '#332005');
       pipGrad.addColorStop(0.8, '#1a1000');
@@ -57,11 +62,18 @@ function drawDiceFaceToCanvas(canvas, value, theme) {
     }
 
     ctx.fillStyle = pipGrad;
-    ctx.shadowColor = isRed ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.4)';
-    ctx.shadowBlur = 6;
+    ctx.shadowColor = isRed ? 'rgba(0,0,0,0.9)' : 'rgba(255,255,255,0.4)';
+    ctx.shadowBlur = isRed ? 8 : 6;
     ctx.shadowOffsetX = 2;
     ctx.shadowOffsetY = 2;
     ctx.fill();
+
+    // High contrast crisp dark border for red dice so pips never wash out against bright red background
+    if (isRed) {
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = '#220006';
+      ctx.stroke();
+    }
     ctx.restore();
   };
 
@@ -147,8 +159,8 @@ export function CanvasPipDie({ value = 1, theme = 'red', isRolling = false, size
         transform: isRolling ? 'rotate(8deg) scale(1.05)' : 'none',
         transition: 'transform 0.15s ease',
         filter: isRed
-          ? 'drop-shadow(0 8px 18px rgba(255, 42, 85, 0.45))'
-          : 'drop-shadow(0 8px 18px rgba(255, 224, 102, 0.45))'
+          ? 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5))'
+          : 'drop-shadow(0 6px 14px rgba(255, 224, 102, 0.35))'
       }}
     >
       <canvas
@@ -161,8 +173,8 @@ export function CanvasPipDie({ value = 1, theme = 'red', isRolling = false, size
           boxShadow: isRolling
             ? '0 0 25px #FBC80D'
             : isRed
-            ? '0 0 16px rgba(255, 42, 85, 0.3)'
-            : '0 0 16px rgba(255, 224, 102, 0.3)',
+            ? '0 0 12px rgba(0, 0, 0, 0.6)'
+            : '0 0 14px rgba(255, 224, 102, 0.25)',
           animation: isRolling ? 'diceWobble 0.2s infinite ease-in-out' : 'none'
         }}
       />
@@ -231,12 +243,12 @@ export default function KontrolaDiceRoller({
   const [isAttackerRolling, setIsAttackerRolling] = useState(false);
   const [isDefenderRolling, setIsDefenderRolling] = useState(false);
 
-  // Active dice values
+  // Active dice values (null until rolled)
   const [clashAtkDice, setClashAtkDice] = useState(
-    precalculatedRolls?.attackerRoll?.rolls || [1, 1]
+    precalculatedRolls?.attackerRoll?.rolls || null
   );
   const [clashDefDice, setClashDefDice] = useState(
-    precalculatedRolls?.defenderRoll?.rolls || [1, 1]
+    precalculatedRolls?.defenderRoll?.rolls || null
   );
 
   // Interactive 2nd-stage multiplier die for character "PER" attacks
@@ -249,13 +261,17 @@ export default function KontrolaDiceRoller({
   const [defenderFateCard, setDefenderFateCard] = useState(false);
   const [showRerollOption, setShowRerollOption] = useState(false);
 
+  // Authoritative dice sources: local clash dice OR precalculated broadcast dice
+  const activeAtkDice = clashAtkDice || precalculatedRolls?.attackerRoll?.rolls || null;
+  const activeDefDice = clashDefDice || precalculatedRolls?.defenderRoll?.rolls || null;
+
   const isRolling = isAttackerRolling || isDefenderRolling || (isExternallyRolling && phase === 'clash');
 
-  const atkSum = clashAtkDice[0] + clashAtkDice[1];
-  const defSum = clashDefDice[0] + clashDefDice[1];
-  const isTie = atkSum === defSum;
-  const atkWon = !isTie && atkSum > defSum;
-  const defWon = !isTie && defSum > atkSum;
+  const atkSum = activeAtkDice ? (activeAtkDice[0] + activeAtkDice[1]) : 0;
+  const defSum = activeDefDice ? (activeDefDice[0] + activeDefDice[1]) : 0;
+  const isTie = hasAttackerRolled && hasDefenderRolled && atkSum === defSum;
+  const atkWon = hasAttackerRolled && hasDefenderRolled && !isTie && atkSum > defSum;
+  const defWon = hasAttackerRolled && hasDefenderRolled && !isTie && defSum > atkSum;
 
   // Robust attack info lookup with character template fallback
   const charKey = atkChar?.id || combatData?.attackerId || combatData?.actorId || 'chynaman';
@@ -264,9 +280,15 @@ export default function KontrolaDiceRoller({
   const hasMultiplierDie = Boolean(selectedAttackInfo && selectedAttackInfo.dice > 0);
 
   const handleFinishCombat = () => {
+    const finalAtkRolls = activeAtkDice || [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
+    const finalAtkTotal = finalAtkRolls[0] + finalAtkRolls[1];
+
+    const finalDefRolls = activeDefDice || [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
+    const finalDefTotal = finalDefRolls[0] + finalDefRolls[1];
+
     const finalRolls = {
-      attackerRoll: { rolls: clashAtkDice, total: atkSum },
-      defenderRoll: { rolls: clashDefDice, total: defSum },
+      attackerRoll: { rolls: finalAtkRolls, total: finalAtkTotal },
+      defenderRoll: { rolls: finalDefRolls, total: finalDefTotal },
       dRoll: hasMultiplierDie ? { rolls: [multiplierDie], total: multiplierDie } : undefined,
       defenseCard: combatData?.defenseCard || precalculatedRolls?.defenseCard || null
     };
@@ -281,8 +303,8 @@ export default function KontrolaDiceRoller({
     setPhase('clash');
     setHasAttackerRolled(false);
     setHasDefenderRolled(false);
-    setClashAtkDice([1, 1]);
-    setClashDefDice([1, 1]);
+    setClashAtkDice(null);
+    setClashDefDice(null);
     setIsAttackerRolling(false);
     setIsDefenderRolling(false);
     setShowRerollOption(false);
@@ -371,7 +393,7 @@ export default function KontrolaDiceRoller({
     }, 900);
   }
 
-  // Interactive 2nd-stage multiplier die roll for "PER" character moves
+  // Interactive 2nd-stage multiplier die for "PER" character moves
   function handleRollMultiplierDie() {
     if (isRollingMultiplier || hasRolledMultiplier) return;
     setIsRollingMultiplier(true);
@@ -411,8 +433,15 @@ export default function KontrolaDiceRoller({
           const refs = autoRollRef.current;
           
           if (refs.phase === 'clash') {
-            if (!refs.hasAttackerRolled && (refs.isAttacker || refs.isHost)) refs.handleRollAttacker();
-            else if (!refs.hasDefenderRolled && (refs.isDefender || refs.isHost)) refs.handleRollDefender();
+            if (!refs.hasAttackerRolled) {
+              // Only attacker rolls; host only rolls as fallback if not the attacker
+              if (refs.isAttacker) refs.handleRollAttacker();
+              else if (refs.isHost && !refs.isDefender) refs.handleRollAttacker();
+            } else if (!refs.hasDefenderRolled) {
+              // Only defender rolls; host only rolls as fallback if not the defender
+              if (refs.isDefender) refs.handleRollDefender();
+              else if (refs.isHost && !refs.isAttacker) refs.handleRollDefender();
+            }
           } else if (refs.phase === 'clash_summary') {
             if (refs.isAttacker || refs.isHost) {
               if (refs.isTie) refs.handleReRoll();
@@ -431,61 +460,79 @@ export default function KontrolaDiceRoller({
 
   // Sync rolls when precalculatedRolls updates from peer broadcast
   // ─── RPC receive path ──────────────────────────────────────────────────────
-  // Each player generates + broadcasts their own roll.
-  // LOCAL player: animation already started in handleRollAttacker/Defender —
-  //               ignore own echo completely (animation + value already applied).
-  // REMOTE players: receive the broadcast → play animation → land on same number.
   useEffect(() => {
     const hasNoDiceRolls = !precalculatedRolls ||
       (!precalculatedRolls.attackerRoll?.rolls && !precalculatedRolls.defenderRoll?.rolls);
 
     if (hasNoDiceRolls) {
-      // Re-roll / tie reset — only wipe if neither side has committed yet
-      if (!hasAttackerRolled && !hasDefenderRolled) {
-        setClashAtkDice([1, 1]);
-        setClashDefDice([1, 1]);
-        setPhase('clash');
-      }
+      // Re-roll / tie reset broadcast received: wipe all client dice and return to clash phase
+      setClashAtkDice(null);
+      setClashDefDice(null);
+      setHasAttackerRolled(false);
+      setHasDefenderRolled(false);
+      setIsAttackerRolling(false);
+      setIsDefenderRolling(false);
+      setShowRerollOption(false);
+      setAttackerFateCard(false);
+      setDefenderFateCard(false);
+      setPhase('clash');
       return;
     }
 
     // Attacker roll arrived via broadcast
-    if (precalculatedRolls?.attackerRoll?.rolls && !hasAttackerRolled && !isAttackerRolling) {
+    if (precalculatedRolls?.attackerRoll?.rolls) {
       const rolls = precalculatedRolls.attackerRoll.rolls;
+      if (precalculatedRolls.attackerDouble || (rolls[0] === rolls[1])) {
+        setAttackerFateCard(true);
+        setShowRerollOption(true);
+      }
 
-      if (isAttacker) {
-        // Own echo — animation is already running in handleRollAttacker's setTimeout.
-        // Do NOT interrupt it. The setTimeout will apply the value when it finishes.
-        // We only need to guard hasAttackerRolled so this branch doesn't re-fire.
-        // (hasAttackerRolled will be set true inside that setTimeout — nothing to do here)
-      } else {
-        // Remote client: start animation, then reveal the received value
-        setIsAttackerRolling(true);
-        if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
-        setTimeout(() => {
+      if (!isAttacker) {
+        // Remote client (defender/spectator): start animation if not rolling, then apply value
+        if (!hasAttackerRolled && !isAttackerRolling) {
+          setIsAttackerRolling(true);
+          if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
+          setTimeout(() => {
+            setClashAtkDice(rolls);
+            setIsAttackerRolling(false);
+            setHasAttackerRolled(true);
+          }, 900);
+        } else {
+          // Keep clashAtkDice in sync with authoritative broadcast
           setClashAtkDice(rolls);
           setIsAttackerRolling(false);
           setHasAttackerRolled(true);
-        }, 900);
+        }
+      } else {
+        setClashAtkDice(rolls);
       }
     }
 
     // Defender roll arrived via broadcast
-    if (precalculatedRolls?.defenderRoll?.rolls && !hasDefenderRolled && !isDefenderRolling) {
+    if (precalculatedRolls?.defenderRoll?.rolls) {
       const rolls = precalculatedRolls.defenderRoll.rolls;
+      if (precalculatedRolls.defenderDouble || (rolls[0] === rolls[1])) {
+        setDefenderFateCard(true);
+        setShowRerollOption(true);
+      }
 
-      if (isDefender) {
-        // Own echo — animation already running in handleRollDefender's setTimeout.
-        // Do NOT interrupt. Nothing to do here.
-      } else {
-        // Remote client: start animation, then reveal the received value
-        setIsDefenderRolling(true);
-        if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
-        setTimeout(() => {
+      if (!isDefender) {
+        // Remote client (attacker/spectator): start animation if not rolling, then apply value
+        if (!hasDefenderRolled && !isDefenderRolling) {
+          setIsDefenderRolling(true);
+          if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
+          setTimeout(() => {
+            setClashDefDice(rolls);
+            setIsDefenderRolling(false);
+            setHasDefenderRolled(true);
+          }, 900);
+        } else {
           setClashDefDice(rolls);
           setIsDefenderRolling(false);
           setHasDefenderRolled(true);
-        }, 900);
+        }
+      } else {
+        setClashDefDice(rolls);
       }
     }
 
@@ -759,8 +806,8 @@ export default function KontrolaDiceRoller({
                   marginBottom: '16px'
                 }}
               >
-                <CanvasPipDie value={clashAtkDice[0]} theme="red" isRolling={isAttackerRolling} size={76} />
-                <CanvasPipDie value={clashAtkDice[1]} theme="red" isRolling={isAttackerRolling} size={76} />
+                <CanvasPipDie value={activeAtkDice ? activeAtkDice[0] : 0} theme="red" isRolling={isAttackerRolling} size={76} />
+                <CanvasPipDie value={activeAtkDice ? activeAtkDice[1] : 0} theme="red" isRolling={isAttackerRolling} size={76} />
               </div>
 
               <div
@@ -842,8 +889,8 @@ export default function KontrolaDiceRoller({
                   marginBottom: '16px'
                 }}
               >
-                <CanvasPipDie value={clashDefDice[0]} theme="gold" isRolling={isDefenderRolling} size={76} />
-                <CanvasPipDie value={clashDefDice[1]} theme="gold" isRolling={isDefenderRolling} size={76} />
+                <CanvasPipDie value={activeDefDice ? activeDefDice[0] : 0} theme="gold" isRolling={isDefenderRolling} size={76} />
+                <CanvasPipDie value={activeDefDice ? activeDefDice[1] : 0} theme="gold" isRolling={isDefenderRolling} size={76} />
               </div>
 
               <div
@@ -1036,16 +1083,16 @@ export default function KontrolaDiceRoller({
                 </div>
               )}
 
-              {/* Fate Card Award - Doubles Detected */}
+{/* Doubles Detected Banner */}
               {(attackerFateCard || defenderFateCard) && (
                 <div
                   style={{
                     margin: '0 auto 16px auto',
                     padding: '12px 22px',
                     borderRadius: '10px',
-                    background: 'rgba(57, 255, 20, 0.15)',
-                    border: '1px solid rgba(57, 255, 20, 0.6)',
-                    color: '#39ff14',
+                    background: 'rgba(251, 200, 13, 0.15)',
+                    border: '1px solid rgba(251, 200, 13, 0.7)',
+                    color: 'var(--neon-gold)',
                     fontWeight: 'bold',
                     fontSize: '0.95rem',
                     display: 'inline-flex',
@@ -1056,9 +1103,9 @@ export default function KontrolaDiceRoller({
                 >
                   <Sparkles size={18} />
                   <span>
-                    {attackerFateCard && `${atkChar.name} ROLLED DOUBLES! ?? FATE CARD AWARDED!`}
-                    {defenderFateCard && !attackerFateCard && `${defChar.name} ROLLED DOUBLES! ?? FATE CARD AWARDED!`}
-                    {defenderFateCard && attackerFateCard && `BOTH PLAYERS ROLLED DOUBLES! ???? FATE CARDS AWARDED!`}
+                    {attackerFateCard && !defenderFateCard && `${atkChar.name} ROLLED DOUBLES! You may re-roll or accept your roll.`}
+                    {defenderFateCard && !attackerFateCard && `${defChar.name} ROLLED DOUBLES! You may re-roll or accept your roll.`}
+                    {defenderFateCard && attackerFateCard && `BOTH PLAYERS ROLLED DOUBLES! Eligible to re-roll or accept roll.`}
                   </span>
                 </div>
               )}
@@ -1197,29 +1244,57 @@ export default function KontrolaDiceRoller({
                     </div>
                   )
                 ) : (
-                  <button
-                    onClick={handleFinishCombat}
-                    style={{
-                      background: '#39ff14',
-                      color: '#000',
-                      border: 'none',
-                      padding: '14px 38px',
-                      borderRadius: '12px',
-                      fontSize: '1.15rem',
-                      fontWeight: '900',
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      fontFamily: 'Bebas Neue, sans-serif',
-                      letterSpacing: '1px',
-                      boxShadow: '0 0 25px rgba(57, 255, 20, 0.45)',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    <Check size={22} />
-                    <span>APPLY RESULT & CONTINUE</span>
-                  </button>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                    {((attackerFateCard && isAttacker) || (defenderFateCard && isDefender) || ((attackerFateCard || defenderFateCard) && isHost)) && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center' }}>
+                        <button
+                          onClick={handleReRoll}
+                          style={{
+                            background: 'linear-gradient(135deg, #FBC80D, #ff8800)',
+                            color: '#000',
+                            border: 'none',
+                            padding: '12px 28px',
+                            borderRadius: '12px',
+                            fontSize: '1.1rem',
+                            fontWeight: '900',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            fontFamily: 'Bebas Neue, sans-serif',
+                            letterSpacing: '1px',
+                            boxShadow: '0 0 20px rgba(251, 200, 13, 0.5)'
+                          }}
+                        >
+                          <RotateCcw size={20} />
+                          <span>🔄 RE-ROLL (DOUBLES BONUS)</span>
+                        </button>
+                      </div>
+                    )}
+                    <button
+                      onClick={handleFinishCombat}
+                      style={{
+                        background: '#39ff14',
+                        color: '#000',
+                        border: 'none',
+                        padding: '14px 38px',
+                        borderRadius: '12px',
+                        fontSize: '1.15rem',
+                        fontWeight: '900',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        fontFamily: 'Bebas Neue, sans-serif',
+                        letterSpacing: '1px',
+                        boxShadow: '0 0 25px rgba(57, 255, 20, 0.45)',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <Check size={22} />
+                      <span>APPLY RESULT & CONTINUE</span>
+                    </button>
+                  </div>
                 )}
               </div>
             </div>

@@ -679,6 +679,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           // Apply 3-turn duration to defender for continued drain effect (not additional attacks)
           newDefenderState.vampireStealStack = (newDefenderState.vampireStealStack || 0) + 1;
           newDefenderState.vampireStealTurnsLeft = 3;
+          newDefenderState.vampireAttackerId = newAttackerState.id || attackerChar?.id || null;
           newDefenderState.vampireStealActivated = true; // Flag to prevent multiple hits
           log += ` 🧛 VAMPIRE effect applied for 3 turns! Attacker gains +10 HP/turn and +1 ET/turn.`;
         }
