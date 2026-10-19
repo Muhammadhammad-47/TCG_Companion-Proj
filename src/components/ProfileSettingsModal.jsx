@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
-import { X, User, Lock, Award, Trophy, Check, AlertCircle, Save, Sparkles } from 'lucide-react';
+import { X, User, Lock, Award, Trophy, Check, AlertCircle, Save, Sparkles, Edit3 } from 'lucide-react';
 import { authService } from '../services/authService';
 import { AVAILABLE_AVATARS, getAvatarUrl, DEFAULT_AVATAR } from '../utils/avatarUtils';
 import PlayerAvatar from './PlayerAvatar';
 
+/**
+ * ProfileSettingsView
+ * Full-screen single page showing Avatar, Account Settings, and Stats in one clean view.
+ * Clicking the avatar or 'Change Avatar' button opens a dedicated avatar selection modal.
+ */
 export default function ProfileSettingsModal({
   isOpen,
   onClose,
@@ -11,8 +16,9 @@ export default function ProfileSettingsModal({
   userProfile,
   onProfileUpdated
 }) {
-  const [activeTab, setActiveTab] = useState('avatar'); // 'avatar' | 'account' | 'stats'
-  
+  // Avatar picker modal sub-state
+  const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
+
   // Avatar selection state
   const currentAvatar = userProfile?.avatar_id || DEFAULT_AVATAR;
   const [selectedAvatar, setSelectedAvatar] = useState(currentAvatar);
@@ -20,7 +26,7 @@ export default function ProfileSettingsModal({
   // Username edit state
   const [username, setUsername] = useState(userProfile?.username || '');
   const [usernameError, setUsernameError] = useState('');
-  
+
   // Password edit state
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -47,6 +53,7 @@ export default function ProfileSettingsModal({
       setConfirmPassword('');
       setSuccessMsg('');
       setErrorMsg('');
+      setIsAvatarPickerOpen(false);
 
       // Fetch fresh authoritative stats & profile directly from Supabase DB
       if (currentUser?.id) {
@@ -80,7 +87,9 @@ export default function ProfileSettingsModal({
         avatar_id: avatarFilename
       });
       setSelectedAvatar(avatarFilename);
-      setSuccessMsg('Profile avatar updated successfully!');
+      setProfileData(prev => ({ ...(prev || userProfile), avatar_id: avatarFilename }));
+      setSuccessMsg('Avatar updated successfully!');
+      setIsAvatarPickerOpen(false);
       if (onProfileUpdated) onProfileUpdated(updated || { ...userProfile, avatar_id: avatarFilename });
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (err) {
@@ -116,6 +125,7 @@ export default function ProfileSettingsModal({
         username: clean
       });
       setSuccessMsg('Username updated successfully!');
+      setProfileData(prev => ({ ...(prev || userProfile), username: clean }));
       if (onProfileUpdated) onProfileUpdated(updated || { ...userProfile, username: clean });
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (err) {
@@ -169,620 +179,794 @@ export default function ProfileSettingsModal({
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 9999,
-        background: 'radial-gradient(ellipse at top, #0d1e3d 0%, #030814 70%, #000208 100%)',
-        backdropFilter: 'blur(16px)',
-        display: 'flex',
-        flexDirection: 'column',
+        zIndex: 999999,
+        background: 'radial-gradient(ellipse at top, #0a1936 0%, #030814 65%, #000208 100%)',
         width: '100vw',
         height: '100vh',
-        overflow: 'hidden',
-        animation: 'fadeIn 0.25s ease'
+        display: 'flex',
+        flexDirection: 'column',
+        overflowY: 'auto',
+        fontFamily: 'Barlow Condensed, sans-serif'
       }}
     >
+      {/* Top Navigation Bar */}
       <div
         style={{
           width: '100%',
-          height: '100%',
+          padding: '16px 32px',
           display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          fontFamily: 'Barlow Condensed, sans-serif'
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: 'rgba(4, 10, 24, 0.85)',
+          borderBottom: '1px solid rgba(0, 240, 255, 0.2)',
+          backdropFilter: 'blur(16px)',
+          boxSizing: 'border-box',
+          position: 'sticky',
+          top: 0,
+          zIndex: 100
         }}
       >
-        {/* Header Bar */}
-        <div
-          style={{
-            padding: '18px 24px',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            background: 'rgba(0, 0, 0, 0.35)'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div
+            onClick={() => setIsAvatarPickerOpen(true)}
+            title="Click to change avatar"
+            style={{ cursor: 'pointer', position: 'relative' }}
+          >
             <PlayerAvatar
               avatarId={selectedAvatar}
-              username={userProfile?.username}
-              size={46}
+              username={activeProfile?.username}
+              size={48}
               borderColor="var(--neon-gold, #FBC80D)"
               showGlow={true}
             />
-            <div>
-              <h2
+            <div
+              style={{
+                position: 'absolute',
+                bottom: -2,
+                right: -2,
+                background: 'var(--neon-gold, #FBC80D)',
+                color: '#000',
+                borderRadius: '50%',
+                width: '18px',
+                height: '18px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 0 8px rgba(251, 200, 13, 0.8)'
+              }}
+            >
+              <Edit3 size={11} strokeWidth={2.5} />
+            </div>
+          </div>
+
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h1
                 style={{
                   margin: 0,
-                  fontSize: '1.4rem',
+                  fontSize: '1.5rem',
                   fontFamily: 'Bebas Neue, sans-serif',
                   letterSpacing: '1px',
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
+                  color: '#fff'
                 }}
               >
-                <span>{userProfile?.username || 'PLAYER'} PROFILE</span>
-                {userProfile?.is_admin && (
-                  <span
-                    style={{
-                      fontSize: '0.65rem',
-                      background: 'rgba(251, 200, 13, 0.2)',
-                      border: '1px solid var(--neon-gold, #FBC80D)',
-                      color: 'var(--neon-gold, #FBC80D)',
-                      borderRadius: '4px',
-                      padding: '2px 6px',
-                      letterSpacing: '0.5px'
-                    }}
-                  >
-                    ADMIN
-                  </span>
-                )}
+                {activeProfile?.username || 'PLAYER'} PROFILE
+              </h1>
+              {activeProfile?.is_admin && (
+                <span
+                  style={{
+                    fontSize: '0.65rem',
+                    background: 'rgba(251, 200, 13, 0.2)',
+                    border: '1px solid var(--neon-gold, #FBC80D)',
+                    color: 'var(--neon-gold, #FBC80D)',
+                    borderRadius: '4px',
+                    padding: '2px 6px',
+                    letterSpacing: '0.5px',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  ADMIN
+                </span>
+              )}
+            </div>
+            <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>
+              {currentUser?.email}
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={onClose}
+          title="Back to Hub"
+          style={{
+            background: 'rgba(255, 255, 255, 0.08)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            borderRadius: '50%',
+            width: '42px',
+            height: '42px',
+            color: '#fff',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.background = 'rgba(255, 42, 85, 0.3)';
+            e.currentTarget.style.borderColor = '#ff2a55';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+          }}
+        >
+          <X size={22} />
+        </button>
+      </div>
+
+      {/* Global Notice Banners */}
+      {successMsg && (
+        <div
+          style={{
+            padding: '12px 24px',
+            background: 'rgba(57, 255, 20, 0.15)',
+            borderBottom: '1px solid rgba(57, 255, 20, 0.4)',
+            color: '#39ff14',
+            fontSize: '0.95rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px'
+          }}
+        >
+          <Check size={18} />
+          <span>{successMsg}</span>
+        </div>
+      )}
+      {errorMsg && (
+        <div
+          style={{
+            padding: '12px 24px',
+            background: 'rgba(255, 42, 85, 0.15)',
+            borderBottom: '1px solid rgba(255, 42, 85, 0.4)',
+            color: '#ff8899',
+            fontSize: '0.95rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px'
+          }}
+        >
+          <AlertCircle size={18} />
+          <span>{errorMsg}</span>
+        </div>
+      )}
+
+      {/* Main Single-Page Content Container */}
+      <div
+        style={{
+          flex: 1,
+          width: '100%',
+          maxWidth: '1100px',
+          margin: '0 auto',
+          padding: '36px 24px 60px',
+          boxSizing: 'border-box',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '32px'
+        }}
+      >
+        {/* SECTION 1: AVATAR & CALLSIGN HERO BANNER */}
+        <div
+          style={{
+            background: 'linear-gradient(135deg, rgba(8, 24, 52, 0.7), rgba(4, 12, 28, 0.9))',
+            border: '1.5px solid rgba(0, 240, 255, 0.25)',
+            borderRadius: '20px',
+            padding: '28px 32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '20px',
+            boxShadow: '0 8px 30px rgba(0,0,0,0.5)'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '22px' }}>
+            <div
+              onClick={() => setIsAvatarPickerOpen(true)}
+              title="Click to choose a new avatar"
+              style={{
+                cursor: 'pointer',
+                position: 'relative',
+                transition: 'transform 0.2s ease'
+              }}
+              onMouseOver={(e) => (e.currentTarget.style.transform = 'scale(1.05)')}
+              onMouseOut={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+            >
+              <PlayerAvatar
+                avatarId={selectedAvatar}
+                username={activeProfile?.username}
+                size={96}
+                borderColor="var(--neon-gold, #FBC80D)"
+                showGlow={true}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: 2,
+                  right: 2,
+                  background: 'var(--neon-gold, #FBC80D)',
+                  color: '#000',
+                  borderRadius: '50%',
+                  width: '28px',
+                  height: '28px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 0 10px rgba(251, 200, 13, 0.8)'
+                }}
+              >
+                <Edit3 size={15} strokeWidth={2.5} />
+              </div>
+            </div>
+
+            <div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--neon-cyan, #00f0ff)', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold' }}>
+                ACTIVE PILOT CALLSIGN
+              </div>
+              <h2
+                style={{
+                  margin: '4px 0 6px 0',
+                  fontSize: '2.4rem',
+                  color: '#fff',
+                  fontFamily: 'Bebas Neue, sans-serif',
+                  letterSpacing: '1.5px'
+                }}
+              >
+                {activeProfile?.username || 'Player'}
               </h2>
-              <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)' }}>
-                {currentUser?.email}
+              <div style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)' }}>
+                Avatar File: <span style={{ color: 'var(--neon-gold, #FBC80D)' }}>{selectedAvatar}</span>
               </div>
             </div>
           </div>
 
           <button
-            onClick={onClose}
+            onClick={() => setIsAvatarPickerOpen(true)}
             style={{
-              background: 'rgba(255,255,255,0.08)',
+              background: 'linear-gradient(135deg, #00f0ff 0%, #0077ff 100%)',
               border: 'none',
-              borderRadius: '50%',
-              width: '36px',
-              height: '36px',
-              color: '#fff',
+              borderRadius: '12px',
+              padding: '12px 24px',
+              color: '#000',
+              fontWeight: 'bold',
+              fontSize: '1rem',
+              fontFamily: 'Bebas Neue, sans-serif',
+              letterSpacing: '1px',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
+              gap: '8px',
+              boxShadow: '0 0 20px rgba(0, 240, 255, 0.4)',
               transition: 'all 0.2s ease'
             }}
-            onMouseOver={(e) => (e.currentTarget.style.background = 'rgba(255, 42, 85, 0.3)')}
-            onMouseOut={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)')}
+            onMouseOver={(e) => (e.currentTarget.style.boxShadow = '0 0 25px rgba(0, 240, 255, 0.7)')}
+            onMouseOut={(e) => (e.currentTarget.style.boxShadow = '0 0 20px rgba(0, 240, 255, 0.4)')}
           >
-            <X size={20} />
+            <Sparkles size={18} />
+            <span>CHANGE AVATAR</span>
           </button>
         </div>
 
-        {/* Tab Navigation */}
-        <div
-          style={{
-            display: 'flex',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-            background: 'rgba(0, 0, 0, 0.2)'
-          }}
-        >
-          {[
-            { id: 'avatar', label: 'SELECT AVATAR', icon: Sparkles },
-            { id: 'account', label: 'ACCOUNT SETTINGS', icon: User },
-            { id: 'stats', label: 'PLAYER STATS', icon: Trophy }
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                style={{
-                  flex: 1,
-                  padding: '12px 16px',
-                  background: isActive ? 'rgba(251, 200, 13, 0.12)' : 'transparent',
-                  border: 'none',
-                  borderBottom: isActive ? '3px solid var(--neon-gold, #FBC80D)' : '3px solid transparent',
-                  color: isActive ? 'var(--neon-gold, #FBC80D)' : 'rgba(255,255,255,0.6)',
-                  fontWeight: 'bold',
-                  fontSize: '0.95rem',
-                  fontFamily: 'Bebas Neue, sans-serif',
-                  letterSpacing: '0.8px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                <Icon size={16} />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Alerts */}
-        {successMsg && (
-          <div
+        {/* SECTION 2: PLAYER STATS & PROGRESS */}
+        <div>
+          <h3
             style={{
-              padding: '10px 18px',
-              background: 'rgba(57, 255, 20, 0.15)',
-              borderBottom: '1px solid rgba(57, 255, 20, 0.4)',
-              color: '#39ff14',
-              fontSize: '0.9rem',
+              margin: '0 0 16px 0',
+              fontSize: '1.4rem',
+              color: 'var(--neon-gold, #FBC80D)',
+              fontFamily: 'Bebas Neue, sans-serif',
+              letterSpacing: '1px',
               display: 'flex',
               alignItems: 'center',
               gap: '8px'
             }}
           >
-            <Check size={18} />
-            <span>{successMsg}</span>
-          </div>
-        )}
-        {errorMsg && (
+            <Trophy size={20} />
+            <span>PLAYER STATS & COMPETITIVE RECORD</span>
+          </h3>
+
           <div
             style={{
-              padding: '10px 18px',
-              background: 'rgba(255, 42, 85, 0.15)',
-              borderBottom: '1px solid rgba(255, 42, 85, 0.4)',
-              color: '#ff8899',
-              fontSize: '0.9rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+              gap: '16px',
+              marginBottom: '16px'
             }}
           >
-            <AlertCircle size={18} />
-            <span>{errorMsg}</span>
-          </div>
-        )}
-
-        {/* Content Area */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '30px 24px', display: 'flex', justifyContent: 'center' }}>
-          <div style={{ width: '100%', maxWidth: '860px' }}>
-          {/* TAB 1: AVATAR PICKER */}
-          {activeTab === 'avatar' && (
-            <div>
-              <div style={{ marginBottom: '16px' }}>
-                <h3
-                  style={{
-                    margin: '0 0 6px 0',
-                    fontSize: '1.2rem',
-                    color: '#fff',
-                    fontFamily: 'Bebas Neue, sans-serif',
-                    letterSpacing: '0.5px'
-                  }}
-                >
-                  CHOOSE YOUR PROFILE AVATAR
-                </h3>
-                <p style={{ margin: 0, fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)' }}>
-                  Select any avatar below. It will represent your player callsign in all matches, leaderboards, and the app header.
-                </p>
+            {/* Matches Played */}
+            <div
+              style={{
+                background: 'rgba(0, 240, 255, 0.08)',
+                border: '1.5px solid rgba(0, 240, 255, 0.35)',
+                borderRadius: '16px',
+                padding: '20px',
+                textAlign: 'center'
+              }}
+            >
+              <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', marginBottom: '6px', fontWeight: 'bold' }}>
+                MATCHES PLAYED
               </div>
-
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(84px, 1fr))',
-                  gap: '14px',
-                  maxHeight: '380px',
-                  overflowY: 'auto',
-                  padding: '10px 4px'
-                }}
-              >
-                {AVAILABLE_AVATARS.map((avatarFile) => {
-                  const isSelected = selectedAvatar === avatarFile;
-                  return (
-                    <div
-                      key={avatarFile}
-                      onClick={() => handleSaveAvatar(avatarFile)}
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '6px',
-                        padding: '8px',
-                        borderRadius: '14px',
-                        background: isSelected ? 'rgba(251, 200, 13, 0.15)' : 'rgba(255, 255, 255, 0.03)',
-                        border: isSelected ? '2px solid var(--neon-gold, #FBC80D)' : '1.5px solid rgba(255, 255, 255, 0.1)',
-                        boxShadow: isSelected ? '0 0 16px rgba(251, 200, 13, 0.35)' : 'none',
-                        cursor: isSaving ? 'wait' : 'pointer',
-                        transition: 'all 0.2s ease',
-                        position: 'relative'
-                      }}
-                      onMouseOver={(e) => {
-                        if (!isSelected) e.currentTarget.style.borderColor = 'var(--neon-cyan, #00f0ff)';
-                      }}
-                      onMouseOut={(e) => {
-                        if (!isSelected) e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                      }}
-                    >
-                      <img
-                        src={getAvatarUrl(avatarFile)}
-                        alt={avatarFile}
-                        style={{
-                          width: '64px',
-                          height: '64px',
-                          borderRadius: '50%',
-                          objectFit: 'cover',
-                          display: 'block',
-                          boxShadow: '0 4px 10px rgba(0,0,0,0.5)'
-                        }}
-                      />
-                      {isSelected && (
-                        <div
-                          style={{
-                            position: 'absolute',
-                            top: '4px',
-                            right: '4px',
-                            background: 'var(--neon-gold, #FBC80D)',
-                            color: '#000',
-                            borderRadius: '50%',
-                            width: '18px',
-                            height: '18px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            boxShadow: '0 0 8px rgba(251, 200, 13, 0.8)'
-                          }}
-                        >
-                          <Check size={12} strokeWidth={3} />
-                        </div>
-                      )}
-                      <span
-                        style={{
-                          fontSize: '0.72rem',
-                          color: isSelected ? 'var(--neon-gold, #FBC80D)' : 'rgba(255,255,255,0.5)',
-                          fontFamily: 'Bebas Neue, sans-serif',
-                          letterSpacing: '0.5px'
-                        }}
-                      >
-                        {avatarFile.replace('.png', '').toUpperCase()}
-                      </span>
-                    </div>
-                  );
-                })}
+              <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'var(--neon-cyan, #00f0ff)', fontFamily: 'Bebas Neue, sans-serif' }}>
+                {matchesPlayed}
               </div>
             </div>
-          )}
 
-          {/* TAB 2: ACCOUNT SETTINGS (USERNAME & PASSWORD) */}
-          {activeTab === 'account' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              {/* Username Update Form */}
-              <form
-                onSubmit={handleUpdateUsername}
+            {/* Victories */}
+            <div
+              style={{
+                background: 'rgba(57, 255, 20, 0.08)',
+                border: '1.5px solid rgba(57, 255, 20, 0.35)',
+                borderRadius: '16px',
+                padding: '20px',
+                textAlign: 'center'
+              }}
+            >
+              <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', marginBottom: '6px', fontWeight: 'bold' }}>
+                VICTORIES
+              </div>
+              <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#39ff14', fontFamily: 'Bebas Neue, sans-serif' }}>
+                {matchesWon}
+              </div>
+            </div>
+
+            {/* Win Rate */}
+            <div
+              style={{
+                background: 'rgba(251, 200, 13, 0.08)',
+                border: '1.5px solid rgba(251, 200, 13, 0.35)',
+                borderRadius: '16px',
+                padding: '20px',
+                textAlign: 'center'
+              }}
+            >
+              <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', marginBottom: '6px', fontWeight: 'bold' }}>
+                WIN RATE
+              </div>
+              <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'var(--neon-gold, #FBC80D)', fontFamily: 'Bebas Neue, sans-serif' }}>
+                {winRate}%
+              </div>
+            </div>
+
+            {/* Crystals */}
+            <div
+              style={{
+                background: 'rgba(168, 85, 247, 0.08)',
+                border: '1.5px solid rgba(168, 85, 247, 0.35)',
+                borderRadius: '16px',
+                padding: '20px',
+                textAlign: 'center'
+              }}
+            >
+              <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', marginBottom: '6px', fontWeight: 'bold' }}>
+                CRYSTALS
+              </div>
+              <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#c084fc', fontFamily: 'Bebas Neue, sans-serif' }}>
+                {crystals}
+              </div>
+            </div>
+          </div>
+
+          {/* Ratio bar */}
+          <div
+            style={{
+              background: 'rgba(0, 0, 0, 0.4)',
+              borderRadius: '14px',
+              padding: '16px 20px',
+              border: '1px solid rgba(255, 255, 255, 0.1)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '0.9rem', color: '#fff', fontWeight: 'bold' }}>
+                COMBAT PERFORMANCE RATIO
+              </span>
+              <span style={{ fontSize: '0.95rem', color: 'var(--neon-gold, #FBC80D)', fontFamily: 'Bebas Neue, sans-serif' }}>
+                {matchesWon} WINS / {Math.max(0, matchesPlayed - matchesWon)} LOSSES
+              </span>
+            </div>
+            <div
+              style={{
+                height: '12px',
+                borderRadius: '6px',
+                background: 'rgba(255, 42, 85, 0.3)',
+                overflow: 'hidden',
+                display: 'flex'
+              }}
+            >
+              <div
                 style={{
-                  background: 'rgba(0, 0, 0, 0.35)',
-                  padding: '20px',
-                  borderRadius: '14px',
-                  border: '1px solid rgba(255, 255, 255, 0.08)'
+                  width: `${winRate}%`,
+                  height: '100%',
+                  background: 'linear-gradient(90deg, #39ff14, #00f0ff)',
+                  transition: 'width 0.5s ease'
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 3: ACCOUNT SETTINGS (USERNAME & PASSWORD) */}
+        <div>
+          <h3
+            style={{
+              margin: '0 0 16px 0',
+              fontSize: '1.4rem',
+              color: 'var(--neon-cyan, #00f0ff)',
+              fontFamily: 'Bebas Neue, sans-serif',
+              letterSpacing: '1px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <User size={20} />
+            <span>ACCOUNT & SECURITY SETTINGS</span>
+          </h3>
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gap: '20px'
+            }}
+          >
+            {/* Username Update Form */}
+            <form
+              onSubmit={handleUpdateUsername}
+              style={{
+                background: 'rgba(4, 12, 28, 0.75)',
+                padding: '24px',
+                borderRadius: '16px',
+                border: '1px solid rgba(0, 240, 255, 0.25)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px'
+              }}
+            >
+              <h4
+                style={{
+                  margin: 0,
+                  fontSize: '1.15rem',
+                  color: 'var(--neon-cyan, #00f0ff)',
+                  fontFamily: 'Bebas Neue, sans-serif',
+                  letterSpacing: '0.5px'
                 }}
               >
-                <h4
+                CHANGE CALLSIGN / USERNAME
+              </h4>
+              <p style={{ margin: 0, fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
+                3 to 20 letters, numbers, hyphens, and underscores.
+              </p>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => {
+                    setUsername(e.target.value);
+                    setUsernameError('');
+                  }}
+                  placeholder="Enter callsign..."
+                  maxLength={20}
                   style={{
-                    margin: '0 0 6px 0',
-                    fontSize: '1.15rem',
-                    color: 'var(--neon-cyan, #00f0ff)',
+                    flex: 1,
+                    background: 'rgba(0, 0, 0, 0.5)',
+                    border: usernameError ? '1.5px solid #ff2a55' : '1px solid rgba(0, 240, 255, 0.35)',
+                    borderRadius: '8px',
+                    padding: '10px 14px',
+                    color: '#fff',
+                    fontSize: '1rem',
                     fontFamily: 'Bebas Neue, sans-serif',
                     letterSpacing: '0.5px',
+                    outline: 'none'
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  style={{
+                    background: 'linear-gradient(135deg, #00f0ff, #0088ff)',
+                    border: 'none',
+                    color: '#000',
+                    borderRadius: '8px',
+                    padding: '10px 20px',
+                    fontWeight: 'bold',
+                    fontSize: '0.95rem',
+                    fontFamily: 'Bebas Neue, sans-serif',
+                    cursor: isSaving ? 'wait' : 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px'
+                    gap: '6px'
                   }}
                 >
-                  <User size={18} />
-                  <span>CHANGE USERNAME / CALLSIGN</span>
-                </h4>
-                <p style={{ margin: '0 0 14px 0', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
-                  Must be unique across all players (3 to 20 letters, numbers, hyphens, and underscores).
-                </p>
+                  <Save size={16} />
+                  <span>SAVE</span>
+                </button>
+              </div>
+              {usernameError && (
+                <div style={{ fontSize: '0.82rem', color: '#ff8899' }}>
+                  {usernameError}
+                </div>
+              )}
+            </form>
 
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <input
-                    type="text"
-                    value={username}
-                    onChange={(e) => {
-                      setUsername(e.target.value);
-                      setUsernameError('');
-                    }}
-                    placeholder="Enter callsign..."
-                    maxLength={20}
-                    style={{
-                      flex: 1,
-                      background: 'rgba(0, 0, 0, 0.5)',
-                      border: usernameError ? '1.5px solid #ff2a55' : '1px solid rgba(0, 240, 255, 0.3)',
-                      borderRadius: '8px',
-                      padding: '10px 14px',
-                      color: '#fff',
-                      fontSize: '1rem',
-                      fontFamily: 'Bebas Neue, sans-serif',
-                      letterSpacing: '0.5px',
-                      outline: 'none'
-                    }}
-                  />
+            {/* Password Update Form */}
+            <form
+              onSubmit={handleUpdatePassword}
+              style={{
+                background: 'rgba(4, 12, 28, 0.75)',
+                padding: '24px',
+                borderRadius: '16px',
+                border: '1px solid rgba(251, 200, 13, 0.25)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px'
+              }}
+            >
+              <h4
+                style={{
+                  margin: 0,
+                  fontSize: '1.15rem',
+                  color: 'var(--neon-gold, #FBC80D)',
+                  fontFamily: 'Bebas Neue, sans-serif',
+                  letterSpacing: '0.5px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <Lock size={16} />
+                <span>CHANGE PASSWORD</span>
+              </h4>
+              <p style={{ margin: 0, fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
+                Minimum 6 characters.
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => {
+                    setNewPassword(e.target.value);
+                    setPasswordError('');
+                  }}
+                  placeholder="New password (min 6 characters)"
+                  style={{
+                    background: 'rgba(0, 0, 0, 0.5)',
+                    border: passwordError ? '1.5px solid #ff2a55' : '1px solid rgba(251, 200, 13, 0.35)',
+                    borderRadius: '8px',
+                    padding: '10px 14px',
+                    color: '#fff',
+                    fontSize: '0.95rem',
+                    outline: 'none'
+                  }}
+                />
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    setPasswordError('');
+                  }}
+                  placeholder="Confirm new password"
+                  style={{
+                    background: 'rgba(0, 0, 0, 0.5)',
+                    border: passwordError ? '1.5px solid #ff2a55' : '1px solid rgba(251, 200, 13, 0.35)',
+                    borderRadius: '8px',
+                    padding: '10px 14px',
+                    color: '#fff',
+                    fontSize: '0.95rem',
+                    outline: 'none'
+                  }}
+                />
+                <div>
                   <button
                     type="submit"
                     disabled={isSaving}
                     style={{
-                      background: 'linear-gradient(135deg, #00f0ff, #0088ff)',
+                      background: 'linear-gradient(135deg, #FBC80D, #ff9900)',
                       border: 'none',
                       color: '#000',
                       borderRadius: '8px',
-                      padding: '10px 20px',
+                      padding: '10px 24px',
                       fontWeight: 'bold',
                       fontSize: '0.95rem',
                       fontFamily: 'Bebas Neue, sans-serif',
                       cursor: isSaving ? 'wait' : 'pointer',
-                      display: 'flex',
+                      display: 'inline-flex',
                       alignItems: 'center',
                       gap: '6px'
                     }}
                   >
                     <Save size={16} />
-                    <span>SAVE</span>
+                    <span>UPDATE PASSWORD</span>
                   </button>
                 </div>
-                {usernameError && (
-                  <div style={{ marginTop: '8px', fontSize: '0.82rem', color: '#ff8899' }}>
-                    {usernameError}
+                {passwordError && (
+                  <div style={{ fontSize: '0.82rem', color: '#ff8899' }}>
+                    {passwordError}
                   </div>
                 )}
-              </form>
-
-              {/* Password Update Form */}
-              <form
-                onSubmit={handleUpdatePassword}
-                style={{
-                  background: 'rgba(0, 0, 0, 0.35)',
-                  padding: '20px',
-                  borderRadius: '14px',
-                  border: '1px solid rgba(255, 255, 255, 0.08)'
-                }}
-              >
-                <h4
-                  style={{
-                    margin: '0 0 6px 0',
-                    fontSize: '1.15rem',
-                    color: 'var(--neon-gold, #FBC80D)',
-                    fontFamily: 'Bebas Neue, sans-serif',
-                    letterSpacing: '0.5px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}
-                >
-                  <Lock size={18} />
-                  <span>CHANGE PASSWORD</span>
-                </h4>
-                <p style={{ margin: '0 0 14px 0', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
-                  Enter a new password (minimum 6 characters).
-                </p>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => {
-                      setNewPassword(e.target.value);
-                      setPasswordError('');
-                    }}
-                    placeholder="New password (min 6 characters)"
-                    style={{
-                      background: 'rgba(0, 0, 0, 0.5)',
-                      border: passwordError ? '1.5px solid #ff2a55' : '1px solid rgba(251, 200, 13, 0.3)',
-                      borderRadius: '8px',
-                      padding: '10px 14px',
-                      color: '#fff',
-                      fontSize: '0.95rem',
-                      outline: 'none'
-                    }}
-                  />
-                  <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => {
-                      setConfirmPassword(e.target.value);
-                      setPasswordError('');
-                    }}
-                    placeholder="Confirm new password"
-                    style={{
-                      background: 'rgba(0, 0, 0, 0.5)',
-                      border: passwordError ? '1.5px solid #ff2a55' : '1px solid rgba(251, 200, 13, 0.3)',
-                      borderRadius: '8px',
-                      padding: '10px 14px',
-                      color: '#fff',
-                      fontSize: '0.95rem',
-                      outline: 'none'
-                    }}
-                  />
-                  <div>
-                    <button
-                      type="submit"
-                      disabled={isSaving}
-                      style={{
-                        background: 'linear-gradient(135deg, #FBC80D, #ff9900)',
-                        border: 'none',
-                        color: '#000',
-                        borderRadius: '8px',
-                        padding: '10px 24px',
-                        fontWeight: 'bold',
-                        fontSize: '0.95rem',
-                        fontFamily: 'Bebas Neue, sans-serif',
-                        cursor: isSaving ? 'wait' : 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
-                    >
-                      <Save size={16} />
-                      <span>UPDATE PASSWORD</span>
-                    </button>
-                  </div>
-                  {passwordError && (
-                    <div style={{ fontSize: '0.82rem', color: '#ff8899' }}>
-                      {passwordError}
-                    </div>
-                  )}
-                </div>
-              </form>
-            </div>
-          )}
-
-          {/* TAB 3: STATS & PROGRESS */}
-          {activeTab === 'stats' && (
-            <div>
-              <div style={{ marginBottom: '20px' }}>
-                <h3
-                  style={{
-                    margin: '0 0 6px 0',
-                    fontSize: '1.2rem',
-                    color: '#fff',
-                    fontFamily: 'Bebas Neue, sans-serif',
-                    letterSpacing: '0.5px'
-                  }}
-                >
-                  PLAYER STATS & COMBAT RECORD
-                </h3>
-                <p style={{ margin: 0, fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)' }}>
-                  Your live competitive performance across all multiplayer Kontrola arenas.
-                </p>
               </div>
-
-              {/* Stats Cards Grid */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
-                  gap: '14px',
-                  marginBottom: '24px'
-                }}
-              >
-                {/* Matches Played */}
-                <div
-                  style={{
-                    background: 'rgba(0, 240, 255, 0.08)',
-                    border: '1px solid rgba(0, 240, 255, 0.3)',
-                    borderRadius: '14px',
-                    padding: '16px',
-                    textAlign: 'center'
-                  }}
-                >
-                  <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', marginBottom: '6px' }}>
-                    MATCHES
-                  </div>
-                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--neon-cyan, #00f0ff)', fontFamily: 'Bebas Neue, sans-serif' }}>
-                    {matchesPlayed}
-                  </div>
-                </div>
-
-                {/* Matches Won */}
-                <div
-                  style={{
-                    background: 'rgba(57, 255, 20, 0.08)',
-                    border: '1px solid rgba(57, 255, 20, 0.3)',
-                    borderRadius: '14px',
-                    padding: '16px',
-                    textAlign: 'center'
-                  }}
-                >
-                  <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', marginBottom: '6px' }}>
-                    VICTORIES
-                  </div>
-                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#39ff14', fontFamily: 'Bebas Neue, sans-serif' }}>
-                    {matchesWon}
-                  </div>
-                </div>
-
-                {/* Win Rate */}
-                <div
-                  style={{
-                    background: 'rgba(251, 200, 13, 0.08)',
-                    border: '1px solid rgba(251, 200, 13, 0.3)',
-                    borderRadius: '14px',
-                    padding: '16px',
-                    textAlign: 'center'
-                  }}
-                >
-                  <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', marginBottom: '6px' }}>
-                    WIN RATE
-                  </div>
-                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--neon-gold, #FBC80D)', fontFamily: 'Bebas Neue, sans-serif' }}>
-                    {winRate}%
-                  </div>
-                </div>
-
-                {/* Crystals Collected */}
-                <div
-                  style={{
-                    background: 'rgba(168, 85, 247, 0.08)',
-                    border: '1px solid rgba(168, 85, 247, 0.3)',
-                    borderRadius: '14px',
-                    padding: '16px',
-                    textAlign: 'center'
-                  }}
-                >
-                  <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', marginBottom: '6px' }}>
-                    CRYSTALS
-                  </div>
-                  <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#c084fc', fontFamily: 'Bebas Neue, sans-serif' }}>
-                    {crystals}
-                  </div>
-                </div>
-              </div>
-
-              {/* Progress Summary Bar */}
-              <div
-                style={{
-                  background: 'rgba(0, 0, 0, 0.35)',
-                  borderRadius: '14px',
-                  padding: '18px 20px',
-                  border: '1px solid rgba(255, 255, 255, 0.08)'
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '0.9rem', color: '#fff', fontWeight: 'bold' }}>
-                    COMBAT RATIO
-                  </span>
-                  <span style={{ fontSize: '0.9rem', color: 'var(--neon-gold, #FBC80D)', fontFamily: 'Bebas Neue, sans-serif' }}>
-                    {matchesWon} WINS / {Math.max(0, matchesPlayed - matchesWon)} LOSSES
-                  </span>
-                </div>
-                <div
-                  style={{
-                    height: '10px',
-                    borderRadius: '5px',
-                    background: 'rgba(255, 42, 85, 0.3)',
-                    overflow: 'hidden',
-                    display: 'flex'
-                  }}
-                >
-                  <div
-                    style={{
-                      width: `${winRate}%`,
-                      height: '100%',
-                      background: 'linear-gradient(90deg, #39ff14, #00f0ff)',
-                      transition: 'width 0.5s ease'
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
+            </form>
           </div>
         </div>
       </div>
+
+      {/* MODAL: AVATAR SELECTION DIALOG */}
+      {isAvatarPickerOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1000000,
+            background: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(12px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            animation: 'fadeIn 0.2s ease'
+          }}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '680px',
+              maxHeight: '85vh',
+              background: 'linear-gradient(135deg, rgba(8, 20, 44, 0.98), rgba(2, 6, 18, 0.99))',
+              border: '2px solid var(--neon-gold, #FBC80D)',
+              borderRadius: '20px',
+              boxShadow: '0 16px 50px rgba(0, 0, 0, 0.9), 0 0 35px rgba(251, 200, 13, 0.25)',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                padding: '18px 24px',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                background: 'rgba(0, 0, 0, 0.4)'
+              }}
+            >
+              <div>
+                <h3
+                  style={{
+                    margin: 0,
+                    fontSize: '1.3rem',
+                    fontFamily: 'Bebas Neue, sans-serif',
+                    color: 'var(--neon-gold, #FBC80D)',
+                    letterSpacing: '1px'
+                  }}
+                >
+                  SELECT YOUR PROFILE AVATAR
+                </h3>
+                <p style={{ margin: '2px 0 0 0', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
+                  Click any avatar below to pick it.
+                </p>
+              </div>
+
+              <button
+                onClick={() => setIsAvatarPickerOpen(false)}
+                style={{
+                  background: 'rgba(255,255,255,0.08)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '36px',
+                  height: '36px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Grid */}
+            <div
+              style={{
+                flex: 1,
+                overflowY: 'auto',
+                padding: '24px',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))',
+                gap: '14px'
+              }}
+            >
+              {AVAILABLE_AVATARS.map((avatarFile) => {
+                const isSelected = selectedAvatar === avatarFile;
+                return (
+                  <div
+                    key={avatarFile}
+                    onClick={() => handleSaveAvatar(avatarFile)}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '10px 8px',
+                      borderRadius: '14px',
+                      background: isSelected ? 'rgba(251, 200, 13, 0.18)' : 'rgba(255, 255, 255, 0.03)',
+                      border: isSelected ? '2px solid var(--neon-gold, #FBC80D)' : '1.5px solid rgba(255, 255, 255, 0.1)',
+                      boxShadow: isSelected ? '0 0 16px rgba(251, 200, 13, 0.4)' : 'none',
+                      cursor: isSaving ? 'wait' : 'pointer',
+                      transition: 'all 0.2s ease',
+                      position: 'relative'
+                    }}
+                    onMouseOver={(e) => {
+                      if (!isSelected) e.currentTarget.style.borderColor = 'var(--neon-cyan, #00f0ff)';
+                    }}
+                    onMouseOut={(e) => {
+                      if (!isSelected) e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    }}
+                  >
+                    <img
+                      src={getAvatarUrl(avatarFile)}
+                      alt={avatarFile}
+                      style={{
+                        width: '64px',
+                        height: '64px',
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        display: 'block',
+                        boxShadow: '0 4px 10px rgba(0,0,0,0.5)'
+                      }}
+                    />
+                    {isSelected && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '6px',
+                          right: '6px',
+                          background: 'var(--neon-gold, #FBC80D)',
+                          color: '#000',
+                          borderRadius: '50%',
+                          width: '18px',
+                          height: '18px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: '0 0 8px rgba(251, 200, 13, 0.8)'
+                        }}
+                      >
+                        <Check size={12} strokeWidth={3} />
+                      </div>
+                    )}
+                    <span
+                      style={{
+                        fontSize: '0.72rem',
+                        color: isSelected ? 'var(--neon-gold, #FBC80D)' : 'rgba(255,255,255,0.5)',
+                        fontFamily: 'Bebas Neue, sans-serif',
+                        letterSpacing: '0.5px'
+                      }}
+                    >
+                      {avatarFile.replace('.png', '').toUpperCase()}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

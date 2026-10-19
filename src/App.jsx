@@ -1829,15 +1829,6 @@ export function Hub() {
                 setUserProfile(prev => ({ ...prev, crystals_collected: (prev?.crystals_collected || 0) + amount }));
               }} 
             />
-            <ProfileSettingsModal
-              isOpen={isProfileSettingsOpen}
-              onClose={() => setIsProfileSettingsOpen(false)}
-              currentUser={currentUser}
-              userProfile={userProfile}
-              onProfileUpdated={(updated) => {
-                setUserProfile(updated);
-              }}
-            />
 
 
             <div className="menu-bg-elements" style={{ width: '100%', height: '100%' }}>
@@ -2164,6 +2155,17 @@ export function Hub() {
         }}
       />
 
+      {/* Full-Screen Profile & Settings View */}
+      <ProfileSettingsModal
+        isOpen={isProfileSettingsOpen}
+        onClose={() => setIsProfileSettingsOpen(false)}
+        currentUser={currentUser}
+        userProfile={userProfile}
+        onProfileUpdated={(updated) => {
+          setUserProfile(updated);
+        }}
+      />
+
       {/* Fixed Position: Contact Support Button (Bottom Right) - NOT on admin pages or during profile view */}
       {currentUser && location.pathname !== '/admin' && !isProfileSettingsOpen && (
         <div style={{
@@ -2240,6 +2242,13 @@ function App() {
     });
 
     const { data: { subscription } } = authService.onAuthStateChange(async (event, session, profile) => {
+      // Ignore transient token refresh events that don't change actual auth state
+      // When browser minimizes or visibility toggles, Supabase refreshes the JWT token.
+      // Re-triggering loading state would cause the route guard to remount and send user to home.
+      if (event === 'TOKEN_REFRESHED' && session?.user && currentUser?.id === session.user.id) {
+        return;
+      }
+
       setCurrentUser(session?.user || null);
       setUserProfile(profile);
       

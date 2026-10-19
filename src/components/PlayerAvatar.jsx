@@ -39,7 +39,7 @@ export default function PlayerAvatar({
         border: `${borderWidth}px solid ${borderColor}`,
         boxShadow: showGlow ? `0 0 12px ${borderColor}` : 'none',
         overflow: 'hidden',
-        cursor: onClick ? 'pointer' : 'default',
+        cursor: onClick ? 'pointer' : 'pointer',
         boxSizing: 'border-box',
         transition: 'all 0.2s ease',
         ...style
