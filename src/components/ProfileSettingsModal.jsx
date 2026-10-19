@@ -185,7 +185,7 @@ export default function ProfileSettingsModal({
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        overflowY: 'auto',
+        overflow: 'hidden',
         fontFamily: 'Barlow Condensed, sans-serif'
       }}
     >
@@ -193,20 +193,19 @@ export default function ProfileSettingsModal({
       <div
         style={{
           width: '100%',
-          padding: '16px 32px',
+          padding: '10px 28px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          background: 'rgba(4, 10, 24, 0.85)',
+          background: 'rgba(4, 10, 24, 0.9)',
           borderBottom: '1px solid rgba(0, 240, 255, 0.2)',
           backdropFilter: 'blur(16px)',
           boxSizing: 'border-box',
-          position: 'sticky',
-          top: 0,
+          flexShrink: 0,
           zIndex: 100
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div
             onClick={() => setIsAvatarPickerOpen(true)}
             title="Click to change avatar"
@@ -342,36 +341,38 @@ export default function ProfileSettingsModal({
         </div>
       )}
 
-      {/* Main Single-Page Content Container */}
+      {/* Main Single-Page Content Container - Fits cleanly within viewport */}
       <div
         style={{
           flex: 1,
           width: '100%',
-          maxWidth: '1100px',
+          maxWidth: '1140px',
           margin: '0 auto',
-          padding: '36px 24px 60px',
+          padding: '12px 24px 16px',
           boxSizing: 'border-box',
           display: 'flex',
           flexDirection: 'column',
-          gap: '32px'
+          justifyContent: 'space-evenly',
+          gap: '10px',
+          minHeight: 0
         }}
       >
-        {/* SECTION 1: AVATAR & CALLSIGN HERO BANNER */}
+        {/* ROW 1: HERO CALLSIGN & AVATAR BANNER */}
         <div
           style={{
             background: 'linear-gradient(135deg, rgba(8, 24, 52, 0.7), rgba(4, 12, 28, 0.9))',
             border: '1.5px solid rgba(0, 240, 255, 0.25)',
-            borderRadius: '20px',
-            padding: '28px 32px',
+            borderRadius: '14px',
+            padding: '10px 20px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             flexWrap: 'wrap',
-            gap: '20px',
-            boxShadow: '0 8px 30px rgba(0,0,0,0.5)'
+            gap: '12px',
+            boxShadow: '0 4px 18px rgba(0,0,0,0.45)'
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '22px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div
               onClick={() => setIsAvatarPickerOpen(true)}
               title="Click to choose a new avatar"
@@ -386,46 +387,47 @@ export default function ProfileSettingsModal({
               <PlayerAvatar
                 avatarId={selectedAvatar}
                 username={activeProfile?.username}
-                size={96}
+                size={70}
                 borderColor="var(--neon-gold, #FBC80D)"
                 showGlow={true}
               />
               <div
                 style={{
                   position: 'absolute',
-                  bottom: 2,
-                  right: 2,
+                  bottom: 0,
+                  right: 0,
                   background: 'var(--neon-gold, #FBC80D)',
                   color: '#000',
                   borderRadius: '50%',
-                  width: '28px',
-                  height: '28px',
+                  width: '22px',
+                  height: '22px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 0 10px rgba(251, 200, 13, 0.8)'
+                  boxShadow: '0 0 8px rgba(251, 200, 13, 0.8)'
                 }}
               >
-                <Edit3 size={15} strokeWidth={2.5} />
+                <Edit3 size={12} strokeWidth={2.5} />
               </div>
             </div>
 
             <div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--neon-cyan, #00f0ff)', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold' }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--neon-cyan, #00f0ff)', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold' }}>
                 ACTIVE PILOT CALLSIGN
               </div>
               <h2
                 style={{
-                  margin: '4px 0 6px 0',
-                  fontSize: '2.4rem',
+                  margin: '2px 0 4px 0',
+                  fontSize: '1.9rem',
                   color: '#fff',
                   fontFamily: 'Bebas Neue, sans-serif',
-                  letterSpacing: '1.5px'
+                  letterSpacing: '1px',
+                  lineHeight: 1.1
                 }}
               >
                 {activeProfile?.username || 'Player'}
               </h2>
-              <div style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)' }}>
+              <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)' }}>
                 Avatar File: <span style={{ color: 'var(--neon-gold, #FBC80D)' }}>{selectedAvatar}</span>
               </div>
             </div>
@@ -436,68 +438,66 @@ export default function ProfileSettingsModal({
             style={{
               background: 'linear-gradient(135deg, #00f0ff 0%, #0077ff 100%)',
               border: 'none',
-              borderRadius: '12px',
-              padding: '12px 24px',
+              borderRadius: '10px',
+              padding: '10px 20px',
               color: '#000',
               fontWeight: 'bold',
-              fontSize: '1rem',
+              fontSize: '0.95rem',
               fontFamily: 'Bebas Neue, sans-serif',
-              letterSpacing: '1px',
+              letterSpacing: '0.8px',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              boxShadow: '0 0 20px rgba(0, 240, 255, 0.4)',
+              gap: '6px',
+              boxShadow: '0 0 16px rgba(0, 240, 255, 0.35)',
               transition: 'all 0.2s ease'
             }}
-            onMouseOver={(e) => (e.currentTarget.style.boxShadow = '0 0 25px rgba(0, 240, 255, 0.7)')}
-            onMouseOut={(e) => (e.currentTarget.style.boxShadow = '0 0 20px rgba(0, 240, 255, 0.4)')}
+            onMouseOver={(e) => (e.currentTarget.style.boxShadow = '0 0 22px rgba(0, 240, 255, 0.65)')}
+            onMouseOut={(e) => (e.currentTarget.style.boxShadow = '0 0 16px rgba(0, 240, 255, 0.35)')}
           >
-            <Sparkles size={18} />
+            <Sparkles size={16} />
             <span>CHANGE AVATAR</span>
           </button>
         </div>
 
-        {/* SECTION 2: PLAYER STATS & PROGRESS */}
-        <div>
-          <h3
+        {/* ROW 2: PLAYER STATS & PROGRESS */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div
             style={{
-              margin: '0 0 16px 0',
-              fontSize: '1.4rem',
+              fontSize: '1.15rem',
               color: 'var(--neon-gold, #FBC80D)',
               fontFamily: 'Bebas Neue, sans-serif',
-              letterSpacing: '1px',
+              letterSpacing: '0.8px',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px'
+              gap: '6px'
             }}
           >
-            <Trophy size={20} />
+            <Trophy size={16} />
             <span>PLAYER STATS & COMPETITIVE RECORD</span>
-          </h3>
+          </div>
 
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-              gap: '16px',
-              marginBottom: '16px'
+              gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+              gap: '12px'
             }}
           >
             {/* Matches Played */}
             <div
               style={{
                 background: 'rgba(0, 240, 255, 0.08)',
-                border: '1.5px solid rgba(0, 240, 255, 0.35)',
-                borderRadius: '16px',
-                padding: '20px',
+                border: '1px solid rgba(0, 240, 255, 0.3)',
+                borderRadius: '12px',
+                padding: '12px 14px',
                 textAlign: 'center'
               }}
             >
-              <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', marginBottom: '6px', fontWeight: 'bold' }}>
-                MATCHES PLAYED
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', marginBottom: '2px', fontWeight: 'bold' }}>
+                MATCHES
               </div>
-              <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'var(--neon-cyan, #00f0ff)', fontFamily: 'Bebas Neue, sans-serif' }}>
+              <div style={{ fontSize: '1.85rem', fontWeight: 'bold', color: 'var(--neon-cyan, #00f0ff)', fontFamily: 'Bebas Neue, sans-serif', lineHeight: 1.1 }}>
                 {matchesPlayed}
               </div>
             </div>
@@ -506,16 +506,16 @@ export default function ProfileSettingsModal({
             <div
               style={{
                 background: 'rgba(57, 255, 20, 0.08)',
-                border: '1.5px solid rgba(57, 255, 20, 0.35)',
-                borderRadius: '16px',
-                padding: '20px',
+                border: '1px solid rgba(57, 255, 20, 0.3)',
+                borderRadius: '12px',
+                padding: '12px 14px',
                 textAlign: 'center'
               }}
             >
-              <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', marginBottom: '6px', fontWeight: 'bold' }}>
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', marginBottom: '2px', fontWeight: 'bold' }}>
                 VICTORIES
               </div>
-              <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#39ff14', fontFamily: 'Bebas Neue, sans-serif' }}>
+              <div style={{ fontSize: '1.85rem', fontWeight: 'bold', color: '#39ff14', fontFamily: 'Bebas Neue, sans-serif', lineHeight: 1.1 }}>
                 {matchesWon}
               </div>
             </div>
@@ -524,16 +524,16 @@ export default function ProfileSettingsModal({
             <div
               style={{
                 background: 'rgba(251, 200, 13, 0.08)',
-                border: '1.5px solid rgba(251, 200, 13, 0.35)',
-                borderRadius: '16px',
-                padding: '20px',
+                border: '1px solid rgba(251, 200, 13, 0.3)',
+                borderRadius: '12px',
+                padding: '12px 14px',
                 textAlign: 'center'
               }}
             >
-              <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', marginBottom: '6px', fontWeight: 'bold' }}>
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', marginBottom: '2px', fontWeight: 'bold' }}>
                 WIN RATE
               </div>
-              <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'var(--neon-gold, #FBC80D)', fontFamily: 'Bebas Neue, sans-serif' }}>
+              <div style={{ fontSize: '1.85rem', fontWeight: 'bold', color: 'var(--neon-gold, #FBC80D)', fontFamily: 'Bebas Neue, sans-serif', lineHeight: 1.1 }}>
                 {winRate}%
               </div>
             </div>
@@ -542,16 +542,16 @@ export default function ProfileSettingsModal({
             <div
               style={{
                 background: 'rgba(168, 85, 247, 0.08)',
-                border: '1.5px solid rgba(168, 85, 247, 0.35)',
-                borderRadius: '16px',
-                padding: '20px',
+                border: '1px solid rgba(168, 85, 247, 0.3)',
+                borderRadius: '12px',
+                padding: '12px 14px',
                 textAlign: 'center'
               }}
             >
-              <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', marginBottom: '6px', fontWeight: 'bold' }}>
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', marginBottom: '2px', fontWeight: 'bold' }}>
                 CRYSTALS
               </div>
-              <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#c084fc', fontFamily: 'Bebas Neue, sans-serif' }}>
+              <div style={{ fontSize: '1.85rem', fontWeight: 'bold', color: '#c084fc', fontFamily: 'Bebas Neue, sans-serif', lineHeight: 1.1 }}>
                 {crystals}
               </div>
             </div>
@@ -561,23 +561,23 @@ export default function ProfileSettingsModal({
           <div
             style={{
               background: 'rgba(0, 0, 0, 0.4)',
-              borderRadius: '14px',
-              padding: '16px 20px',
-              border: '1px solid rgba(255, 255, 255, 0.1)'
+              borderRadius: '10px',
+              padding: '10px 16px',
+              border: '1px solid rgba(255, 255, 255, 0.08)'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '0.9rem', color: '#fff', fontWeight: 'bold' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <span style={{ fontSize: '0.8rem', color: '#fff', fontWeight: 'bold' }}>
                 COMBAT PERFORMANCE RATIO
               </span>
-              <span style={{ fontSize: '0.95rem', color: 'var(--neon-gold, #FBC80D)', fontFamily: 'Bebas Neue, sans-serif' }}>
+              <span style={{ fontSize: '0.85rem', color: 'var(--neon-gold, #FBC80D)', fontFamily: 'Bebas Neue, sans-serif' }}>
                 {matchesWon} WINS / {Math.max(0, matchesPlayed - matchesWon)} LOSSES
               </span>
             </div>
             <div
               style={{
-                height: '12px',
-                borderRadius: '6px',
+                height: '8px',
+                borderRadius: '4px',
                 background: 'rgba(255, 42, 85, 0.3)',
                 overflow: 'hidden',
                 display: 'flex'
@@ -595,29 +595,28 @@ export default function ProfileSettingsModal({
           </div>
         </div>
 
-        {/* SECTION 3: ACCOUNT SETTINGS (USERNAME & PASSWORD) */}
-        <div>
-          <h3
+        {/* ROW 3: ACCOUNT & SECURITY SETTINGS */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div
             style={{
-              margin: '0 0 16px 0',
-              fontSize: '1.4rem',
+              fontSize: '1.15rem',
               color: 'var(--neon-cyan, #00f0ff)',
               fontFamily: 'Bebas Neue, sans-serif',
-              letterSpacing: '1px',
+              letterSpacing: '0.8px',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px'
+              gap: '6px'
             }}
           >
-            <User size={20} />
+            <User size={16} />
             <span>ACCOUNT & SECURITY SETTINGS</span>
-          </h3>
+          </div>
 
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-              gap: '20px'
+              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+              gap: '12px'
             }}
           >
             {/* Username Update Form */}
@@ -625,30 +624,32 @@ export default function ProfileSettingsModal({
               onSubmit={handleUpdateUsername}
               style={{
                 background: 'rgba(4, 12, 28, 0.75)',
-                padding: '24px',
-                borderRadius: '16px',
+                padding: '16px 20px',
+                borderRadius: '14px',
                 border: '1px solid rgba(0, 240, 255, 0.25)',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '12px'
+                gap: '8px'
               }}
             >
-              <h4
-                style={{
-                  margin: 0,
-                  fontSize: '1.15rem',
-                  color: 'var(--neon-cyan, #00f0ff)',
-                  fontFamily: 'Bebas Neue, sans-serif',
-                  letterSpacing: '0.5px'
-                }}
-              >
-                CHANGE CALLSIGN / USERNAME
-              </h4>
-              <p style={{ margin: 0, fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
-                3 to 20 letters, numbers, hyphens, and underscores.
-              </p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h4
+                  style={{
+                    margin: 0,
+                    fontSize: '1rem',
+                    color: 'var(--neon-cyan, #00f0ff)',
+                    fontFamily: 'Bebas Neue, sans-serif',
+                    letterSpacing: '0.5px'
+                  }}
+                >
+                  CHANGE CALLSIGN / USERNAME
+                </h4>
+                <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)' }}>
+                  3-20 characters
+                </span>
+              </div>
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
                 <input
                   type="text"
                   value={username}
@@ -663,9 +664,9 @@ export default function ProfileSettingsModal({
                     background: 'rgba(0, 0, 0, 0.5)',
                     border: usernameError ? '1.5px solid #ff2a55' : '1px solid rgba(0, 240, 255, 0.35)',
                     borderRadius: '8px',
-                    padding: '10px 14px',
+                    padding: '8px 12px',
                     color: '#fff',
-                    fontSize: '1rem',
+                    fontSize: '0.95rem',
                     fontFamily: 'Bebas Neue, sans-serif',
                     letterSpacing: '0.5px',
                     outline: 'none'
@@ -679,22 +680,22 @@ export default function ProfileSettingsModal({
                     border: 'none',
                     color: '#000',
                     borderRadius: '8px',
-                    padding: '10px 20px',
+                    padding: '8px 16px',
                     fontWeight: 'bold',
-                    fontSize: '0.95rem',
+                    fontSize: '0.9rem',
                     fontFamily: 'Bebas Neue, sans-serif',
                     cursor: isSaving ? 'wait' : 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '6px'
+                    gap: '4px'
                   }}
                 >
-                  <Save size={16} />
+                  <Save size={14} />
                   <span>SAVE</span>
                 </button>
               </div>
               {usernameError && (
-                <div style={{ fontSize: '0.82rem', color: '#ff8899' }}>
+                <div style={{ fontSize: '0.78rem', color: '#ff8899' }}>
                   {usernameError}
                 </div>
               )}
@@ -705,34 +706,32 @@ export default function ProfileSettingsModal({
               onSubmit={handleUpdatePassword}
               style={{
                 background: 'rgba(4, 12, 28, 0.75)',
-                padding: '24px',
-                borderRadius: '16px',
+                padding: '16px 20px',
+                borderRadius: '14px',
                 border: '1px solid rgba(251, 200, 13, 0.25)',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '12px'
+                gap: '8px'
               }}
             >
-              <h4
-                style={{
-                  margin: 0,
-                  fontSize: '1.15rem',
-                  color: 'var(--neon-gold, #FBC80D)',
-                  fontFamily: 'Bebas Neue, sans-serif',
-                  letterSpacing: '0.5px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                <Lock size={16} />
-                <span>CHANGE PASSWORD</span>
-              </h4>
-              <p style={{ margin: 0, fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
-                Minimum 6 characters.
-              </p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h4
+                  style={{
+                    margin: 0,
+                    fontSize: '1rem',
+                    color: 'var(--neon-gold, #FBC80D)',
+                    fontFamily: 'Bebas Neue, sans-serif',
+                    letterSpacing: '0.5px'
+                  }}
+                >
+                  CHANGE PASSWORD
+                </h4>
+                <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)' }}>
+                  Min 6 characters
+                </span>
+              </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
                 <input
                   type="password"
                   value={newPassword}
@@ -740,14 +739,15 @@ export default function ProfileSettingsModal({
                     setNewPassword(e.target.value);
                     setPasswordError('');
                   }}
-                  placeholder="New password (min 6 characters)"
+                  placeholder="New password"
                   style={{
+                    flex: 1,
                     background: 'rgba(0, 0, 0, 0.5)',
                     border: passwordError ? '1.5px solid #ff2a55' : '1px solid rgba(251, 200, 13, 0.35)',
                     borderRadius: '8px',
-                    padding: '10px 14px',
+                    padding: '8px 12px',
                     color: '#fff',
-                    fontSize: '0.95rem',
+                    fontSize: '0.9rem',
                     outline: 'none'
                   }}
                 />
@@ -758,46 +758,46 @@ export default function ProfileSettingsModal({
                     setConfirmPassword(e.target.value);
                     setPasswordError('');
                   }}
-                  placeholder="Confirm new password"
+                  placeholder="Confirm password"
                   style={{
+                    flex: 1,
                     background: 'rgba(0, 0, 0, 0.5)',
                     border: passwordError ? '1.5px solid #ff2a55' : '1px solid rgba(251, 200, 13, 0.35)',
                     borderRadius: '8px',
-                    padding: '10px 14px',
+                    padding: '8px 12px',
                     color: '#fff',
-                    fontSize: '0.95rem',
+                    fontSize: '0.9rem',
                     outline: 'none'
                   }}
                 />
-                <div>
-                  <button
-                    type="submit"
-                    disabled={isSaving}
-                    style={{
-                      background: 'linear-gradient(135deg, #FBC80D, #ff9900)',
-                      border: 'none',
-                      color: '#000',
-                      borderRadius: '8px',
-                      padding: '10px 24px',
-                      fontWeight: 'bold',
-                      fontSize: '0.95rem',
-                      fontFamily: 'Bebas Neue, sans-serif',
-                      cursor: isSaving ? 'wait' : 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}
-                  >
-                    <Save size={16} />
-                    <span>UPDATE PASSWORD</span>
-                  </button>
-                </div>
-                {passwordError && (
-                  <div style={{ fontSize: '0.82rem', color: '#ff8899' }}>
-                    {passwordError}
-                  </div>
-                )}
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  style={{
+                    background: 'linear-gradient(135deg, #FBC80D, #ff9900)',
+                    border: 'none',
+                    color: '#000',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    fontWeight: 'bold',
+                    fontSize: '0.9rem',
+                    fontFamily: 'Bebas Neue, sans-serif',
+                    cursor: isSaving ? 'wait' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  <Save size={14} />
+                  <span>UPDATE</span>
+                </button>
               </div>
+              {passwordError && (
+                <div style={{ fontSize: '0.78rem', color: '#ff8899' }}>
+                  {passwordError}
+                </div>
+              )}
             </form>
           </div>
         </div>

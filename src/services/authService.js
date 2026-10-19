@@ -397,7 +397,15 @@ export const authService = {
     if (!supabase) {
       return { data: { subscription: { unsubscribe: () => {} } } };
     }
+    let lastUserId = null;
     return supabase.auth.onAuthStateChange(async (event, session) => {
+      // Prevent browser minimize / tab switch from causing full reload / reset
+      // Supabase emits TOKEN_REFRESHED on window focus / restore. If user hasn't changed, ignore it.
+      if (event === 'TOKEN_REFRESHED' && session?.user && lastUserId === session.user.id) {
+        return;
+      }
+      lastUserId = session?.user?.id || null;
+
       let profile = null;
       if (session?.user) {
         profile = await this.getProfile(session.user.id);

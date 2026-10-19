@@ -2221,11 +2221,14 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const currentUserRef = useRef(null);
 
   useEffect(() => {
     let isMounted = true;
+
     authService.getCurrentUser().then(async (u) => {
       if (isMounted) {
+        currentUserRef.current = u;
         setCurrentUser(u);
         if (u) {
           const prof = await authService.getProfile(u.id);
@@ -2244,11 +2247,12 @@ function App() {
     const { data: { subscription } } = authService.onAuthStateChange(async (event, session, profile) => {
       // Ignore transient token refresh events that don't change actual auth state
       // When browser minimizes or visibility toggles, Supabase refreshes the JWT token.
-      // Re-triggering loading state would cause the route guard to remount and send user to home.
-      if (event === 'TOKEN_REFRESHED' && session?.user && currentUser?.id === session.user.id) {
+      // Re-triggering state causes the entire route tree to remount and send user to home.
+      if (event === 'TOKEN_REFRESHED' && session?.user && currentUserRef.current?.id === session.user.id) {
         return;
       }
 
+      currentUserRef.current = session?.user || null;
       setCurrentUser(session?.user || null);
       setUserProfile(profile);
       
