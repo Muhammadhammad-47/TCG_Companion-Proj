@@ -25,6 +25,7 @@ import BugReportButton from './components/BugReportButton.jsx';
 import SupportInbox from './components/SupportInbox.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { StoreModal } from './components/StoreModal.jsx';
+import MusicUploadProgress from './components/MusicUploadProgress.jsx';
 import { LeaderboardModal } from './components/LeaderboardModal.jsx';
 import PlayerAvatar from './components/PlayerAvatar.jsx';
 import ProfileSettingsModal from './components/ProfileSettingsModal.jsx';
