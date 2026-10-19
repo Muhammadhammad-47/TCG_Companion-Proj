@@ -1,5 +1,7 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 
+let activeSessionUserId = null;
+
 export const authService = {
   // Validate username format and check unique availability
   async checkUsernameAvailable(username, excludeUserId = null) {
@@ -140,6 +142,7 @@ export const authService = {
 
   // Sign out
   async signOut() {
+    activeSessionUserId = null;
     if (!supabase) return;
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
@@ -149,7 +152,11 @@ export const authService = {
   async getCurrentUser() {
     if (!supabase) return null;
     const { data: { user }, error } = await supabase.auth.getUser();
-    if (error || !user) return null;
+    if (error || !user) {
+      activeSessionUserId = null;
+      return null;
+    }
+    activeSessionUserId = user.id;
     return user;
   },
 
@@ -397,14 +404,15 @@ export const authService = {
     if (!supabase) {
       return { data: { subscription: { unsubscribe: () => {} } } };
     }
-    let lastUserId = null;
     return supabase.auth.onAuthStateChange(async (event, session) => {
-      // Prevent browser minimize / tab switch from causing full reload / reset
+      // Prevent browser minimize / tab switch / window focus from causing full reload or state reset.
       // Supabase emits TOKEN_REFRESHED on window focus / restore. If user hasn't changed, ignore it.
-      if (event === 'TOKEN_REFRESHED' && session?.user && lastUserId === session.user.id) {
+      if (event === 'TOKEN_REFRESHED' && session?.user && activeSessionUserId === session.user.id) {
         return;
       }
-      lastUserId = session?.user?.id || null;
+      if (session?.user?.id) {
+        activeSessionUserId = session.user.id;
+      }
 
       let profile = null;
       if (session?.user) {

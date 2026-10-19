@@ -174,6 +174,8 @@ export default function ProfileSettingsModal({
   const crystals = activeProfile?.crystals_collected || 0;
   const winRate = matchesPlayed > 0 ? Math.round((matchesWon / matchesPlayed) * 100) : 0;
 
+  if (!isOpen) return null;
+
   return (
     <div
       style={{
