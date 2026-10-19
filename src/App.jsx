@@ -2164,8 +2164,8 @@ export function Hub() {
         }}
       />
 
-      {/* Fixed Position: Contact Support Button (Bottom Right) - NOT on admin pages */}
-      {currentUser && location.pathname !== '/admin' && (
+      {/* Fixed Position: Contact Support Button (Bottom Right) - NOT on admin pages or during profile view */}
+      {currentUser && location.pathname !== '/admin' && !isProfileSettingsOpen && (
         <div style={{
           position: 'fixed',
           bottom: '30px',

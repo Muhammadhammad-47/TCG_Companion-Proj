@@ -34,8 +34,11 @@ export const DEFAULT_AVATAR = 'frame_001.png';
  * Handles paths like 'frame_001.png', '/PFP Avatars/frame_001.png', or legacy IDs.
  */
 export function getAvatarUrl(avatarId) {
+  const rawBase = import.meta.env?.BASE_URL || '/';
+  const base = rawBase.endsWith('/') ? rawBase : `${rawBase}/`;
+
   if (!avatarId) {
-    return encodeURI('/PFP Avatars/' + DEFAULT_AVATAR);
+    return encodeURI(`${base}PFP Avatars/${DEFAULT_AVATAR}`);
   }
 
   // Already a full path or data URI
@@ -46,19 +49,19 @@ export function getAvatarUrl(avatarId) {
   // If already prefixed with /PFP Avatars/ or PFP Avatars/
   if (avatarId.includes('PFP Avatars/')) {
     const filename = avatarId.split('PFP Avatars/').pop();
-    return encodeURI(`/PFP Avatars/${filename}`);
+    return encodeURI(`${base}PFP Avatars/${filename}`);
   }
 
   // If matches one of the frame filenames directly
   if (avatarId.endsWith('.png') || avatarId.endsWith('.jpg') || avatarId.endsWith('.webp')) {
-    return encodeURI(`/PFP Avatars/${avatarId}`);
+    return encodeURI(`${base}PFP Avatars/${avatarId}`);
   }
 
   // If frame number format like 'frame_001' without extension
   if (/^frame_\d+$/i.test(avatarId)) {
-    return encodeURI(`/PFP Avatars/${avatarId}.png`);
+    return encodeURI(`${base}PFP Avatars/${avatarId}.png`);
   }
 
   // Fallback to default
-  return encodeURI('/PFP Avatars/' + DEFAULT_AVATAR);
+  return encodeURI(`${base}PFP Avatars/${DEFAULT_AVATAR}`);
 }

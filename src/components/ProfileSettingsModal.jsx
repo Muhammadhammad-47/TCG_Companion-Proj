@@ -31,19 +31,40 @@ export default function ProfileSettingsModal({
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Keep state synchronized when modal opens or userProfile changes
+  // Live profile state fetched directly from database
+  const [profileData, setProfileData] = useState(userProfile);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+
+  // Keep state synchronized and fetch fresh data directly from DB when opened
   React.useEffect(() => {
     if (isOpen) {
-      setSelectedAvatar(userProfile?.avatar_id || DEFAULT_AVATAR);
-      setUsername(userProfile?.username || '');
+      const activeProf = profileData || userProfile;
+      setSelectedAvatar(activeProf?.avatar_id || DEFAULT_AVATAR);
+      setUsername(activeProf?.username || '');
       setUsernameError('');
       setPasswordError('');
       setNewPassword('');
       setConfirmPassword('');
       setSuccessMsg('');
       setErrorMsg('');
+
+      // Fetch fresh authoritative stats & profile directly from Supabase DB
+      if (currentUser?.id) {
+        setIsLoadingProfile(true);
+        authService.getProfile(currentUser.id)
+          .then((fresh) => {
+            if (fresh) {
+              setProfileData(fresh);
+              setSelectedAvatar(fresh.avatar_id || DEFAULT_AVATAR);
+              setUsername(fresh.username || '');
+              if (onProfileUpdated) onProfileUpdated(fresh);
+            }
+          })
+          .catch((err) => console.warn('Failed to fetch fresh profile:', err))
+          .finally(() => setIsLoadingProfile(false));
+      }
     }
-  }, [isOpen, userProfile]);
+  }, [isOpen, currentUser?.id]);
 
   if (!isOpen) return null;
 
@@ -137,9 +158,10 @@ export default function ProfileSettingsModal({
     }
   };
 
-  const matchesPlayed = userProfile?.matches_played || 0;
-  const matchesWon = userProfile?.matches_won || 0;
-  const crystals = userProfile?.crystals_collected || 0;
+  const activeProfile = profileData || userProfile;
+  const matchesPlayed = activeProfile?.matches_played || 0;
+  const matchesWon = activeProfile?.matches_won || 0;
+  const crystals = activeProfile?.crystals_collected || 0;
   const winRate = matchesPlayed > 0 ? Math.round((matchesWon / matchesPlayed) * 100) : 0;
 
   return (
@@ -148,24 +170,20 @@ export default function ProfileSettingsModal({
         position: 'fixed',
         inset: 0,
         zIndex: 9999,
-        background: 'rgba(2, 6, 18, 0.85)',
-        backdropFilter: 'blur(12px)',
+        background: 'radial-gradient(ellipse at top, #0d1e3d 0%, #030814 70%, #000208 100%)',
+        backdropFilter: 'blur(16px)',
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '20px',
+        flexDirection: 'column',
+        width: '100vw',
+        height: '100vh',
+        overflow: 'hidden',
         animation: 'fadeIn 0.25s ease'
       }}
     >
       <div
         style={{
           width: '100%',
-          maxWidth: '680px',
-          maxHeight: '90vh',
-          background: 'linear-gradient(135deg, rgba(8, 20, 44, 0.98), rgba(2, 6, 18, 0.99))',
-          border: '1.5px solid rgba(251, 200, 13, 0.35)',
-          borderRadius: '20px',
-          boxShadow: '0 16px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(251, 200, 13, 0.15)',
+          height: '100%',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
@@ -331,7 +349,8 @@ export default function ProfileSettingsModal({
         )}
 
         {/* Content Area */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '30px 24px', display: 'flex', justifyContent: 'center' }}>
+          <div style={{ width: '100%', maxWidth: '860px' }}>
           {/* TAB 1: AVATAR PICKER */}
           {activeTab === 'avatar' && (
             <div>
@@ -761,6 +780,7 @@ export default function ProfileSettingsModal({
               </div>
             </div>
           )}
+          </div>
         </div>
       </div>
     </div>
