@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Send, X, Bot, Swords, ArrowLeft, ThumbsUp, ThumbsDown, User, Shield, LogOut, Check, Trophy, Settings, Music, Lock, MessageSquare } from 'lucide-react';
 import axios from 'axios';
@@ -25,8 +25,9 @@ import BugReportButton from './components/BugReportButton.jsx';
 import SupportInbox from './components/SupportInbox.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { StoreModal } from './components/StoreModal.jsx';
-import MusicUploadProgress from './components/MusicUploadProgress.jsx';
 import { LeaderboardModal } from './components/LeaderboardModal.jsx';
+import PlayerAvatar from './components/PlayerAvatar.jsx';
+import ProfileSettingsModal from './components/ProfileSettingsModal.jsx';
 
 // ============================================================================
 // HELPER FUNCTIONS FOR MODULE ACCESS & BADGES
@@ -1538,6 +1539,7 @@ export function Hub() {
   const [isStoreOpen, setIsStoreOpen] = useState(false);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false);
   const [appSettings, setAppSettings] = useState({ match_cost: 1, premium_modules: ['kontrola'], module_costs: {} });
 
   // Music submission modal state
@@ -1679,28 +1681,31 @@ export function Hub() {
                     </button>
                   )}
 
-                  {/* Avatar circle — click to open dropdown */}
+                  {/* Avatar circle — click to open dropdown / profile settings */}
                   <div style={{ position: 'relative' }}>
                     <button
                       onClick={() => setIsProfileDropdownOpen(v => !v)}
-                      title={userProfile?.username || 'Player'}
+                      title={userProfile?.username || 'Player Profile'}
                       style={{
-                        width: '40px', height: '40px',
-                        borderRadius: '50%',
-                        background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.95))',
-                        border: '2px solid var(--neon-gold)',
-                        color: 'var(--neon-gold)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        padding: 0,
+                        background: 'none',
+                        border: 'none',
                         cursor: 'pointer',
-                        fontSize: '1rem', fontWeight: 'bold',
-                        fontFamily: 'Bebas Neue, sans-serif',
-                        transition: 'all 0.2s ease',
-                        boxShadow: isProfileDropdownOpen ? '0 0 14px rgba(0,240,255,0.4)' : 'none'
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'transform 0.2s ease'
                       }}
-                      onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--neon-cyan)'; e.currentTarget.style.boxShadow = '0 0 14px rgba(0,240,255,0.4)'; }}
-                      onMouseOut={e => { if (!isProfileDropdownOpen) { e.currentTarget.style.borderColor = 'rgba(0,240,255,0.5)'; e.currentTarget.style.boxShadow = 'none'; } }}
+                      onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                      onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
                     >
-                      {(userProfile?.username || 'P').charAt(0).toUpperCase()}
+                      <PlayerAvatar
+                        avatarId={userProfile?.avatar_id}
+                        username={userProfile?.username}
+                        size={42}
+                        borderColor={isProfileDropdownOpen ? 'var(--neon-cyan, #00f0ff)' : 'var(--neon-gold, #FBC80D)'}
+                        showGlow={isProfileDropdownOpen}
+                      />
                     </button>
 
                     {/* Dropdown menu */}
@@ -1713,26 +1718,73 @@ export function Hub() {
                         />
                         <div style={{
                           position: 'absolute', top: 'calc(100% + 10px)', right: 0,
-                          minWidth: '200px',
-                          background: 'rgba(6, 14, 32, 0.97)',
+                          minWidth: '220px',
+                          background: 'rgba(6, 14, 32, 0.98)',
                           border: '1px solid rgba(0,240,255,0.25)',
-                          borderRadius: '14px',
-                          padding: '8px',
-                          boxShadow: '0 12px 40px rgba(0,0,0,0.7)',
+                          borderRadius: '16px',
+                          padding: '10px',
+                          boxShadow: '0 12px 40px rgba(0,0,0,0.8), 0 0 20px rgba(0,240,255,0.15)',
                           backdropFilter: 'blur(16px)',
                           zIndex: 200,
                           fontFamily: 'Bebas Neue, sans-serif'
                         }}>
-                          {/* Profile header */}
-                          <div style={{ padding: '10px 12px 8px', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: '4px' }}>
-                            <div style={{ fontWeight: 'bold', color: '#fff', fontSize: '1rem' }}>{userProfile?.username || 'Player'}</div>
-                            <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', marginTop: '2px' }}>{currentUser?.email}</div>
-                            {userProfile?.is_admin && (
-                              <span style={{ display: 'inline-block', marginTop: '4px', fontSize: '0.62rem', fontWeight: 'bold', background: 'rgba(251, 200, 13,0.15)', color: 'var(--neon-gold)', border: '1px solid rgba(251, 200, 13,0.35)', borderRadius: '4px', padding: '1px 6px', letterSpacing: '0.5px' }}>ADMIN</span>
-                            )}
+                          {/* Profile header with avatar */}
+                          <div style={{ 
+                            padding: '8px 10px 12px', 
+                            borderBottom: '1px solid rgba(255,255,255,0.08)', 
+                            marginBottom: '6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px'
+                          }}>
+                            <PlayerAvatar
+                              avatarId={userProfile?.avatar_id}
+                              username={userProfile?.username}
+                              size={38}
+                              borderColor="var(--neon-gold, #FBC80D)"
+                            />
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                              <div style={{ fontWeight: 'bold', color: '#fff', fontSize: '1.05rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {userProfile?.username || 'Player'}
+                              </div>
+                              <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {currentUser?.email}
+                              </div>
+                              {userProfile?.is_admin && (
+                                <span style={{ display: 'inline-block', marginTop: '3px', fontSize: '0.6rem', fontWeight: 'bold', background: 'rgba(251, 200, 13,0.15)', color: 'var(--neon-gold)', border: '1px solid rgba(251, 200, 13,0.35)', borderRadius: '4px', padding: '1px 5px', letterSpacing: '0.5px' }}>ADMIN</span>
+                              )}
+                            </div>
                           </div>
 
                           {/* Menu items */}
+                          <button
+                            onClick={() => {
+                              setIsProfileDropdownOpen(false);
+                              setIsProfileSettingsOpen(true);
+                            }}
+                            style={{
+                              width: '100%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '10px',
+                              background: 'transparent',
+                              border: 'none',
+                              color: 'var(--neon-cyan, #00f0ff)',
+                              padding: '10px 12px',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              fontSize: '0.92rem',
+                              fontWeight: 'bold',
+                              fontFamily: 'Bebas Neue, sans-serif',
+                              letterSpacing: '0.5px',
+                              transition: 'background 0.15s'
+                            }}
+                            onMouseOver={e => e.currentTarget.style.background = 'rgba(0, 240, 255, 0.12)'}
+                            onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                          >
+                            <User size={16} /><span>Profile & Settings</span>
+                          </button>
+
                           <button onClick={() => { setIsProfileDropdownOpen(false); handleLogout(); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', background: 'transparent', border: 'none', color: '#ff8080', padding: '10px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.88rem', fontWeight: 'bold', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.5px', transition: 'background 0.15s' }}
                             onMouseOver={e => e.currentTarget.style.background = 'rgba(255,60,60,0.12)'}
                             onMouseOut={e => e.currentTarget.style.background = 'transparent'}
@@ -1775,6 +1827,15 @@ export function Hub() {
               onPurchaseComplete={(amount) => {
                 setUserProfile(prev => ({ ...prev, crystals_collected: (prev?.crystals_collected || 0) + amount }));
               }} 
+            />
+            <ProfileSettingsModal
+              isOpen={isProfileSettingsOpen}
+              onClose={() => setIsProfileSettingsOpen(false)}
+              currentUser={currentUser}
+              userProfile={userProfile}
+              onProfileUpdated={(updated) => {
+                setUserProfile(updated);
+              }}
             />
 
 

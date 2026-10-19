@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Trophy, X, Medal } from 'lucide-react';
 import { authService } from '../services/authService';
 import { leaderboardCache } from '../services/preferenceService';
+import PlayerAvatar from './PlayerAvatar';
 
 export const LeaderboardModal = ({ isOpen, onClose }) => {
   const [players, setPlayers] = useState([]);
@@ -147,6 +148,12 @@ export const LeaderboardModal = ({ isOpen, onClose }) => {
                     </div>
                     
                     <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <PlayerAvatar
+                        avatarId={p.avatar_id}
+                        username={p.username}
+                        size={32}
+                        borderColor={idx === 0 ? '#FBC80D' : idx === 1 ? '#c0c0c0' : idx === 2 ? '#cd7f32' : 'rgba(255,255,255,0.2)'}
+                      />
                       <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff' }}>
                         {p.username || 'Anonymous'}
                       </div>
