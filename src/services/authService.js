@@ -208,7 +208,12 @@ export const authService = {
       throw new Error('Supabase is not configured.');
     }
     const cleanEmail = email.trim().toLowerCase();
-    const redirectUrl = window.location.origin + window.location.pathname;
+    // For GitHub Pages (or custom domains), ensure pathname has trailing slash
+    let originPath = window.location.origin + window.location.pathname;
+    if (!originPath.endsWith('/')) {
+      originPath += '/';
+    }
+    const redirectUrl = originPath;
     const { data, error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
       redirectTo: redirectUrl
     });

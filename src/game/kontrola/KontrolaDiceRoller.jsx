@@ -1195,7 +1195,7 @@ export default function KontrolaDiceRoller({
                       }}
                     >
                       <RotateCcw size={22} />
-                      <span>?? RE-ROLL CLASH</span>
+                      <span>🔄 RE-ROLL CLASH</span>
                     </button>
                   ) : (
                     <div
@@ -1210,53 +1210,12 @@ export default function KontrolaDiceRoller({
                       }}
                     >
                       <RotateCcw size={18} />
-                      <span>? Stalemate! Waiting for Attacker to re-roll...</span>
-                    </div>
-                  )
-                ) : (atkWon && hasMultiplierDie && !hasRolledMultiplier) ? (
-                  isAttacker ? (
-                    <button
-                      onClick={handleRollMultiplierDie}
-                      disabled={isRollingMultiplier}
-                      style={{
-                        background: 'linear-gradient(135deg, #FBC80D, #ff8800)',
-                        color: '#000',
-                        border: 'none',
-                        padding: '14px 38px',
-                        borderRadius: '12px',
-                        fontSize: '1.15rem',
-                        fontWeight: '900',
-                        cursor: isRollingMultiplier ? 'wait' : 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        fontFamily: 'Bebas Neue, sans-serif',
-                        letterSpacing: '1px',
-                        boxShadow: '0 0 25px rgba(251, 200, 13, 0.55)',
-                        transition: 'all 0.2s ease'
-                      }}
-                    >
-                      <Sparkles size={22} />
-                      <span>{isRollingMultiplier ? 'ROLLING MULTIPLIER DIE...' : 'ROLL 1 MULTIPLIER DIE'}</span>
-                    </button>
-                  ) : (
-                    <div
-                      style={{
-                        color: '#FBC80D',
-                        fontStyle: 'italic',
-                        fontSize: '1rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px'
-                      }}
-                    >
-                      <Clock size={18} />
-                      <span>Attacker won clash! Waiting for attacker to roll multiplier die...</span>
+                      <span>⏳ Stalemate! Waiting for Attacker to re-roll...</span>
                     </div>
                   )
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
+                    {/* Doubles Re-Roll Bonus Option */}
                     {((attackerFateCard && isAttacker) || (defenderFateCard && isDefender) || ((attackerFateCard || defenderFateCard) && isHost)) && (
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center' }}>
                         <button
@@ -1283,6 +1242,50 @@ export default function KontrolaDiceRoller({
                         </button>
                       </div>
                     )}
+
+                    {(atkWon && hasMultiplierDie && !hasRolledMultiplier) ? (
+                      isAttacker ? (
+                        <button
+                          onClick={handleRollMultiplierDie}
+                          disabled={isRollingMultiplier}
+                          style={{
+                            background: 'linear-gradient(135deg, #FBC80D, #ff8800)',
+                            color: '#000',
+                            border: 'none',
+                            padding: '14px 38px',
+                            borderRadius: '12px',
+                            fontSize: '1.15rem',
+                            fontWeight: '900',
+                            cursor: isRollingMultiplier ? 'wait' : 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '10px',
+                            fontFamily: 'Bebas Neue, sans-serif',
+                            letterSpacing: '1px',
+                            boxShadow: '0 0 25px rgba(251, 200, 13, 0.55)',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          <Sparkles size={22} />
+                          <span>{isRollingMultiplier ? 'ROLLING MULTIPLIER DIE...' : 'ROLL 1 MULTIPLIER DIE'}</span>
+                        </button>
+                      ) : (
+                        <div
+                          style={{
+                            color: '#FBC80D',
+                            fontStyle: 'italic',
+                            fontSize: '1rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px'
+                          }}
+                        >
+                          <Clock size={18} />
+                          <span>Attacker won clash! Waiting for attacker to roll multiplier die...</span>
+                        </div>
+                      )
+                    ) : null}
                     {hasRetreatCard && onExecuteRetreat && (isAttacker || isDefender) && (
                       <button
                         onClick={() => onExecuteRetreat(isAttacker ? 'attacker' : 'defender')}

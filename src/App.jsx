@@ -2227,8 +2227,10 @@ function App() {
   useEffect(() => {
     let isMounted = true;
 
-    // Check if URL hash or search contains recovery tokens
-    if (window.location.hash.includes('type=recovery') || window.location.search.includes('type=recovery')) {
+    // Check if URL hash or search contains recovery tokens or auth code
+    const isRecoveryHash = window.location.hash.includes('type=recovery') || (window.location.hash.includes('access_token=') && window.location.hash.includes('type=recovery'));
+    const isRecoverySearch = window.location.search.includes('type=recovery') || window.location.search.includes('code=');
+    if (isRecoveryHash || isRecoverySearch) {
       setShowPasswordRecoveryModal(true);
     }
 
@@ -2361,9 +2363,17 @@ function App() {
           isOpen={true}
           initialMode="update_password"
           preventClose={false}
-          onClose={() => setShowPasswordRecoveryModal(false)}
+          onClose={() => {
+            setShowPasswordRecoveryModal(false);
+            if (window.location.hash || window.location.search) {
+              window.history.replaceState(null, '', window.location.pathname);
+            }
+          }}
           onAuthSuccess={async (u) => {
             setShowPasswordRecoveryModal(false);
+            if (window.location.hash || window.location.search) {
+              window.history.replaceState(null, '', window.location.pathname);
+            }
             const user = u || await authService.getCurrentUser();
             if (user) {
               setCurrentUser(user);

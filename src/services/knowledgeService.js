@@ -165,7 +165,8 @@ export const knowledgeService = {
   async logUserQuestion({ userId = null, userName = 'Guest Player', questionText, aiAnswer, matchedTopic = null, appSource = 'companion_hub' }) {
     if (!supabase || !questionText) return null;
     try {
-      const { data, error } = await supabase
+      const client = supabaseAdmin || supabase;
+      const { data, error } = await client
         .from('user_questions')
         .insert({
           user_id: userId,
@@ -200,7 +201,8 @@ export const knowledgeService = {
         updates.user_suggested_answer = suggestedAnswer.trim();
         updates.admin_status = 'pending';
       }
-      const { error } = await supabase
+      const client = supabaseAdmin || supabase;
+      const { error } = await client
         .from('user_questions')
         .update(updates)
         .eq('id', questionId);
@@ -220,7 +222,8 @@ export const knowledgeService = {
         if (ok) return true;
       }
       if (!supabase) return false;
-      const { error } = await supabase
+      const client = supabaseAdmin || supabase;
+      const { error } = await client
         .from('user_questions')
         .insert({
           user_id: userId,
@@ -243,7 +246,8 @@ export const knowledgeService = {
   // Admin: Fetch questions — always Supabase, filter by pending by default
   async fetchUserQuestions({ filter = 'pending', limit = 50 } = {}) {
     if (!supabase) return [];
-    let query = supabase
+    const client = supabaseAdmin || supabase;
+    let query = client
       .from('user_questions')
       .select('*')
       .order('created_at', { ascending: false })
@@ -270,7 +274,8 @@ export const knowledgeService = {
     if (adminApprovedAnswer) {
       updates.admin_approved_answer = adminApprovedAnswer.trim();
     }
-    const { error } = await supabase
+    const client = supabaseAdmin || supabase;
+    const { error } = await client
       .from('user_questions')
       .update(updates)
       .eq('id', questionId);

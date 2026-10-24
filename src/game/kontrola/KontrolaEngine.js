@@ -852,7 +852,8 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     }
 
     // Shadow Purr: Heals attacker + puts defender to sleep (only on successful hit)
-    if (attackSelectionName === 'SHADOW PURR' && atkWin && newDefenderState) {
+    const isShadowPurr = attackSelectionName && attackSelectionName.toUpperCase().replace(/\s+/g, '').includes('SHADOWPURR');
+    if (isShadowPurr && atkWin && newDefenderState) {
       newAttackerState.hp = Math.min(newAttackerState.maxHp || 100, newAttackerState.hp + 15);
       newDefenderState.sleepTurns = (newDefenderState.sleepTurns || 0) + 1;
       log += ` 😻 SHADOW PURR! ${newAttackerState.name} restored +15 HP and ${newDefenderState.name} falls asleep for 1 turn!`;

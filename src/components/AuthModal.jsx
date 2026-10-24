@@ -12,6 +12,14 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
+  React.useEffect(() => {
+    if (initialMode) {
+      setAuthMode(initialMode);
+      setErrorMsg('');
+      setSuccessMsg('');
+    }
+  }, [initialMode, isOpen]);
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
