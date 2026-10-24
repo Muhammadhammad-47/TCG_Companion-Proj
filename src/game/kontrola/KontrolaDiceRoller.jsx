@@ -193,8 +193,11 @@ export default function KontrolaDiceRoller({
   isHost = false,
   isExternallyRolling = false,
   onTriggerRoll = null,
-  onForceClose = null
+  onForceClose = null,
+  playerHand = [],
+  onExecuteRetreat = null
 }) {
+  const hasRetreatCard = Array.isArray(playerHand) && playerHand.some(c => c.name?.includes('RETREAT'));
   // SAFETY: Ensure combatData and all required properties exist before using them
   // This prevents "Cannot access X before initialization" errors during build minification
   if (!combatData) {
@@ -446,6 +449,7 @@ export default function KontrolaDiceRoller({
             if (refs.isAttacker || refs.isHost) {
               if (refs.isTie) refs.handleReRoll();
               else if (refs.hasRolledMultiplier === false) refs.handleRollMultiplierDie();
+              else if (showRerollOption && (attackerFateCard || defenderFateCard)) { /* Wait for player to choose re-roll */ }
               else if (typeof refs.handleFinishCombat === 'function') refs.handleFinishCombat();
             }
           }
@@ -475,6 +479,7 @@ export default function KontrolaDiceRoller({
       setShowRerollOption(false);
       setAttackerFateCard(false);
       setDefenderFateCard(false);
+      setSecondsRemaining(15);
       setPhase('clash');
       return;
     }
@@ -1130,10 +1135,17 @@ export default function KontrolaDiceRoller({
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <CanvasPipDie value={multiplierDie} theme="red" isRolling={isRollingMultiplier} size={54} />
-                    <div style={{ textAlign: 'left' }}>
-                      <div style={{ fontSize: '1rem', color: '#fff' }}>
-                        Roll: <strong>{multiplierDie}</strong> � {selectedAttackInfo.ap} AP = <strong style={{ color: '#39ff14' }}>{multiplierDie * selectedAttackInfo.ap} Total AP</strong>
-                      </div>
+                                        <div style={{ textAlign: 'left' }}>
+                      {(() => {
+                        const isAtkX2 = actionCard?.name?.includes('ATTACK X2');
+                        const perAp = isAtkX2 ? (selectedAttackInfo.ap * 2) : selectedAttackInfo.ap;
+                        const total = multiplierDie * perAp;
+                        return (
+                          <div style={{ fontSize: '1rem', color: '#fff' }}>
+                            Roll: <strong>{multiplierDie}</strong> × {perAp} AP {isAtkX2 ? '(Attack X2 doubled)' : ''} = <strong style={{ color: '#39ff14' }}>{total} Total AP</strong>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                   {isAttacker && !hasRolledMultiplier && (
@@ -1270,6 +1282,30 @@ export default function KontrolaDiceRoller({
                           <span>🔄 RE-ROLL (DOUBLES BONUS)</span>
                         </button>
                       </div>
+                    )}
+                    {hasRetreatCard && onExecuteRetreat && (isAttacker || isDefender) && (
+                      <button
+                        onClick={() => onExecuteRetreat(isAttacker ? 'attacker' : 'defender')}
+                        style={{
+                          background: 'linear-gradient(135deg, #00d2ff, #0066ff)',
+                          color: '#fff',
+                          border: 'none',
+                          padding: '12px 28px',
+                          borderRadius: '12px',
+                          fontSize: '1.1rem',
+                          fontWeight: '900',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          fontFamily: 'Bebas Neue, sans-serif',
+                          letterSpacing: '1px',
+                          boxShadow: '0 0 20px rgba(0, 210, 255, 0.45)'
+                        }}
+                        title={isAttacker ? 'Disengage attack without taking damage' : 'Disengage battle and safely escape (lose next turn)'}
+                      >
+                        <span>💨 PLAY RETREAT CARD ({isAttacker ? 'ATTACKER DISENGAGE' : 'DEFENDER ESCAPE -1 TURN'})</span>
+                      </button>
                     )}
                     <button
                       onClick={handleFinishCombat}

@@ -4,7 +4,7 @@ import {
   ArrowLeft, Wifi, Swords, Shield, Skull, Zap, ScrollText, MessageSquare,
   Dices, Crown, Trophy, Layers, Clock, HelpCircle, X, Eye, Users, RefreshCw,
   Lock, Radio, AlertTriangle, Play, Sparkles, CheckCircle2, SkipForward, FastForward,
-  Music, Pause, Volume2, VolumeX, ChevronDown, ChevronUp
+  Music, Pause, Volume2, VolumeX, ChevronDown, ChevronUp, Trash2
 } from 'lucide-react';
 import { DynamicScaleWrapper } from '../../components/DynamicScaleWrapper';
 import { soundFX } from '../utils/audio';
@@ -717,6 +717,15 @@ export default function KontrolaArena() {
           const newState = event.payload;
           setGameState(newState);
           setIsProcessingAction(false); // Free the action lock on state sync
+          if (newState?.rollOffs) {
+            setRollingOffPlayers(prev => {
+              const updated = { ...prev };
+              Object.keys(newState.rollOffs).forEach(pId => {
+                delete updated[pId];
+              });
+              return updated;
+            });
+          }
           if (newState?.winner) {
             setWinner(newState.winner);
           }
@@ -849,6 +858,8 @@ export default function KontrolaArena() {
               const kept = { defenseCard: prev?.precalculatedRolls?.defenseCard ?? null };
               return prev ? { ...prev, precalculatedRolls: kept } : prev;
             });
+            setIsDiceRollingSync(false);
+            return;
           } else if (event.payload?.precalculatedRolls) {
             // Merge the incoming rolls into activeCombat.
             // NOTE: We always merge — the sync guard in KontrolaDiceRoller's useEffect
@@ -1386,6 +1397,54 @@ export default function KontrolaArena() {
         return nextState;
       }
 
+      if (payload.actionType === 'EXECUTE_RETREAT') {
+        const { retreatingPlayerId, role, reason } = payload;
+        const char = currentState.characterStates?.[retreatingPlayerId];
+        const pHand = [...(currentState.hands?.[retreatingPlayerId] || [])];
+        const rIdx = pHand.findIndex(c => c.name?.includes('RETREAT'));
+        if (rIdx !== -1) {
+          pHand.splice(rIdx, 1);
+          let deck = [...(currentState.deck || [])];
+          if (deck.length > 0) {
+            pHand.push(deck.shift());
+          }
+        }
+        while (pHand.length > 10) pHand.pop();
+
+        const livingPlayers = currentState.players.filter(pId => !currentState.characterStates?.[pId]?.isDefeated);
+        const currentIdx = livingPlayers.indexOf(currentState.turn);
+        const step = currentState.turnDirection === 'counter' ? -1 : 1;
+        let nextIdx = (currentIdx + step) % livingPlayers.length;
+        if (nextIdx < 0) nextIdx += livingPlayers.length;
+        let nextTurnPlayerId = livingPlayers[nextIdx] || livingPlayers[0];
+
+        const logMsg = role === 'attacker'
+          ? `💨 ${char?.name || 'Attacker'} used RETREAT to disengage from combat! Turn ended without taking damage.`
+          : `💨 ${char?.name || 'Defender'} used RETREAT to disengage from battle and safely escapes (loses next turn)!`;
+
+        const updatedCharStates = { ...currentState.characterStates };
+        if (role === 'defender' && updatedCharStates[retreatingPlayerId]) {
+          updatedCharStates[retreatingPlayerId] = {
+            ...updatedCharStates[retreatingPlayerId],
+            sleepTurns: (updatedCharStates[retreatingPlayerId].sleepTurns || 0) + 1
+          };
+        }
+
+        const nextState = {
+          ...currentState,
+          turn: nextTurnPlayerId,
+          pendingAttackX2For: null,
+          hands: {
+            ...(currentState.hands || {}),
+            [retreatingPlayerId]: pHand
+          },
+          characterStates: updatedCharStates,
+          logs: [logMsg, ...(currentState.logs || [])]
+        };
+        broadcastState(matchIdRef.current, nextState);
+        return nextState;
+      }
+
       if (payload.actionType === 'EXECUTE_ALLIANCE_TRADE') {
         const { traderId, recipientId, tradeType, card, amount } = payload;
         const traderHand = [...(currentState.hands?.[traderId] || [])];
@@ -1421,6 +1480,44 @@ export default function KontrolaArena() {
             [recipientId]: recipientChar
           },
           logs: [tradeLog, ...(currentState.logs || [])]
+        };
+        broadcastState(matchIdRef.current, nextState);
+        return nextState;
+      }
+
+      if (payload.actionType === 'DISCARD_AND_DRAW') {
+        const { actorId, cardId, cardName } = payload;
+        const actorHand = [...(currentState.hands?.[actorId] || [])];
+        const actorChar = currentState.characterStates?.[actorId];
+        const cIdx = actorHand.findIndex(c => (cardId && c.id === cardId) || c.name === cardName);
+        let discardedCard = null;
+        if (cIdx !== -1) {
+          [discardedCard] = actorHand.splice(cIdx, 1);
+        }
+        let newDeck = [...(currentState.deck || [])];
+        let drawnCard = null;
+        if (newDeck.length > 0) {
+          drawnCard = newDeck.shift();
+          actorHand.push(drawnCard);
+        }
+        while (actorHand.length > 10) actorHand.pop();
+        const livingPlayers = currentState.players.filter(pId => !currentState.characterStates?.[pId]?.isDefeated);
+        const currentIdx = livingPlayers.indexOf(actorId);
+        const step = currentState.turnDirection === 'counter' ? -1 : 1;
+        let nextIdx = (currentIdx + step) % livingPlayers.length;
+        if (nextIdx < 0) nextIdx += livingPlayers.length;
+        let nextTurnPlayerId = livingPlayers[nextIdx] || livingPlayers[0];
+        const logMsg = `${actorChar?.name || 'Player'} discarded "${discardedCard?.name || cardName || 'card'}" and drew a new Action Card (only move for this turn).`;
+        const nextState = {
+          ...currentState,
+          turn: nextTurnPlayerId,
+          pendingAttackX2For: null,
+          deck: newDeck,
+          hands: {
+            ...(currentState.hands || {}),
+            [actorId]: actorHand
+          },
+          logs: [logMsg, ...(currentState.logs || [])]
         };
         broadcastState(matchIdRef.current, nextState);
         return nextState;
@@ -2187,6 +2284,33 @@ export default function KontrolaArena() {
     setSelectedTargetId(null);
   };
 
+  // Discard a selected card in your hand and pick a new one from Action Card deck as your ONLY turn move
+  const handleDiscardActionCardTurn = () => {
+    if (isProcessingAction) return;
+    playClick();
+    if (!isMyTurn || isSpectator) return;
+    if (!selectedActionCard) {
+      showNotice('Please select the Action Card you want to discard first.', 'warning');
+      return;
+    }
+    setIsProcessingAction(true);
+    const payload = {
+      actionType: 'DISCARD_AND_DRAW',
+      actorId: playerId,
+      cardId: selectedActionCard.id,
+      cardName: selectedActionCard.name
+    };
+    if (isHost) {
+      enqueueHostAction(payload);
+    } else {
+      takeTurn(matchId, { type: 'PLAYER_ACTION', payload });
+    }
+    setTimeout(() => setIsProcessingAction(false), 2500);
+    setSelectedActionCard(null);
+    setSelectedCharacterAttack(null);
+    setSelectedTargetId(null);
+  };
+
   // Host force skip for stalled / AFK player
   const handleForceSkipCurrentPlayer = () => {
     playClick();
@@ -2252,9 +2376,10 @@ export default function KontrolaArena() {
       isVampire
     });
 
-    // Level check for Vitality Gain V20
-    if (selectedActionCard.name.includes('VITALITY GAIN V20') && (myCharacter.level || 1) < 2) {
-      showNotice('VITALITY GAIN V20 requires your character to be at least Level 2!', 'warning');
+    // Level check for Vitality Gain V20 (requires reaching 150 HP / Level 2)
+    const isLevel2 = (myCharacter?.hp || 0) >= 150 || (myCharacter?.level || 1) >= 2;
+    if (selectedActionCard.name.includes('VITALITY GAIN V20') && !isLevel2) {
+      showNotice('Only available in level 2 (requires 150 HP)', 'warning');
       return;
     }
 
@@ -2266,7 +2391,7 @@ export default function KontrolaArena() {
       return; // Must select target
     }
 
-    const needsTarget = ['POISON', 'SLEEPY', 'FREEZE', 'X-CHANGE', 'KONTROL', 'SOUL ALLIANCE'].some(kw => selectedActionCard.name.includes(kw)) || (selectedActionCard.name.includes('VISION') && !selectedActionCard.name.includes('FULL'));
+    const needsTarget = ['POISON', 'SLEEPY', 'FREEZE', 'X-CHANGE', 'KONTROL', 'SOUL ALLIANCE', 'DRAIN', 'VAMPIRE'].some(kw => selectedActionCard.name.includes(kw)) || (selectedActionCard.name.includes('VISION') && !selectedActionCard.name.includes('FULL'));
     if (needsTarget && !selectedTargetId) {
       showNotice('Please select a target player first!', 'warning');
       return;
@@ -2381,7 +2506,7 @@ export default function KontrolaArena() {
         return prev ? { ...prev, precalculatedRolls: kept } : prev;
       });
       await broadcastUIEvent(matchId, 'dice_screen_rolled', { timestamp: Date.now(), isReroll: true });
-      setIsDiceRollingSync(true);
+      setIsDiceRollingSync(false);
     } else {
       await broadcastUIEvent(matchId, 'dice_screen_rolled', { timestamp: Date.now() });
       setIsDiceRollingSync(true);
@@ -2403,6 +2528,28 @@ export default function KontrolaArena() {
     setIsDiceRollingSync(false);
     if (resolved && isHost && activeCombat) {
       enqueueHostAction({ ...activeCombat, actionType: 'RESOLVE_COMBAT' }, rollsToApply);
+    }
+  };
+
+  // Disengage from combat using RETREAT card (Attacker after rolling, Defender after attacker rolls)
+  const handleExecuteRetreat = async (role = 'attacker') => {
+    playClick();
+    const payload = {
+      actionType: 'EXECUTE_RETREAT',
+      retreatingPlayerId: playerId,
+      role
+    };
+    await broadcastUIEvent(matchId, 'dice_screen_close', {
+      resolved: false,
+      combatData: activeCombat,
+      retreat: true
+    });
+    setActiveCombat(null);
+    setIsDiceRollingSync(false);
+    if (isHost) {
+      enqueueHostAction(payload);
+    } else {
+      takeTurn(matchId, { type: 'PLAYER_ACTION', payload });
     }
   };
 
@@ -4435,6 +4582,31 @@ export default function KontrolaArena() {
                         <span>PASS / END TURN</span>
                       </button>
                     )}
+                    {isMyTurn && (
+                      <button
+                        className="btn-discard-turn"
+                        onClick={handleDiscardActionCardTurn}
+                        disabled={!selectedActionCard}
+                        style={{
+                          background: selectedActionCard ? 'rgba(251, 200, 13, 0.15)' : 'rgba(255, 255, 255, 0.04)',
+                          border: selectedActionCard ? '1.5px solid var(--neon-gold)' : '1.5px solid rgba(255, 255, 255, 0.15)',
+                          color: selectedActionCard ? 'var(--neon-gold)' : 'rgba(255, 255, 255, 0.3)',
+                          padding: '12px 18px',
+                          borderRadius: '8px',
+                          fontWeight: 'bold',
+                          cursor: selectedActionCard ? 'pointer' : 'not-allowed',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          letterSpacing: '0.5px',
+                          transition: 'all 0.2s ease'
+                        }}
+                        title="Discard selected card in hand & pick one from Action Deck (counts as your only move for this turn)"
+                      >
+                        <Trash2 size={16} />
+                        <span>DISCARD & DRAW (TURN MOVE)</span>
+                      </button>
+                    )}
                     <button
                       className={`btn-end-turn-cta ${isMyTurn && selectedActionCard ? 'flashing-end-turn-cta' : ''}`}
                       disabled={
@@ -4446,11 +4618,8 @@ export default function KontrolaArena() {
                           !selectedActionCard.name.includes('FIRE FLAME') &&
                           !selectedActionCard.name.includes('VAMPIRE') &&
                           (!selectedCharacterAttack || !selectedTargetId)) ||
-                        (selectedActionCard.name?.includes('VAMPIRE') && !selectedTargetId) ||
-                        (['POISON', 'SLEEPY', 'FREEZE', 'X-CHANGE', 'KONTROL', 'SOUL ALLIANCE'].some(kw => selectedActionCard.name.includes(kw)) && !selectedTargetId) ||
-                        (selectedActionCard.name.includes('VISION') && !selectedActionCard.name.includes('FULL') && !selectedTargetId) ||
-                        (selectedActionCard.name.includes('VITALITY GAIN V20') &&
-                          (myCharacter?.level || 1) < 2)
+                        (['POISON', 'SLEEPY', 'FREEZE', 'X-CHANGE', 'KONTROL', 'SOUL ALLIANCE', 'DRAIN', 'VAMPIRE'].some(kw => selectedActionCard.name.includes(kw)) && !selectedTargetId) ||
+                        (selectedActionCard.name.includes('VISION') && !selectedActionCard.name.includes('FULL') && !selectedTargetId)
                       }
                       onClick={playTurn}
                       style={{
@@ -5389,6 +5558,8 @@ export default function KontrolaArena() {
               onClose={async () => await handleCloseDiceScreen(false)}
               onForceClose={async () => await handleCloseDiceScreen(false)}
               onCombatComplete={async (finalRolls) => await handleCloseDiceScreen(true, finalRolls)}
+              playerHand={myHand}
+              onExecuteRetreat={handleExecuteRetreat}
             />
           )}
 

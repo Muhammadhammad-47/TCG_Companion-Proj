@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { authService } from '../services/authService';
 import { X, User, Mail, Lock, Sparkles, AlertCircle, CheckCircle, ArrowLeft, KeyRound } from 'lucide-react';
 
-export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false }) {
-  // authMode: 'signin' | 'signup' | 'forgot'
-  const [authMode, setAuthMode] = useState('signin');
+export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false, initialMode = 'signin' }) {
+  // authMode: 'signin' | 'signup' | 'forgot' | 'update_password'
+  const [authMode, setAuthMode] = useState(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
@@ -50,6 +50,16 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
         }
         await authService.resetPassword(email);
         setSuccessMsg('Password recovery email sent! Check your inbox to reset your password.');
+      } else if (authMode === 'update_password') {
+        if (!password || password.length < 6) {
+          throw new Error('Password must be at least 6 characters.');
+        }
+        await authService.updatePassword(password);
+        setSuccessMsg('Password updated successfully! You are now logged in.');
+        setTimeout(() => {
+          if (onAuthSuccess) onAuthSuccess();
+          if (onClose) onClose();
+        }, 1200);
       }
     } catch (err) {
       if (err?.status === 429 || (err?.message && (err.message.includes('429') || err.message.toLowerCase().includes('rate limit')))) {
@@ -132,16 +142,18 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
             {authMode === 'signup' && 'PLAYER REGISTRATION'}
             {authMode === 'signin' && 'PLAYER LOGIN'}
             {authMode === 'forgot' && 'ACCOUNT RECOVERY'}
+            {authMode === 'update_password' && 'SET NEW PASSWORD'}
           </h2>
           <p style={{ color: 'var(--text-muted, #CBD5E1)', fontSize: '0.95rem', margin: 0, fontFamily: 'var(--font-sub, "Barlow Condensed", sans-serif)' }}>
             {authMode === 'signup' && 'Create your player profile to preserve battle crystals & ranking.'}
             {authMode === 'signin' && 'Authenticate to enter the battle arena, chatbot & simulator.'}
             {authMode === 'forgot' && 'Enter your registered email to receive a password reset link.'}
+            {authMode === 'update_password' && 'Enter your new secure password below to complete recovery.'}
           </p>
         </div>
 
-        {/* Tabs: Sign In / Register (Hidden on forgot password) */}
-        {authMode !== 'forgot' ? (
+        {/* Tabs: Sign In / Register (Hidden on forgot password and update_password) */}
+        {authMode !== 'forgot' && authMode !== 'update_password' ? (
           <div
             style={{
               display: 'flex',
@@ -292,34 +304,36 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
             </div>
           )}
 
-          <div>
-            <label style={{ display: 'block', color: 'rgba(255, 255, 255, 0.85)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 'bold', letterSpacing: '1px' }}>
-              EMAIL ADDRESS
-            </label>
-            <div style={{ position: 'relative' }}>
-              <Mail size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--neon-cyan, #FBC80D)' }} />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="player@attentiontcg.com"
-                autoComplete="email"
-                required
-                style={{
-                  width: '100%',
-                  boxSizing: 'border-box',
-                  padding: '12px 14px 12px 40px',
-                  background: 'var(--bg-card)',
-                  border: '1.5px solid rgba(251, 200, 13, 0.3)',
-                  borderRadius: '12px',
-                  color: '#fff',
-                  fontSize: '1rem',
-                  outline: 'none',
-                  fontFamily: 'var(--font-sub, "Barlow Condensed", sans-serif)'
-                }}
-              />
+          {authMode !== 'update_password' && (
+            <div>
+              <label style={{ display: 'block', color: 'rgba(255, 255, 255, 0.85)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 'bold', letterSpacing: '1px' }}>
+                EMAIL ADDRESS
+              </label>
+              <div style={{ position: 'relative' }}>
+                <Mail size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--neon-cyan, #FBC80D)' }} />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="player@attentiontcg.com"
+                  autoComplete="email"
+                  required={authMode !== 'update_password'}
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    padding: '12px 14px 12px 40px',
+                    background: 'var(--bg-card)',
+                    border: '1.5px solid rgba(251, 200, 13, 0.3)',
+                    borderRadius: '12px',
+                    color: '#fff',
+                    fontSize: '1rem',
+                    outline: 'none',
+                    fontFamily: 'var(--font-sub, "Barlow Condensed", sans-serif)'
+                  }}
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           {authMode !== 'forgot' && (
             <div>
@@ -391,7 +405,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess, preventClose = false
               fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)'
             }}
           >
-            {loading ? 'PROCESSING...' : authMode === 'signup' ? 'CREATE ACCOUNT' : authMode === 'signin' ? 'ENTER ATTENTION TCG' : 'SEND RESET LINK'}
+            {loading ? 'PROCESSING...' : authMode === 'signup' ? 'CREATE ACCOUNT' : authMode === 'signin' ? 'ENTER ATTENTION TCG' : authMode === 'update_password' ? 'UPDATE PASSWORD & SIGN IN' : 'SEND RESET LINK'}
           </button>
         </form>
 

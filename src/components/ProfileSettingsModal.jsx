@@ -31,6 +31,7 @@ export default function ProfileSettingsModal({
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
 
   // Status messages
   const [isSaving, setIsSaving] = useState(false);
@@ -49,6 +50,7 @@ export default function ProfileSettingsModal({
       setUsername(activeProf?.username || '');
       setUsernameError('');
       setPasswordError('');
+      setPasswordSuccess('');
       setNewPassword('');
       setConfirmPassword('');
       setSuccessMsg('');
@@ -156,10 +158,14 @@ export default function ProfileSettingsModal({
     setIsSaving(true);
     try {
       await authService.updatePassword(newPassword);
+      setPasswordSuccess('Password updated successfully!');
       setSuccessMsg('Password updated successfully!');
       setNewPassword('');
       setConfirmPassword('');
-      setTimeout(() => setSuccessMsg(''), 3000);
+      setTimeout(() => {
+        setSuccessMsg('');
+        setPasswordSuccess('');
+      }, 4000);
     } catch (err) {
       console.error('Failed to update password:', err);
       setPasswordError(err.message || 'Failed to update password.');
@@ -178,6 +184,7 @@ export default function ProfileSettingsModal({
 
   return (
     <div
+      className="profile-settings-fullscreen-view"
       style={{
         position: 'fixed',
         inset: 0,
@@ -187,7 +194,6 @@ export default function ProfileSettingsModal({
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        overflow: 'hidden',
         fontFamily: 'Barlow Condensed, sans-serif'
       }}
     >
@@ -798,6 +804,11 @@ export default function ProfileSettingsModal({
               {passwordError && (
                 <div style={{ fontSize: '0.78rem', color: '#ff8899' }}>
                   {passwordError}
+                </div>
+              )}
+              {passwordSuccess && (
+                <div style={{ fontSize: '0.78rem', color: '#39ff14', fontWeight: 'bold' }}>
+                  ✓ {passwordSuccess}
                 </div>
               )}
             </form>

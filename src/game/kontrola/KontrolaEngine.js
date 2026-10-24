@@ -203,8 +203,8 @@ export const ACTION_CARDS_PREMIUM = [
   { name: 'SHIELD SACRED PROTECTION', type: 'DEFENSE', count: 2, costET: 0, desc: 'Sacred barrier absorbing damage.' },
   { name: 'SHIELD ADVANCE +100HP', type: 'DEFENSE', count: 1, costET: 0, desc: '+100 Advanced Shield barrier.' },
   { name: 'SLEEPY X2', type: 'OTHERS', count: 3, costET: 0, desc: 'Target sleeps for 2 turns.' },
-  { name: 'VAMPIRE LIFE STEAL', type: 'ATTACK', count: 1, costET: 1, desc: 'Steals 1 ET and 10 HP for 3 turns.' },
-  { name: 'DRAIN', type: 'ATTACK', count: 2, costET: 1, desc: 'Steals all opponent Energy Tokens.' },
+  { name: 'VAMPIRE LIFE STEAL', type: 'OTHERS', count: 1, costET: 1, desc: 'Steals 1 ET and 10 HP for 3 turns.' },
+  { name: 'DRAIN', type: 'OTHERS', count: 2, costET: 1, desc: 'Steals all opponent Energy Tokens.' },
   { name: 'VITALITY GAIN V30', type: 'HEAL', count: 2, costET: 0, desc: '+30 HP vitality surge.' },
   { name: 'HEAL H40', type: 'HEAL', count: 2, costET: 0, desc: 'Restores +40 HP.' },
   { name: '+DEFENCE D20', type: 'DEFENSE', count: 4, costET: 0, desc: '+20 Defense points.' },
@@ -588,13 +588,10 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       const atk = attackerChar?.attacks?.[attackSelectionName] || template?.attacks?.[attackSelectionName];
       if (atk) {
         attackElement = atk.element || 'Physical';
-        if (atk.dice > 0 && (cardName.includes('ATTACK X1') || cardName.includes('ATTACK X2'))) {
-          const actionCardAP = cardName.includes('X2') ? 20 : 10;
-          baseAP = (dRoll?.total || 1) * actionCardAP;
-          log += ` [${attackSelectionName} with ${cardName}: ${dRoll?.total || 1} × ${actionCardAP} AP = ${baseAP} AP]`;
-        } else if (atk.dice > 0) {
-          baseAP = (dRoll?.total || 1) * atk.ap;
-          log += ` [${attackSelectionName}: ${dRoll?.total || 1} × ${atk.ap} AP = ${baseAP} AP]`;
+        if (atk.dice > 0) {
+          const multiplier = cardName.includes('ATTACK X2') ? (atk.ap * 2) : atk.ap;
+          baseAP = (dRoll?.total || 1) * multiplier;
+          log += ` [${attackSelectionName}${cardName.includes('ATTACK X2') ? ' (Attack X2 2× multiplier)' : ''}: ${dRoll?.total || 1} × ${multiplier} AP = ${baseAP} AP]`;
         } else {
           baseAP = atk.ap;
         }
@@ -910,32 +907,31 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       let requiredLevel = 1;
       let nextLevel = null;
 
+      const currentLevel = (newAttackerState.hp >= 150 || (newAttackerState.level || 1) >= 2) ? 2 : 1;
+
       if (cardName.includes('V10')) {
         vitAmount = 10;
-        requiredLevel = 1;
-        nextLevel = 2;
+        // Vitality V10 is usable in Level 1 and Level 2
       } else if (cardName.includes('V20')) {
         vitAmount = 20;
         requiredLevel = 2;
-        nextLevel = 3;
-        if ((newAttackerState.level || 1) < requiredLevel) {
-          log += ` ⚠️ VITALITY GAIN V20 requires Character Level ${requiredLevel}! (Current Level: ${newAttackerState.level || 1}). You must use VITALITY GAIN V10 to reach Level 2 first.`;
+        // Vitality V20 is for Level 2 (when player reaches 150 HP)
+        if (currentLevel < requiredLevel) {
+          log += ` ⚠️ Only available in level 2! VITALITY GAIN V20 requires reaching 150 HP (Level 2). Use Vitality V10 to level up first.`;
           return { newAttackerState, newDefenderState, log };
         }
       } else if (cardName.includes('V30')) {
         vitAmount = 30;
         requiredLevel = 3;
-        nextLevel = 4;
-        if ((newAttackerState.level || 1) < requiredLevel) {
-          log += ` ⚠️ VITALITY GAIN V30 requires Character Level ${requiredLevel}! (Current Level: ${newAttackerState.level || 1}). You must use VITALITY GAIN V10 or V20 to reach Level 3 first.`;
+        if ((newAttackerState.level || 1) < requiredLevel && (newAttackerState.maxHp || 100) < 180) {
+          log += ` ⚠️ Only available in level 3! VITALITY GAIN V30 requires Level 3.`;
           return { newAttackerState, newDefenderState, log };
         }
       } else if (cardName.includes('V40')) {
         vitAmount = 40;
         requiredLevel = 4;
-        nextLevel = 5;
-        if ((newAttackerState.level || 1) < requiredLevel) {
-          log += ` ⚠️ VITALITY GAIN V40 requires Character Level ${requiredLevel}! (Current Level: ${newAttackerState.level || 1}). You must use VITALITY GAIN V20 to V30 to reach Level 4 first.`;
+        if ((newAttackerState.level || 1) < requiredLevel && (newAttackerState.maxHp || 100) < 200) {
+          log += ` ⚠️ Only available in level 4! VITALITY GAIN V40 requires Level 4.`;
           return { newAttackerState, newDefenderState, log };
         }
       }
@@ -943,7 +939,9 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       // Apply vitality gain and level up
       newAttackerState.maxHp = (newAttackerState.maxHp || 100) + vitAmount;
       newAttackerState.hp += vitAmount;
-      newAttackerState.level = (newAttackerState.level || 1) + 1;
+      if (newAttackerState.hp >= 150 && (newAttackerState.level || 1) < 2) {
+        newAttackerState.level = 2;
+      }
       
       log += ` 🌟 Vitality expanded! Max HP +${vitAmount}. ${newAttackerState.name} leveled up to Level ${newAttackerState.level}! (Current HP: ${newAttackerState.hp}/${newAttackerState.maxHp})`;
     }
@@ -1016,6 +1014,36 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       log += ` 👁️ VISION FULL activated! All players reveal their Action Cards for 30 seconds.`;
     } else if (newDefenderState) {
       log += ` 👁️ Vision activated! Revealing ${newDefenderState.name}'s Action Cards for 15 seconds.`;
+    }
+  }
+  // 10b. DRAIN CARD (Direct effect, steals all opponent ET)
+  else if (cardName === 'DRAIN') {
+    if (newDefenderState) {
+      const stolen = newDefenderState.energyTokens || 0;
+      newDefenderState.energyTokens = 0;
+      newAttackerState.energyTokens = Math.min(10, (newAttackerState.energyTokens || 0) + stolen);
+      log += ` ⚡ DRAIN successful! Stole all ${stolen} Energy Tokens from ${newDefenderState.name}!`;
+    } else {
+      log += ` ⚡ DRAIN played without target.`;
+    }
+  }
+  // 10c. VAMPIRE LIFE STEAL (Steals 1 ET and 10 HP for 3 turns)
+  else if (cardName === 'VAMPIRE LIFE STEAL') {
+    if (newDefenderState) {
+      const stolenHp = Math.min(10, newDefenderState.hp);
+      const stolenEt = Math.min(1, newDefenderState.energyTokens || 0);
+      newDefenderState.hp = Math.max(0, newDefenderState.hp - stolenHp);
+      newDefenderState.energyTokens = Math.max(0, (newDefenderState.energyTokens || 0) - stolenEt);
+      newAttackerState.hp = Math.min(newAttackerState.maxHp || 100, (newAttackerState.hp || 0) + stolenHp);
+      newAttackerState.energyTokens = Math.min(10, (newAttackerState.energyTokens || 0) + stolenEt);
+
+      newDefenderState.vampireStealStack = (newDefenderState.vampireStealStack || 0) + 1;
+      newDefenderState.vampireStealTurnsLeft = 3;
+      newDefenderState.vampireAttackerId = newAttackerState.id || attackerChar?.id || null;
+      newDefenderState.vampireStealActivated = true;
+      log += ` 🧛 VAMPIRE LIFE STEAL activated! Stole ${stolenHp} HP and ${stolenEt} ET. Curse applied for 3 turns (-10 HP, -1 ET/turn)!`;
+    } else {
+      log += ` 🧛 VAMPIRE LIFE STEAL played without target.`;
     }
   }
   // 11. TIME MACHINE

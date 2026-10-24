@@ -784,3 +784,15 @@ body {
   from { transform: scale(0.5); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
+
+/* Profile Fullscreen View responsive behavior:
+   Strictly zero scroller on standard displays, but gracefully scrollable on tiny viewports (< 620px) */
+.profile-settings-fullscreen-view {
+  overflow-y: hidden;
+}
+
+@media (max-height: 620px) {
+  .profile-settings-fullscreen-view {
+    overflow-y: auto !important;
+  }
+}

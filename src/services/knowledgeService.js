@@ -1,4 +1,4 @@
-import { supabase, isSupabaseConfigured } from './supabaseClient';
+import { supabase, supabaseAdmin, isSupabaseConfigured } from './supabaseClient';
 import { RULES_KNOWLEDGE as FALLBACK_RULES } from '../game/data/rulesKnowledge.js';
 
 // In-memory cache for ultra-fast instant answers
@@ -438,7 +438,8 @@ export const knowledgeService = {
       updated_at: new Date().toISOString()
     };
 
-    const { data, error } = await supabase
+    const writeClient = supabaseAdmin || supabase;
+    const { data, error } = await writeClient
       .from('knowledge_documents')
       .update(payload)
       .eq('id', docId)
@@ -487,7 +488,8 @@ export const knowledgeService = {
     const safeFilename = cleanName.endsWith('.txt') ? cleanName : `${cleanName}.txt`;
     const charCount = content.length;
 
-    const { data, error } = await supabase
+    const writeClient = supabaseAdmin || supabase;
+    const { data, error } = await writeClient
       .from('knowledge_documents')
       .insert({
         filename: safeFilename,
@@ -530,7 +532,8 @@ export const knowledgeService = {
       throw new Error('Master document cannot be deleted. Use "Reset Master Document" instead.');
     }
 
-    const { error } = await supabase
+    const writeClient = supabaseAdmin || supabase;
+    const { error } = await writeClient
       .from('knowledge_documents')
       .delete()
       .eq('id', docId);
@@ -557,7 +560,8 @@ export const knowledgeService = {
       updated_at: new Date().toISOString()
     };
 
-    const { data, error } = await supabase
+    const writeClient = supabaseAdmin || supabase;
+    const { data, error } = await writeClient
       .from('knowledge_documents')
       .upsert(masterDoc, { onConflict: 'id' })
       .select()

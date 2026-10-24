@@ -410,7 +410,9 @@ export const authService = {
       if (event === 'TOKEN_REFRESHED' && session?.user && activeSessionUserId === session.user.id) {
         return;
       }
-      if (session?.user?.id) {
+      if (event === 'SIGNED_OUT' || !session?.user) {
+        activeSessionUserId = null;
+      } else if (session?.user?.id) {
         activeSessionUserId = session.user.id;
       }
 

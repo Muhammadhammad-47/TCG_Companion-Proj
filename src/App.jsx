@@ -2221,10 +2221,16 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [showPasswordRecoveryModal, setShowPasswordRecoveryModal] = useState(false);
   const currentUserRef = useRef(null);
 
   useEffect(() => {
     let isMounted = true;
+
+    // Check if URL hash or search contains recovery tokens
+    if (window.location.hash.includes('type=recovery') || window.location.search.includes('type=recovery')) {
+      setShowPasswordRecoveryModal(true);
+    }
 
     authService.getCurrentUser().then(async (u) => {
       if (isMounted) {
@@ -2245,6 +2251,17 @@ function App() {
     });
 
     const { data: { subscription } } = authService.onAuthStateChange(async (event, session, profile) => {
+      // If user arrived from password recovery link, show new password prompt modal
+      if (event === 'PASSWORD_RECOVERY') {
+        setShowPasswordRecoveryModal(true);
+        if (session?.user) {
+          currentUserRef.current = session.user;
+          setCurrentUser(session.user);
+        }
+        setAuthLoading(false);
+        return;
+      }
+
       // Ignore transient token refresh events that don't change actual auth state
       // When browser minimizes or visibility toggles, Supabase refreshes the JWT token.
       // Re-triggering state causes the entire route tree to remount and send user to home.
@@ -2338,6 +2355,24 @@ function App() {
         <Route path="/docs" element={<DocsPage />} />
         <Route path="/docs/*" element={<DocsPage />} />
       </Routes>
+
+      {showPasswordRecoveryModal && (
+        <AuthModal
+          isOpen={true}
+          initialMode="update_password"
+          preventClose={false}
+          onClose={() => setShowPasswordRecoveryModal(false)}
+          onAuthSuccess={async (u) => {
+            setShowPasswordRecoveryModal(false);
+            const user = u || await authService.getCurrentUser();
+            if (user) {
+              setCurrentUser(user);
+              const prof = await authService.getProfile(user.id);
+              setUserProfile(prof);
+            }
+          }}
+        />
+      )}
     </ErrorBoundary>
   );
 }
