@@ -424,7 +424,7 @@ export default function AdminTournamentManager({ currentUser, userProfile }) {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '12px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', color: 'rgba(255,255,255,0.6)', marginBottom: '4px' }}>
                     BRACKET SIZE (PLAYERS)
@@ -469,6 +469,34 @@ export default function AdminTournamentManager({ currentUser, userProfile }) {
                     <option value="bo1" style={{ background: '#111' }}>Best of 1 (First to 1 win)</option>
                     <option value="bo3" style={{ background: '#111' }}>Best of 3 (First to 2 wins)</option>
                     <option value="bo5" style={{ background: '#111' }}>Best of 5 (First to 3 wins)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', color: 'rgba(255,255,255,0.6)', marginBottom: '4px' }}>
+                    REGISTRATION DEADLINE
+                  </label>
+                  <select
+                    value={pubDurationHours}
+                    onChange={(e) => setPubDurationHours(parseInt(e.target.value, 10))}
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      background: 'rgba(0,0,0,0.5)',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      borderRadius: '8px',
+                      color: '#fff',
+                      fontSize: '0.9rem'
+                    }}
+                  >
+                    <option value={1} style={{ background: '#111' }}>1 Hour</option>
+                    <option value={3} style={{ background: '#111' }}>3 Hours</option>
+                    <option value={6} style={{ background: '#111' }}>6 Hours</option>
+                    <option value={12} style={{ background: '#111' }}>12 Hours</option>
+                    <option value={24} style={{ background: '#111' }}>24 Hours (1 Day)</option>
+                    <option value={48} style={{ background: '#111' }}>48 Hours (2 Days)</option>
+                    <option value={72} style={{ background: '#111' }}>72 Hours (3 Days)</option>
+                    <option value={168} style={{ background: '#111' }}>7 Days (1 Week)</option>
                   </select>
                 </div>
               </div>

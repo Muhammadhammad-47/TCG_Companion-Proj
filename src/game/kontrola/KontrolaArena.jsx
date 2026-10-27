@@ -2248,6 +2248,7 @@ export default function KontrolaArena() {
       setGameState(initialState);
       setIsHost(true);
       setIsSpectator(false);
+      setTournamentMatchContext(null);
       setError(null);
       // Persist session to DB + localStorage
       sessionService.saveSession(newMatchId, playerId, 'host', currentUser?.id ?? null);
@@ -2296,6 +2297,8 @@ export default function KontrolaArena() {
       }
 
       setIsHost(false);
+      setIsSpectator(false);
+      setTournamentMatchContext(null);
       
       const tempState = await joinMatch(cleanId, playerId, selectedCharacter);
       tempState.playerNames = { [playerId]: finalName };
@@ -3987,6 +3990,7 @@ export default function KontrolaArena() {
                       setGameState(null);
                       setMatchId('');
                       setIsSpectator(false);
+                      setTournamentMatchContext(null);
                       // Clear session from DB + localStorage
                       sessionService.clearSession(matchId, playerId);
                     }}
@@ -4066,6 +4070,7 @@ export default function KontrolaArena() {
                       setGameState(null);
                       setMatchId('');
                       setWinner(null);
+                      setTournamentMatchContext(null);
                       try { localStorage.removeItem('kontrola_current_match'); } catch(e) {}
                       setLobbyTab('tournaments');
                     }}
