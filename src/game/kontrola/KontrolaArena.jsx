@@ -34,6 +34,9 @@ import ReconnectModal from '../components/ReconnectModal';
 import XChangeModal from '../components/XChangeModal';
 import SoulAllianceTradeModal from '../components/SoulAllianceTradeModal';
 import { createGameRoom, updateGameRoom, fetchGameRoom } from '../../services/roomService';
+import { tournamentService } from '../../services/tournamentService';
+import KontrolaTournamentHub from './KontrolaTournamentHub';
+import KontrolaBracketView from './KontrolaBracketView';
 
 import '../../pages/GamePage.css';
 
@@ -150,6 +153,8 @@ export default function KontrolaArena() {
 
   // Lobby Tab Navigation ('browse' | 'create' | 'join')
   const [lobbyTab, setLobbyTab] = useState('browse');
+  const [activeTournamentId, setActiveTournamentId] = useState(null);
+  const [tournamentMatchContext, setTournamentMatchContext] = useState(null);
   const [openRooms, setOpenRooms] = useState([]);
   const [isRefreshingRooms, setIsRefreshingRooms] = useState(false);
   const [joinCodeInput, setJoinCodeInput] = useState(''); // separate from matchId to avoid pre-filling from localStorage
@@ -280,11 +285,27 @@ export default function KontrolaArena() {
           // Winner gets 3 crystals, loser gets 1 � only for authenticated users
           if (currentUser?.id) {
             const isWinner = winner.playerId === playerId;
-            await authService.savePlayerMatchResult(currentUser.id, {
-              won: isWinner,
-              crystalsDelta: isWinner ? 3 : 1,
-              appSource: 'kontrola'
-            });
+            if (tournamentMatchContext) {
+              const winnerUserId = isWinner ? currentUser?.id : (tournamentMatchContext.player1Id === currentUser?.id ? tournamentMatchContext.player2Id : tournamentMatchContext.player1Id);
+              const winnerName = isWinner ? (playerName || 'Player') : (gameState?.playerNames?.[winner.playerId] || 'Opponent');
+
+              if (isHost) {
+                await tournamentService.recordGameResult({
+                  tournamentId: tournamentMatchContext.tournamentId,
+                  round: tournamentMatchContext.round,
+                  matchIndex: tournamentMatchContext.matchIndex,
+                  winnerUserId,
+                  winnerName,
+                  roomCode: matchIdRef.current
+                });
+              }
+            } else {
+              await authService.savePlayerMatchResult(currentUser.id, {
+                won: isWinner,
+                crystalsDelta: isWinner ? 3 : 1,
+                appSource: 'kontrola'
+              });
+            }
           }
         } catch (e) {
           console.warn('Failed to log match result to DB:', e);
@@ -614,6 +635,24 @@ export default function KontrolaArena() {
 
     return () => clearInterval(interval);
   }, [isHost, matchId, gameState?.status, gameState?.players?.length, playerName, playerId]);
+
+  // Auto-sync heartbeat while in 'joining' state (handles guest entering before host in tournament duels)
+  useEffect(() => {
+    if (!matchId || isHost || gameState?.status !== 'joining') return;
+
+    const interval = setInterval(() => {
+      if (gameState?.status === 'joining' && matchIdRef.current) {
+        requestJoin(matchIdRef.current, {
+          playerId: playerIdRef.current,
+          characterId: selectedCharacterRef.current,
+          playerName: (playerNameRef.current || 'Player').trim()
+        });
+        requestSync(matchIdRef.current, playerIdRef.current);
+      }
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, [matchId, isHost, gameState?.status]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -2107,6 +2146,76 @@ export default function KontrolaArena() {
   };
 
   // ==========================================
+  // TOURNAMENT MATCH LAUNCH HANDLER
+  const handleLaunchTournamentMatch = async (tournament, match, spectator = false) => {
+    playClick();
+    const finalName = (playerName || userProfile?.username || currentUser?.user_metadata?.username || 'Player').trim();
+    if (playerName !== finalName) setPlayerName(finalName);
+
+    setTournamentMatchContext({
+      tournamentId: tournament.id,
+      tournamentTitle: tournament.title,
+      round: match.round,
+      matchIndex: match.matchIndex,
+      seriesFormat: match.seriesFormat,
+      targetWins: match.targetWins,
+      player1Id: match.player1?.id,
+      player2Id: match.player2?.id
+    });
+
+    const isMatchHost = match.player1?.id === currentUser?.id;
+    const roomCode = match.roomCode;
+
+    if (spectator) {
+      setIsSpectator(true);
+      setIsHost(false);
+      setMatchId(roomCode);
+      return;
+    }
+
+    if (isMatchHost) {
+      try {
+        const initialState = await createMatch(roomCode, playerId, selectedCharacter);
+        initialState.isPremium = isPremium;
+        initialState.playerNames = { [playerId]: finalName };
+        initialState.isTournamentMatch = true;
+
+        setMatchId(roomCode);
+        setRoomCode(roomCode);
+        setGameState(initialState);
+        setIsHost(true);
+        setIsSpectator(false);
+        setError(null);
+      } catch (err) {
+        setError(err.message);
+      }
+    } else {
+      try {
+        setIsHost(false);
+        const tempState = await joinMatch(roomCode, playerId, selectedCharacter);
+        tempState.playerNames = { [playerId]: finalName };
+        tempState.isTournamentMatch = true;
+        setGameState(tempState);
+        setRoomCode(roomCode);
+        setError(null);
+
+        if (matchId === roomCode) {
+          requestJoin(roomCode, {
+            playerId: playerIdRef.current,
+            characterId: selectedCharacterRef.current,
+            playerName: finalName
+          });
+          requestSync(roomCode, playerIdRef.current);
+        } else {
+          isJoiningRef.current = true;
+          setMatchId(roomCode);
+        }
+      } catch (err) {
+        setError(err.message);
+      }
+    }
+  };
+
   // MATCH CREATION & JOINING
   // ==========================================
   const handleCreateMatch = async () => {
@@ -3087,6 +3196,30 @@ export default function KontrolaArena() {
                   </button>
 
                   <button
+                    onClick={() => { playClick(); setLobbyTab('tournaments'); }}
+                    style={{
+                      flex: 1,
+                      padding: '12px',
+                      borderRadius: '10px',
+                      border: lobbyTab === 'tournaments' ? '1.5px solid var(--neon-gold)' : '1px solid rgba(255,255,255,0.1)',
+                      background: lobbyTab === 'tournaments' ? 'rgba(251, 200, 13, 0.2)' : 'rgba(0,0,0,0.4)',
+                      color: lobbyTab === 'tournaments' ? 'var(--neon-gold)' : '#fff',
+                      fontWeight: 'bold',
+                      fontFamily: 'Bebas Neue, sans-serif',
+                      fontSize: '1.05rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <Trophy size={18} />
+                    <span>TOURNAMENTS</span>
+                  </button>
+
+                  <button
                     onClick={() => { playClick(); setLobbyTab('join'); }}
                     style={{
                       flex: 1,
@@ -3476,6 +3609,28 @@ export default function KontrolaArena() {
                     </button>
                   </div>
                 )}
+
+                {/* TAB 4: TOURNAMENTS */}
+                {lobbyTab === 'tournaments' && (
+                  <div style={{ marginTop: '10px' }}>
+                    {activeTournamentId ? (
+                      <KontrolaBracketView
+                        tournamentId={activeTournamentId}
+                        currentUser={currentUser}
+                        userProfile={userProfile}
+                        onLaunchMatch={handleLaunchTournamentMatch}
+                        onBack={() => setActiveTournamentId(null)}
+                      />
+                    ) : (
+                      <KontrolaTournamentHub
+                        currentUser={currentUser}
+                        userProfile={userProfile}
+                        adminSettings={appSettings}
+                        onSelectTournament={(tId) => setActiveTournamentId(tId)}
+                      />
+                    )}
+                  </div>
+                )}
               </div>
             ) : (
               /* In-Lobby Waiting Room View */
@@ -3492,6 +3647,12 @@ export default function KontrolaArena() {
                   boxShadow: '0 0 35px rgba(251, 200, 13, 0.25)'
                 }}
               >
+                {tournamentMatchContext && (
+                  <div style={{ background: 'rgba(251, 200, 13, 0.15)', border: '1px solid var(--neon-gold)', borderRadius: '10px', padding: '10px 14px', marginBottom: '16px', color: 'var(--neon-gold)', fontWeight: 'bold', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                    <Trophy size={18} />
+                    <span>{tournamentMatchContext.tournamentTitle || 'TOURNAMENT MATCH'} • ROUND {tournamentMatchContext.round} (Best of {tournamentMatchContext.seriesFormat === 'bo5' ? 5 : tournamentMatchContext.seriesFormat === 'bo3' ? 3 : 1})</span>
+                  </div>
+                )}
                 <div style={{ fontSize: '0.85rem', color: 'var(--neon-cyan)', letterSpacing: '2px', fontWeight: 'bold', marginBottom: '6px' }}>
                   MATCH CODE (SHARE WITH OPPONENTS)
                 </div>
@@ -3899,18 +4060,34 @@ export default function KontrolaArena() {
                   })}
                 </div>
 
-                <button
-                  onClick={() => {
-                    setGameState(null);
-                    setMatchId('');
-                    setWinner(null);
-                    navigate('/');
-                  }}
-                  className="btn-enter-game-cta"
-                  style={{ width: '100%', padding: '14px', borderRadius: '12px', justifyContent: 'center' }}
-                >
-                  RETURN TO HUB
-                </button>
+                {tournamentMatchContext ? (
+                  <button
+                    onClick={() => {
+                      setGameState(null);
+                      setMatchId('');
+                      setWinner(null);
+                      try { localStorage.removeItem('kontrola_current_match'); } catch(e) {}
+                      setLobbyTab('tournaments');
+                    }}
+                    className="btn-enter-game-cta"
+                    style={{ width: '100%', padding: '14px', borderRadius: '12px', justifyContent: 'center' }}
+                  >
+                    RETURN TO TOURNAMENT BRACKET
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setGameState(null);
+                      setMatchId('');
+                      setWinner(null);
+                      navigate('/');
+                    }}
+                    className="btn-enter-game-cta"
+                    style={{ width: '100%', padding: '14px', borderRadius: '12px', justifyContent: 'center' }}
+                  >
+                    RETURN TO HUB
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -4741,7 +4918,7 @@ export default function KontrolaArena() {
           )}
 
           {/* Secret Alliance Invite Modal */}
-          {showSecretAllianceInviteModal && (
+          {showSecretAllianceInviteModal && !tournamentMatchContext && (
             <SecretAllianceInviteModal
               isOpen={showSecretAllianceInviteModal}
               activePlayer={{ id: playerId, name: myCharacter?.name || playerName || 'Player' }}
@@ -4828,7 +5005,7 @@ export default function KontrolaArena() {
           )}
 
           {/* Crystal Split Modal */}
-          {showCrystalSplitModal && crystalSplitData && (
+          {showCrystalSplitModal && !tournamentMatchContext && crystalSplitData && (
             <CrystalSplitModal
               isOpen={showCrystalSplitModal}
               attackers={[crystalSplitData.attacker, ...(gameState?.players?.filter(p => p !== crystalSplitData.attacker.id && gameState?.characterStates?.[p]?.isDefeated === false) || []).map(pid => gameState?.characterStates?.[pid]) || []]}

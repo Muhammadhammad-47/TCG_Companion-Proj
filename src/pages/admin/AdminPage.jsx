@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Shield, BookOpen, HelpCircle, Plus, Search, Filter,
@@ -8,7 +8,7 @@ import {
   Crown, Lock, Ban, Sparkles, Gem, Clock, Zap, LogOut, ChevronRight,
   Server, Globe, LayoutGrid, List, FileCode, Cpu, FileText, Download,
   PlusCircle, FilePlus, Code, AlertCircle, Coins, ShoppingCart, Music, Play, Pause,
-  Bug, MonitorX, ZapOff, MessageSquare
+  Bug, MonitorX, ZapOff, MessageSquare, Trophy
 } from 'lucide-react';
 import { authService } from '../../services/authService';
 import { knowledgeService, calculateGroqMetrics, GROQ_LIMITS } from '../../services/knowledgeService';
@@ -17,6 +17,7 @@ import { musicService } from '../../services/musicService';
 import { bugReportService } from '../../services/bugReportService';
 import { supportService } from '../../services/supportService';
 import AdminSupportPanel from '../../components/AdminSupportPanel';
+import AdminTournamentManager from '../../components/AdminTournamentManager';
 import MusicPlayer from '../../components/MusicPlayer';
 import MusicUploadProgress from '../../components/MusicUploadProgress';
 
@@ -907,6 +908,7 @@ export default function AdminPage() {
   const navItems = [
     { id: 'users', label: 'Users Directory', icon: Users, badge: usersList.length },
     { id: 'matches', label: 'Match History', icon: Swords, badge: matchHistory.length },
+    { id: 'tournaments', label: 'Tournaments', icon: Trophy, badge: 'Live' },
     { id: 'rules', label: 'Knowledge Base', icon: BookOpen, badge: `${documents.length || 1} Doc` },
     { id: 'questions', label: 'Questions Inbox', icon: HelpCircle, badge: questions.length },
     { id: 'monetization', label: 'Monetization', icon: Coins, badge: 'Eco' },
@@ -3358,6 +3360,17 @@ export default function AdminPage() {
                 </div>
               )}
 
+              {/* =========================================================================
+                  TAB: TOURNAMENTS MANAGEMENT & FINANCIAL SETTINGS
+              ========================================================================= */}
+              {activeTab === 'tournaments' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  <AdminTournamentManager
+                    currentUser={currentUser}
+                    userProfile={userProfile}
+                  />
+                </div>
+              )}
             </main>
           </div>
 
