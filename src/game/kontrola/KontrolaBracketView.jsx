@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   ArrowLeft, Trophy, Users, Copy, Check, Swords, Shield, Clock,
-  Eye, AlertTriangle, Play, Sparkles, RefreshCw
+  Eye, AlertTriangle, Play, Sparkles, RefreshCw, Trash2
 } from 'lucide-react';
 import { tournamentService } from '../../services/tournamentService';
 
@@ -61,6 +61,22 @@ export default function KontrolaBracketView({
     } else {
       loadData();
     }
+  };
+
+  const handleCancelTournament = async () => {
+    if (!tournament || !currentUser) return;
+    if (!window.confirm(`Are you sure you want to cancel "${tournament.title}"? All entry fees will be immediately 100% refunded to all registered contenders.`)) {
+      return;
+    }
+
+    const res = await tournamentService.cancelTournament(tournament.id, currentUser.id);
+    if (res.error) {
+      setActionNotice({ type: 'error', text: res.error });
+    } else {
+      setActionNotice({ type: 'success', text: 'Tournament successfully cancelled and all entry fees were 100% refunded!' });
+      loadData();
+    }
+    setTimeout(() => setActionNotice(null), 4000);
   };
 
   const handleForfeit = async (match, absentPlayer) => {
@@ -254,6 +270,28 @@ export default function KontrolaBracketView({
               <Play size={16} /> START BRACKET ({participants.length}/{tournament.bracket_size})
             </button>
           )}
+
+          {/* Host / Admin Cancel & 100% Refund Button */}
+          {!isCompleted && tournament.status !== 'cancelled' && (isHost || currentUser?.is_admin) && (
+            <button
+              onClick={handleCancelTournament}
+              style={{
+                padding: '10px 16px',
+                borderRadius: '10px',
+                background: 'rgba(239, 68, 68, 0.15)',
+                border: '1px solid rgba(239, 68, 68, 0.4)',
+                color: '#f87171',
+                fontSize: '0.85rem',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <Trash2 size={16} /> CANCEL & REFUND
+            </button>
+          )}
         </div>
       </div>
 
@@ -269,6 +307,57 @@ export default function KontrolaBracketView({
           }}
         >
           {actionNotice.text}
+        </div>
+      )}
+
+      {/* REGISTRATION DEADLINE COUNTDOWN BANNER */}
+      {isRegistration && tournament.registration_deadline && (
+        <div
+          style={{
+            background: 'rgba(0, 0, 0, 0.45)',
+            border: '1px solid rgba(56, 189, 248, 0.3)',
+            borderRadius: '12px',
+            padding: '12px 18px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '10px',
+            color: '#fff',
+            fontSize: '0.85rem'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Clock size={18} color="#38bdf8" />
+            <span>
+              <strong>Registration Deadline:</strong> {new Date(tournament.registration_deadline).toLocaleString()}
+            </span>
+          </div>
+          <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>
+            Unfilled brackets automatically expire with 100% crystal refunds to all players.
+          </span>
+        </div>
+      )}
+
+      {/* TOURNAMENT CANCELLED BANNER */}
+      {tournament.status === 'cancelled' && (
+        <div
+          style={{
+            background: 'rgba(239, 68, 68, 0.12)',
+            border: '2px solid rgba(239, 68, 68, 0.4)',
+            borderRadius: '16px',
+            padding: '24px',
+            textAlign: 'center',
+            color: '#fff'
+          }}
+        >
+          <AlertTriangle size={42} color="#f87171" style={{ margin: '0 auto 8px auto' }} />
+          <h2 style={{ fontFamily: 'Bebas Neue', fontSize: '2rem', color: '#f87171', margin: '0 0 6px 0' }}>
+            TOURNAMENT CANCELLED
+          </h2>
+          <p style={{ margin: 0, fontSize: '1rem', color: 'rgba(255,255,255,0.8)' }}>
+            This tournament has been cancelled. All contenders have received a 100% refund of their entry fees.
+          </p>
         </div>
       )}
 

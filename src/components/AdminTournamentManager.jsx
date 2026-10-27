@@ -30,6 +30,7 @@ export default function AdminTournamentManager({ currentUser, userProfile }) {
   const [pubEntryFee, setPubEntryFee] = useState(10);
   const [pubBonusPrize, setPubBonusPrize] = useState(100);
   const [pubDeductionPct, setPubDeductionPct] = useState(10);
+  const [pubDurationHours, setPubDurationHours] = useState(24);
   const [creatingPub, setCreatingPub] = useState(false);
 
   // Inspect Bracket Modal State
@@ -101,7 +102,8 @@ export default function AdminTournamentManager({ currentUser, userProfile }) {
       bonus_prize: pubBonusPrize,
       admin_deduction_pct: pubDeductionPct,
       creator_id: currentUser?.id || null,
-      creator_name: 'Official Admin'
+      creator_name: 'Official Admin',
+      durationHours: pubDurationHours
     });
     setCreatingPub(false);
 
@@ -637,6 +639,7 @@ export default function AdminTournamentManager({ currentUser, userProfile }) {
                   <th style={{ padding: '10px' }}>ADMIN RAKE</th>
                   <th style={{ padding: '10px' }}>WINNER PAYOUT</th>
                   <th style={{ padding: '10px' }}>STATUS</th>
+                  <th style={{ padding: '10px' }}>DEADLINE</th>
                   <th style={{ padding: '10px', textAlign: 'right' }}>ACTIONS</th>
                 </tr>
               </thead>
@@ -701,6 +704,26 @@ export default function AdminTournamentManager({ currentUser, userProfile }) {
                         >
                           {t.status.toUpperCase()}
                         </span>
+                      </td>
+                      <td style={{ padding: '12px 10px', fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)', whiteSpace: 'nowrap' }}>
+                        {t.registration_deadline ? (
+                          (() => {
+                            const d = new Date(t.registration_deadline);
+                            const isExpired = Date.now() > d.getTime();
+                            return (
+                              <div>
+                                <div style={{ color: isExpired && isReg ? '#f87171' : 'inherit' }}>
+                                  {d.toLocaleDateString()} {d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </div>
+                                {isExpired && isReg && (
+                                  <span style={{ fontSize: '0.65rem', color: '#f87171', fontWeight: 'bold' }}>EXPIRED</span>
+                                )}
+                              </div>
+                            );
+                          })()
+                        ) : (
+                          <span style={{ color: 'rgba(255,255,255,0.3)' }}>No limit</span>
+                        )}
                       </td>
                       <td style={{ padding: '12px 10px', textAlign: 'right' }}>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>

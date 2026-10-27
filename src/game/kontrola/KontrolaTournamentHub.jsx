@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Trophy, Plus, Users, Shield, Sparkles, Search, RefreshCw, Key,
-  CheckCircle2, AlertCircle, ArrowRight, Eye, Swords
+  CheckCircle2, AlertCircle, ArrowRight, Eye, Swords, Trash2, Clock
 } from 'lucide-react';
 import { tournamentService } from '../../services/tournamentService';
 import CreateTournamentModal from './CreateTournamentModal';
@@ -400,10 +400,14 @@ export default function KontrolaTournamentHub({
         currentUser={currentUser}
         userProfile={userProfile}
         adminDeductionPct={adminSettings?.tournament_admin_deduction_pct ?? 10}
+        minEntryFee={adminSettings?.tournament_min_entry_fee ?? 0}
         maxEntryFee={adminSettings?.tournament_max_entry_fee ?? 500}
         onTournamentCreated={(tourney) => {
           loadTournaments();
           onSelectTournament(tourney.id);
+        }}
+        onViewExistingTournament={(id) => {
+          onSelectTournament(id);
         }}
       />
     </div>

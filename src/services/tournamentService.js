@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { economyService } from './economyService';
 
 /**
  * Tournament Service — Handles Public & Private Tournaments, Brackets,
@@ -23,8 +24,65 @@ export function getTargetWins(seriesFormat = 'bo1') {
 }
 
 export const tournamentService = {
+  // Auto-expire unfilled tournaments whose registration deadline has passed and refund 100%
+  async checkAndExpireTournaments() {
+    if (!supabase) return;
+    try {
+      // 1. Try atomic RPC first
+      const { data: rpcRes, error: rpcErr } = await supabase.rpc('rpc_check_and_expire_tournaments');
+      if (!rpcErr && rpcRes && rpcRes.success) {
+        return rpcRes;
+      }
+
+      // 2. Client fallback
+      const now = new Date().toISOString();
+      const { data: expiredList } = await supabase
+        .from('kontrola_tournaments')
+        .select('id, title, bracket_size')
+        .eq('status', 'registration')
+        .not('registration_deadline', 'is', null)
+        .lte('registration_deadline', now);
+
+      if (expiredList && expiredList.length > 0) {
+        for (const tourney of expiredList) {
+          const parts = await this.getParticipants(tourney.id);
+          if (parts.length < tourney.bracket_size) {
+            console.log(`Tournament "${tourney.title}" registration deadline expired (${parts.length}/${tourney.bracket_size} players). Refunding all participants...`);
+            await this.cancelTournament(tourney.id, null);
+          } else {
+            await this.autoStartTournamentIfFull(tourney.id);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('tournamentService.checkAndExpireTournaments warning:', e);
+    }
+  },
+
+  // Check if player already has an active private tournament (limit 1 at a time)
+  async getActiveTournamentForUser(userId) {
+    if (!supabase || !userId) return null;
+    try {
+      const { data, error } = await supabase
+        .from('kontrola_tournaments')
+        .select('*')
+        .eq('creator_id', userId)
+        .eq('type', 'private')
+        .in('status', ['registration', 'in_progress'])
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+      return (data && data.length > 0) ? data[0] : null;
+    } catch (e) {
+      console.warn('tournamentService.getActiveTournamentForUser error:', e);
+      return null;
+    }
+  },
+
   // Fetch active and upcoming public tournaments
   async getPublicTournaments() {
+    await this.checkAndExpireTournaments();
     if (!supabase) return [];
     try {
       const { data, error } = await supabase
@@ -49,6 +107,7 @@ export const tournamentService = {
 
   // Fetch private tournaments created by or joined by the user
   async getPrivateTournaments(userId) {
+    await this.checkAndExpireTournaments();
     if (!supabase || !userId) return [];
     try {
       const { data, error } = await supabase
@@ -158,15 +217,60 @@ export const tournamentService = {
     series_format = 'bo1',
     entry_fee = 0,
     bonus_prize = 0,
-    admin_deduction_pct = 10.0,
+    admin_deduction_pct = null,
     creator_id = null,
-    creator_name = 'Player'
+    creator_name = 'Player',
+    registration_deadline = null,
+    durationHours = 24
   }) {
     if (!supabase) return { error: 'Database not connected' };
 
     try {
+      // 1. Fetch Admin Global Limits from app_settings
+      const appSettings = await economyService.getAppSettings();
+      const minFee = appSettings.tournament_min_entry_fee ?? 0;
+      const maxFee = appSettings.tournament_max_entry_fee ?? 500;
+      const globalRakePct = parseFloat(appSettings.tournament_admin_deduction_pct) || 10.0;
+
+      const parsedFee = Math.max(0, parseInt(entry_fee, 10) || 0);
+
+      // 2. Enforce limits for Private Tournaments
+      if (type === 'private') {
+        if (parsedFee < minFee) {
+          return { error: `Entry fee cannot be less than the minimum required by Admin (${minFee} 💎).` };
+        }
+        if (parsedFee > maxFee) {
+          return { error: `Entry fee cannot exceed the maximum limit set by Admin (${maxFee} 💎).` };
+        }
+        // Force admin deduction percentage to match global platform settings
+        admin_deduction_pct = globalRakePct;
+
+        // 3. Enforce single active private tournament per player
+        if (creator_id) {
+          const activeTourney = await this.getActiveTournamentForUser(creator_id);
+          if (activeTourney) {
+            return {
+              error: `You already have an active private tournament: "${activeTourney.title}". You must finish or cancel your existing tournament before creating a new one.`,
+              existingTournament: activeTourney
+            };
+          }
+        }
+      } else {
+        // Public Tournament: use provided rake or fallback to global
+        if (admin_deduction_pct === null || admin_deduction_pct === undefined) {
+          admin_deduction_pct = globalRakePct;
+        }
+      }
+
+      // 4. Calculate Registration Deadline / Expiry
+      let finalDeadline = registration_deadline;
+      if (!finalDeadline) {
+        const safeHours = Math.max(1, parseInt(durationHours, 10) || 24);
+        finalDeadline = new Date(Date.now() + safeHours * 60 * 60 * 1000).toISOString();
+      }
+
       const inviteCode = type === 'private' ? generateInviteCode() : null;
-      const initialTotalPot = bonus_prize || 0;
+      const initialTotalPot = (type === 'public' ? (parseInt(bonus_prize, 10) || 0) : 0);
       const initialAdminRake = Math.floor(initialTotalPot * (admin_deduction_pct / 100));
       const initialWinnerPayout = initialTotalPot - initialAdminRake;
 
@@ -179,12 +283,13 @@ export const tournamentService = {
         invite_code: inviteCode,
         bracket_size: parseInt(bracket_size, 10),
         series_format,
-        entry_fee: Math.max(0, parseInt(entry_fee, 10) || 0),
+        entry_fee: parsedFee,
         bonus_prize: Math.max(0, parseInt(bonus_prize, 10) || 0),
         admin_deduction_pct: parseFloat(admin_deduction_pct) || 10.0,
         total_pot: initialTotalPot,
         admin_deducted_amount: initialAdminRake,
         winner_payout: initialWinnerPayout,
+        registration_deadline: finalDeadline,
         status: 'registration',
         bracket_data: {}
       };
@@ -234,6 +339,9 @@ export const tournamentService = {
       const tourney = await this.getTournamentById(tournamentId);
       if (!tourney) return { error: 'Tournament not found' };
       if (tourney.status !== 'registration') return { error: 'Registration is closed' };
+      if (tourney.registration_deadline && new Date(tourney.registration_deadline) <= new Date()) {
+        return { error: 'Registration deadline has expired. This tournament is closed.' };
+      }
 
       const existingParticipants = await this.getParticipants(tournamentId);
       if (existingParticipants.length >= tourney.bracket_size) {
@@ -652,6 +760,17 @@ export const tournamentService = {
       }
 
       // 2. Client fallback
+      const tourney = await this.getTournamentById(tournamentId);
+      if (!tourney) return { error: 'Tournament not found' };
+
+      if (requesterId) {
+        const { data: prof } = await supabase.from('profiles').select('is_admin').eq('id', requesterId).single();
+        const isAdmin = prof?.is_admin === true;
+        if (tourney.creator_id !== requesterId && !isAdmin) {
+          return { error: 'Unauthorized. Only the tournament host or an admin can cancel.' };
+        }
+      }
+
       const participants = await this.getParticipants(tournamentId);
       for (const p of participants) {
         if (p.entry_fee_paid > 0) {

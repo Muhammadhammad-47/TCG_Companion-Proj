@@ -41,14 +41,19 @@ CREATE TABLE IF NOT EXISTS public.kontrola_tournaments (
     bracket_data JSONB NOT NULL DEFAULT '{}'::jsonb,
     winner_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
     winner_name VARCHAR(100),
+    registration_deadline TIMESTAMPTZ,
     started_at TIMESTAMPTZ,
     ended_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- Ensure registration_deadline exists on existing tables
+ALTER TABLE public.kontrola_tournaments ADD COLUMN IF NOT EXISTS registration_deadline TIMESTAMPTZ;
+
 CREATE INDEX IF NOT EXISTS idx_tournaments_type_status ON public.kontrola_tournaments (type, status);
 CREATE INDEX IF NOT EXISTS idx_tournaments_invite_code ON public.kontrola_tournaments (invite_code);
+CREATE INDEX IF NOT EXISTS idx_tournaments_deadline ON public.kontrola_tournaments (registration_deadline);
 
 -- 3. KONTROLA TOURNAMENT PARTICIPANTS TABLE
 CREATE TABLE IF NOT EXISTS public.kontrola_tournament_participants (
@@ -95,8 +100,7 @@ CREATE POLICY "Participants can update own registration or admin can update" ON 
     EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true)
 );
 
--- 5. ATOMIC RPC FUNCTION: JOIN TOURNAMENT WITH ESCROW DEDUCTION
--- Prevents race conditions (overfill) and double spending
+-- 5. ATOMIC RPC: JOIN TOURNAMENT WITH ROW LOCKS (Eliminates Race Conditions & Double-Spending)
 CREATE OR REPLACE FUNCTION public.rpc_join_tournament(
     p_tournament_id UUID,
     p_user_id UUID,
@@ -115,7 +119,7 @@ DECLARE
     v_admin_rake INT;
     v_winner_payout INT;
 BEGIN
-    -- Lock tournament row to prevent concurrent joins from overfilling bracket
+    -- Row-level lock on tournament row
     SELECT * INTO v_tourney FROM public.kontrola_tournaments WHERE id = p_tournament_id FOR UPDATE;
     IF NOT FOUND THEN
         RETURN jsonb_build_object('success', false, 'error', 'Tournament does not exist.');
@@ -123,6 +127,11 @@ BEGIN
 
     IF v_tourney.status != 'registration' THEN
         RETURN jsonb_build_object('success', false, 'error', 'Registration is closed.');
+    END IF;
+
+    -- Check registration deadline
+    IF v_tourney.registration_deadline IS NOT NULL AND v_tourney.registration_deadline <= NOW() THEN
+        RETURN jsonb_build_object('success', false, 'error', 'Registration deadline has expired.');
     END IF;
 
     -- Check participant count
@@ -136,17 +145,19 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'error', 'You are already registered.');
     END IF;
 
-    -- Lock and check user crystals
+    -- Row-level lock on user profile crystals
     SELECT crystals_collected INTO v_user_crystals FROM public.profiles WHERE id = p_user_id FOR UPDATE;
     IF v_user_crystals IS NULL OR v_user_crystals < v_tourney.entry_fee THEN
         RETURN jsonb_build_object('success', false, 'error', 'Insufficient Stability Crystals.');
     END IF;
 
-    -- Deduct crystals from user balance
-    UPDATE public.profiles
-    SET crystals_collected = crystals_collected - v_tourney.entry_fee,
-        updated_at = NOW()
-    WHERE id = p_user_id;
+    -- Atomically deduct entry fee
+    IF v_tourney.entry_fee > 0 THEN
+        UPDATE public.profiles
+        SET crystals_collected = crystals_collected - v_tourney.entry_fee,
+            updated_at = NOW()
+        WHERE id = p_user_id;
+    END IF;
 
     -- Insert participant
     INSERT INTO public.kontrola_tournament_participants(
@@ -155,7 +166,7 @@ BEGIN
         p_tournament_id, p_user_id, p_player_name, p_character_id, v_current_count + 1, 'registered', v_tourney.entry_fee
     );
 
-    -- Recalculate escrow prize pot
+    -- Calculate pot and payout
     v_new_pot := ((v_current_count + 1) * v_tourney.entry_fee) + v_tourney.bonus_prize;
     v_admin_rake := FLOOR(v_new_pot * (v_tourney.admin_deduction_pct / 100.0));
     v_winner_payout := v_new_pot - v_admin_rake;
@@ -178,7 +189,7 @@ BEGIN
 END;
 $$;
 
--- 6. ATOMIC RPC FUNCTION: CANCEL & 100% REFUND
+-- 6. ATOMIC RPC: CANCEL & 100% REFUND (Player Host or Admin)
 CREATE OR REPLACE FUNCTION public.rpc_cancel_tournament(
     p_tournament_id UUID,
     p_requester_id UUID
@@ -189,7 +200,7 @@ SECURITY DEFINER
 AS $$
 DECLARE
     v_tourney public.kontrola_tournaments%ROWTYPE;
-    v_is_admin BOOLEAN;
+    v_is_admin BOOLEAN := false;
     v_p RECORD;
 BEGIN
     SELECT * INTO v_tourney FROM public.kontrola_tournaments WHERE id = p_tournament_id FOR UPDATE;
@@ -197,16 +208,19 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'error', 'Tournament not found.');
     END IF;
 
-    SELECT is_admin INTO v_is_admin FROM public.profiles WHERE id = p_requester_id;
-    IF v_tourney.creator_id != p_requester_id AND (v_is_admin IS NOT TRUE) THEN
-        RETURN jsonb_build_object('success', false, 'error', 'Unauthorized.');
+    IF p_requester_id IS NOT NULL THEN
+        SELECT is_admin INTO v_is_admin FROM public.profiles WHERE id = p_requester_id;
+        -- Allow creator or admin
+        IF v_tourney.creator_id != p_requester_id AND (v_is_admin IS NOT TRUE) THEN
+            RETURN jsonb_build_object('success', false, 'error', 'Unauthorized. Only the tournament host or an admin can cancel.');
+        END IF;
     END IF;
 
     IF v_tourney.status = 'completed' THEN
         RETURN jsonb_build_object('success', false, 'error', 'Cannot cancel a completed tournament.');
     END IF;
 
-    -- Refund all participants
+    -- 100% refund to all registered participants
     FOR v_p IN SELECT user_id, entry_fee_paid FROM public.kontrola_tournament_participants WHERE tournament_id = p_tournament_id LOOP
         IF v_p.entry_fee_paid > 0 THEN
             UPDATE public.profiles
@@ -224,11 +238,62 @@ BEGIN
         updated_at = NOW()
     WHERE id = p_tournament_id;
 
-    RETURN jsonb_build_object('success', true, 'message', 'Tournament cancelled and entry fees refunded.');
+    RETURN jsonb_build_object('success', true, 'message', 'Tournament cancelled and entry fees 100% refunded.');
 END;
 $$;
 
--- 7. ATOMIC RPC FUNCTION: CONCLUDE TOURNAMENT & PAYOUT WINNER
+-- 7. ATOMIC RPC: AUTO-EXPIRE UNFILLED TOURNAMENTS WITH 100% REFUNDS
+CREATE OR REPLACE FUNCTION public.rpc_check_and_expire_tournaments()
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_tourney RECORD;
+    v_part_count INT;
+    v_p RECORD;
+    v_expired_count INT := 0;
+BEGIN
+    FOR v_tourney IN
+        SELECT id, title, bracket_size
+        FROM public.kontrola_tournaments
+        WHERE status = 'registration'
+          AND registration_deadline IS NOT NULL
+          AND registration_deadline <= NOW()
+        FOR UPDATE
+    LOOP
+        SELECT COUNT(*) INTO v_part_count
+        FROM public.kontrola_tournament_participants
+        WHERE tournament_id = v_tourney.id;
+
+        IF v_part_count < v_tourney.bracket_size THEN
+            -- Unfilled bracket: 100% refund all participants
+            FOR v_p IN SELECT user_id, entry_fee_paid FROM public.kontrola_tournament_participants WHERE tournament_id = v_tourney.id LOOP
+                IF v_p.entry_fee_paid > 0 THEN
+                    UPDATE public.profiles
+                    SET crystals_collected = crystals_collected + v_p.entry_fee_paid,
+                        updated_at = NOW()
+                    WHERE id = v_p.user_id;
+                END IF;
+            END LOOP;
+
+            UPDATE public.kontrola_tournaments
+            SET status = 'cancelled',
+                total_pot = 0,
+                winner_payout = 0,
+                admin_deducted_amount = 0,
+                updated_at = NOW()
+            WHERE id = v_tourney.id;
+
+            v_expired_count := v_expired_count + 1;
+        END IF;
+    END LOOP;
+
+    RETURN jsonb_build_object('success', true, 'expired_tournaments_refunded', v_expired_count);
+END;
+$$;
+
+-- 8. ATOMIC RPC: CONCLUDE TOURNAMENT & PAYOUT WINNER
 CREATE OR REPLACE FUNCTION public.rpc_conclude_tournament(
     p_tournament_id UUID,
     p_winner_id UUID,
@@ -250,7 +315,7 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'error', 'Tournament already completed.');
     END IF;
 
-    -- Credit winner payout
+    -- Award prize pot to winner
     IF v_tourney.winner_payout > 0 AND p_winner_id IS NOT NULL THEN
         UPDATE public.profiles
         SET crystals_collected = crystals_collected + v_tourney.winner_payout,
@@ -259,12 +324,10 @@ BEGIN
         WHERE id = p_winner_id;
     END IF;
 
-    -- Update participant record for winner
     UPDATE public.kontrola_tournament_participants
     SET status = 'winner'
     WHERE tournament_id = p_tournament_id AND user_id = p_winner_id;
 
-    -- Update tournament status
     UPDATE public.kontrola_tournaments
     SET status = 'completed',
         winner_id = p_winner_id,
