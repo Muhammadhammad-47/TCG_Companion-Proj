@@ -608,9 +608,9 @@ export default function KontrolaArena() {
     };
   }, []);
 
-  // Host continuously advertises open room to Global Lobby
+  // Host continuously advertises open room to Global Lobby (Casual open rooms only)
   useEffect(() => {
-    if (!isHost || !matchId || !gameState || gameState.status !== 'waiting') return;
+    if (!isHost || !matchId || !gameState || gameState.status !== 'waiting' || tournamentMatchContext || gameState.isTournamentMatch) return;
 
     const interval = setInterval(() => {
       advertiseRoom({
@@ -634,7 +634,7 @@ export default function KontrolaArena() {
     });
 
     return () => clearInterval(interval);
-  }, [isHost, matchId, gameState?.status, gameState?.players?.length, playerName, playerId]);
+  }, [isHost, matchId, gameState?.status, gameState?.players?.length, playerName, playerId, tournamentMatchContext, gameState?.isTournamentMatch]);
 
   // Auto-sync heartbeat while in 'joining' state (handles guest entering before host in tournament duels)
   useEffect(() => {

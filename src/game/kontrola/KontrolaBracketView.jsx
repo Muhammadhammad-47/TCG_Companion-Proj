@@ -129,6 +129,42 @@ export default function KontrolaBracketView({
   const isCompleted = tournament.status === 'completed';
   const myParticipant = participants.find(p => p.user_id === currentUser?.id);
 
+  // Derive user's personal bracket standing in this tournament
+  let userBracketStatus = null;
+  if (tournament.status === 'in_progress' && rounds.length > 0 && myParticipant) {
+    let activeReadyMatch = null;
+    let waitingMatch = null;
+    let eliminatedInRound = null;
+
+    for (const r of rounds) {
+      for (const m of (r.matches || [])) {
+        const isP1 = m.player1?.id === currentUser?.id;
+        const isP2 = m.player2?.id === currentUser?.id;
+        if (isP1 || isP2) {
+          if (m.status === 'completed') {
+            if (m.winnerId && m.winnerId !== currentUser?.id) {
+              eliminatedInRound = r.name;
+            }
+          } else if (m.status === 'ready' && m.player1 && m.player2) {
+            activeReadyMatch = { ...m, roundName: r.name };
+          } else if ((m.player1 && !m.player2) || (!m.player1 && m.player2)) {
+            waitingMatch = { ...m, roundName: r.name };
+          }
+        }
+      }
+    }
+
+    if (tournament.winner_id === currentUser?.id) {
+      userBracketStatus = { type: 'champion' };
+    } else if (activeReadyMatch) {
+      userBracketStatus = { type: 'ready', match: activeReadyMatch };
+    } else if (waitingMatch) {
+      userBracketStatus = { type: 'waiting_opponent', match: waitingMatch };
+    } else if (eliminatedInRound) {
+      userBracketStatus = { type: 'eliminated', roundName: eliminatedInRound };
+    }
+  }
+
   return (
     <div style={{ width: '100%', minHeight: '600px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Top Tournament Navigation Bar */}
@@ -452,6 +488,78 @@ export default function KontrolaBracketView({
         </div>
       )}
 
+      {/* PERSONAL CONTENDER STATUS ACTION BANNER (When In Progress) */}
+      {tournament.status === 'in_progress' && userBracketStatus && (
+        <div style={{
+          borderRadius: '16px',
+          padding: '18px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '16px',
+          background: userBracketStatus.type === 'ready'
+            ? 'linear-gradient(90deg, rgba(251, 200, 13, 0.2) 0%, rgba(0,0,0,0.8) 100%)'
+            : userBracketStatus.type === 'waiting_opponent'
+            ? 'linear-gradient(90deg, rgba(0, 243, 255, 0.15) 0%, rgba(0,0,0,0.8) 100%)'
+            : 'rgba(255,255,255,0.04)',
+          border: userBracketStatus.type === 'ready'
+            ? '1.5px solid var(--neon-gold)'
+            : userBracketStatus.type === 'waiting_opponent'
+            ? '1.5px solid var(--neon-cyan)'
+            : '1px solid rgba(255,255,255,0.1)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            {userBracketStatus.type === 'ready' && (
+              <Swords size={32} color="var(--neon-gold)" />
+            )}
+            {userBracketStatus.type === 'waiting_opponent' && (
+              <Clock size={32} color="var(--neon-cyan)" />
+            )}
+            {userBracketStatus.type === 'eliminated' && (
+              <Shield size={32} color="rgba(255,255,255,0.4)" />
+            )}
+            {userBracketStatus.type === 'champion' && (
+              <Trophy size={32} color="var(--neon-gold)" />
+            )}
+
+            <div>
+              <div style={{
+                fontFamily: 'Bebas Neue',
+                fontSize: '1.4rem',
+                letterSpacing: '1px',
+                color: userBracketStatus.type === 'ready' ? 'var(--neon-gold)' : userBracketStatus.type === 'waiting_opponent' ? 'var(--neon-cyan)' : '#fff'
+              }}>
+                {userBracketStatus.type === 'ready' && `YOUR MATCH IS READY — ${userBracketStatus.match.roundName.toUpperCase()}`}
+                {userBracketStatus.type === 'waiting_opponent' && `ADVANCED TO ${userBracketStatus.match.roundName.toUpperCase()} — WAITING FOR OPPONENT`}
+                {userBracketStatus.type === 'eliminated' && `ELIMINATED IN ${userBracketStatus.roundName?.toUpperCase() || 'TOURNAMENT'}`}
+                {userBracketStatus.type === 'champion' && 'TOURNAMENT CHAMPION!'}
+              </div>
+              <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', marginTop: '2px' }}>
+                {userBracketStatus.type === 'ready' && `You are scheduled to duel ${userBracketStatus.match.player1?.id === currentUser?.id ? userBracketStatus.match.player2?.name : userBracketStatus.match.player1?.name}. Click Enter Duel to launch.`}
+                {userBracketStatus.type === 'waiting_opponent' && 'You have advanced in the bracket! Please wait while your future opponent finishes their duel. Your bracket updates automatically in real-time.'}
+                {userBracketStatus.type === 'eliminated' && 'Your tournament run has concluded. You can spectate any remaining duels in real-time below.'}
+                {userBracketStatus.type === 'champion' && 'You conquered the bracket and claimed the grand crystal pot!'}
+              </div>
+            </div>
+          </div>
+
+          {userBracketStatus.type === 'ready' && (
+            <button
+              onClick={() => onLaunchMatch(tournament, userBracketStatus.match)}
+              className="btn-enter-game-cta"
+              style={{
+                padding: '12px 24px',
+                fontSize: '1rem',
+                boxShadow: '0 0 20px rgba(251, 200, 13, 0.4)'
+              }}
+            >
+              <Swords size={18} /> ENTER TOURNAMENT DUEL NOW
+            </button>
+          )}
+        </div>
+      )}
+
       {/* INTERACTIVE VISUAL BRACKET TREE */}
       {rounds.length > 0 && (
         <div
@@ -627,6 +735,29 @@ export default function KontrolaBracketView({
                                   <Eye size={14} /> SPECTATE DUEL
                                 </button>
                               )}
+                            </div>
+                          )}
+
+                          {/* Waiting for Opponent in Bracket */}
+                          {!isReadyToDuel && !isComplete && ((match.player1 && !match.player2) || (!match.player1 && match.player2)) && (
+                            <div
+                              style={{
+                                marginTop: '10px',
+                                padding: '8px 10px',
+                                borderRadius: '8px',
+                                background: isMyMatch ? 'rgba(0, 243, 255, 0.08)' : 'rgba(255,255,255,0.03)',
+                                border: isMyMatch ? '1px dashed var(--neon-cyan)' : '1px dashed rgba(255,255,255,0.15)',
+                                color: isMyMatch ? 'var(--neon-cyan)' : 'rgba(255,255,255,0.4)',
+                                fontSize: '0.75rem',
+                                fontWeight: 'bold',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '6px'
+                              }}
+                            >
+                              <Clock size={13} />
+                              <span>{isMyMatch ? 'WAITING FOR OPPONENT...' : 'Awaiting Opponent...'}</span>
                             </div>
                           )}
                         </div>
