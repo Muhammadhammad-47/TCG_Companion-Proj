@@ -68,7 +68,15 @@ const generateRoomCode = () => {
 
 // Bulletproof helpers to handle both string cards ('SHIELD BASIC') and card objects ({ id, name, type, costET })
 export const getSafeCardName = (c) => typeof c === 'string' ? c : (c?.name || '');
-export const getSafeCardType = (c) => typeof c === 'object' && c?.type ? c.type : 'ACTION';
+export const getSafeCardType = (c) => {
+  if (typeof c === 'object' && c?.type) return c.type;
+  const name = getSafeCardName(c).toUpperCase();
+  if (['ATTACK', 'FIRE', 'LIGHTNING', 'DRAIN', 'VAMPIRE', 'BACK STAB'].some(kw => name.includes(kw))) return 'ATTACK';
+  if (['SHIELD', 'DEFEN', 'DODGE', 'COUNTER', 'BOOMERANG'].some(kw => name.includes(kw))) return 'DEFENSE';
+  if (['HEAL', 'ANTIDOTE', 'VITALITY', 'REVIVE'].some(kw => name.includes(kw))) return 'HEAL';
+  if (['POISON', 'FREEZE', 'SLEEPY'].some(kw => name.includes(kw))) return 'STATUS';
+  return 'OTHERS';
+};
 export const getSafeCardId = (c, idx = 0) => (typeof c === 'object' && c?.id) ? c.id : `${getSafeCardName(c)}_${idx}`;
 export const getSafeCardCost = (c) => typeof c === 'object' && typeof c?.costET === 'number' ? c.costET : 0;
 
@@ -858,7 +866,7 @@ export default function KontrolaArena() {
           console.log('[DICE_SCREEN_OPEN] Received event with payload:', {
             actorId: event.payload?.actorId,
             targetId: event.payload?.targetId,
-            actionCard: event.payload?.actionCard?.name,
+            actionCard: getSafeCardName(event.payload?.actionCard),
             attackSelectionName: event.payload?.attackSelectionName,
             attackerPlayerId: event.payload?.attackerPlayerId,
             defenderPlayerId: event.payload?.defenderPlayerId,
@@ -1873,7 +1881,7 @@ export default function KontrolaArena() {
         }
 
         // Not a tie � now commit the ET cost
-        const cost = actionCard?.costET || (actionCard?.type === 'ATTACK' ? 1 : 0);
+        const cost = actionCard?.costET || (getSafeCardType(actionCard) === 'ATTACK' ? 1 : 0);
         newAttackerState.energyTokens = Math.max(0, (newAttackerState.energyTokens || 5) - cost);
 
         newAttackerState = resolved.newAttackerState;
@@ -2274,6 +2282,24 @@ export default function KontrolaArena() {
         updatedStats.damageDealt[actorId] = (updatedStats.damageDealt[actorId] || 0) + totalTurnDmg;
       }
 
+      // If ABANDON was played, purge active alliance and reset trading permissions
+      let updatedAlliances = currentState.alliances;
+      if (getSafeCardName(actionCard).toUpperCase().includes('ABANDON')) {
+        const myAlliances = (currentState.alliances || []).filter(
+          a => a.player1Id === actorId || a.player2Id === actorId
+        );
+        myAlliances.forEach(a => {
+          const allyId = a.player1Id === actorId ? a.player2Id : a.player1Id;
+          if (updatedStates[allyId]) {
+            updatedStates[allyId].allianceId = null;
+            updatedStates[allyId].canTradeWithAlliance = false;
+          }
+        });
+        updatedAlliances = (currentState.alliances || []).filter(
+          a => a.player1Id !== actorId && a.player2Id !== actorId
+        );
+      }
+
       const nextState = {
         ...currentState,
         turn: nextTurnPlayerId,
@@ -2282,6 +2308,7 @@ export default function KontrolaArena() {
         deck: newDeck,
         hands: updatedHands,
         characterStates: updatedStates,
+        alliances: updatedAlliances,
         stats: updatedStats,
         logs: [...turnLogs, ...(currentState.logs || [])],
         winner: matchWinner
@@ -2632,7 +2659,7 @@ export default function KontrolaArena() {
     const isTrap = ['BOOMERANG', 'MISDIRECT'].some(kw => cardName.includes(kw));
     const isDrain = cardName.includes('DRAIN');
     const isBackStab = cardName.includes('BACK STAB');
-    const isAttack = (selectedActionCard.type === 'ATTACK' || isBackStab) && !isTrap && !isDrain;
+    const isAttack = (getSafeCardType(selectedActionCard) === 'ATTACK' || isBackStab) && !isTrap && !isDrain;
     const isAoE = cardName.includes('BLITZ');
     const isLightning = cardName.includes('LIGHTNING');
     const isFireFlame = cardName.includes('FIRE FLAME');
@@ -2640,7 +2667,7 @@ export default function KontrolaArena() {
 
     console.log('[playTurn] Card type analysis:', {
       cardName,
-      cardType: selectedActionCard.type,
+      cardType: getSafeCardType(selectedActionCard),
       isAttack,
       isAoE,
       isLightning,
@@ -2651,11 +2678,33 @@ export default function KontrolaArena() {
       isTrap
     });
 
-    // Level check for Vitality Gain V20 (requires reaching 150 HP / Level 2)
+    // Level check for Vitality Gain V20, V30, V40
     const isLevel2 = (myCharacter?.hp || 0) >= 150 || (myCharacter?.level || 1) >= 2;
+    const isLevel3 = (myCharacter?.level || 1) >= 3 || (myCharacter?.maxHp || 100) >= 180;
+    const isLevel4 = (myCharacter?.level || 1) >= 4 || (myCharacter?.maxHp || 100) >= 200;
+
     if (cardName.includes('VITALITY GAIN V20') && !isLevel2) {
       showNotice('Only available in level 2 (requires 150 HP)', 'warning');
       return;
+    }
+    if (cardName.includes('VITALITY GAIN V30') && !isLevel3) {
+      showNotice('Only available in level 3 (requires Level 3)', 'warning');
+      return;
+    }
+    if (cardName.includes('VITALITY GAIN V40') && !isLevel4) {
+      showNotice('Only available in level 4 (requires Level 4)', 'warning');
+      return;
+    }
+
+    // Abandon card can only be played when in an active Soul Alliance
+    if (cardName === 'ABANDON') {
+      const inAlliance = (gameState?.alliances || []).some(
+        a => a.player1Id === playerId || a.player2Id === playerId
+      );
+      if (!inAlliance) {
+        showNotice('An Abandon card can only be used while in an active Soul Alliance!', 'warning');
+        return;
+      }
     }
 
     if (isAttack && !isAoE && !selectedTargetId) {
@@ -2729,7 +2778,7 @@ export default function KontrolaArena() {
         console.log('[playTurn] Regular Attack - Broadcasting ATTACK_DECLARED:', {
           attackerName: clashData.attackerPlayerName,
           defenderName: clashData.defenderPlayerName,
-          actionCard: clashData.actionCard.name,
+          actionCard: getSafeCardName(clashData.actionCard),
           attackSelectionName: clashData.attackSelectionName,
           isHost
         });
@@ -4815,7 +4864,7 @@ export default function KontrolaArena() {
 
               {/* Target & Move Selection Panel */}
               {selectedActionCard && !isSpectator && (
-                ((selectedActionCard.type === 'ATTACK' || getSafeCardName(selectedActionCard).toUpperCase().includes('BACK STAB')) && !['BOOMERANG', 'MISDIRECT'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw))) ||
+                ((getSafeCardType(selectedActionCard) === 'ATTACK' || getSafeCardName(selectedActionCard).toUpperCase().includes('BACK STAB')) && !['BOOMERANG', 'MISDIRECT'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw))) ||
                 ['POISON', 'SLEEPY', 'FREEZE', 'X-CHANGE', 'KONTROL', 'SOUL ALLIANCE', 'DRAIN', 'VAMPIRE'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw)) ||
                 (getSafeCardName(selectedActionCard).toUpperCase().includes('VISION') && !getSafeCardName(selectedActionCard).toUpperCase().includes('FULL'))
               ) && (
@@ -4857,7 +4906,7 @@ export default function KontrolaArena() {
                     })}
                   </div>
 
-                  {(selectedActionCard?.type === 'ATTACK' || getSafeCardName(selectedActionCard).toUpperCase().includes('BACK STAB')) && !['LIGHTNING', 'FIRE FLAME', 'VAMPIRE', 'DRAIN', 'BACK STAB', 'BOOMERANG', 'MISDIRECT', 'BLITZ'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw)) && (
+                  {(getSafeCardType(selectedActionCard) === 'ATTACK' || getSafeCardName(selectedActionCard).toUpperCase().includes('BACK STAB')) && !['LIGHTNING', 'FIRE FLAME', 'VAMPIRE', 'DRAIN', 'BACK STAB', 'BOOMERANG', 'MISDIRECT', 'BLITZ'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw)) && (
                     <>
                       <div className="panel-title-bar" style={{ marginBottom: '8px' }}>
                         <span className="panel-kicker" style={{ color: 'var(--neon-crimson)' }}>2. SELECT CHARACTER MOVE</span>
@@ -4976,7 +5025,7 @@ export default function KontrolaArena() {
                       disabled={
                         !isMyTurn ||
                         !selectedActionCard ||
-                        (selectedActionCard.type === 'ATTACK' &&
+                        (getSafeCardType(selectedActionCard) === 'ATTACK' &&
                           !['BLITZ', 'LIGHTNING', 'FIRE FLAME', 'VAMPIRE', 'DRAIN', 'BACK STAB', 'BOOMERANG', 'MISDIRECT'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw)) &&
                           (!selectedCharacterAttack || !selectedTargetId)) ||
                         (getSafeCardName(selectedActionCard).toUpperCase().includes('BACK STAB') && !selectedTargetId) ||
@@ -5000,7 +5049,7 @@ export default function KontrolaArena() {
                       }}
                     >
                       <Dices size={18} />
-                      <span>{selectedActionCard?.type === 'ATTACK' ? 'ROLL COMBAT CLASH' : 'PLAY ACTION CARD'}</span>
+                      <span>{getSafeCardType(selectedActionCard) === 'ATTACK' ? 'ROLL COMBAT CLASH' : 'PLAY ACTION CARD'}</span>
                     </button>
                   </>
                 )}
@@ -5517,7 +5566,7 @@ export default function KontrolaArena() {
 
                   {/* Defense cards in hand */}
                   <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center', maxWidth: '820px', marginBottom: '32px' }}>
-                    {myHand.filter(c => ['SHIELD', 'BOOMERANG', 'DEFENCE', 'DODGE', '+DEFENCE'].some(kw => getSafeCardName(c).toUpperCase().includes(kw))).map((card, idx) => {
+                    {myHand.filter(c => getSafeCardType(c) === 'DEFENSE' || ['SHIELD', 'BOOMERANG', 'DEFEN', 'DODGE', 'COUNTER'].some(kw => getSafeCardName(c).toUpperCase().includes(kw))).map((card, idx) => {
                       const cName = getSafeCardName(card);
                       const cType = getSafeCardType(card);
                       const cId = getSafeCardId(card, idx);
