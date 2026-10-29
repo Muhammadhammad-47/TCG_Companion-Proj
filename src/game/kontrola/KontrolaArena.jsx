@@ -1893,8 +1893,10 @@ export default function KontrolaArena() {
         // Broadcast UI effects to all clients (Shake, Sound, Damage Popups, Vision Modals)
         setTimeout(() => {
           let visionData = null;
-          if (actionCard?.name && actionCard.name.includes('VISION')) {
-            if (actionCard.name === 'VISION FULL') {
+          const playedCardName = getSafeCardName(actionCard);
+          const playedCardType = getSafeCardType(actionCard);
+          if (playedCardName.includes('VISION')) {
+            if (playedCardName.includes('VISION FULL')) {
               const allCards = [];
               Object.keys(currentState.hands || {}).forEach(pid => {
                 if (pid !== actorId) {
@@ -1928,27 +1930,27 @@ export default function KontrolaArena() {
 
           let dmgDealt = 0;
           let healDelta = 0;
-          if (actionCard?.type === 'ATTACK') {
+          if (playedCardType === 'ATTACK') {
              const prevDefHP = (currentState.characterStates?.[targetId]?.hp) ?? 0;
              const newDefHP = newDefenderState?.hp ?? 0;
              dmgDealt = Math.max(0, prevDefHP - newDefHP);
-          } else if (actionCard?.type === 'HEAL') {
+          } else if (playedCardType === 'HEAL') {
              const prevAtkHP = (currentState.characterStates?.[actorId]?.hp) ?? 0;
              const newAtkHP = newAttackerState?.hp ?? 0;
              healDelta = Math.max(0, newAtkHP - prevAtkHP);
           }
 
           let triggerXChange = null;
-          if (actionCard?.name && actionCard.name.includes('X-CHANGE') && targetId && targetId !== 'ALL') {
+          if (playedCardName.includes('X-CHANGE') && targetId && targetId !== 'ALL') {
             // Filter out the played action card from the attacker's hand so they don't exchange the card they just spent
             const availableAttackerHand = newHand.filter(c => {
-              const cName = typeof c === 'string' ? c : c?.name;
+              const cName = getSafeCardName(c);
               const cId = typeof c === 'object' ? c?.id : null;
-              if (actionCard.id && cId) return cId !== actionCard.id;
-              return cName !== actionCard.name;
+              if (actionCard?.id && cId) return cId !== actionCard.id;
+              return cName !== playedCardName;
             });
             triggerXChange = {
-              xChangeType: actionCard.name.includes('FULL') ? 'FULL' : 'X1',
+              xChangeType: playedCardName.includes('FULL') ? 'FULL' : 'X1',
               actorId,
               targetId,
               defenderName: defenderChar?.name || 'Opponent',
@@ -2047,6 +2049,8 @@ export default function KontrolaArena() {
             name: currentState.characterStates[pId]?.name || 'Unknown',
             hp: currentState.characterStates[pId]?.hp || 0,
             crystals: currentState.characterStates[pId]?.crystals || 0,
+            energyTokens: currentState.characterStates[pId]?.energyTokens || 0,
+            actionCardsHand: currentState.hands?.[pId] || [],
             isDefeated: false
           }));
 
@@ -2101,16 +2105,18 @@ export default function KontrolaArena() {
       // Cards that should NEVER grant an extra turn regardless of resolved flags.
       // TIME MACHINE is type 'OTHERS' but is the sole exception � it explicitly grants an extra turn.
       // ATTACK X2 is type 'ATTACK' and handles its second-hit via triggerAttackX2SecondHit.
-      const isStatusOrHealCard = actionCard &&
-        ['STATUS', 'HEAL', 'OTHERS', 'TACTICAL', 'DEFENSE', 'SPECIAL'].includes(actionCard.type) &&
-        actionCard.name !== 'TIME MACHINE';
+      const resolvedEndTurnCardType = getSafeCardType(actionCard);
+      const resolvedEndTurnCardName = getSafeCardName(actionCard);
+      const isStatusOrHealCard = Boolean(actionCard) &&
+        ['STATUS', 'HEAL', 'OTHERS', 'TACTICAL', 'DEFENSE', 'SPECIAL'].includes(resolvedEndTurnCardType) &&
+        resolvedEndTurnCardName !== 'TIME MACHINE';
 
       if (livingPlayers.length <= 1) {
         matchWinner = updatedStates[livingPlayers[0]] ? { ...updatedStates[livingPlayers[0]], playerId: livingPlayers[0] } : matchWinner;
         nextTurnPlayerId = livingPlayers[0] || actorId;
       } else {
         // STATUS/HEAL/OTHERS/TACTICAL/DEFENSE cards must ALWAYS advance the turn � never stay on same player
-        const isAlreadySecondHit = currentState.pendingAttackX2For === actorId || actionCard?.id === 'attack_x2_2nd' || actionCard?.name?.includes('2ND HIT');
+        const isAlreadySecondHit = currentState.pendingAttackX2For === actorId || (typeof actionCard === 'object' && actionCard?.id === 'attack_x2_2nd') || resolvedEndTurnCardName.includes('2ND HIT');
         const triggerSecondHit = !isAlreadySecondHit && Boolean(resolved.triggerAttackX2SecondHit);
         const grantExtraTurn = !isStatusOrHealCard && (resolved.extraTurnGranted || triggerSecondHit);
 
@@ -2247,7 +2253,7 @@ export default function KontrolaArena() {
       updatedStats.turnsTaken[actorId] = (updatedStats.turnsTaken[actorId] || 0) + 1;
 
       // Damage Dealt (Compute from diff)
-      if (!isPass && actionCard?.type === 'ATTACK') {
+      if (!isPass && getSafeCardType(actionCard) === 'ATTACK') {
         let totalTurnDmg = 0;
         if (targetId && targetId !== 'ALL' && newDefenderState) {
            const prevDefHP = (currentState.characterStates?.[targetId]?.hp) ?? 0;
@@ -4819,7 +4825,7 @@ export default function KontrolaArena() {
                   </div>
 
                   <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', flexWrap: 'wrap' }}>
-                    {(selectedActionCard?.name?.includes('POISON') ? [...opponents, playerId] : opponents).map((oId) => {
+                    {(getSafeCardName(selectedActionCard).toUpperCase().includes('POISON') ? [...opponents, playerId] : opponents).map((oId) => {
                       const oChar = gameState.characterStates?.[oId];
                       if (!oChar || oChar.isDefeated) return null;
                       const isSelectedTarget = selectedTargetId === oId;

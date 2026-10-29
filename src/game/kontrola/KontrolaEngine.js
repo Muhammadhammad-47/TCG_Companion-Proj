@@ -979,7 +979,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     log += ` Deployed +${sValue} Shield barrier.`;
   }
   // 8. DEFENSE CARDS
-  else if (actionCard.type === 'DEFENSE') {
+  else if (cardType === 'DEFENSE') {
     if (cardName.includes('D20')) {
       newAttackerState.shield = (newAttackerState.shield || 0) + 20;
       log += ` Fortified defense (+20 temporary barrier).`;

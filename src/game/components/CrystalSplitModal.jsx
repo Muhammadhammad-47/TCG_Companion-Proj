@@ -35,10 +35,21 @@ export default function CrystalSplitModal({
 
   // Get available action cards from current offerer
   const getAvailableCards = (player) => {
-    return (player.actionCardsHand || []).map((card, idx) => ({
-      ...card,
-      instanceId: card.instanceId || `card_${idx}_${Date.now()}`
-    }));
+    return (player.actionCardsHand || []).map((card, idx) => {
+      const isStr = typeof card === 'string';
+      const name = isStr ? card : (card?.name || `CARD ${idx + 1}`);
+      const type = isStr
+        ? (name.includes('SHIELD') || name.includes('DEFEN') ? 'DEFENSE' : name.includes('ATTACK') ? 'ATTACK' : 'SPECIAL')
+        : (card?.type || 'SPECIAL');
+      const id = isStr ? `c_${idx}_${name}` : (card?.id || `c_${idx}`);
+      return {
+        ...(isStr ? {} : card),
+        id,
+        name,
+        type,
+        instanceId: (isStr ? null : card?.instanceId) || `card_${idx}_${name}_${Date.now()}`
+      };
+    });
   };
 
   const availableCards = getAvailableCards(currentOfferer);

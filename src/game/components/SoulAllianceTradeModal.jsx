@@ -14,7 +14,10 @@ export default function SoulAllianceTradeModal({
   const [selectedReviveCard, setSelectedReviveCard] = useState(null);
   const [energyAmount, setEnergyAmount] = useState(1);
 
-  const reviveCards = playerHand?.filter(c => c.name.includes('REVIVE')) || [];
+  const getCardName = (c) => typeof c === 'string' ? c : (c?.name || 'REVIVE');
+  const getCardType = (c) => typeof c === 'object' && c?.type ? c.type : 'HEAL';
+
+  const reviveCards = playerHand?.filter(c => getCardName(c).toUpperCase().includes('REVIVE')) || [];
   const hasReviveCards = reviveCards.length > 0;
 
   const handleTrade = () => {
@@ -77,8 +80,8 @@ export default function SoulAllianceTradeModal({
                     onClick={() => setSelectedReviveCard(card)}
                   >
                     <div className="card-icon">💀</div>
-                    <div className="card-name">{card.name}</div>
-                    <div className="card-type">{card.type}</div>
+                    <div className="card-name">{getCardName(card)}</div>
+                    <div className="card-type">{getCardType(card)}</div>
                   </div>
                 ))}
               </div>
@@ -89,7 +92,7 @@ export default function SoulAllianceTradeModal({
             )}
             {selectedReviveCard && (
               <div className="trade-preview">
-                <strong>Sending to {allyName}:</strong> {selectedReviveCard.name}
+                <strong>Sending to {allyName}:</strong> {getCardName(selectedReviveCard)}
               </div>
             )}
           </div>
