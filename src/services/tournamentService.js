@@ -840,12 +840,21 @@ export const tournamentService = {
         () => {
           onUpdate({ type: 'PARTICIPANTS_CHANGED' });
         }
-      )
-      .subscribe();
+      );
+
+    if (channel.state !== 'joined' && channel.state !== 'joining') {
+      try {
+        channel.subscribe();
+      } catch (err) {
+        console.warn('[Supabase] subscribeToTournament ignored re-subscribe:', err);
+      }
+    }
 
     return {
       unsubscribe: () => {
-        supabase.removeChannel(channel);
+        try {
+          supabase.removeChannel(channel);
+        } catch (e) {}
       }
     };
   }
