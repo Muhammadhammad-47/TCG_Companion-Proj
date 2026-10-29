@@ -54,7 +54,9 @@ export const createMatch = async (matchId, hostId, characterId = 'chynaman') => 
   };
 
   if (!channels[matchId]) {
-    channels[matchId] = supabase.channel(`match_${matchId}`);
+    channels[matchId] = supabase.channel(`match_${matchId}`, {
+      config: { broadcast: { self: true } }
+    });
   }
 
   return initialState;
@@ -64,7 +66,9 @@ export const joinMatch = async (matchId, playerId, characterId = 'bee') => {
   if (!supabase) throw new Error('Supabase is not configured in .env');
 
   if (!channels[matchId]) {
-    channels[matchId] = supabase.channel(`match_${matchId}`);
+    channels[matchId] = supabase.channel(`match_${matchId}`, {
+      config: { broadcast: { self: true } }
+    });
   }
   
   return {
@@ -85,7 +89,10 @@ export const subscribeToMatch = (matchId, callback, onSubscribe = null, playerId
 
   if (!channels[matchId]) {
     channels[matchId] = supabase.channel(`match_${matchId}`, {
-      config: { presence: { key: playerId || 'spectator' } }
+      config: {
+        broadcast: { self: true },
+        presence: { key: playerId || 'spectator' }
+      }
     });
   }
 
@@ -277,12 +284,18 @@ export const broadcastLeave = async (matchId, playerId) => {
 
 export const broadcastAction = async (matchId, eventName, payload) => {
   if (!channels[matchId]) return;
-  await channels[matchId].send({
-    type: 'broadcast',
-    event: eventName,
-    payload
-  });
+  try {
+    await channels[matchId].send({
+      type: 'broadcast',
+      event: eventName,
+      payload
+    });
+  } catch (err) {
+    console.warn(`[Supabase] broadcastAction error for event ${eventName}:`, err);
+  }
 };
+
+export const broadcastUIEvent = broadcastAction;
 
 export const takeTurn = async (matchId, action) => {
   if (!channels[matchId]) return;

@@ -1771,6 +1771,7 @@ export default function KontrolaArena() {
               visionData = {
                 targetId: 'ALL',
                 targetName: 'All Opponents',
+                isFull: true,
                 expiresAt: Date.now() + 30000,
                 cards: allCards,
                 actorId
@@ -1778,6 +1779,7 @@ export default function KontrolaArena() {
             } else if (targetId && targetId !== 'ALL') {
               visionData = {
                 targetId,
+                isFull: false,
                 isXChange: actionCard.name.includes('X-CHANGE'),
                 targetName: defenderChar?.name || 'Opponent',
                 expiresAt: Date.now() + 15000,
@@ -1785,6 +1787,10 @@ export default function KontrolaArena() {
                 actorId
               };
             }
+          }
+
+          if (visionData && visionData.actorId === playerIdRef.current) {
+            setRevealedVision(visionData);
           }
 
           let dmgDealt = 0;
@@ -5681,8 +5687,11 @@ export default function KontrolaArena() {
                 </div>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', overflowY: 'auto', maxHeight: '55vh', paddingRight: '4px' }}>
-                  {revealedVision.cards.map((c, i) => {
-                    const cardImgUrl = getCardGraphicUrl(c.name);
+                  {revealedVision.cards.filter(Boolean).map((c, i) => {
+                    const cardName = typeof c === 'string' ? c : (c?.name || 'Action Card');
+                    const cardType = typeof c === 'object' ? (c?.type || 'ACTION') : 'ACTION';
+                    const cardOwner = typeof c === 'object' ? c?.ownerName : null;
+                    const cardImgUrl = getCardGraphicUrl(cardName);
                     return (
                       <div
                         key={i}
@@ -5700,7 +5709,7 @@ export default function KontrolaArena() {
                           <div style={{ width: '100%', height: '90px', borderRadius: '6px', overflow: 'hidden', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <img
                               src={cardImgUrl}
-                              alt={c.name}
+                              alt={cardName}
                               style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                               onError={(e) => { e.currentTarget.style.display = 'none'; }}
                             />
@@ -5708,12 +5717,12 @@ export default function KontrolaArena() {
                         )}
                         <div>
                           <div style={{ fontWeight: 'bold', color: '#fff', fontSize: '0.85rem', lineHeight: 1.2 }}>
-                            {c.name}
+                            {cardName}
                           </div>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', fontSize: '0.72rem' }}>
-                            <span style={{ color: 'var(--neon-cyan)' }}>{c.type || 'ACTION'}</span>
-                            {c.ownerName && (
-                              <span style={{ color: 'var(--neon-gold)', opacity: 0.9 }}>{c.ownerName}</span>
+                            <span style={{ color: 'var(--neon-cyan)' }}>{cardType}</span>
+                            {cardOwner && (
+                              <span style={{ color: 'var(--neon-gold)', opacity: 0.9 }}>{cardOwner}</span>
                             )}
                           </div>
                         </div>
