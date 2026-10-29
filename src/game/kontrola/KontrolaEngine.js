@@ -339,7 +339,11 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     };
   };
   
-  let log = `${attackerState.name} played ${actionCard.name}.`;
+  const cardName = (typeof actionCard === 'string' ? actionCard : (actionCard?.name || '')).toUpperCase();
+  const cardType = (typeof actionCard === 'object' && actionCard?.type) ? actionCard.type : (
+    ['ATTACK', 'LIGHTNING', 'FIRE', 'BACK STAB', 'VAMPIRE', 'DRAIN'].some(kw => cardName.includes(kw)) ? 'ATTACK' : 'OTHERS'
+  );
+  let log = `${attackerState.name} played ${typeof actionCard === 'string' ? actionCard : (actionCard?.name || 'Action Card')}.`;
   let damage = 0;
   let heal = 0;
   let shieldGain = 0;
@@ -359,8 +363,8 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   // Process Defender's Played Card (if any) during Preparation Window
   const defCard = precalculatedRolls?.defenseCard;
   if (defCard && newDefenderState) {
-    const dName = defCard.name.toUpperCase();
-    log += ` [Defender played ${defCard.name}]`;
+    const dName = (typeof defCard === 'string' ? defCard : (defCard?.name || '')).toUpperCase();
+    log += ` [Defender played ${typeof defCard === 'string' ? defCard : (defCard?.name || 'Defense Card')}]`;
     if (dName.includes('SHIELD')) {
       const gain = dName.includes('100HP') || dName.includes('ADVANCE') ? 100
                  : dName.includes('50HP')  || dName.includes('FIRE')    ? 50
@@ -390,7 +394,6 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     }
   }
 
-  const cardName = actionCard.name.toUpperCase();
   const isAttackerZombie = newAttackerState.poisonCount >= 5;
   const isDefenderZombie = newDefenderState?.poisonCount >= 5;
 
@@ -535,7 +538,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     }
   }
   // 3. ATTACK CARDS (With Character Combat Moves or Standalone Elemental Spells)
-  else if (actionCard.type === 'ATTACK') {
+  else if (cardType === 'ATTACK') {
     if (cardName === 'BOOMERANG FULL') {
       newAttackerState.hasBoomerang = true;
       log += ` Boomerang Trap set! Next successful attack against you will be reflected 100%.`;
@@ -555,7 +558,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     if (cardName.includes('LIGHTNING')) {
       baseAP = cardName.includes('X2') ? 20 : 10;
       attackElement = 'Lightning';
-      log += ` [${actionCard.name}: Elemental Lightning strike dealing ${baseAP} AP]`;
+      log += ` [${cardName}: Elemental Lightning strike dealing ${baseAP} AP]`;
     } else if (cardName.includes('FIRE FLAME')) {
       const isX2 = cardName.includes('X2');
       baseAP = isX2 ? 20 : 10;
@@ -571,7 +574,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         return { newAttackerState, newDefenderState, log };
       }
       
-      log += ` [${actionCard.name}: Rolled doubles! Elemental Fire strike dealing ${baseAP} AP]`;
+      log += ` [${cardName}: Rolled doubles! Elemental Fire strike dealing ${baseAP} AP]`;
     } else if (isAttackerZombie) {
       baseAP = 20; // Zombie Venom Strike
       attackElement = 'Poison';
@@ -582,9 +585,9 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       if (atk) {
         attackElement = atk.element || 'Physical';
         if (atk.dice > 0) {
-          const multiplier = cardName.includes('ATTACK X2') ? (atk.ap * 2) : atk.ap;
+          const multiplier = atk.ap;
           baseAP = (dRoll?.total || 1) * multiplier;
-          log += ` [${attackSelectionName}${cardName.includes('ATTACK X2') ? ' (Attack X2 2× multiplier)' : ''}: ${dRoll?.total || 1} × ${multiplier} AP = ${baseAP} AP]`;
+          log += ` [${attackSelectionName}: ${dRoll?.total || 1} × ${multiplier} AP = ${baseAP} AP]`;
         } else {
           baseAP = atk.ap;
         }
@@ -801,7 +804,9 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       // Apply damage to defender
       if (newDefenderState) {
         newDefenderState.hp = Math.max(0, newDefenderState.hp - finalDamage);
-        log += ` Attack lands! ${newDefenderState.name} takes ${finalDamage} damage.`;
+        log += ` Attack lands! ${newDefenderState.name} takes ${finalDamage} damage (Base: ${baseAP} AP` +
+          (newDefenderState.weakness && attackElement && newDefenderState.weakness.toLowerCase().includes(attackElement.toLowerCase()) ? ` + Weakness` : '') +
+          (defenderRoll.total >= 6 && !newDefenderState?.hasDefendBasic ? ` - Innate DP` : '') + `).`;
 
         // If Zombie is hit by Fire or Lightning -> removes 1 poison card
         if (isDefenderZombie && ['Fire', 'Lightning'].includes(attackElement)) {

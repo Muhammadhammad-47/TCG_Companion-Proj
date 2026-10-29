@@ -197,7 +197,9 @@ export default function KontrolaDiceRoller({
   playerHand = [],
   onExecuteRetreat = null
 }) {
-  const hasRetreatCard = Array.isArray(playerHand) && playerHand.some(c => c.name?.includes('RETREAT'));
+  const hasRetreatCard = Array.isArray(playerHand) && playerHand.some(c => 
+    (typeof c === 'string' ? c : (c?.name || '')).toUpperCase().includes('RETREAT')
+  );
   // SAFETY: Ensure combatData and all required properties exist before using them
   // This prevents "Cannot access X before initialization" errors during build minification
   if (!combatData) {
@@ -210,7 +212,7 @@ export default function KontrolaDiceRoller({
     hasDefender: !!combatData?.defender,
     attackerPlayerName: combatData?.attacker?.name || combatData?.attackerPlayerName,
     defenderPlayerName: combatData?.defender?.name || combatData?.defenderPlayerName,
-    actionCard: combatData?.actionCard?.name,
+    actionCard: typeof combatData?.actionCard === 'string' ? combatData.actionCard : combatData?.actionCard?.name,
     attackSelectionName: combatData?.attackSelectionName,
     isAttacker,
     isDefender,
@@ -220,6 +222,7 @@ export default function KontrolaDiceRoller({
   });
   
   const { attacker, defender, actionCard, attackSelectionName, attackerPlayerName, defenderPlayerName } = combatData || {};
+  const resolvedCardName = typeof actionCard === 'string' ? actionCard : (actionCard?.name || '');
   
   // CRITICAL FIX: Ensure these NEVER become undefined to prevent minification variable errors
   const defChar = defender || { 
@@ -562,7 +565,7 @@ export default function KontrolaDiceRoller({
 
   const cardImg = attackSelectionName
     ? getCharacterAttackGraphicUrl(attackSelectionName)
-    : getCardGraphicUrl(actionCard?.name, atkChar?.id);
+    : getCardGraphicUrl(resolvedCardName, atkChar?.id);
 
   return (
     <div
@@ -736,7 +739,7 @@ export default function KontrolaDiceRoller({
               textAlign: 'center'
             }}
           >
-            ?? {attackSelectionName || actionCard?.name || 'ATTACK CLASH'}
+            ⚔️ {attackSelectionName || resolvedCardName || 'ATTACK CLASH'}
           </div>
           <div
             style={{
@@ -751,7 +754,7 @@ export default function KontrolaDiceRoller({
           >
             <img
               src={cardImg}
-              alt={actionCard?.name || 'Combat Action'}
+              alt={resolvedCardName || 'Combat Action'}
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
           </div>
@@ -1140,7 +1143,7 @@ export default function KontrolaDiceRoller({
                     <CanvasPipDie value={multiplierDie} theme="red" isRolling={isRollingMultiplier} size={54} />
                                         <div style={{ textAlign: 'left' }}>
                       {(() => {
-                        const isAtkX2 = actionCard?.name?.includes('ATTACK X2');
+                        const isAtkX2 = resolvedCardName.includes('ATTACK X2');
                         const perAp = isAtkX2 ? (selectedAttackInfo.ap * 2) : selectedAttackInfo.ap;
                         const total = multiplierDie * perAp;
                         return (

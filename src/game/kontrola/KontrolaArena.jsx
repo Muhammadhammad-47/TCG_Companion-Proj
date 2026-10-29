@@ -1618,7 +1618,7 @@ export default function KontrolaArena() {
 
         let tradeLog = '';
         if (tradeType === 'REVIVE' && card) {
-          const rIdx = traderHand.findIndex(c => c.id === card.id || c.name === card.name);
+          const rIdx = findSafeCardIndex(traderHand, card);
           if (rIdx !== -1) {
             const [tradedCard] = traderHand.splice(rIdx, 1);
             recipientHand.push(tradedCard);
@@ -2559,8 +2559,8 @@ export default function KontrolaArena() {
     const payload = {
       actionType: 'DISCARD_AND_DRAW',
       actorId: playerId,
-      cardId: selectedActionCard.id,
-      cardName: selectedActionCard.name
+      cardId: typeof selectedActionCard === 'object' ? selectedActionCard?.id : null,
+      cardName: getSafeCardName(selectedActionCard)
     };
     if (isHost) {
       enqueueHostAction(payload);
@@ -5474,10 +5474,10 @@ export default function KontrolaArena() {
                   <span style={{ fontSize: '1.4rem' }}>??</span>
                   <div>
                     <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#fff', letterSpacing: '0.04em' }}>
-                      {gameState.activeDefenseState.actionCard.name}
+                      {getSafeCardName(gameState.activeDefenseState.actionCard)}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: 'rgba(255,160,160,0.8)', marginTop: '2px' }}>
-                      {gameState.activeDefenseState.actionCard.type} � Cost {gameState.activeDefenseState.actionCard.costET ?? 0} ET
+                      {getSafeCardType(gameState.activeDefenseState.actionCard)} � Cost {getSafeCardCost(gameState.activeDefenseState.actionCard)} ET
                     </div>
                   </div>
                 </div>
