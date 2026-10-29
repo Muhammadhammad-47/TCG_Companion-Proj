@@ -1,54 +1,79 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, Check, X } from 'lucide-react';
+import { getCardGraphicUrl } from '../kontrola/kontrolaAssets';
 
 export default function XChangeModal({
   isOpen,
-  xChangeType, // 'X1' or 'FULL'
-  attackerHand,
-  defenderHand,
-  defenderName,
+  xChangeType = 'X1', // 'X1' or 'FULL'
+  attackerHand = [],
+  defenderHand = [],
+  defenderName = 'Opponent',
   onConfirm,
   onCancel,
   timeLimit = 30
 }) {
-  // Track selections by index for reliable matching even without unique IDs
+  // Track selections by index for reliable matching
   const [selectedAttackerIdx, setSelectedAttackerIdx] = useState(null);
   const [selectedDefenderIdx, setSelectedDefenderIdx] = useState(null);
   const [timeLeft, setTimeLeft] = useState(timeLimit);
   const [showWarning, setShowWarning] = useState(false);
 
-  const isX1 = xChangeType === 'X1';
-  const availableDefenderCards = defenderHand || [];
-  const myCards = attackerHand || [];
+  const safeDefenderName = (typeof defenderName === 'string' && defenderName.trim()) 
+    ? defenderName.trim() 
+    : 'Opponent';
+
+  const myCards = (attackerHand || []).filter(Boolean);
+  const availableDefenderCards = (defenderHand || []).filter(Boolean);
 
   const selectedAttackerCard = selectedAttackerIdx !== null ? myCards[selectedAttackerIdx] : null;
   const selectedDefenderCard = selectedDefenderIdx !== null ? availableDefenderCards[selectedDefenderIdx] : null;
 
+  const getCardName = (card) => {
+    if (!card) return 'Action Card';
+    if (typeof card === 'string') return card;
+    return card.name || 'Action Card';
+  };
+
+  const getCardType = (card) => {
+    if (!card || typeof card === 'string') return 'ACTION';
+    return card.type || 'ACTION';
+  };
+
+  // Reset state whenever modal is opened
   useEffect(() => {
+    if (isOpen) {
+      setSelectedAttackerIdx(null);
+      setSelectedDefenderIdx(null);
+      setTimeLeft(timeLimit);
+      setShowWarning(false);
+    }
+  }, [isOpen, timeLimit]);
+
+  // Dedicated timer countdown
+  useEffect(() => {
+    if (!isOpen) return;
     const timer = setInterval(() => {
       setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          // Auto-select if time runs out
-          if (selectedAttackerCard && selectedDefenderCard) {
-            handleConfirm();
-          } else {
-            onCancel();
-          }
-          return 0;
-        }
+        if (prev <= 1) return 0;
         return prev - 1;
       });
     }, 1000);
-
     return () => clearInterval(timer);
-  }, [selectedAttackerCard, selectedDefenderCard]);
+  }, [isOpen]);
 
+  // Handle timer expiration outside setState updater
   useEffect(() => {
-    if (timeLeft <= 5) {
+    if (!isOpen) return;
+    if (timeLeft === 0) {
+      if (selectedAttackerCard && selectedDefenderCard) {
+        handleConfirm();
+      } else if (onCancel) {
+        onCancel();
+      }
+    } else if (timeLeft <= 5) {
       setShowWarning(true);
     }
-  }, [timeLeft]);
+  }, [timeLeft, isOpen, selectedAttackerCard, selectedDefenderCard]);
 
   const handleConfirm = () => {
     if (!selectedAttackerCard || !selectedDefenderCard) {
@@ -56,12 +81,14 @@ export default function XChangeModal({
       return;
     }
     
-    onConfirm({
-      attackerCard: selectedAttackerCard,
-      defenderCard: selectedDefenderCard,
-      attackerCardIdx: selectedAttackerIdx,
-      defenderCardIdx: selectedDefenderIdx
-    });
+    if (onConfirm) {
+      onConfirm({
+        attackerCard: selectedAttackerCard,
+        defenderCard: selectedDefenderCard,
+        attackerCardIdx: selectedAttackerIdx,
+        defenderCardIdx: selectedDefenderIdx
+      });
+    }
   };
 
   if (!isOpen) return null;
@@ -71,7 +98,7 @@ export default function XChangeModal({
       <div className="xchange-modal-container">
         <h2 className="xchange-modal-title">🔄 X-CHANGE CARD EXCHANGE</h2>
         <div className="xchange-modal-subtitle">
-          View all of {defenderName}&apos;s cards. Select 1 card to take and 1 card from your Action Card deck to discard/give.
+          View all of {safeDefenderName}&apos;s cards. Select 1 card to take and 1 card from your Action Card deck to discard/give.
         </div>
 
         {/* Timer */}
@@ -92,17 +119,29 @@ export default function XChangeModal({
               ) : (
                 myCards.map((card, idx) => {
                   const isSelected = selectedAttackerIdx === idx;
+                  const cName = getCardName(card);
+                  const cType = getCardType(card);
+                  const cImg = getCardGraphicUrl(cName);
+                  const key = typeof card === 'object' && card?.id ? `my-${card.id}-${idx}` : `my-${cName}-${idx}`;
                   return (
                     <div
-                      key={`my-${card.id || idx}-${idx}`}
+                      key={key}
                       className={`xchange-card-option ${isSelected ? 'selected' : ''}`}
                       onClick={() => {
                         setSelectedAttackerIdx(idx);
                         setShowWarning(false);
                       }}
                     >
-                      <div className="xchange-card-name">{card.name}</div>
-                      <div className="xchange-card-type">{card.type}</div>
+                      {cImg && (
+                        <img
+                          src={cImg}
+                          alt={cName}
+                          className="xchange-card-img"
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                      )}
+                      <div className="xchange-card-name">{cName}</div>
+                      <div className="xchange-card-type">{cType}</div>
                       {isSelected && (
                         <div className="xchange-card-check">✓</div>
                       )}
@@ -116,7 +155,7 @@ export default function XChangeModal({
           {/* Defender's Hand (Card Selection) */}
           <div className="xchange-section">
             <h3 className="xchange-section-title">
-              {defenderName.toUpperCase()}&apos;S ACTION CARDS (SELECT 1 TO TAKE)
+              {safeDefenderName.toUpperCase()}&apos;S ACTION CARDS (SELECT 1 TO TAKE)
             </h3>
             <div className="xchange-card-grid">
               {availableDefenderCards.length === 0 ? (
@@ -126,17 +165,29 @@ export default function XChangeModal({
               ) : (
                 availableDefenderCards.map((card, idx) => {
                   const isSelected = selectedDefenderIdx === idx;
+                  const cName = getCardName(card);
+                  const cType = getCardType(card);
+                  const cImg = getCardGraphicUrl(cName);
+                  const key = typeof card === 'object' && card?.id ? `opp-${card.id}-${idx}` : `opp-${cName}-${idx}`;
                   return (
                     <div
-                      key={`opp-${card.id || idx}-${idx}`}
+                      key={key}
                       className={`xchange-card-option opponent-card ${isSelected ? 'selected' : ''}`}
                       onClick={() => {
                         setSelectedDefenderIdx(idx);
                         setShowWarning(false);
                       }}
                     >
-                      <div className="xchange-card-name">{card.name}</div>
-                      <div className="xchange-card-type">{card.type}</div>
+                      {cImg && (
+                        <img
+                          src={cImg}
+                          alt={cName}
+                          className="xchange-card-img"
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                      )}
+                      <div className="xchange-card-name">{cName}</div>
+                      <div className="xchange-card-type">{cType}</div>
                       {isSelected && (
                         <div className="xchange-card-check">✓</div>
                       )}
@@ -154,12 +205,12 @@ export default function XChangeModal({
             <div className="xchange-selection-info">
               <div className="selection-item">
                 <span className="selection-label">Giving / Discarding:</span>
-                <span className="selection-value" style={{ color: '#ff8899' }}>{selectedAttackerCard.name}</span>
+                <span className="selection-value" style={{ color: '#ff8899' }}>{getCardName(selectedAttackerCard)}</span>
               </div>
               <div className="selection-arrow">🔄</div>
               <div className="selection-item">
                 <span className="selection-label">Taking from Opponent:</span>
-                <span className="selection-value" style={{ color: '#39ff14' }}>{selectedDefenderCard.name}</span>
+                <span className="selection-value" style={{ color: '#39ff14' }}>{getCardName(selectedDefenderCard)}</span>
               </div>
             </div>
           ) : (
@@ -176,12 +227,12 @@ export default function XChangeModal({
         {/* Warning Message */}
         {showWarning && !selectedAttackerCard && (
           <div className="xchange-warning">
-            ⚠️ Please select a card from your hand!
+            ⚠️ Please select a card from your hand to give!
           </div>
         )}
         {showWarning && !selectedDefenderCard && (
           <div className="xchange-warning">
-            ⚠️ Please select a card to receive!
+            ⚠️ Please select a card from opponent to take!
           </div>
         )}
 
@@ -210,40 +261,42 @@ export default function XChangeModal({
           left: 0;
           right: 0;
           bottom: 0;
-          background: rgba(0, 0, 0, 0.8);
+          background: rgba(0, 0, 0, 0.85);
           display: flex;
           align-items: center;
           justify-content: center;
-          z-index: 9999;
-          backdrop-filter: blur(4px);
+          z-index: 99999;
+          backdrop-filter: blur(6px);
         }
 
         .xchange-modal-container {
-          background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-          border: 2px solid #fbc80d;
-          border-radius: 12px;
+          background: linear-gradient(135deg, #101828 0%, #0a0f1d 100%);
+          border: 2px solid #00f0ff;
+          border-radius: 16px;
           padding: 24px;
-          max-width: 900px;
-          width: 90%;
-          max-height: 85vh;
+          max-width: 920px;
+          width: 92%;
+          max-height: 88vh;
           overflow-y: auto;
-          box-shadow: 0 0 30px rgba(251, 200, 13, 0.3), inset 0 0 20px rgba(251, 200, 13, 0.1);
+          box-shadow: 0 0 35px rgba(0, 240, 255, 0.35), inset 0 0 20px rgba(0, 240, 255, 0.08);
+          font-family: 'Barlow Condensed', sans-serif;
         }
 
         .xchange-modal-title {
-          font-size: 28px;
-          color: #fbc80d;
+          font-size: 26px;
+          color: #00f0ff;
           text-align: center;
-          margin: 0 0 8px 0;
-          font-weight: bold;
-          text-shadow: 0 0 10px rgba(251, 200, 13, 0.5);
+          margin: 0 0 6px 0;
+          font-weight: 900;
+          text-shadow: 0 0 12px rgba(0, 240, 255, 0.5);
+          letter-spacing: 1px;
         }
 
         .xchange-modal-subtitle {
           font-size: 14px;
-          color: rgba(255, 255, 255, 0.7);
+          color: rgba(255, 255, 255, 0.75);
           text-align: center;
-          margin: 0 0 16px 0;
+          margin: 0 0 14px 0;
         }
 
         .xchange-timer {
@@ -251,21 +304,22 @@ export default function XChangeModal({
           align-items: center;
           justify-content: center;
           gap: 8px;
-          font-size: 18px;
-          color: #60a5fa;
+          font-size: 16px;
+          color: #00f0ff;
           font-weight: bold;
-          margin: 0 0 16px 0;
-          padding: 8px 16px;
-          background: rgba(96, 165, 250, 0.1);
-          border: 1px solid #60a5fa;
+          margin: 0 auto 16px auto;
+          max-width: 200px;
+          padding: 6px 14px;
+          background: rgba(0, 240, 255, 0.1);
+          border: 1px solid #00f0ff;
           border-radius: 8px;
           transition: all 0.3s ease;
         }
 
         .xchange-timer.warning {
-          color: #ef4444;
-          border-color: #ef4444;
-          background: rgba(239, 68, 68, 0.1);
+          color: #ff2a55;
+          border-color: #ff2a55;
+          background: rgba(255, 42, 85, 0.15);
           animation: pulse 0.5s infinite;
         }
 
@@ -277,8 +331,8 @@ export default function XChangeModal({
         .xchange-modal-content {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 24px;
-          margin: 20px 0;
+          gap: 20px;
+          margin: 16px 0;
         }
 
         @media (max-width: 768px) {
@@ -288,67 +342,89 @@ export default function XChangeModal({
         }
 
         .xchange-section {
-          background: rgba(0, 0, 0, 0.3);
-          border: 1px solid rgba(251, 200, 13, 0.3);
-          border-radius: 8px;
-          padding: 16px;
+          background: rgba(0, 0, 0, 0.45);
+          border: 1px solid rgba(0, 240, 255, 0.25);
+          border-radius: 12px;
+          padding: 14px;
         }
 
         .xchange-section-title {
-          font-size: 14px;
-          color: #fbc80d;
-          font-weight: bold;
-          margin: 0 0 12px 0;
+          font-size: 13px;
+          color: #00f0ff;
+          font-weight: 800;
+          margin: 0 0 10px 0;
           text-transform: uppercase;
           letter-spacing: 1px;
         }
 
         .xchange-card-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+          grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
           gap: 10px;
+          max-height: 38vh;
+          overflow-y: auto;
+          padding-right: 4px;
         }
 
         .xchange-card-option {
-          background: linear-gradient(135deg, #2a2a3e 0%, #1f1f2e 100%);
-          border: 2px solid rgba(251, 200, 13, 0.2);
+          background: linear-gradient(135deg, rgba(20, 28, 48, 0.95) 0%, rgba(12, 18, 32, 0.95) 100%);
+          border: 1.5px solid rgba(255, 255, 255, 0.15);
           border-radius: 8px;
-          padding: 12px;
+          padding: 8px;
           cursor: pointer;
-          transition: all 0.3s ease;
+          transition: all 0.25s ease;
           position: relative;
           text-align: center;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
         }
 
         .xchange-card-option:hover {
-          border-color: #fbc80d;
-          background: linear-gradient(135deg, #3a3a4e 0%, #2f2f3e 100%);
+          border-color: #00f0ff;
+          background: linear-gradient(135deg, rgba(26, 38, 66, 0.95) 0%, rgba(16, 25, 46, 0.95) 100%);
           transform: translateY(-2px);
-          box-shadow: 0 0 10px rgba(251, 200, 13, 0.2);
+          box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
         }
 
         .xchange-card-option.selected {
           border-color: #39ff14;
-          background: linear-gradient(135deg, #3a4e2e 0%, #2f3e1f 100%);
-          box-shadow: 0 0 15px rgba(57, 255, 20, 0.3);
+          background: linear-gradient(135deg, rgba(20, 60, 30, 0.95) 0%, rgba(10, 35, 18, 0.95) 100%);
+          box-shadow: 0 0 15px rgba(57, 255, 20, 0.45);
         }
 
         .xchange-card-option.opponent-card {
-          opacity: 0.8;
+          border-color: rgba(251, 200, 13, 0.3);
+        }
+
+        .xchange-card-option.opponent-card:hover {
+          border-color: #fbc80d;
+          box-shadow: 0 0 12px rgba(251, 200, 13, 0.3);
+        }
+
+        .xchange-card-img {
+          width: 100%;
+          height: 100px;
+          object-fit: contain;
+          border-radius: 6px;
+          margin-bottom: 6px;
+          background: rgba(0, 0, 0, 0.3);
         }
 
         .xchange-card-name {
-          font-size: 12px;
+          font-size: 11px;
           color: #ffffff;
-          font-weight: bold;
-          margin: 0 0 4px 0;
+          font-weight: 800;
+          margin: 0 0 2px 0;
           white-space: normal;
-          line-height: 1.2;
+          line-height: 1.15;
+          letter-spacing: 0.5px;
         }
 
         .xchange-card-type {
-          font-size: 11px;
-          color: rgba(255, 255, 255, 0.6);
+          font-size: 9px;
+          color: rgba(255, 255, 255, 0.5);
+          text-transform: uppercase;
           margin: 0;
         }
 
@@ -359,47 +435,49 @@ export default function XChangeModal({
           background: #39ff14;
           color: #000;
           border-radius: 50%;
-          width: 20px;
-          height: 20px;
+          width: 18px;
+          height: 18px;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-weight: bold;
-          font-size: 12px;
+          font-weight: 900;
+          font-size: 11px;
+          box-shadow: 0 0 8px rgba(57, 255, 20, 0.6);
         }
 
         .xchange-modal-selection {
-          background: rgba(96, 165, 250, 0.1);
-          border: 1px solid #60a5fa;
-          border-radius: 8px;
-          padding: 16px;
-          margin: 16px 0;
+          background: rgba(0, 240, 255, 0.08);
+          border: 1px solid rgba(0, 240, 255, 0.3);
+          border-radius: 10px;
+          padding: 12px 16px;
+          margin: 14px 0;
         }
 
         .xchange-selection-info {
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 16px;
+          gap: 20px;
           flex-wrap: wrap;
         }
 
         .selection-item {
           display: flex;
           flex-direction: column;
-          gap: 4px;
+          gap: 2px;
           text-align: center;
         }
 
         .selection-label {
-          font-size: 12px;
+          font-size: 11px;
           color: rgba(255, 255, 255, 0.6);
           text-transform: uppercase;
+          letter-spacing: 0.5px;
         }
 
         .selection-value {
           font-size: 14px;
-          color: #60a5fa;
+          color: #00f0ff;
           font-weight: bold;
         }
 
@@ -410,21 +488,22 @@ export default function XChangeModal({
         }
 
         .xchange-warning {
-          background: rgba(239, 68, 68, 0.1);
-          border: 1px solid #ef4444;
-          border-radius: 6px;
-          padding: 10px;
-          color: #fca5a5;
+          background: rgba(255, 42, 85, 0.15);
+          border: 1px solid #ff2a55;
+          border-radius: 8px;
+          padding: 8px 12px;
+          color: #ff8899;
           font-size: 13px;
-          margin: 12px 0;
+          margin: 10px 0;
           text-align: center;
+          font-weight: bold;
         }
 
         .xchange-modal-buttons {
           display: flex;
           gap: 12px;
           justify-content: center;
-          margin-top: 20px;
+          margin-top: 16px;
         }
 
         .xchange-btn {
@@ -432,42 +511,44 @@ export default function XChangeModal({
           align-items: center;
           justify-content: center;
           gap: 8px;
-          padding: 12px 24px;
+          padding: 12px 28px;
           border: none;
-          border-radius: 6px;
+          border-radius: 8px;
           font-size: 14px;
-          font-weight: bold;
+          font-weight: 800;
           cursor: pointer;
-          transition: all 0.3s ease;
+          transition: all 0.25s ease;
           text-transform: uppercase;
           letter-spacing: 0.5px;
+          font-family: inherit;
         }
 
         .xchange-btn.cancel-btn {
-          background: rgba(239, 68, 68, 0.2);
-          color: #fca5a5;
-          border: 1px solid #ef4444;
+          background: rgba(255, 42, 85, 0.18);
+          color: #ff8899;
+          border: 1px solid #ff2a55;
         }
 
         .xchange-btn.cancel-btn:hover {
-          background: rgba(239, 68, 68, 0.3);
-          box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+          background: rgba(255, 42, 85, 0.3);
+          box-shadow: 0 0 12px rgba(255, 42, 85, 0.35);
         }
 
         .xchange-btn.confirm-btn {
-          background: linear-gradient(135deg, #39ff14 0%, #2adf0f 100%);
+          background: linear-gradient(135deg, #39ff14 0%, #20c800 100%);
           color: #000;
           border: 1px solid #39ff14;
         }
 
         .xchange-btn.confirm-btn:hover:not(.disabled) {
-          box-shadow: 0 0 15px rgba(57, 255, 20, 0.5);
-          transform: translateY(-2px);
+          box-shadow: 0 0 20px rgba(57, 255, 20, 0.6);
+          transform: translateY(-1px);
         }
 
         .xchange-btn.confirm-btn.disabled {
-          opacity: 0.5;
+          opacity: 0.4;
           cursor: not-allowed;
+          filter: grayscale(0.6);
         }
       `}</style>
     </div>

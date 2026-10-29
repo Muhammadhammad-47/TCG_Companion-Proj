@@ -1415,15 +1415,35 @@ export default function KontrolaArena() {
         const actorChar = currentState.characterStates?.[actorId];
         const targetChar = currentState.characterStates?.[targetId];
 
-        // Remove giveCard from actor and add to target
-        const giveIdx = actorHand.findIndex(c => c.id === giveCard?.id || c.name === giveCard?.name);
-        const takeIdx = targetHand.findIndex(c => c.id === takeCard?.id || c.name === takeCard?.name);
+        const findCardIndex = (hand, cardToMatch) => {
+          if (!hand || !cardToMatch) return -1;
+          const matchId = typeof cardToMatch === 'object' ? cardToMatch?.id : null;
+          const matchName = typeof cardToMatch === 'string' ? cardToMatch : (cardToMatch?.name || null);
+          if (matchId) {
+            const byId = hand.findIndex(c => typeof c === 'object' && c?.id === matchId);
+            if (byId !== -1) return byId;
+          }
+          if (matchName) {
+            const byName = hand.findIndex(c => {
+              const cName = typeof c === 'string' ? c : c?.name;
+              return cName === matchName;
+            });
+            if (byName !== -1) return byName;
+          }
+          return -1;
+        };
+
+        const giveIdx = findCardIndex(actorHand, giveCard);
+        const takeIdx = findCardIndex(targetHand, takeCard);
 
         if (giveIdx !== -1 && takeIdx !== -1) {
           const [cardGiven] = actorHand.splice(giveIdx, 1);
           const [cardTaken] = targetHand.splice(takeIdx, 1);
           actorHand.push(cardTaken);
           targetHand.push(cardGiven);
+
+          const givenName = typeof cardGiven === 'string' ? cardGiven : (cardGiven?.name || 'Action Card');
+          const takenName = typeof cardTaken === 'string' ? cardTaken : (cardTaken?.name || 'Action Card');
 
           const nextState = {
             ...currentState,
@@ -1433,7 +1453,7 @@ export default function KontrolaArena() {
               [targetId]: targetHand
             },
             logs: [
-              `🔄 X-CHANGE: ${actorChar?.name || 'Player'} exchanged "${cardGiven.name}" with ${targetChar?.name || 'Opponent'}'s "${cardTaken.name}"!`,
+              `🔄 X-CHANGE: ${actorChar?.name || 'Player'} exchanged "${givenName}" with ${targetChar?.name || 'Opponent'}'s "${takenName}"!`,
               ...(currentState.logs || [])
             ]
           };
@@ -1809,7 +1829,7 @@ export default function KontrolaArena() {
         // Broadcast UI effects to all clients (Shake, Sound, Damage Popups, Vision Modals)
         setTimeout(() => {
           let visionData = null;
-          if (actionCard.name.includes('VISION') || actionCard.name.includes('X-CHANGE')) {
+          if (actionCard?.name && actionCard.name.includes('VISION')) {
             if (actionCard.name === 'VISION FULL') {
               const allCards = [];
               Object.keys(currentState.hands || {}).forEach(pid => {
@@ -1829,7 +1849,7 @@ export default function KontrolaArena() {
               visionData = {
                 targetId,
                 isFull: false,
-                isXChange: actionCard.name.includes('X-CHANGE'),
+                isXChange: false,
                 targetName: defenderChar?.name || 'Opponent',
                 expiresAt: Date.now() + 15000,
                 cards: currentState.hands?.[targetId] || [],
@@ -1855,15 +1875,26 @@ export default function KontrolaArena() {
           }
 
           let triggerXChange = null;
-          if (actionCard.name.includes('X-CHANGE') && targetId && targetId !== 'ALL') {
+          if (actionCard?.name && actionCard.name.includes('X-CHANGE') && targetId && targetId !== 'ALL') {
+            // Filter out the played action card from the attacker's hand so they don't exchange the card they just spent
+            const availableAttackerHand = newHand.filter(c => {
+              const cName = typeof c === 'string' ? c : c?.name;
+              const cId = typeof c === 'object' ? c?.id : null;
+              if (actionCard.id && cId) return cId !== actionCard.id;
+              return cName !== actionCard.name;
+            });
             triggerXChange = {
               xChangeType: actionCard.name.includes('FULL') ? 'FULL' : 'X1',
               actorId,
               targetId,
               defenderName: defenderChar?.name || 'Opponent',
-              attackerHand: newHand,
+              attackerHand: availableAttackerHand,
               defenderHand: newDefenderHand
             };
+          }
+
+          if (triggerXChange && triggerXChange.actorId === playerIdRef.current) {
+            setXChangeModalData(triggerXChange);
           }
 
           let triggerRevivePrompt = null;
@@ -5086,8 +5117,8 @@ export default function KontrolaArena() {
               isOpen={Boolean(xChangeModalData)}
               xChangeType={xChangeModalData.xChangeType || 'X1'}
               attackerHand={xChangeModalData.attackerHand || myHand}
-              defenderHand={xChangeModalData.defenderHand || []}
-              defenderName={xChangeModalData.defenderName || 'Opponent'}
+              defenderHand={xChangeModalData.defenderHand || gameState?.hands?.[xChangeModalData.targetId] || []}
+              defenderName={xChangeModalData.defenderName || gameState?.characterStates?.[xChangeModalData.targetId]?.name || 'Opponent'}
               onConfirm={handleConfirmXChange}
               onCancel={() => setXChangeModalData(null)}
               timeLimit={30}
