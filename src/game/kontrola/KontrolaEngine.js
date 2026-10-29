@@ -345,6 +345,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   let shieldGain = 0;
   let aoeDamage = 0;
   let aoeSplitDamage = false;
+  let stealActionCard = false;
 
   let newAttackerState = { ...attackerState };
   let newDefenderState = defenderState ? { ...defenderState } : null;
@@ -471,16 +472,8 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           log += ` 🧠 KONTROL OPTION A: ${newDefenderState.name} MUST attack another player next turn!`;
         } else {
           // Option B: Steal 1 random Action Card from opponent
-          if (newDefenderState.actionCardsHand && newDefenderState.actionCardsHand.length > 0) {
-            const randomIdx = Math.floor(Math.random() * newDefenderState.actionCardsHand.length);
-            const stolenCard = newDefenderState.actionCardsHand[randomIdx];
-            newDefenderState.actionCardsHand.splice(randomIdx, 1);
-            newAttackerState.actionCardsHand = newAttackerState.actionCardsHand || [];
-            newAttackerState.actionCardsHand.push(stolenCard);
-            log += ` 🧠 KONTROL OPTION B: ${newAttackerState.name} stole "${stolenCard.name}" from ${newDefenderState.name}!`;
-          } else {
-            log += ` 🧠 KONTROL OPTION B: ${newDefenderState.name} has no Action Cards to steal!`;
-          }
+          stealActionCard = true;
+          log += ` 🧠 KONTROL OPTION B: Steal Action Card activated!`;
         }
       }
     }
@@ -606,11 +599,13 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     if (newDefenderState?.dicePenalty) {
       adjustedDefenderRoll = Math.max(0, adjustedDefenderRoll - newDefenderState.dicePenalty);
       log += ` ❄️ FREEZE penalty: -${newDefenderState.dicePenalty} to defender roll! (${defenderRoll.total} - ${newDefenderState.dicePenalty} = ${adjustedDefenderRoll})`;
+      newDefenderState.dicePenalty = 0; // Penalty consumed for this clash
     }
     
     if (newAttackerState?.dicePenalty) {
       adjustedAttackerRoll = Math.max(0, adjustedAttackerRoll - newAttackerState.dicePenalty);
       log += ` ❄️ FREEZE penalty: -${newAttackerState.dicePenalty} to attacker roll! (${attackerRoll.total} - ${newAttackerState.dicePenalty} = ${adjustedAttackerRoll})`;
+      newAttackerState.dicePenalty = 0; // Penalty consumed for this clash
     }
     
     const isClashTie = adjustedAttackerRoll === adjustedDefenderRoll;
@@ -812,6 +807,10 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         if (isDefenderZombie && ['Fire', 'Lightning'].includes(attackElement)) {
           newDefenderState.poisonCount = Math.max(0, newDefenderState.poisonCount - 1);
           log += ` Fire/Lightning cleansed 1 Poison card from Zombie!`;
+          if (newDefenderState.poisonCount < 5) {
+            newDefenderState.hp = newDefenderState.preZombieHp || 100;
+            log += ` 🌟 ${newDefenderState.name} was cleansed of Zombie curse and restored to human form!`;
+          }
         }
 
         // If Attacker was Zombie Venom Strike -> Defender gains 1 Poison Card
@@ -846,8 +845,13 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       
       // LIGHTNING X1 / X2 removes 1 poison card from defender per official rules
       if (newDefenderState.poisonCount > 0) {
+        const wasZombie = newDefenderState.poisonCount >= 5;
         newDefenderState.poisonCount = Math.max(0, newDefenderState.poisonCount - 1);
         log += ` ⚡ Lightning cleansed 1 Poison card from ${newDefenderState.name}!`;
+        if (wasZombie && newDefenderState.poisonCount < 5) {
+          newDefenderState.hp = newDefenderState.preZombieHp || 100;
+          log += ` 🌟 ${newDefenderState.name} was cleansed of Zombie curse and restored to human form!`;
+        }
       }
     }
 
@@ -1142,6 +1146,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     extraTurnGranted: cardName === 'TIME MACHINE',
     triggerAttackX2SecondHit: cardName.includes('ATTACK X2'), // Trigger second attack regardless of first outcome
     triggerXChange: false, // Handled in Arena UI now
+    stealActionCard: Boolean(stealActionCard),
     aoeDamage,
     aoeSplitDamage: aoeSplitDamage || false // Flag for 1vAll damage splitting
   };

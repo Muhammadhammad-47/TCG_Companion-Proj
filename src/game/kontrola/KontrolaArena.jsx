@@ -66,6 +66,26 @@ const generateRoomCode = () => {
   return code;
 };
 
+// Bulletproof helpers to handle both string cards ('SHIELD BASIC') and card objects ({ id, name, type, costET })
+export const getSafeCardName = (c) => typeof c === 'string' ? c : (c?.name || '');
+export const getSafeCardType = (c) => typeof c === 'object' && c?.type ? c.type : 'ACTION';
+export const getSafeCardId = (c, idx = 0) => (typeof c === 'object' && c?.id) ? c.id : `${getSafeCardName(c)}_${idx}`;
+export const getSafeCardCost = (c) => typeof c === 'object' && typeof c?.costET === 'number' ? c.costET : 0;
+
+export const findSafeCardIndex = (hand, identifier) => {
+  if (!Array.isArray(hand) || !identifier) return -1;
+  const targetName = typeof identifier === 'string' ? identifier : identifier?.name;
+  const targetId = typeof identifier === 'object' ? identifier?.id : null;
+  if (targetId) {
+    const byId = hand.findIndex(c => typeof c === 'object' && c?.id === targetId);
+    if (byId !== -1) return byId;
+  }
+  if (targetName) {
+    return hand.findIndex(c => (typeof c === 'string' ? c : c?.name) === targetName);
+  }
+  return -1;
+};
+
 export default function KontrolaArena() {
   const navigate = useNavigate();
   const [matchId, setMatchId] = useState(() => {
@@ -1052,6 +1072,36 @@ export default function KontrolaArena() {
             soundFX.playPowerUp();
           }
         }
+        else if (event.type === 'ALLIANCE_INVITE') {
+          const invite = event.payload;
+          if (invite && invite.toPlayerId === playerIdRef.current) {
+            setPendingAllianceInvite(invite);
+            soundFX.init?.();
+            soundFX.playPowerUp?.();
+          }
+        }
+        else if (event.type === 'ALLIANCE_RESPONSE') {
+          const { fromPlayerId, toPlayerId, accepted, toPlayerName } = event.payload || {};
+          if (fromPlayerId === playerIdRef.current) {
+            if (accepted) {
+              showNotice(`🤝 ${toPlayerName} accepted your Secret Soul Alliance!`, 'info');
+              setActiveAlliance({
+                player1Id: fromPlayerId,
+                player1Name: myCharacter?.name || playerName || 'Player',
+                player2Id: toPlayerId,
+                player2Name: toPlayerName,
+                type: null,
+                terms: [],
+                confirmations: {},
+                createdTurn: gameStateRef.current?.turnNumber || 1,
+                expiresAtTurn: (gameStateRef.current?.turnNumber || 1) + 1
+              });
+              setShowAllianceChatModal(true);
+            } else {
+              showNotice(`${toPlayerName} declined your Secret Soul Alliance offer.`, 'warning');
+            }
+          }
+        }
         // 12. Player Disconnected (Presence)
         else if (event.type === 'PLAYER_DISCONNECTED' || event.type === 'PLAYER_PRESENCE_AWAY') {
           // PLAYER_PRESENCE_AWAY = Supabase Presence leave (fires on tab switch, minimize, brief network drop)
@@ -1469,7 +1519,9 @@ export default function KontrolaArena() {
         if (!victimChar) return currentState;
 
         const victimHand = [...(currentState.hands?.[victimId] || [])];
-        const reviveIdx = victimHand.findIndex(c => c.name?.includes('REVIVE'));
+        const reviveIdx = findSafeCardIndex(victimHand, 'REVIVE') !== -1
+          ? findSafeCardIndex(victimHand, 'REVIVE')
+          : victimHand.findIndex(c => getSafeCardName(c).includes('REVIVE'));
         if (reviveIdx !== -1) {
           victimHand.splice(reviveIdx, 1);
           // Draw replacement from deck if available
@@ -1511,7 +1563,9 @@ export default function KontrolaArena() {
         const { retreatingPlayerId, role, reason } = payload;
         const char = currentState.characterStates?.[retreatingPlayerId];
         const pHand = [...(currentState.hands?.[retreatingPlayerId] || [])];
-        const rIdx = pHand.findIndex(c => c.name?.includes('RETREAT'));
+        const rIdx = findSafeCardIndex(pHand, 'RETREAT') !== -1
+          ? findSafeCardIndex(pHand, 'RETREAT')
+          : pHand.findIndex(c => getSafeCardName(c).includes('RETREAT'));
         if (rIdx !== -1) {
           pHand.splice(rIdx, 1);
           let deck = [...(currentState.deck || [])];
@@ -1599,7 +1653,7 @@ export default function KontrolaArena() {
         const { actorId, cardId, cardName } = payload;
         const actorHand = [...(currentState.hands?.[actorId] || [])];
         const actorChar = currentState.characterStates?.[actorId];
-        const cIdx = actorHand.findIndex(c => (cardId && c.id === cardId) || c.name === cardName);
+        const cIdx = findSafeCardIndex(actorHand, cardId ? { id: cardId, name: cardName } : cardName);
         let discardedCard = null;
         if (cIdx !== -1) {
           [discardedCard] = actorHand.splice(cIdx, 1);
@@ -1826,6 +1880,16 @@ export default function KontrolaArena() {
         newDefenderState = resolved.newDefenderState;
         log = resolved.log;
 
+        if (resolved.stealActionCard && targetId && newDefenderHand && newDefenderHand.length > 0) {
+          const randIdx = Math.floor(Math.random() * newDefenderHand.length);
+          const [stolenCard] = newDefenderHand.splice(randIdx, 1);
+          if (newHand.length < 10) {
+            newHand.push(stolenCard);
+          }
+          const stolenName = getSafeCardName(stolenCard);
+          log += ` 🧠 KONTROL: Stole "${stolenName}" from ${newDefenderState?.name || 'Defender'}!`;
+        }
+
         // Broadcast UI effects to all clients (Shake, Sound, Damage Popups, Vision Modals)
         setTimeout(() => {
           let visionData = null;
@@ -1900,7 +1964,7 @@ export default function KontrolaArena() {
           let triggerRevivePrompt = null;
           if (newDefenderState && newDefenderState.hp <= 0) {
             // Check if defender holds REVIVE card
-            const hasRevive = (newDefenderHand || []).some(c => c.name?.includes('REVIVE'));
+            const hasRevive = (newDefenderHand || []).some(c => getSafeCardName(c).includes('REVIVE'));
             if (hasRevive) {
               triggerRevivePrompt = {
                 victimId: targetId,
@@ -1908,6 +1972,10 @@ export default function KontrolaArena() {
                 maxHp: newDefenderState.maxHp || 100
               };
             }
+          }
+
+          if (triggerRevivePrompt && triggerRevivePrompt.victimId === playerIdRef.current) {
+            setPendingRevivePrompt(triggerRevivePrompt);
           }
 
           broadcastUIEvent(matchIdRef.current, 'action_effect', {
@@ -1922,18 +1990,11 @@ export default function KontrolaArena() {
         }, 100);
 
         // Discard played card and replenish hand to exactly 10 cards
+        const playedIdx = findSafeCardIndex(newHand, actionCard);
         let discarded = false;
-        if (actionCard?.id) {
-          const initLen = newHand.length;
-          newHand = newHand.filter((c) => c.id !== actionCard.id);
-          if (newHand.length < initLen) discarded = true;
-        }
-        if (!discarded && actionCard?.name) {
-          const matchIdx = newHand.findIndex((c) => c.name === actionCard.name);
-          if (matchIdx !== -1) {
-            newHand.splice(matchIdx, 1);
-            discarded = true;
-          }
+        if (playedIdx !== -1) {
+          newHand.splice(playedIdx, 1);
+          discarded = true;
         }
         if (discarded && newDeck.length > 0) {
           newHand.push(newDeck.shift());
@@ -1945,12 +2006,13 @@ export default function KontrolaArena() {
       }
 
       // Also discard the defender's card if they played one during the preparation window
-      newDefenderHand = defenderChar ? [...(currentState.hands?.[targetId] || [])] : [];
       let defenderDiscarded = false;
-      if (precalculatedRolls?.defenseCard?.id) {
-        const initLen = newDefenderHand.length;
-        newDefenderHand = newDefenderHand.filter((c) => c.id !== precalculatedRolls.defenseCard.id);
-        if (newDefenderHand.length < initLen) defenderDiscarded = true;
+      if (precalculatedRolls?.defenseCard) {
+        const defCardIdx = findSafeCardIndex(newDefenderHand, precalculatedRolls.defenseCard);
+        if (defCardIdx !== -1) {
+          newDefenderHand.splice(defCardIdx, 1);
+          defenderDiscarded = true;
+        }
       }
       if (defenderDiscarded && newDeck.length > 0) {
         newDefenderHand.push(newDeck.shift());
@@ -2560,30 +2622,35 @@ export default function KontrolaArena() {
       return;
     }
 
-    const isAttack = selectedActionCard.type === 'ATTACK';
-    const isAoE = selectedActionCard.name.includes('BLITZ');
-    const isLightning = selectedActionCard.name.includes('LIGHTNING');
-    const isFireFlame = selectedActionCard.name.includes('FIRE FLAME');
-    const isVampire = selectedActionCard.name.includes('VAMPIRE');
+    const cardName = getSafeCardName(selectedActionCard).toUpperCase();
+    const isTrap = ['BOOMERANG', 'MISDIRECT'].some(kw => cardName.includes(kw));
+    const isDrain = cardName.includes('DRAIN');
+    const isBackStab = cardName.includes('BACK STAB');
+    const isAttack = (selectedActionCard.type === 'ATTACK' || isBackStab) && !isTrap && !isDrain;
+    const isAoE = cardName.includes('BLITZ');
+    const isLightning = cardName.includes('LIGHTNING');
+    const isFireFlame = cardName.includes('FIRE FLAME');
+    const isVampire = cardName.includes('VAMPIRE');
 
     console.log('[playTurn] Card type analysis:', {
-      cardName: selectedActionCard.name,
+      cardName,
       cardType: selectedActionCard.type,
       isAttack,
       isAoE,
       isLightning,
       isFireFlame,
-      isVampire
+      isVampire,
+      isBackStab,
+      isDrain,
+      isTrap
     });
 
     // Level check for Vitality Gain V20 (requires reaching 150 HP / Level 2)
     const isLevel2 = (myCharacter?.hp || 0) >= 150 || (myCharacter?.level || 1) >= 2;
-    if (selectedActionCard.name.includes('VITALITY GAIN V20') && !isLevel2) {
+    if (cardName.includes('VITALITY GAIN V20') && !isLevel2) {
       showNotice('Only available in level 2 (requires 150 HP)', 'warning');
       return;
     }
-
-
 
     if (isAttack && !isAoE && !selectedTargetId) {
       console.log('[playTurn] VALIDATION FAILED: Attack requires target');
@@ -2591,13 +2658,13 @@ export default function KontrolaArena() {
       return; // Must select target
     }
 
-    const needsTarget = ['POISON', 'SLEEPY', 'FREEZE', 'X-CHANGE', 'KONTROL', 'SOUL ALLIANCE', 'DRAIN', 'VAMPIRE'].some(kw => selectedActionCard.name.includes(kw)) || (selectedActionCard.name.includes('VISION') && !selectedActionCard.name.includes('FULL'));
+    const needsTarget = ['POISON', 'SLEEPY', 'FREEZE', 'X-CHANGE', 'KONTROL', 'SOUL ALLIANCE', 'DRAIN', 'VAMPIRE'].some(kw => cardName.includes(kw)) || (cardName.includes('VISION') && !cardName.includes('FULL'));
     if (needsTarget && !selectedTargetId) {
       showNotice('Please select a target player first!', 'warning');
       return;
     }
 
-    if (isAttack && !isAoE && !isLightning && !isFireFlame && !isVampire && !selectedCharacterAttack) {
+    if (isAttack && !isAoE && !isLightning && !isFireFlame && !isVampire && !isBackStab && !selectedCharacterAttack) {
       console.log('[playTurn] VALIDATION FAILED: Attack requires character move selection');
       showNotice('Please select a character attack move to strike with!', 'warning');
       return;
@@ -2606,8 +2673,8 @@ export default function KontrolaArena() {
     const payload = {
       actorId: playerId,
       actionCard: selectedActionCard,
-      attackSelectionName: (isLightning || isFireFlame || isVampire) ? null : selectedCharacterAttack,
-      targetId: isAoE ? 'ALL' : selectedTargetId
+      attackSelectionName: (isLightning || isFireFlame || isVampire || isBackStab) ? null : selectedCharacterAttack,
+      targetId: isAoE ? 'ALL' : (isTrap ? playerId : selectedTargetId)
     };
 
     console.log('[playTurn] Payload created:', payload);
@@ -2819,19 +2886,17 @@ export default function KontrolaArena() {
 
   const handleSendAllianceInvite = (inviteData) => {
     soundFX.playMenuSelect?.();
-    setPendingAllianceInvite({
+    const packet = {
       fromPlayerId: inviteData.fromPlayerId,
       fromPlayerName: inviteData.fromPlayerName,
       toPlayerId: inviteData.toPlayerId,
       toPlayerName: inviteData.toPlayerName,
       createdAt: Date.now(),
       expiresAt: Date.now() + (30 * 1000)
-    });
+    };
+    broadcastUIEvent(matchIdRef.current, 'alliance_invite', packet);
     setShowSecretAllianceInviteModal(false);
-    
-    inviteTimeoutRef.current = setTimeout(() => {
-      setPendingAllianceInvite(null);
-    }, 30000);
+    showNotice(`Secret alliance proposal sent to ${inviteData.toPlayerName}!`, 'info');
   };
 
   const handleAcceptAllianceInvite = () => {
@@ -2842,6 +2907,13 @@ export default function KontrolaArena() {
       clearTimeout(inviteTimeoutRef.current);
       inviteTimeoutRef.current = null;
     }
+
+    broadcastUIEvent(matchIdRef.current, 'alliance_response', {
+      fromPlayerId: pendingAllianceInvite.fromPlayerId,
+      toPlayerId: pendingAllianceInvite.toPlayerId,
+      accepted: true,
+      toPlayerName: myCharacter?.name || playerName || 'Player'
+    });
 
     setActiveAlliance({
       player1Id: pendingAllianceInvite.fromPlayerId,
@@ -2864,6 +2936,14 @@ export default function KontrolaArena() {
 
   const handleDeclineAllianceInvite = () => {
     soundFX.playCard?.();
+    if (pendingAllianceInvite) {
+      broadcastUIEvent(matchIdRef.current, 'alliance_response', {
+        fromPlayerId: pendingAllianceInvite.fromPlayerId,
+        toPlayerId: pendingAllianceInvite.toPlayerId,
+        accepted: false,
+        toPlayerName: myCharacter?.name || playerName || 'Player'
+      });
+    }
     setPendingAllianceInvite(null);
   };
 
@@ -4643,12 +4723,20 @@ export default function KontrolaArena() {
                     const mid = Math.floor(myHand.length / 2);
                     const rotation = (index - mid) * 4; 
                     const yOffset = Math.abs(index - mid) * 2; 
-                    const isSelected = selectedActionCard?.id === card.id;
-                    const cardArt = getCardGraphicUrl(card.name, myCharacter?.id);
+                    const cName = getSafeCardName(card);
+                    const cType = getSafeCardType(card);
+                    const cId = getSafeCardId(card, index);
+                    const cCost = getSafeCardCost(card);
+                    const isSelected = selectedActionCard && (
+                      (selectedActionCard.id && selectedActionCard.id === cId) ||
+                      getSafeCardName(selectedActionCard) === cName
+                    );
+                    const cardArt = getCardGraphicUrl(cName, myCharacter?.id);
+                    const cardObj = typeof card === 'object' ? card : { id: cId, name: cName, type: cType, costET: cCost };
                     
                     return (
                       <div 
-                        key={card.id} 
+                        key={cId} 
                         className={`uno-action-card ${isSelected ? 'selected' : ''}`}
                         style={{
                           transform: `rotate(${rotation}deg) translateY(${yOffset}px)`,
@@ -4658,18 +4746,18 @@ export default function KontrolaArena() {
                         onClick={() => {
                           if (isMyTurn && !isPendingSecondAttack) {
                             playClick();
-                            setSelectedActionCard(card);
+                            setSelectedActionCard(cardObj);
                           }
                         }}
                       >
                         <div className="uno-card-art">
-                          <img src={cardArt} alt={card.name} />
+                          <img src={cardArt} alt={cName} />
                         </div>
                         <div className="uno-card-info">
-                          <div className="uno-card-title">{card.name}</div>
+                          <div className="uno-card-title">{cName}</div>
                           <div className="uno-card-meta">
-                            <span>{card.type}</span>
-                            <span>? {card.costET || 0}</span>
+                            <span>{cType}</span>
+                            <span>⚡ {cCost}</span>
                           </div>
                         </div>
                       </div>
@@ -4721,9 +4809,9 @@ export default function KontrolaArena() {
 
               {/* Target & Move Selection Panel */}
               {selectedActionCard && !isSpectator && (
-                selectedActionCard.type === 'ATTACK' ||
-                ['POISON', 'SLEEPY', 'FREEZE', 'X-CHANGE', 'KONTROL', 'SOUL ALLIANCE'].some(kw => selectedActionCard.name.includes(kw)) ||
-                (selectedActionCard.name.includes('VISION') && !selectedActionCard.name.includes('FULL'))
+                ((selectedActionCard.type === 'ATTACK' || getSafeCardName(selectedActionCard).toUpperCase().includes('BACK STAB')) && !['BOOMERANG', 'MISDIRECT'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw))) ||
+                ['POISON', 'SLEEPY', 'FREEZE', 'X-CHANGE', 'KONTROL', 'SOUL ALLIANCE', 'DRAIN', 'VAMPIRE'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw)) ||
+                (getSafeCardName(selectedActionCard).toUpperCase().includes('VISION') && !getSafeCardName(selectedActionCard).toUpperCase().includes('FULL'))
               ) && (
                 <div className="arena-panel" style={{ background: 'rgba(20, 10, 20, 0.95)', border: '1.5px solid var(--neon-crimson)', padding: '12px' }}>
                   <div className="panel-title-bar" style={{ marginBottom: '8px' }}>
@@ -4763,7 +4851,7 @@ export default function KontrolaArena() {
                     })}
                   </div>
 
-                  {selectedActionCard?.type === 'ATTACK' && !selectedActionCard?.name?.includes('LIGHTNING') && !selectedActionCard?.name?.includes('FIRE FLAME') && !selectedActionCard?.name?.includes('VAMPIRE') && !selectedActionCard?.name?.includes('BLITZ') && (
+                  {(selectedActionCard?.type === 'ATTACK' || getSafeCardName(selectedActionCard).toUpperCase().includes('BACK STAB')) && !['LIGHTNING', 'FIRE FLAME', 'VAMPIRE', 'DRAIN', 'BACK STAB', 'BOOMERANG', 'MISDIRECT', 'BLITZ'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw)) && (
                     <>
                       <div className="panel-title-bar" style={{ marginBottom: '8px' }}>
                         <span className="panel-kicker" style={{ color: 'var(--neon-crimson)' }}>2. SELECT CHARACTER MOVE</span>
@@ -4883,13 +4971,11 @@ export default function KontrolaArena() {
                         !isMyTurn ||
                         !selectedActionCard ||
                         (selectedActionCard.type === 'ATTACK' &&
-                          !selectedActionCard.name.includes('BLITZ') &&
-                          !selectedActionCard.name.includes('LIGHTNING') &&
-                          !selectedActionCard.name.includes('FIRE FLAME') &&
-                          !selectedActionCard.name.includes('VAMPIRE') &&
+                          !['BLITZ', 'LIGHTNING', 'FIRE FLAME', 'VAMPIRE', 'DRAIN', 'BACK STAB', 'BOOMERANG', 'MISDIRECT'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw)) &&
                           (!selectedCharacterAttack || !selectedTargetId)) ||
-                        (['POISON', 'SLEEPY', 'FREEZE', 'X-CHANGE', 'KONTROL', 'SOUL ALLIANCE', 'DRAIN', 'VAMPIRE'].some(kw => selectedActionCard.name.includes(kw)) && !selectedTargetId) ||
-                        (selectedActionCard.name.includes('VISION') && !selectedActionCard.name.includes('FULL') && !selectedTargetId)
+                        (getSafeCardName(selectedActionCard).toUpperCase().includes('BACK STAB') && !selectedTargetId) ||
+                        (['POISON', 'SLEEPY', 'FREEZE', 'X-CHANGE', 'KONTROL', 'SOUL ALLIANCE', 'DRAIN', 'VAMPIRE'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw)) && !selectedTargetId) ||
+                        (getSafeCardName(selectedActionCard).toUpperCase().includes('VISION') && !getSafeCardName(selectedActionCard).toUpperCase().includes('FULL') && !selectedTargetId)
                       }
                       onClick={playTurn}
                       style={{
@@ -5425,43 +5511,48 @@ export default function KontrolaArena() {
 
                   {/* Defense cards in hand */}
                   <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center', maxWidth: '820px', marginBottom: '32px' }}>
-                    {myHand.filter(c => ['SHIELD', 'BOOMERANG', 'DEFENCE', 'DODGE', '+DEFENCE'].some(kw => c.name.toUpperCase().includes(kw))).map((card) => (
-                      <button
-                        key={card.id}
-                        onClick={() => handleDefenseSelect(card)}
-                        style={{
-                          background: 'rgba(0, 0, 0, 0.85)',
-                          border: '2px solid #39ff14',
-                          borderRadius: '10px',
-                          padding: '12px 10px',
-                          width: '130px',
-                          cursor: 'pointer',
-                          color: '#fff',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          gap: '6px',
-                          boxShadow: '0 0 18px rgba(57, 255, 20, 0.25)',
-                          transition: 'transform 0.15s, box-shadow 0.15s'
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 0 28px rgba(57,255,20,0.5)'; }}
-                        onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 0 18px rgba(57,255,20,0.25)'; }}
-                      >
-                        <div style={{ fontSize: '1.4rem' }}>
-                          {card.name.toUpperCase().includes('BOOMERANG') ? '??'
-                            : card.name.toUpperCase().includes('DODGE') ? '??'
-                            : card.name.toUpperCase().includes('COUNTER') ? '??'
-                            : '???'}
-                        </div>
-                        <div style={{ fontWeight: 'bold', fontSize: '0.75rem', textAlign: 'center', lineHeight: '1.2' }}>{card.name}</div>
-                        <div style={{
-                          fontSize: '0.62rem', color: '#39ff14',
-                          background: 'rgba(57,255,20,0.12)', borderRadius: '4px',
-                          padding: '2px 6px'
-                        }}>{card.type}</div>
-                      </button>
-                    ))}
-                    {myHand.filter(c => ['SHIELD', 'BOOMERANG', 'DEFENCE', 'DODGE', '+DEFENCE'].some(kw => c.name.toUpperCase().includes(kw))).length === 0 && (
+                    {myHand.filter(c => ['SHIELD', 'BOOMERANG', 'DEFENCE', 'DODGE', '+DEFENCE'].some(kw => getSafeCardName(c).toUpperCase().includes(kw))).map((card, idx) => {
+                      const cName = getSafeCardName(card);
+                      const cType = getSafeCardType(card);
+                      const cId = getSafeCardId(card, idx);
+                      return (
+                        <button
+                          key={cId}
+                          onClick={() => handleDefenseSelect(typeof card === 'object' ? card : { id: cId, name: cName, type: cType })}
+                          style={{
+                            background: 'rgba(0, 0, 0, 0.85)',
+                            border: '2px solid #39ff14',
+                            borderRadius: '10px',
+                            padding: '12px 10px',
+                            width: '130px',
+                            cursor: 'pointer',
+                            color: '#fff',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '6px',
+                            boxShadow: '0 0 18px rgba(57, 255, 20, 0.25)',
+                            transition: 'transform 0.15s, box-shadow 0.15s'
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 0 28px rgba(57,255,20,0.5)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 0 18px rgba(57,255,20,0.25)'; }}
+                        >
+                          <div style={{ fontSize: '1.4rem' }}>
+                            {cName.toUpperCase().includes('BOOMERANG') ? '🪃'
+                              : cName.toUpperCase().includes('DODGE') ? '💨'
+                              : cName.toUpperCase().includes('COUNTER') ? '⚡'
+                              : '🛡️'}
+                          </div>
+                          <div style={{ fontWeight: 'bold', fontSize: '0.75rem', textAlign: 'center', lineHeight: '1.2' }}>{cName}</div>
+                          <div style={{
+                            fontSize: '0.62rem', color: '#39ff14',
+                            background: 'rgba(57,255,20,0.12)', borderRadius: '4px',
+                            padding: '2px 6px'
+                          }}>{cType}</div>
+                        </button>
+                      );
+                    })}
+                    {myHand.filter(c => ['SHIELD', 'BOOMERANG', 'DEFENCE', 'DODGE', '+DEFENCE'].some(kw => getSafeCardName(c).toUpperCase().includes(kw))).length === 0 && (
                       <div style={{
                         color: 'rgba(255,255,255,0.4)', fontStyle: 'italic', padding: '20px 40px',
                         border: '1px dashed rgba(255,255,255,0.2)', borderRadius: '8px'

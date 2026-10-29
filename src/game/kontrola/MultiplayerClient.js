@@ -150,6 +150,14 @@ export const subscribeToMatch = (matchId, callback, onSubscribe = null, playerId
     callback({ type: 'PLAYER_TAUNT', payload });
   });
 
+  channel.on('broadcast', { event: 'alliance_invite' }, ({ payload }) => {
+    callback({ type: 'ALLIANCE_INVITE', payload });
+  });
+
+  channel.on('broadcast', { event: 'alliance_response' }, ({ payload }) => {
+    callback({ type: 'ALLIANCE_RESPONSE', payload });
+  });
+
   channel.on('presence', { event: 'leave' }, ({ key }) => {
     if (key && key !== 'spectator') {
       callback({ type: 'PLAYER_PRESENCE_AWAY', payload: { playerId: key } });

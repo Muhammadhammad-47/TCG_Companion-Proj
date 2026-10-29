@@ -235,6 +235,7 @@ export default function KontrolaDiceRoller({
 
   const [phase, setPhase] = useState('clash'); // 'clash' | 'clash_summary'
   const [secondsRemaining, setSecondsRemaining] = useState(60);
+  const [rerollKey, setRerollKey] = useState(0);
 
   // Independent roll completion states per client specification
   const [hasAttackerRolled, setHasAttackerRolled] = useState(
@@ -304,6 +305,7 @@ export default function KontrolaDiceRoller({
     if (isAttackerRolling || isDefenderRolling) return;
     // Reset internal state for re-rolling on tie
     setPhase('clash');
+    setRerollKey(k => k + 1);
     setHasAttackerRolled(false);
     setHasDefenderRolled(false);
     setClashAtkDice(null);
@@ -460,7 +462,7 @@ export default function KontrolaDiceRoller({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [phase]);
+  }, [phase, rerollKey]);
 
   // Sync rolls when precalculatedRolls updates from peer broadcast
   // ─── RPC receive path ──────────────────────────────────────────────────────
@@ -480,6 +482,7 @@ export default function KontrolaDiceRoller({
       setAttackerFateCard(false);
       setDefenderFateCard(false);
       setSecondsRemaining(15);
+      setRerollKey(k => k + 1);
       setPhase('clash');
       return;
     }
