@@ -548,16 +548,25 @@ export default function KontrolaArena() {
     }
   }, [gameState?.tiebreakPool, playerId]);
 
-  const handleRollOff = async () => {
+  const handleRollOff = () => {
     if (isProcessingAction || rollingOffPlayers[playerId]) return;
     
-    // Broadcast animation to everyone!
-    await broadcastUIEvent(matchIdRef.current, 'roll_off_animation', { actorId: playerId });
+    // Broadcast animation to everyone immediately (fire-and-forget, never block execution)
+    broadcastUIEvent(matchIdRef.current, 'roll_off_animation', { actorId: playerId }).catch(() => {});
     
-    // Trigger local animation (it will clear naturally when state sync arrives and hasRolled becomes true)
+    // Trigger local animation with a guaranteed auto-release safety timeout
     setRollingOffPlayers(prev => ({ ...prev, [playerId]: true }));
     
-    // Local fallback for sound and processing lock
+    // Safety auto-clear timeout: never allow rolling animation to hang indefinitely
+    const safetyTimer = setTimeout(() => {
+      setRollingOffPlayers(prev => {
+        const next = { ...prev };
+        delete next[playerId];
+        return next;
+      });
+      setIsProcessingAction(false);
+    }, 4000);
+    
     playClick();
     if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
     setIsProcessingAction(true);
@@ -568,9 +577,32 @@ export default function KontrolaArena() {
       const d2 = rollDice(1).total;
       const total = d1 + d2;
       const payload = { actionType: 'ROLL_OFF', actorId: playerId, total, dice: [d1, d2] };
-      if (isHostRef.current) enqueueHostAction(payload);
-      else takeTurn(matchIdRef.current, { type: 'PLAYER_ACTION', payload });
-      setTimeout(() => setIsProcessingAction(false), 2500);
+      
+      const submitRoll = () => {
+        if (isHostRef.current) {
+          enqueueHostAction(payload);
+        } else {
+          takeTurn(matchIdRef.current, { type: 'PLAYER_ACTION', payload }).catch(err => {
+            console.warn('[handleRollOff] takeTurn error:', err);
+          });
+        }
+      };
+
+      submitRoll();
+
+      // Retry submission if host has not acknowledged roll after 2.2 seconds
+      const retryTimer = setTimeout(() => {
+        if (!gameStateRef.current?.rollOffs?.[playerId]) {
+          console.warn('[handleRollOff] Re-sending unacknowledged roll to host...');
+          submitRoll();
+        }
+      }, 2200);
+
+      setTimeout(() => {
+        clearTimeout(safetyTimer);
+        clearTimeout(retryTimer);
+        setIsProcessingAction(false);
+      }, 3500);
     }, 1200);
   };
 
@@ -959,7 +991,14 @@ export default function KontrolaArena() {
           const { actorId } = event.payload || {};
           if (actorId) {
             setRollingOffPlayers(prev => ({ ...prev, [actorId]: true }));
-            // It will naturally clear when state sync arrives and hasRolled becomes true
+            // Auto-clear after 3.5s so remote players never see dice roll indefinitely
+            setTimeout(() => {
+              setRollingOffPlayers(prev => {
+                const next = { ...prev };
+                delete next[actorId];
+                return next;
+              });
+            }, 3500);
           }
         }
         // 11. Action Effects (Syncs Vision, Shakes, Sounds, Damage Popups)
@@ -1114,7 +1153,7 @@ export default function KontrolaArena() {
       if (currentGS.status === 'roll_off' && remainingPlayers.length > 0) {
         delete updatedRollOffs[leftPlayerId]; // Remove leaver's roll if any
         if (Object.keys(updatedRollOffs).length === remainingPlayers.length) {
-          updatedStatus = 'direction_select';
+          updatedStatus = 'roll_off_complete';
           let maxTotal = -1;
           for (const pId of remainingPlayers) {
             if ((updatedRollOffs[pId] || 0) > maxTotal) {
@@ -1163,12 +1202,16 @@ export default function KontrolaArena() {
     if (isProcessingQueueRef.current || actionQueueRef.current.length === 0) return;
     isProcessingQueueRef.current = true;
 
-    while (actionQueueRef.current.length > 0) {
-      const item = actionQueueRef.current.shift();
-      executeActionResolution(item.payload, item.precalculatedRolls);
+    try {
+      while (actionQueueRef.current.length > 0) {
+        const item = actionQueueRef.current.shift();
+        executeActionResolution(item.payload, item.precalculatedRolls);
+      }
+    } catch (err) {
+      console.error('[processActionQueue] Error during host resolution:', err);
+    } finally {
+      isProcessingQueueRef.current = false;
     }
-
-    isProcessingQueueRef.current = false;
   };
 
   const executeActionResolution = (payload, precalculatedRollsParam = null) => {
@@ -1197,6 +1240,12 @@ export default function KontrolaArena() {
       if (payload.actionType === 'ROLL_OFF') {
         const updatedRollOffs = { ...(state.rollOffs || {}), [payload.actorId]: payload.total };
         const updatedRollOffDice = { ...(state.rollOffDice || {}), [payload.actorId]: payload.dice };
+        // Immediately clear local rolling state for this roller
+        setRollingOffPlayers(prev => {
+          const next = { ...prev };
+          delete next[payload.actorId];
+          return next;
+        });
         // tiebreakPool: if set, only players in this list need to re-roll
         const activePlayers = state.tiebreakPool || state.players;
         let nextState = { ...state, rollOffs: updatedRollOffs, rollOffDice: updatedRollOffDice };
@@ -5177,7 +5226,7 @@ export default function KontrolaArena() {
                   .map((pId, idx) => {
                   const isTiebreakParticipant = !gameState.tiebreakPool || gameState.tiebreakPool.includes(pId);
                   const hasRolled = Boolean(gameState.rollOffs?.[pId]);
-                  const isRolling = rollingOffPlayers[pId];
+                  const isRolling = Boolean(rollingOffPlayers[pId]) && !hasRolled;
                   // Players sitting out a tiebreak are shown greyed-out with their previous roll
                   const isSittingOut = gameState.tiebreakPool && !gameState.tiebreakPool.includes(pId);
                   return (
@@ -5236,7 +5285,7 @@ export default function KontrolaArena() {
               {!isSpectator && !gameState.rollOffs?.[playerId] && (!gameState.tiebreakPool || gameState.tiebreakPool.includes(playerId)) && (
                 <button
                   onClick={handleRollOff}
-                  disabled={rollingOffPlayers[playerId]}
+                  disabled={Boolean(rollingOffPlayers[playerId]) || isProcessingAction}
                   style={{
                     background: gameState.tiebreakPool
                       ? 'linear-gradient(180deg, #ff2a55 0%, #a80022 100%)'
@@ -5244,14 +5293,14 @@ export default function KontrolaArena() {
                     border: gameState.tiebreakPool ? '2px solid #ff8899' : '2px solid #ff8899',
                     borderRadius: '12px', padding: '18px 50px',
                     color: '#fff', fontSize: '1.5rem', fontWeight: '900', 
-                    cursor: rollingOffPlayers[playerId] ? 'wait' : 'pointer',
+                    cursor: (rollingOffPlayers[playerId] || isProcessingAction) ? 'wait' : 'pointer',
                     boxShadow: '0 0 30px rgba(255, 42, 85, 0.6)',
                     display: 'flex', alignItems: 'center', gap: '12px',
                     letterSpacing: '1px', textTransform: 'uppercase'
                   }}
                 >
                   <Dices size={28} />
-                  {rollingOffPlayers[playerId] ? 'ROLLING DICE...' : gameState.tiebreakPool ? '?? RE-ROLL TO BREAK TIE' : 'ROLL 2 DICE'}
+                  {rollingOffPlayers[playerId] ? 'ROLLING DICE...' : gameState.tiebreakPool ? '🎲 RE-ROLL TO BREAK TIE' : 'ROLL 2 DICE'}
                 </button>
               )}
               {/* Sitting-out players see a waiting message */}
