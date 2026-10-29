@@ -354,6 +354,7 @@ export default function KontrolaArena() {
 
   const [turnSecondsLeft, setTurnSecondsLeft] = useState(60);
   const [revealedVision, setRevealedVision] = useState(null);
+  const [visionSecondsLeft, setVisionSecondsLeft] = useState(15);
 
   const [defenseSeconds, setDefenseSeconds] = useState(15);
 
@@ -421,18 +422,19 @@ export default function KontrolaArena() {
     }
   }, [turnSecondsLeft, isMyTurn, gameState?.status]);
 
-  // Auto-expire revealed vision modal after 15 seconds
+  // Auto-expire revealed vision modal and live tick countdown
   useEffect(() => {
     if (!revealedVision) return;
-    const timeRemaining = revealedVision.expiresAt - Date.now();
-    if (timeRemaining <= 0) {
-      setRevealedVision(null);
-      return;
-    }
-    const timer = setTimeout(() => {
-      setRevealedVision(null);
-    }, timeRemaining);
-    return () => clearTimeout(timer);
+    const updateTime = () => {
+      const remaining = Math.max(0, Math.ceil(((revealedVision.expiresAt || 0) - Date.now()) / 1000));
+      setVisionSecondsLeft(remaining);
+      if (remaining <= 0) {
+        setRevealedVision(null);
+      }
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
   }, [revealedVision]);
 
   // Music player audio control
@@ -5652,7 +5654,7 @@ export default function KontrolaArena() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <div style={{ fontSize: '0.85rem', color: 'var(--neon-gold)', fontWeight: 'bold', background: 'rgba(251, 200, 13, 0.15)', padding: '3px 8px', borderRadius: '6px', border: '1px solid rgba(251, 200, 13, 0.4)' }}>
-                    {visionSecondsLeft}s left
+                    {visionSecondsLeft ?? 15}s left
                   </div>
                   <button
                     onClick={() => setRevealedVision(null)}
