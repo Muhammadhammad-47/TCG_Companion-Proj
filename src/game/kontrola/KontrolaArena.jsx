@@ -222,7 +222,7 @@ export default function KontrolaArena() {
 
   // Draggable Music Player State & Viewport Clamping
   const clampMusicPos = (x, y, isOpen) => {
-    const width = isOpen ? 340 : 140;
+    const width = isOpen ? 340 : 130;
     const height = isOpen ? 380 : 54;
     const maxX = Math.max(10, (typeof window !== 'undefined' ? window.innerWidth : 1200) - width - 15);
     const maxY = Math.max(10, (typeof window !== 'undefined' ? window.innerHeight : 800) - height - 15);
@@ -233,7 +233,7 @@ export default function KontrolaArena() {
   };
 
   const [musicPlayerPos, setMusicPlayerPos] = useState(() => {
-    const defaultX = typeof window !== 'undefined' ? Math.max(20, window.innerWidth - 170) : 100;
+    const defaultX = typeof window !== 'undefined' ? Math.max(20, window.innerWidth - 160) : 100;
     const defaultY = typeof window !== 'undefined' ? Math.max(80, window.innerHeight - 150) : 100;
     return { x: defaultX, y: defaultY };
   });
@@ -251,16 +251,14 @@ export default function KontrolaArena() {
   const handleToggleMusicOpen = () => {
     setIsMusicPlayerOpen(prev => {
       const next = !prev;
-      if (next) {
-        setMusicPlayerPos(curr => clampMusicPos(curr.x, curr.y, true));
-      }
+      setMusicPlayerPos(curr => clampMusicPos(curr.x, curr.y, next));
       return next;
     });
   };
 
-  const handleMusicPointerDown = (e) => {
+  const handleDragPointerDown = (e) => {
     if (e.button !== undefined && e.button !== 0) return;
-    if (e.target.closest('button.interactive-control') || e.target.closest('input')) {
+    if (e.target.closest('.no-drag')) {
       return;
     }
 
@@ -273,7 +271,7 @@ export default function KontrolaArena() {
     const onPointerMove = (moveEvt) => {
       const dx = moveEvt.clientX - startX;
       const dy = moveEvt.clientY - startY;
-      if (Math.hypot(dx, dy) > 5) {
+      if (Math.hypot(dx, dy) > 4) {
         musicDragRef.current.hasMoved = true;
         setIsDraggingMusic(true);
         setMusicPlayerPos(clampMusicPos(origX + dx, origY + dy, isMusicPlayerOpen));
@@ -6005,225 +6003,246 @@ export default function KontrolaArena() {
             />
           )}
 
-          {/* Floating Music Player Widget */}
-          {musicTracks.length > 0 && (
-            <div
-              onPointerDown={!isMusicPlayerOpen ? handleMusicPointerDown : undefined}
-              style={{
-                position: 'fixed',
-                left: `${musicPlayerPos.x}px`,
-                top: `${musicPlayerPos.y}px`,
-                background: 'var(--bg-card)',
-                border: '2px solid rgba(251, 200, 13, 0.5)',
-                borderRadius: '16px',
-                padding: isMusicPlayerOpen ? '16px' : '10px 14px',
-                minWidth: isMusicPlayerOpen ? '320px' : 'auto',
-                maxWidth: '350px',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.8)',
-                zIndex: 9999,
-                backdropFilter: 'blur(12px)',
-                transition: isDraggingMusic ? 'none' : 'box-shadow 0.2s ease',
-                fontFamily: 'Bebas Neue, sans-serif',
-                cursor: !isMusicPlayerOpen ? (isDraggingMusic ? 'grabbing' : 'grab') : 'default',
-                userSelect: 'none',
-                touchAction: 'none'
-              }}
-            >
-              {/* Header / Minimized Toggle */}
+                  </div>
+      </DynamicScaleWrapper>
+
+      {/* Floating Music Player Widget (Positioned outside DynamicScaleWrapper for 1:1 true viewport tracking) */}
+      {musicTracks.length > 0 && (
+        <div
+          onPointerDown={!isMusicPlayerOpen ? handleDragPointerDown : undefined}
+          onClick={!isMusicPlayerOpen ? () => {
+            if (!musicDragRef.current.hasMoved) {
+              handleToggleMusicOpen();
+            }
+          } : undefined}
+          style={{
+            position: 'fixed',
+            left: `${musicPlayerPos.x}px`,
+            top: `${musicPlayerPos.y}px`,
+            background: 'var(--bg-card)',
+            border: '2px solid rgba(251, 200, 13, 0.6)',
+            borderRadius: '16px',
+            padding: isMusicPlayerOpen ? '16px' : '10px 16px',
+            minWidth: isMusicPlayerOpen ? '320px' : 'auto',
+            maxWidth: '350px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.85)',
+            zIndex: 99999,
+            backdropFilter: 'blur(12px)',
+            transition: isDraggingMusic ? 'none' : 'box-shadow 0.2s ease',
+            fontFamily: 'Bebas Neue, sans-serif',
+            cursor: !isMusicPlayerOpen ? (isDraggingMusic ? 'grabbing' : 'grab') : 'default',
+            userSelect: 'none',
+            touchAction: 'none'
+          }}
+          title={!isMusicPlayerOpen ? 'Click to open playlist â€¢ Drag to move' : undefined}
+        >
+          {/* Minimized Pill View */}
+          {!isMusicPlayerOpen ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#FBC80D' }}>
+              <Music size={22} />
+              <span style={{ fontWeight: 'bold', fontSize: '1.05rem', letterSpacing: '0.5px' }}>
+                PLAYLIST
+              </span>
+              {isPlaying && (
+                <span style={{
+                  display: 'inline-block',
+                  width: '7px',
+                  height: '7px',
+                  borderRadius: '50%',
+                  backgroundColor: '#39ff14',
+                  boxShadow: '0 0 6px #39ff14'
+                }} />
+              )}
+            </div>
+          ) : (
+            /* Expanded Player View */
+            <>
+              {/* Draggable Header */}
               <div
-                onPointerDown={isMusicPlayerOpen ? handleMusicPointerDown : undefined}
+                onPointerDown={handleDragPointerDown}
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  marginBottom: isMusicPlayerOpen ? '12px' : '0',
-                  cursor: isMusicPlayerOpen ? (isDraggingMusic ? 'grabbing' : 'grab') : 'inherit'
+                  marginBottom: '12px',
+                  cursor: isDraggingMusic ? 'grabbing' : 'grab',
+                  paddingBottom: '6px',
+                  borderBottom: '1px solid rgba(255,255,255,0.1)'
                 }}
+                title="Drag header to move"
               >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#FBC80D' }}>
+                  <Music size={20} />
+                  <span style={{ fontWeight: 'bold', fontSize: '1.05rem', letterSpacing: '0.5px' }}>
+                    MUSIC PLAYLIST
+                  </span>
+                  <span style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.5px' }}>
+                    (DRAG)
+                  </span>
+                </div>
                 <button
-                  className="interactive-control"
-                  onClick={() => {
-                    if (!musicDragRef.current.hasMoved) {
-                      handleToggleMusicOpen();
-                    }
+                  className="no-drag"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleMusicOpen();
                   }}
                   style={{
-                    background: 'none',
-                    border: 'none',
+                    background: 'rgba(255,255,255,0.08)',
+                    border: '1px solid rgba(251,200,13,0.3)',
+                    borderRadius: '6px',
                     color: '#FBC80D',
                     cursor: 'pointer',
-                    padding: '4px',
+                    padding: '4px 6px',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px'
+                    justifyContent: 'center'
                   }}
-                  title={isMusicPlayerOpen ? 'Click to minimize - Drag header to move' : 'Click to view playlist - Drag to move'}
+                  title="Minimize to pill"
                 >
-                  <Music size={24} />
-                  <span style={{ fontWeight: 'bold', fontSize: '1.1rem', letterSpacing: '0.5px' }}>
-                    {isMusicPlayerOpen ? 'MUSIC' : 'PLAYLIST'}
-                  </span>
+                  <ChevronDown size={18} />
                 </button>
-                {isMusicPlayerOpen && (
-                  <button
-                    className="interactive-control"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsMusicPlayerOpen(false);
-                    }}
-                    style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', padding: '4px' }}
-                    title="Minimize"
-                  >
-                    <ChevronDown size={20} />
-                  </button>
-                )}
               </div>
 
-              {/* Expanded player content */}
-              {isMusicPlayerOpen && (
-                <>
-                  {/* Track info */}
-                  <div style={{ marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                    <div style={{ color: '#fff', fontWeight: 'bold', fontSize: '0.95rem', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {musicTracks[currentTrackIndex]?.title || 'No Track'}
+              {/* Track info */}
+              <div style={{ marginBottom: '12px', paddingBottom: '10px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ color: '#fff', fontWeight: 'bold', fontSize: '0.95rem', marginBottom: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {musicTracks[currentTrackIndex]?.title || 'No Track'}
+                </div>
+                <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem' }}>
+                  by {musicTracks[currentTrackIndex]?.username || 'Unknown'}
+                </div>
+              </div>
+
+              {/* Playback controls */}
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+                <button
+                  className="no-drag"
+                  onClick={() => {
+                    const newIndex = currentTrackIndex > 0 ? currentTrackIndex - 1 : musicTracks.length - 1;
+                    setCurrentTrackIndex(newIndex);
+                    setIsPlaying(true);
+                  }}
+                  style={{ background: 'rgba(251,200,13,0.2)', border: '1px solid rgba(251,200,13,0.4)', color: '#FBC80D', padding: '8px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  title="Previous"
+                >
+                  <SkipForward size={18} style={{ transform: 'rotate(180deg)' }} />
+                </button>
+
+                <button
+                  className="no-drag"
+                  onClick={() => setIsPlaying(!isPlaying)}
+                  style={{ background: 'linear-gradient(135deg, #FBC80D, #FFD700)', border: 'none', color: '#000', padding: '12px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 16px rgba(251,200,13,0.4)' }}
+                  title={isPlaying ? 'Pause' : 'Play'}
+                >
+                  {isPlaying ? <Pause size={24} /> : <Play size={24} />}
+                </button>
+
+                <button
+                  className="no-drag"
+                  onClick={() => {
+                    const newIndex = currentTrackIndex < musicTracks.length - 1 ? currentTrackIndex + 1 : 0;
+                    setCurrentTrackIndex(newIndex);
+                    setIsPlaying(true);
+                  }}
+                  style={{ background: 'rgba(251,200,13,0.2)', border: '1px solid rgba(251,200,13,0.4)', color: '#FBC80D', padding: '8px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  title="Next"
+                >
+                  <SkipForward size={18} />
+                </button>
+              </div>
+
+              {/* Volume control */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                <button
+                  className="no-drag"
+                  onClick={() => setIsMuted(!isMuted)}
+                  style={{ background: 'none', border: 'none', color: isMuted ? '#ff6b8f' : '#FBC80D', cursor: 'pointer', padding: '4px' }}
+                  title={isMuted ? 'Unmute' : 'Mute'}
+                >
+                  {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                </button>
+                <input
+                  className="no-drag"
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={volume * 100}
+                  onChange={(e) => setVolume(parseFloat(e.target.value) / 100)}
+                  style={{ flex: 1, accentColor: '#FBC80D' }}
+                  title="Volume"
+                />
+                <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem', minWidth: '35px' }}>
+                  {Math.round(volume * 100)}%
+                </span>
+              </div>
+
+              {/* Playlist */}
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginBottom: '6px', fontWeight: 'bold', letterSpacing: '0.5px' }}>
+                PLAYLIST ({musicTracks.length})
+              </div>
+              <div className="no-drag" style={{ maxHeight: '150px', overflowY: 'auto', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '6px' }}>
+                {musicTracks.map((track, idx) => (
+                  <button
+                    key={track.id || idx}
+                    className="no-drag"
+                    onClick={() => {
+                      setCurrentTrackIndex(idx);
+                      setIsPlaying(true);
+                    }}
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      background: idx === currentTrackIndex ? 'rgba(251,200,13,0.2)' : 'transparent',
+                      border: idx === currentTrackIndex ? '1px solid rgba(251,200,13,0.4)' : '1px solid transparent',
+                      color: idx === currentTrackIndex ? '#FBC80D' : 'rgba(255,255,255,0.7)',
+                      padding: '8px 10px',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      marginBottom: '4px',
+                      fontSize: '0.8rem',
+                      fontFamily: 'Bebas Neue, sans-serif',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseOver={e => {
+                      if (idx !== currentTrackIndex) {
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                      }
+                    }}
+                    onMouseOut={e => {
+                      if (idx !== currentTrackIndex) {
+                        e.currentTarget.style.background = 'transparent';
+                      }
+                    }}
+                  >
+                    <div style={{ fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {idx === currentTrackIndex ? '▶ ' : ''}{track.title}
                     </div>
-                    <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem' }}>
-                      by {musicTracks[currentTrackIndex]?.username || 'Unknown'}
+                    <div style={{ fontSize: '0.7rem', opacity: 0.7, marginTop: '2px' }}>
+                      by {track.username || 'Unknown'}
                     </div>
-                  </div>
-
-                  {/* Playback controls */}
-                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
-                    <button
-                      className="interactive-control"
-                      onClick={() => {
-                        const newIndex = currentTrackIndex > 0 ? currentTrackIndex - 1 : musicTracks.length - 1;
-                        setCurrentTrackIndex(newIndex);
-                        setIsPlaying(true);
-                      }}
-                      style={{ background: 'rgba(251,200,13,0.2)', border: '1px solid rgba(251,200,13,0.4)', color: '#FBC80D', padding: '8px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                      title="Previous"
-                    >
-                      <SkipForward size={18} style={{ transform: 'rotate(180deg)' }} />
-                    </button>
-
-                    <button
-                      className="interactive-control"
-                      onClick={() => setIsPlaying(!isPlaying)}
-                      style={{ background: 'linear-gradient(135deg, #FBC80D, #FFD700)', border: 'none', color: '#000', padding: '12px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 16px rgba(251,200,13,0.4)' }}
-                      title={isPlaying ? 'Pause' : 'Play'}
-                    >
-                      {isPlaying ? <Pause size={24} /> : <Play size={24} />}
-                    </button>
-
-                    <button
-                      className="interactive-control"
-                      onClick={() => {
-                        const newIndex = currentTrackIndex < musicTracks.length - 1 ? currentTrackIndex + 1 : 0;
-                        setCurrentTrackIndex(newIndex);
-                        setIsPlaying(true);
-                      }}
-                      style={{ background: 'rgba(251,200,13,0.2)', border: '1px solid rgba(251,200,13,0.4)', color: '#FBC80D', padding: '8px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                      title="Next"
-                    >
-                      <SkipForward size={18} />
-                    </button>
-                  </div>
-
-                  {/* Volume control */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                    <button
-                      className="interactive-control"
-                      onClick={() => setIsMuted(!isMuted)}
-                      style={{ background: 'none', border: 'none', color: isMuted ? '#ff6b8f' : '#FBC80D', cursor: 'pointer', padding: '4px' }}
-                      title={isMuted ? 'Unmute' : 'Mute'}
-                    >
-                      {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-                    </button>
-                    <input
-                      className="interactive-control"
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={volume * 100}
-                      onChange={(e) => setVolume(parseFloat(e.target.value) / 100)}
-                      style={{ flex: 1, accentColor: '#FBC80D' }}
-                      title="Volume"
-                    />
-                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem', minWidth: '35px' }}>
-                      {Math.round(volume * 100)}%
-                    </span>
-                  </div>
-
-                  {/* Playlist */}
-                  <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginBottom: '6px', fontWeight: 'bold', letterSpacing: '0.5px' }}>
-                    PLAYLIST ({musicTracks.length})
-                  </div>
-                  <div style={{ maxHeight: '150px', overflowY: 'auto', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '6px' }}>
-                    {musicTracks.map((track, idx) => (
-                      <button
-                        key={track.id}
-                        className="interactive-control"
-                        onClick={() => {
-                          setCurrentTrackIndex(idx);
-                          setIsPlaying(true);
-                        }}
-                        style={{
-                          width: '100%',
-                          textAlign: 'left',
-                          background: idx === currentTrackIndex ? 'rgba(251,200,13,0.2)' : 'transparent',
-                          border: idx === currentTrackIndex ? '1px solid rgba(251,200,13,0.4)' : '1px solid transparent',
-                          color: idx === currentTrackIndex ? '#FBC80D' : 'rgba(255,255,255,0.7)',
-                          padding: '8px 10px',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          marginBottom: '4px',
-                          fontSize: '0.8rem',
-                          fontFamily: 'Bebas Neue, sans-serif',
-                          transition: 'all 0.2s ease'
-                        }}
-                        onMouseOver={e => {
-                          if (idx !== currentTrackIndex) {
-                            e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-                          }
-                        }}
-                        onMouseOut={e => {
-                          if (idx !== currentTrackIndex) {
-                            e.currentTarget.style.background = 'transparent';
-                          }
-                        }}
-                      >
-                        <div style={{ fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {track.title}
-                        </div>
-                        <div style={{ fontSize: '0.7rem', opacity: 0.7, marginTop: '2px' }}>
-                          by {track.username}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-
-              {/* Hidden audio element */}
-              <audio
-                ref={audioRef}
-                src={musicTracks[currentTrackIndex]?.music_url}
-                autoPlay={isPlaying}
-                loop={false}
-                volume={isMuted ? 0 : volume}
-                onEnded={() => {
-                  const nextIndex = currentTrackIndex < musicTracks.length - 1 ? currentTrackIndex + 1 : 0;
-                  setCurrentTrackIndex(nextIndex);
-                  setIsPlaying(true);
-                }}
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => setIsPlaying(false)}
-              />
-            </div>
+                  </button>
+                ))}
+              </div>
+            </>
           )}
+
+          {/* Hidden audio element */}
+          <audio
+            ref={audioRef}
+            src={musicTracks[currentTrackIndex]?.music_url}
+            autoPlay={isPlaying}
+            loop={false}
+            volume={isMuted ? 0 : volume}
+            onEnded={() => {
+              const nextIndex = currentTrackIndex < musicTracks.length - 1 ? currentTrackIndex + 1 : 0;
+              setCurrentTrackIndex(nextIndex);
+              setIsPlaying(true);
+            }}
+            onPlay={() => setIsPlaying(true)}
+            onPause={() => setIsPlaying(false)}
+          />
         </div>
-      </DynamicScaleWrapper>
+      )}
     </div>
   );
 }
