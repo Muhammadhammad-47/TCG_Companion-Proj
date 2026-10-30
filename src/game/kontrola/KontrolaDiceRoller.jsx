@@ -428,10 +428,9 @@ export default function KontrolaDiceRoller({
       isAttacker, hasAttackerRolled, handleRollAttacker,
       isDefender, hasDefenderRolled, handleRollDefender,
       phase, hasRolledMultiplier, handleRollMultiplierDie, handleFinishCombat,
-      isHost, isTie, handleReRoll,
-      showRerollOption, attackerFateCard, defenderFateCard
+      isHost, isTie, handleReRoll
     };
-  }, [isAttacker, hasAttackerRolled, handleRollAttacker, isDefender, hasDefenderRolled, handleRollDefender, phase, hasRolledMultiplier, handleRollMultiplierDie, handleFinishCombat, isHost, isTie, handleReRoll, showRerollOption, attackerFateCard, defenderFateCard]);
+  }, [isAttacker, hasAttackerRolled, handleRollAttacker, isDefender, hasDefenderRolled, handleRollDefender, phase, hasRolledMultiplier, handleRollMultiplierDie, handleFinishCombat, isHost, isTie, handleReRoll]);
 
   useEffect(() => {
     setSecondsRemaining(15);
@@ -455,7 +454,7 @@ export default function KontrolaDiceRoller({
             if (refs.isAttacker || refs.isHost) {
               if (refs.isTie) refs.handleReRoll();
               else if (refs.hasRolledMultiplier === false) refs.handleRollMultiplierDie();
-              else if (refs.showRerollOption && (refs.attackerFateCard || refs.defenderFateCard)) { /* Wait for player to choose re-roll */ }
+              else if (showRerollOption && (attackerFateCard || defenderFateCard)) { /* Wait for player to choose re-roll */ }
               else if (typeof refs.handleFinishCombat === 'function') refs.handleFinishCombat();
             }
           }
@@ -1144,13 +1143,12 @@ export default function KontrolaDiceRoller({
                     <CanvasPipDie value={multiplierDie} theme="red" isRolling={isRollingMultiplier} size={54} />
                                         <div style={{ textAlign: 'left' }}>
                       {(() => {
-                        const perAp = selectedAttackInfo.ap;
-                        const total = multiplierDie * perAp;
                         const isAtkX2 = resolvedCardName.includes('ATTACK X2');
+                        const perAp = isAtkX2 ? (selectedAttackInfo.ap * 2) : selectedAttackInfo.ap;
+                        const total = multiplierDie * perAp;
                         return (
                           <div style={{ fontSize: '1rem', color: '#fff' }}>
-                            Roll: <strong>{multiplierDie}</strong> × {perAp} AP = <strong style={{ color: '#39ff14' }}>{total} Total AP</strong>
-                            {isAtkX2 && <span style={{ fontSize: '0.85rem', color: 'var(--neon-gold)', marginLeft: '8px' }}>(Hit 1 of 2 via Attack X2)</span>}
+                            Roll: <strong>{multiplierDie}</strong> × {perAp} AP {isAtkX2 ? '(Attack X2 doubled)' : ''} = <strong style={{ color: '#39ff14' }}>{total} Total AP</strong>
                           </div>
                         );
                       })()}
