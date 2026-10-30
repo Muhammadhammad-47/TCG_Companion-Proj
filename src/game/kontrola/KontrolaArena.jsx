@@ -6011,8 +6011,8 @@ export default function KontrolaArena() {
               onPointerDown={!isMusicPlayerOpen ? handleMusicPointerDown : undefined}
               style={{
                 position: 'fixed',
-                left: ${musicPlayerPos.x}px,
-                top: ${musicPlayerPos.y}px,
+                left: `${musicPlayerPos.x}px`,
+                top: `${musicPlayerPos.y}px`,
                 background: 'var(--bg-card)',
                 border: '2px solid rgba(251, 200, 13, 0.5)',
                 borderRadius: '16px',
