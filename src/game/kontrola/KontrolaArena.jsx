@@ -24,7 +24,6 @@ import KontrolaDiceRoller, { CanvasPipDie } from './KontrolaDiceRoller';
 import KontrolaChatModal from './KontrolaChatModal';
 import KontrolaTauntModal from './KontrolaTauntModal';
 import { LeaderboardModal } from '../../components/LeaderboardModal';
-import MusicPlayer from '../components/MusicPlayer';
 import SecretAllianceInviteModal from '../components/SecretAllianceInviteModal';
 import AllianceChatModal from '../components/AllianceChatModal';
 import AllianceStatusBadge from '../components/AllianceStatusBadge';
@@ -6155,9 +6154,6 @@ export default function KontrolaArena() {
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}
               />
-
-              {/* Music Player */}
-              <MusicPlayer />
             </div>
           )}
         </div>
