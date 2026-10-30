@@ -1,0 +1,19 @@
+﻿TCG Companion Notes
+Oct 29, 2026
+
+
+* If the player is at full level 1 HP and uses the HEAL card. It should not increase the HP.
+* Vitality Card v30 is only playable at level 3. Right now it is playable for level one.
+* The system crashed when using the Vision X1 Card.
+* Drain Cards don't work at all. The image does not show up and, you can’t hit any buttons.
+* MisDirect Card does not function properly.***
+* Vision X1 Not properly working
+* X-CHANGE X1 card does not work properly. I did one time, but majority it doesn’t
+* Vision X1 worked on Oct 29 4:40PM CST and OCT 29 4:42 CST
+* I believe that Lightning X1 card gave another turn, which is incorrect.]
+* VISION FULL card does nothing and does not function properly.
+* VIALITY V20 card can not be used until the player reaches level 2
+* BOOMERANGE card is not functioning properly
+* FIRE FLAME card is giving more turns than it should. It should only be one turn.
+* ***RETREAT card is not working properly. RETREAT should be present when attacking and defending. *** In attacking, it should be available after the roll, if the player feels that the number they have rolled, they can end the battle immediately. In defence, the player can end the battle if they feel the attacker number rolled is too high***
+* The Anime Express TV Flyer card is not suppose to be in the Action card deck
