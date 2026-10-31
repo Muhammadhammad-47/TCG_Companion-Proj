@@ -1,4 +1,4 @@
-﻿// TCG Companion — Kontrola Rule Engine
+// TCG Companion — Kontrola Rule Engine
 // Validated against Kontrolla_Data/Docs (Rules & Regulations, AI Breakdowns, Action Cards CSV)
 
 export const KONTROLA_CHARACTERS = {
@@ -423,7 +423,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   if (isKontrolMove && newDefenderState) {
     // Check ET cost (3 ET required per Rules line 39)
     if ((newAttackerState.energyTokens || 0) < 3) {
-      log +=  âš ï¸ KONTROL requires 3 Energy Tokens! You have  ET. Cannot activate.;
+      log += ` ⚠️ KONTROL requires 3 Energy Tokens! You have ${newAttackerState.energyTokens || 0} ET. Cannot activate.`;
       return { newAttackerState, newDefenderState, log, cardBlocked: true };
     }
 
@@ -577,16 +577,19 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       // MISDIRECT: 2d6 vs 2d6 Clash
       // On win: grants attack redirection capability
       // On failure: attacking player takes -20 HP penalty
-      const misdirectWin = adjustedAttackerRoll > adjustedDefenderRoll;
+      const misAttackerRoll = attackerRoll?.total || 0;
+      const misDefenderRoll = defenderRoll?.total || 0;
+      const misdirectWin = misAttackerRoll > misDefenderRoll;
       if (misdirectWin) {
         newAttackerState.canRedirectAttack = true;
-        log +=  ðŸªž MISDIRECT SUCCESS! ( vs ).  can redirect opponent's pending attack!;
+        log += ` 🪞 MISDIRECT SUCCESS! (${misAttackerRoll} vs ${misDefenderRoll}). ${newAttackerState.name} can redirect opponent's pending attack!`;
         return { newAttackerState, newDefenderState, log, triggerRedirectModal: true };
       } else {
         newAttackerState.hp = Math.max(0, newAttackerState.hp - 20);
-        log +=  ðŸªž MISDIRECT FAILED! ( vs ).  suffered -20 HP failure backlash!;
+        log += ` 🪞 MISDIRECT FAILED! (${misAttackerRoll} vs ${misDefenderRoll}). ${newAttackerState.name} suffered -20 HP failure backlash!`;
         return { newAttackerState, newDefenderState, log, misdirectFailed: true };
       }
+    }
 
     let baseAP = 15;
     let attackElement = 'Physical';
@@ -594,17 +597,17 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     if (cardName.includes('LIGHTNING')) {
       baseAP = cardName.includes('X2') ? 20 : 10;
       attackElement = 'Lightning';
+      log += ` [${cardName}: Elemental Lightning strike dealing ${baseAP} AP]`;
     } else if (cardName.includes('BACK STAB')) {
       baseAP = 35;
       attackElement = 'Shadow';
       if (newAttackerState.allianceId && newAttackerState.allianceId === newDefenderState?.id) {
         newAttackerState.allianceId = null;
         if (newDefenderState) newDefenderState.allianceId = null;
-        log +=  ðŸ—¡ï¸ BACK STAB BETRAYAL!  betrayed their Soul Alliance with  and ambushed them!;
+        log += ` 🗡️ BACK STAB BETRAYAL! ${newAttackerState.name} betrayed their Soul Alliance with ${newDefenderState?.name || 'their ally'} and ambushed them!`;
       } else {
-        log +=  ðŸ—¡ï¸ [BACK STAB: Shadow ambush dealing  AP];
+        log += ` 🗡️ [BACK STAB: Shadow ambush dealing ${baseAP} AP]`;
       }
-      log += ` [${cardName}: Elemental Lightning strike dealing ${baseAP} AP]`;
     } else if (cardName.includes('FIRE FLAME')) {
       const isX2 = cardName.includes('X2');
       baseAP = isX2 ? 20 : 10;
@@ -750,7 +753,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
             // Attack is negated for original defender
             finalDamage = 0;
           } else {
-            log += ` ❌ MISDIRECT FAILED! ${newAttackerState.name} takes -20 HP penalty!`;
+            log += ` 🪞 MISDIRECT FAILED! (${attackerRoll?.total || 0} vs ${defenderRoll?.total || 0}). ${newAttackerState.name} suffered -20 HP failure backlash!`;
             newAttackerState.hp = Math.max(0, newAttackerState.hp - 20);
           }
           newDefenderState.hasMisdirect = false;
@@ -979,7 +982,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         requiredLevel = 2;
         // Vitality V20 can ONLY be used at level 2 (Feedback line 15 & AI Breakdowns line 347)
         if (currentLevel < requiredLevel) {
-          log += ` âš ï¸ Only available in level 2! VITALITY GAIN V20 requires reaching 150 HP (Level 2). Use Vitality V10 to level up first.`;
+          log += ` ⚠️ Only available in level 2! VITALITY GAIN V20 requires reaching 150 HP (Level 2). Use Vitality V10 to level up first.`;
           return { newAttackerState, newDefenderState, log };
         }
       } else if (cardName.includes('V30')) {
@@ -987,7 +990,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         requiredLevel = 3;
         // Vitality V30 can ONLY be used at level 3 (Feedback line 6 & AI Breakdowns line 351)
         if (currentLevel < requiredLevel) {
-          log += ` âš ï¸ Only available in level 3! VITALITY GAIN V30 requires Level 3.`;
+          log += ` ⚠️ Only available in level 3! VITALITY GAIN V30 requires Level 3.`;
           return { newAttackerState, newDefenderState, log };
         }
       } else if (cardName.includes('V40')) {
@@ -995,7 +998,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         requiredLevel = 4;
         // Vitality V40 can ONLY be used at level 4 (AI Breakdowns line 355)
         if (currentLevel < requiredLevel) {
-          log += ` âš ï¸ Only available in level 4! VITALITY GAIN V40 requires Level 4.`;
+          log += ` ⚠️ Only available in level 4! VITALITY GAIN V40 requires Level 4.`;
           return { newAttackerState, newDefenderState, log };
         }
       }
@@ -1021,7 +1024,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       // Update maxHp to the canonical cap for the active level
       newAttackerState.maxHp = getCanonicalLevelCap(charKey, newAttackerState.level || 1);
 
-      log += ` âœ¨ Vitality expanded! Restored +${vitAmount} HP. ${newAttackerState.name} is Level ${newAttackerState.level || 1}! (Current HP: ${newAttackerState.hp}/${newAttackerState.maxHp})`;
+      log += ` ✨ Vitality expanded! Restored +${vitAmount} HP. ${newAttackerState.name} is Level ${newAttackerState.level || 1}! (Current HP: ${newAttackerState.hp}/${newAttackerState.maxHp})`;
     }
   }
   // 6c. REVIVE CARD (Bring defeated player back into game)
@@ -1035,7 +1038,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       newAttackerState.hp = Math.max(1, reviveHP);
       newAttackerState.maxHp = lvlCap;
       newAttackerState.isDefeated = false;
-      log += ` ðŸŒŸ ${newAttackerState.name} was REVIVED! Restored to ${reviveHP} HP (50% of Level ${currentLevel} max).`;
+      log += ` 🌟 ${newAttackerState.name} was REVIVED! Restored to ${reviveHP} HP (50% of Level ${currentLevel} max).`;
     } else {
       log += ` REVIVE card failed! ${newAttackerState.name} is not defeated. Card wasted.`;
     }
@@ -1136,20 +1139,22 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     // Per official rules: Available for attacker after they have rolled their dice, and available for defender after the attacker rolls their dice
     // Requires character's Retreat Speed stat - must roll >= that value on 1d6
     
-    // Get attacker's character to check retreat speed
+    // Get attacker's character to check retreat points (RP)
+    // Per official rules (lines 67-73): Higher RP makes retreat easier (RP 5 -> 1+, RP 2 -> 4+). Formula: roll >= max(1, 6 - RP)
     const attackerCharData = attackerChar || KONTROLA_CHARACTERS[newAttackerState.characterId || 'chynaman'];
-    const retreatSpeedReq = attackerCharData?.retreatSpeed || 1;
+    const charRP = attackerCharData?.retreatSpeed || attackerCharData?.rp || 1;
+    const targetRollReq = Math.max(1, 6 - charRP);
     
     // Roll 1 die
     const retreatRoll = rollDice(1);
-    const retreatSuccess = retreatRoll.total >= retreatSpeedReq;
+    const retreatSuccess = retreatRoll.total >= targetRollReq;
     
     if (retreatSuccess) {
-      log += ` 💨 RETREAT SUCCESS! ${newAttackerState.name} rolled ${retreatRoll.total} (${retreatSpeedReq}+) and escaped combat without taking damage!`;
+      log += ` 💨 RETREAT SUCCESS! ${newAttackerState.name} rolled ${retreatRoll.total} (needed ${targetRollReq}+ with RP ${charRP}) and escaped combat without taking damage!`;
       newAttackerState.retreatedThisTurn = true;
       return { newAttackerState, newDefenderState, log, retreatSuccess: true };
     } else {
-      log += ` 💨 RETREAT FAILED! ${newAttackerState.name} rolled ${retreatRoll.total} (needed ${retreatSpeedReq}+). Combat continues!`;
+      log += ` 💨 RETREAT FAILED! ${newAttackerState.name} rolled ${retreatRoll.total} (needed ${targetRollReq}+ with RP ${charRP}). Combat continues!`;
       return { newAttackerState, newDefenderState, log, retreatSuccess: false };
     }
   }
@@ -1227,5 +1232,4 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     aoeSplitDamage: aoeSplitDamage || false // Flag for 1vAll damage splitting
   };
 };
-
 

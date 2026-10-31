@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Wifi, Swords, Shield, Skull, Zap, ScrollText, MessageSquare,
@@ -4858,7 +4858,7 @@ export default function KontrolaArena() {
                         onClick={() => {
                           if (isCardLocked) {
                             playClick();
-                            showNotice(`ðŸ”’ Requires Level ${reqLvl}! (Current: Level ${pLevel}). Reach ${reqLvl === 2 ? '150 HP' : 'Level ' + reqLvl} first.`, 'warning');
+                            showNotice(`🔒 Requires Level ${reqLvl}! (Current: Level ${pLevel}). Reach ${reqLvl === 2 ? '150 HP' : 'Level ' + reqLvl} first.`, 'warning');
                             return;
                           }
                           if (isMyTurn && !isPendingSecondAttack) {
@@ -4882,7 +4882,7 @@ export default function KontrolaArena() {
                             zIndex: 10,
                             boxShadow: '0 2px 8px rgba(0,0,0,0.8)'
                           }}>
-                            <span style={{ fontSize: '11px' }}>ðŸ”’</span>
+                            <span style={{ fontSize: '11px' }}>🔒</span>
                             <span style={{ fontSize: '10px', color: '#FF7777', fontWeight: 'bold' }}>LVL {reqLvl}</span>
                           </div>
                         )}
@@ -6094,7 +6094,7 @@ export default function KontrolaArena() {
             userSelect: 'none',
             touchAction: 'none'
           }}
-          title={!isMusicPlayerOpen ? 'Click to open playlist â€¢ Drag to move' : undefined}
+          title={!isMusicPlayerOpen ? 'Click to open playlist • Drag to move' : undefined}
         >
           {/* Minimized Pill View */}
           {!isMusicPlayerOpen ? (
