@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Wifi, Swords, Shield, Skull, Zap, ScrollText, MessageSquare,
@@ -233,9 +233,7 @@ export default function KontrolaArena() {
   };
 
   const [musicPlayerPos, setMusicPlayerPos] = useState(() => {
-    const defaultX = typeof window !== 'undefined' ? Math.max(20, window.innerWidth - 160) : 100;
-    const defaultY = typeof window !== 'undefined' ? Math.max(80, window.innerHeight - 150) : 100;
-    return { x: defaultX, y: defaultY };
+    return { x: 24, y: 76 };
   });
   const [isDraggingMusic, setIsDraggingMusic] = useState(false);
   const musicDragRef = useRef({ startX: 0, startY: 0, origX: 0, origY: 0, hasMoved: false });
@@ -1096,7 +1094,7 @@ export default function KontrolaArena() {
           const { actionType, actionName, dmgDealt, healDelta, visionData, triggerXChange, triggerRevivePrompt } = event.payload || {};
 
           // Handle Vision Reveal for the player who played it
-          if (visionData && visionData.actorId === playerIdRef.current) {
+          if (visionData) {
             setRevealedVision(visionData);
           }
 
@@ -1474,8 +1472,9 @@ export default function KontrolaArena() {
                 ...template,
                 name: customName || template.name,
                 playerId: pId,
-                hp: template.baseHP || 100,  // Use correct starting HP from character baseHP
-                maxHp: template.maxHP || 200,  // Keep maxHP for reference
+                hp: template.hp || template.baseHP || 100,
+                maxHp: template.maxHp || 100,
+                level: 1,
                 shield: 0,
                 energyTokens: 5,
                 crystals: startingCrystals,
@@ -1553,8 +1552,13 @@ export default function KontrolaArena() {
           return -1;
         };
 
-        const giveIdx = findCardIndex(actorHand, giveCard);
-        const takeIdx = findCardIndex(targetHand, takeCard);
+        const giveIdx = findSafeCardIndex(actorHand, giveCard) !== -1 
+          ? findSafeCardIndex(actorHand, giveCard)
+          : actorHand.findIndex(c => getSafeCardName(c) === getSafeCardName(giveCard));
+
+        const takeIdx = findSafeCardIndex(targetHand, takeCard) !== -1 
+          ? findSafeCardIndex(targetHand, takeCard)
+          : targetHand.findIndex(c => getSafeCardName(c) === getSafeCardName(takeCard));
 
         if (giveIdx !== -1 && takeIdx !== -1) {
           const [cardGiven] = actorHand.splice(giveIdx, 1);
@@ -1942,13 +1946,19 @@ export default function KontrolaArena() {
           return tieState;
         }
 
-        // Not a tie � now commit the ET cost
-        const cost = actionCard?.costET || (actionCard?.type === 'ATTACK' ? 1 : 0);
-        newAttackerState.energyTokens = Math.max(0, (newAttackerState.energyTokens || 5) - cost);
-
+        // Commit turn resolution
+        const attackSelectionUpper = (attackSelectionName || '').toUpperCase();
+        const isSpecialETHandled = attackSelectionUpper.includes('BLITZ') || attackSelectionUpper.includes('KONTROL');
+        
         newAttackerState = resolved.newAttackerState;
         newDefenderState = resolved.newDefenderState;
         log = resolved.log;
+        
+        // If not already deducted by special ability (Blitz -5 ET, Kontrol -3 ET), deduct standard card cost
+        if (!isSpecialETHandled) {
+          const cost = actionCard?.costET || (actionCard?.type === 'ATTACK' ? 1 : 0);
+          newAttackerState.energyTokens = Math.max(0, (newAttackerState.energyTokens || 5) - cost);
+        }
 
         if (resolved.stealActionCard && targetId && newDefenderHand && newDefenderHand.length > 0) {
           const randIdx = Math.floor(Math.random() * newDefenderHand.length);
@@ -1994,7 +2004,7 @@ export default function KontrolaArena() {
             }
           }
 
-          if (visionData && visionData.actorId === playerIdRef.current) {
+          if (visionData) {
             setRevealedVision(visionData);
           }
 
@@ -2703,7 +2713,7 @@ export default function KontrolaArena() {
     const isDrain = cardName.includes('DRAIN');
     const isBackStab = cardName.includes('BACK STAB');
     const isAttack = (selectedActionCard.type === 'ATTACK' || isBackStab) && !isTrap && !isDrain;
-    const isAoE = cardName.includes('BLITZ');
+    const isAoE = cardName.includes('BLITZ') || (selectedCharacterAttack && selectedCharacterAttack.includes('BLITZ'));
     const isLightning = cardName.includes('LIGHTNING');
     const isFireFlame = cardName.includes('FIRE FLAME');
     const isVampire = cardName.includes('VAMPIRE');
@@ -2721,10 +2731,18 @@ export default function KontrolaArena() {
       isTrap
     });
 
-    // Level check for Vitality Gain V20 (requires reaching 150 HP / Level 2)
-    const isLevel2 = (myCharacter?.hp || 0) >= 150 || (myCharacter?.level || 1) >= 2;
-    if (cardName.includes('VITALITY GAIN V20') && !isLevel2) {
-      showNotice('Only available in level 2 (requires 150 HP)', 'warning');
+    // Level check for Vitality Gain cards (V20 -> Level 2, V30 -> Level 3, V40 -> Level 4)
+    const currentVLevel = myCharacter?.level || (myCharacter?.hp >= 200 ? 3 : (myCharacter?.hp >= 150 ? 2 : 1));
+    if (cardName.includes('V20') && currentVLevel < 2) {
+      showNotice('Only available in level 2! Vitality Gain V20 requires reaching 150 HP (Level 2).', 'warning');
+      return;
+    }
+    if (cardName.includes('V30') && currentVLevel < 3) {
+      showNotice('Only available in level 3! Vitality Gain V30 requires reaching 200 HP (Level 3).', 'warning');
+      return;
+    }
+    if (cardName.includes('V40') && currentVLevel < 4) {
+      showNotice('Only available in level 4! Vitality Gain V40 requires reaching Level 4.', 'warning');
       return;
     }
 
@@ -2757,7 +2775,14 @@ export default function KontrolaArena() {
 
     if (isAttack) {
       if (isAoE) {
-        const targetChar = gameState.characterStates[selectedTargetId];
+        // Synthesize valid defender object for AoE so 3D Dice screen never crashes on undefined target
+        const targetChar = (selectedTargetId && gameState.characterStates[selectedTargetId]) ? gameState.characterStates[selectedTargetId] : {
+          id: 'ALL',
+          name: 'ALL OPPONENTS',
+          image: 'Kontrolla_Data/Graphics/CARDS/SHIELD ADVANCE +100HP CARD.png',
+          themeColor: '#FF9900',
+          mind: 3
+        };
         const precalculatedRolls = {};
         const clashData = {
           ...payload,
@@ -2765,9 +2790,8 @@ export default function KontrolaArena() {
           defender: targetChar,
           attackerId: playerId,
           attackerPlayerName: myCharacter.name,
-          defenderPlayerName: 'ALL',
+          defenderPlayerName: 'ALL OPPONENTS',
           precalculatedRolls,
-          // FIX: Add explicit role assignments for AoE attacks
           attackerPlayerId: playerId,
           defenderPlayerId: 'ALL'
         };
@@ -4810,24 +4834,60 @@ export default function KontrolaArena() {
                     const cardArt = getCardGraphicUrl(cName, myCharacter?.id);
                     const cardObj = typeof card === 'object' ? card : { id: cId, name: cName, type: cType, costET: cCost };
                     
+                    // Level Lock Verification (Feedback Lines 6 & 15, AI Breakdowns Lines 346-356)
+                    const pLevel = activePlayerState?.level || (activePlayerState?.hp >= 150 ? 2 : 1);
+                    const upperCardName = cName.toUpperCase();
+                    const isV20Locked = upperCardName.includes('VITALITY') && upperCardName.includes('V20') && pLevel < 2;
+                    const isV30Locked = upperCardName.includes('VITALITY') && upperCardName.includes('V30') && pLevel < 3;
+                    const isV40Locked = upperCardName.includes('VITALITY') && upperCardName.includes('V40') && pLevel < 4;
+                    const isCardLocked = isV20Locked || isV30Locked || isV40Locked;
+                    const reqLvl = isV20Locked ? 2 : isV30Locked ? 3 : isV40Locked ? 4 : null;
+                    
                     return (
                       <div 
                         key={cId} 
-                        className={`uno-action-card ${isSelected ? 'selected' : ''}`}
+                        className={`uno-action-card ${isSelected ? 'selected' : ''} ${isCardLocked ? 'locked-level-card' : ''}`}
                         style={{
                           transform: `rotate(${rotation}deg) translateY(${yOffset}px)`,
                           zIndex: isSelected ? 100 : index,
-                          marginLeft: index === 0 ? '0' : '-25px'
+                          marginLeft: index === 0 ? '0' : '-25px',
+                          opacity: isCardLocked ? 0.55 : 1,
+                          position: 'relative',
+                          filter: isCardLocked ? 'grayscale(0.4)' : 'none'
                         }}
                         onClick={() => {
+                          if (isCardLocked) {
+                            playClick();
+                            showNotice(`ðŸ”’ Requires Level ${reqLvl}! (Current: Level ${pLevel}). Reach ${reqLvl === 2 ? '150 HP' : 'Level ' + reqLvl} first.`, 'warning');
+                            return;
+                          }
                           if (isMyTurn && !isPendingSecondAttack) {
                             playClick();
                             setSelectedActionCard(cardObj);
                           }
                         }}
                       >
+                        {isCardLocked && (
+                          <div style={{
+                            position: 'absolute',
+                            top: '8px',
+                            right: '8px',
+                            background: 'rgba(0, 0, 0, 0.85)',
+                            border: '1px solid #FF4444',
+                            borderRadius: '6px',
+                            padding: '2px 6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            zIndex: 10,
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.8)'
+                          }}>
+                            <span style={{ fontSize: '11px' }}>ðŸ”’</span>
+                            <span style={{ fontSize: '10px', color: '#FF7777', fontWeight: 'bold' }}>LVL {reqLvl}</span>
+                          </div>
+                        )}
                         <div className="uno-card-art">
-                          <img src={cardArt} alt={cName} />
+                          <img src={cardArt} alt={cName} loading="eager" decoding="async" />
                         </div>
                         <div className="uno-card-info">
                           <div className="uno-card-title">{cName}</div>
@@ -5934,7 +5994,7 @@ export default function KontrolaArena() {
                 </div>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', overflowY: 'auto', maxHeight: '55vh', paddingRight: '4px' }}>
-                  {revealedVision.cards.filter(Boolean).map((c, i) => {
+                  {(Array.isArray(revealedVision?.cards) ? revealedVision.cards.filter(Boolean) : []).map((c, i) => {
                     const cardName = typeof c === 'string' ? c : (c?.name || 'Action Card');
                     const cardType = typeof c === 'object' ? (c?.type || 'ACTION') : 'ACTION';
                     const cardOwner = typeof c === 'object' ? c?.ownerName : null;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { soundFX } from '../utils/audio';
 import { Dices, Shield, Swords, Check, Zap, X, Sparkles, AlertCircle, Clock, Eye, RotateCcw } from 'lucide-react';
 import { getCardGraphicUrl, getCharacterAttackGraphicUrl } from './kontrolaAssets';
@@ -1222,7 +1222,7 @@ export default function KontrolaDiceRoller({
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
                     {/* Doubles Re-Roll Bonus Option */}
-                    {((attackerFateCard && isAttacker) || (defenderFateCard && isDefender) || ((attackerFateCard || defenderFateCard) && isHost)) && (
+                    {((attackerFateCard && isAttacker) || (defenderFateCard && isDefender) || ((attackerFateCard || defenderFateCard) && isHost)) && !resolvedCardName?.includes('FIRE FLAME') && !resolvedCardName?.includes('LIGHTNING') && (
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center' }}>
                         <button
                           onClick={handleReRoll}

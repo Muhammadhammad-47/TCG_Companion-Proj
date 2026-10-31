@@ -1,4 +1,4 @@
-// TCG Companion — Kontrola Rule Engine
+﻿// TCG Companion — Kontrola Rule Engine
 // Validated against Kontrolla_Data/Docs (Rules & Regulations, AI Breakdowns, Action Cards CSV)
 
 export const KONTROLA_CHARACTERS = {
@@ -151,6 +151,25 @@ export const KONTROLA_CHARACTERS = {
   }
 };
 
+// Canonical Character HP Progression Table by Level
+// Verbatim from Kontrolla_Data/Docs/?? TCG Companion AI Breakdowns.txt (Lines 358-364)
+export const LEVEL_HP_TABLE = {
+  chynaman: { 1: 100, 2: 200, 3: 300, 4: 400 },
+  kiko:     { 1: 100, 2: 200, 3: 300, 4: 400 },
+  shroomy:  { 1: 65,  2: 130, 3: 260, 4: 320 },
+  bee:      { 1: 70,  2: 140, 3: 280, 4: 360 },
+  katsumi:  { 1: 100, 2: 200, 3: 300, 4: 400 },
+  poochi:   { 1: 70,  2: 140, 3: 280, 4: 360 },
+  queeny:   { 1: 100, 2: 200, 3: 300, 4: 400 }
+};
+
+export const getCanonicalLevelCap = (charId, level = 1) => {
+  const key = (charId || 'chynaman').toLowerCase();
+  const caps = LEVEL_HP_TABLE[key] || LEVEL_HP_TABLE.chynaman;
+  const lvl = Math.max(1, Math.min(4, Number(level) || 1));
+  return caps[lvl] || caps[1];
+};
+
 // 100-Card Basic Blueprint from Action Cards % - Sheet1.csv
 export const ACTION_CARDS_BASIC = [
   { name: 'ATTACK X1', type: 'ATTACK', count: 21, costET: 1, desc: 'Standard combat attack with paired character move.' },
@@ -210,7 +229,6 @@ export const ACTION_CARDS_PREMIUM = [
   { name: '+DEFENCE D20', type: 'DEFENSE', count: 4, costET: 0, desc: '+20 Defense points.' },
   { name: 'X-CHANGE FULL', type: 'OTHERS', count: 2, costET: 0, desc: 'Exchange cards with all opponents.' },
   { name: 'FIRE INFERNO LOCK', type: 'ATTACK', count: 1, costET: 1, desc: 'Burns with spreading flames (-20 HP, spreads to neighbors, must roll doubles to extinguish, -5 HP/turn).' },
-  { name: 'ANIME EXPRESS TV', type: 'FLYER', count: 1, costET: 0, desc: 'Avoid any weaknesses while defending for one turn.' }
 ];
 
 export function shuffle(array) {
@@ -341,7 +359,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   
   const cardName = (typeof actionCard === 'string' ? actionCard : (actionCard?.name || '')).toUpperCase();
   const cardType = (typeof actionCard === 'object' && actionCard?.type) ? actionCard.type : (
-    ['ATTACK', 'LIGHTNING', 'FIRE', 'BACK STAB', 'VAMPIRE', 'DRAIN'].some(kw => cardName.includes(kw)) ? 'ATTACK' : 'OTHERS'
+    ['ATTACK', 'LIGHTNING', 'FIRE', 'BACK STAB'].some(kw => cardName.includes(kw)) ? 'ATTACK' : 'OTHERS'
   );
   let log = `${attackerState.name} played ${typeof actionCard === 'string' ? actionCard : (actionCard?.name || 'Action Card')}.`;
   let damage = 0;
@@ -397,8 +415,20 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   const isAttackerZombie = newAttackerState.poisonCount >= 5;
   const isDefenderZombie = newDefenderState?.poisonCount >= 5;
 
-  // 1. KONTROL CARD
-  if (cardName.includes('KONTROL') && newDefenderState) {
+  const selectedMoveUpper = (attackSelectionName || '').toUpperCase();
+  const isKontrolMove = cardName.includes('KONTROL') || selectedMoveUpper.includes('KONTROL');
+  const isBlitzMove = cardName.includes('BLITZ') || selectedMoveUpper.includes('BLITZ');
+
+  // 1. KONTROL ABILITY / CARD
+  if (isKontrolMove && newDefenderState) {
+    // Check ET cost (3 ET required per Rules line 39)
+    if ((newAttackerState.energyTokens || 0) < 3) {
+      log +=  âš ï¸ KONTROL requires 3 Energy Tokens! You have  ET. Cannot activate.;
+      return { newAttackerState, newDefenderState, log, cardBlocked: true };
+    }
+
+    // Deduct 3 ET
+    newAttackerState.energyTokens = Math.max(0, (newAttackerState.energyTokens || 0) - 3);
     // Check cooldown
     if (newAttackerState.kontrolCooldown > 0) {
       log += ` ⏸️ KONTROL on cooldown! ${newAttackerState.kontrolCooldown} more turn(s) before available.`;
@@ -485,7 +515,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     return { newAttackerState, newDefenderState, log };
   }
   // 2. SAIGO NO BLITZ (200 AP)
-  else if (cardName.includes('BLITZ')) {
+  else if (isBlitzMove) {
     // Official Rule: Requires HP < 50 AND 5 Energy Tokens
     
     // Check cooldown
@@ -513,7 +543,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     }
 
     // Deduct 5 ET cost
-    newAttackerState.energyTokens = Math.max(0, newAttackerState.energyTokens - 5);
+    newAttackerState.energyTokens = Math.max(0, (newAttackerState.energyTokens || 0) - 5);
     
     // Sacrifice 50% of current HP
     const selfSacrifice = Math.floor(newAttackerState.hp * 0.5);
@@ -543,14 +573,20 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       newAttackerState.hasBoomerang = true;
       log += ` Boomerang Trap set! Next successful attack against you will be reflected 100%.`;
       return { newAttackerState, newDefenderState, log };
-    } else if (cardName === 'MISDIRECT') {
-      // NOTE: MISDIRECT is documented as an active response card (defender plays during opponent's attack)
-      // Current implementation treats it as a passive trap set by attacker
-      // TODO: Redesign as active response during attack phase when response mechanics are implemented
-      newAttackerState.hasMisdirect = true;
-      log += ` ⚠️ MISDIRECT set! (Note: Redesign needed - should be defender response card per documentation)`;
-      return { newAttackerState, newDefenderState, log };
-    }
+    } else if (cardName.includes('MISDIRECT')) {
+      // MISDIRECT: 2d6 vs 2d6 Clash
+      // On win: grants attack redirection capability
+      // On failure: attacking player takes -20 HP penalty
+      const misdirectWin = adjustedAttackerRoll > adjustedDefenderRoll;
+      if (misdirectWin) {
+        newAttackerState.canRedirectAttack = true;
+        log +=  ðŸªž MISDIRECT SUCCESS! ( vs ).  can redirect opponent's pending attack!;
+        return { newAttackerState, newDefenderState, log, triggerRedirectModal: true };
+      } else {
+        newAttackerState.hp = Math.max(0, newAttackerState.hp - 20);
+        log +=  ðŸªž MISDIRECT FAILED! ( vs ).  suffered -20 HP failure backlash!;
+        return { newAttackerState, newDefenderState, log, misdirectFailed: true };
+      }
 
     let baseAP = 15;
     let attackElement = 'Physical';
@@ -558,6 +594,16 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     if (cardName.includes('LIGHTNING')) {
       baseAP = cardName.includes('X2') ? 20 : 10;
       attackElement = 'Lightning';
+    } else if (cardName.includes('BACK STAB')) {
+      baseAP = 35;
+      attackElement = 'Shadow';
+      if (newAttackerState.allianceId && newAttackerState.allianceId === newDefenderState?.id) {
+        newAttackerState.allianceId = null;
+        if (newDefenderState) newDefenderState.allianceId = null;
+        log +=  ðŸ—¡ï¸ BACK STAB BETRAYAL!  betrayed their Soul Alliance with  and ambushed them!;
+      } else {
+        log +=  ðŸ—¡ï¸ [BACK STAB: Shadow ambush dealing  AP];
+      }
       log += ` [${cardName}: Elemental Lightning strike dealing ${baseAP} AP]`;
     } else if (cardName.includes('FIRE FLAME')) {
       const isX2 = cardName.includes('X2');
@@ -734,7 +780,8 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           }
           newDefenderState.hasDodge = false;
         } else if (newDefenderState.hasBoomerang) {
-          if (defenderRoll.total >= 6) {
+          const defenseWon = adjustedDefenderRoll >= adjustedAttackerRoll;
+          if (defenseWon) {
             log += ` 🪃 BOOMERANG TRIGGERED! ${newDefenderState.name} rolled ${defenderRoll.total} (6+)! ${newAttackerState.name}'s attack reflected 100% back and loses next turn!`;
             newAttackerState.hp = Math.max(0, newAttackerState.hp - finalDamage);
             newAttackerState.sleepTurns = (newAttackerState.sleepTurns || 0) + 1;  // Attacker loses next turn
@@ -893,78 +940,102 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       newAttackerState.hp = Math.min(newAttackerState.maxHp || 100, newAttackerState.hp + 20);
     }
   }
-  // 6. HEAL CARDS (Strictly capped at maxHp - cannot overheal)
+  // 6. HEAL CARDS (Strictly capped at current level max HP - cannot overheal or level up)
   else if (cardName.includes('HEAL')) {
     let healAmount = 10;
     if (cardName.includes('H20')) healAmount = 20;
     else if (cardName.includes('H30')) healAmount = 30;
     else if (cardName.includes('H40')) healAmount = 40;
     
-    const maxAllowed = newAttackerState.poisonCount >= 5 ? 40 : (newAttackerState.maxHp || 100);
+    const charKey = (newAttackerState.characterId || newAttackerState.id || '').toLowerCase();
+    const currentLvl = newAttackerState.level || (newAttackerState.hp >= 150 ? 2 : 1);
+    const lvlCap = getCanonicalLevelCap(charKey, currentLvl);
+    const maxAllowed = newAttackerState.poisonCount >= 5 ? 40 : lvlCap;
+
     if (newAttackerState.hp >= maxAllowed) {
-      log += ` HP already at maximum capacity (${maxAllowed} HP). Heal card used but cannot overheal.`;
+      log += ` HP already at maximum capacity for Level ${currentLvl} (${maxAllowed} HP). Heal card used but cannot overheal or level up.`;
     } else {
       newAttackerState.hp = Math.min(maxAllowed, newAttackerState.hp + healAmount);
       log += ` Restored +${healAmount} HP. (Current HP: ${newAttackerState.hp}/${maxAllowed})`;
     }
   }
-  // 6b. VITALITY GAIN CARDS (Increases maxHp and allows HP to exceed 100)
+  // 6b. VITALITY GAIN CARDS (Expands vitality and raises HP toward level up thresholds)
+  // Rules line 79: Level UP: Players may not use their level 2 cards until they raise their health point to 150.
+  // Once a player has leveled up to 2+ He or she may use their level 1 attacks. Their HP will not go down unless they are attacked.
   else if (cardName.includes('VITALITY')) {
     if (newAttackerState.poisonCount >= 5) {
       log += ` Zombies cannot gain Vitality! The card has no effect on undead forms.`;
     } else {
+      const charKey = (newAttackerState.characterId || newAttackerState.id || '').toLowerCase();
+      const currentLevel = newAttackerState.level || (newAttackerState.hp >= 150 ? 2 : 1);
       let vitAmount = 10;
       let requiredLevel = 1;
-      let nextLevel = null;
-
-      const currentLevel = (newAttackerState.hp >= 150 || (newAttackerState.level || 1) >= 2) ? 2 : 1;
 
       if (cardName.includes('V10')) {
         vitAmount = 10;
-        // Vitality V10 is usable in Level 1 and Level 2
+        // Vitality V10 is playable at Level 1 & 2 to build toward 150 HP threshold
       } else if (cardName.includes('V20')) {
         vitAmount = 20;
         requiredLevel = 2;
-        // Vitality V20 is for Level 2 (when player reaches 150 HP)
+        // Vitality V20 can ONLY be used at level 2 (Feedback line 15 & AI Breakdowns line 347)
         if (currentLevel < requiredLevel) {
-          log += ` ⚠️ Only available in level 2! VITALITY GAIN V20 requires reaching 150 HP (Level 2). Use Vitality V10 to level up first.`;
+          log += ` âš ï¸ Only available in level 2! VITALITY GAIN V20 requires reaching 150 HP (Level 2). Use Vitality V10 to level up first.`;
           return { newAttackerState, newDefenderState, log };
         }
       } else if (cardName.includes('V30')) {
-        vitAmount = 30;
+        vitAmount = 20;
         requiredLevel = 3;
-        if ((newAttackerState.level || 1) < requiredLevel && (newAttackerState.maxHp || 100) < 180) {
-          log += ` ⚠️ Only available in level 3! VITALITY GAIN V30 requires Level 3.`;
+        // Vitality V30 can ONLY be used at level 3 (Feedback line 6 & AI Breakdowns line 351)
+        if (currentLevel < requiredLevel) {
+          log += ` âš ï¸ Only available in level 3! VITALITY GAIN V30 requires Level 3.`;
           return { newAttackerState, newDefenderState, log };
         }
       } else if (cardName.includes('V40')) {
-        vitAmount = 40;
+        vitAmount = 20;
         requiredLevel = 4;
-        if ((newAttackerState.level || 1) < requiredLevel && (newAttackerState.maxHp || 100) < 200) {
-          log += ` ⚠️ Only available in level 4! VITALITY GAIN V40 requires Level 4.`;
+        // Vitality V40 can ONLY be used at level 4 (AI Breakdowns line 355)
+        if (currentLevel < requiredLevel) {
+          log += ` âš ï¸ Only available in level 4! VITALITY GAIN V40 requires Level 4.`;
           return { newAttackerState, newDefenderState, log };
         }
       }
 
-      // Apply vitality gain and level up
-      newAttackerState.maxHp = (newAttackerState.maxHp || 100) + vitAmount;
+      // Apply vitality HP gain
       newAttackerState.hp += vitAmount;
+
+      // Check for level progression:
+      // Level 1 -> Level 2: Requires raising HP to 150 (Rules line 79)
       if (newAttackerState.hp >= 150 && (newAttackerState.level || 1) < 2) {
         newAttackerState.level = 2;
       }
-      
-      log += ` 🌟 Vitality expanded! Max HP +${vitAmount}. ${newAttackerState.name} leveled up to Level ${newAttackerState.level}! (Current HP: ${newAttackerState.hp}/${newAttackerState.maxHp})`;
+      // Level 2 -> Level 3: Reaching 200 HP threshold
+      if (newAttackerState.hp >= 200 && (newAttackerState.level || 1) < 3) {
+        newAttackerState.level = 3;
+      }
+      // Level 3 -> Level 4: Reaching 300 HP threshold (or 260 for Shroomy, 280 for Bee/Poochi)
+      const l4Threshold = (charKey === 'shroomy' ? 260 : (charKey === 'bee' || charKey === 'poochi' ? 280 : 300));
+      if (newAttackerState.hp >= l4Threshold && (newAttackerState.level || 1) < 4) {
+        newAttackerState.level = 4;
+      }
+
+      // Update maxHp to the canonical cap for the active level
+      newAttackerState.maxHp = getCanonicalLevelCap(charKey, newAttackerState.level || 1);
+
+      log += ` âœ¨ Vitality expanded! Restored +${vitAmount} HP. ${newAttackerState.name} is Level ${newAttackerState.level || 1}! (Current HP: ${newAttackerState.hp}/${newAttackerState.maxHp})`;
     }
   }
   // 6c. REVIVE CARD (Bring defeated player back into game)
   else if (cardName.includes('REVIVE')) {
     // Check if attacker is defeated
     if (newAttackerState.hp <= 0 || newAttackerState.isDefeated) {
-      // Restore attacker to 50% of max HP (per official rules)
-      const reviveHP = Math.floor((newAttackerState.maxHp || 100) * 0.5);
+      const charKey = (newAttackerState.characterId || newAttackerState.id || '').toLowerCase();
+      const currentLevel = newAttackerState.level || 1;
+      const lvlCap = getCanonicalLevelCap(charKey, currentLevel);
+      const reviveHP = Math.floor(lvlCap * 0.5);
       newAttackerState.hp = Math.max(1, reviveHP);
+      newAttackerState.maxHp = lvlCap;
       newAttackerState.isDefeated = false;
-      log += ` ${newAttackerState.name} was REVIVED! Restored to ${reviveHP} HP (50% of max).`;
+      log += ` ðŸŒŸ ${newAttackerState.name} was REVIVED! Restored to ${reviveHP} HP (50% of Level ${currentLevel} max).`;
     } else {
       log += ` REVIVE card failed! ${newAttackerState.name} is not defeated. Card wasted.`;
     }

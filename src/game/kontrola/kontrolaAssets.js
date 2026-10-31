@@ -1,4 +1,4 @@
-// TCG Companion — Official Kontrola Asset Resolver
+﻿// TCG Companion — Official Kontrola Asset Resolver
 // Resolves authentic high-res cards from public/Kontrolla_Data/Graphics
 
 export const getBaseUrl = () => {
@@ -33,7 +33,11 @@ const ACTION_CARD_IMAGE_MAP = {
   'POISON X2': 'ACTION CARDS/BASIC/POISON X2 CARD.png',
   'RETREAT': 'ACTION CARDS/BASIC/RETREAT BASIC CARD.png',
   'REVIVE': 'ACTION CARDS/BASIC/REVIVE CARD.png',
+    'SHIELD BASIC': 'ACTION CARDS/BASIC/SHIELD BASIC +25HP CARD.png',
+  'SHIELD BASIC +20': 'ACTION CARDS/BASIC/SHIELD BASIC +25HP CARD.png',
+  'SHIELD BASIC +25': 'ACTION CARDS/BASIC/SHIELD BASIC +25HP CARD.png',
   'SHIELD BASIC +25 HP': 'ACTION CARDS/BASIC/SHIELD BASIC +25HP CARD.png',
+  'SHIELD BASIC + 25HP': 'ACTION CARDS/BASIC/SHIELD BASIC +25HP CARD.png',
   'SLEEPY X1': 'ACTION CARDS/BASIC/SLEEPY X1 CARD.png',
   'SOUL ALLIANCE': 'ACTION CARDS/BASIC/SOUL ALLIANCE CARD.png',
   'STABILITY CRYSTAL': 'ACTION CARDS/BASIC/STABILITY CRYSTAL CARD.png',
@@ -52,7 +56,7 @@ const ACTION_CARD_IMAGE_MAP = {
   'BACK STAB': 'ACTION CARDS/PREMIUM/BACK STAB CARD.png',
   'DEFENCE FULL GUARD': 'ACTION CARDS/PREMIUM/DEFENCE FULL GUARD CARD.png',
   'DODGE - COUNTER': 'ACTION CARDS/PREMIUM/DODGE COUNTER CARD.png',
-  'DRAIN': 'ACTION CARDS/PREMIUM/DRAIN CARD.png',
+  'DRAIN': 'ACTION CARDS/PREMIUM/DRAIN BASIC CARD.png',
   'FIRE FLAME INFERNO LOCK': 'ACTION CARDS/PREMIUM/FIRE FLAME INFERNO LOCK.png',
   'FIRE FLAME X2': 'ACTION CARDS/PREMIUM/FIRE FLAME X2 CARD.png',
   'FREEZE X2': 'ACTION CARDS/PREMIUM/FREEZE X2 CARD.png',
@@ -154,33 +158,33 @@ export const getCardGraphicUrl = (cardName, characterId = null) => {
   // Check if it's Blitz
   if (cleanName.includes('BLITZ') || cleanName.includes('SAIGO')) {
     const blitzPath = BLITZ_CARD_MAP[characterId?.toLowerCase()] || BLITZ_CARD_MAP.chyna;
-    return encodeURI(`${getBaseUrl()}Kontrolla_Data/Graphics/${blitzPath}`);
+    return `${getBaseUrl()}Kontrolla_Data/Graphics/${blitzPath}`;
   }
 
   // Check if it's Kontrol
   if (cleanName.includes('KONTROL')) {
     const kontrolPath = KONTROL_CARD_MAP[characterId?.toLowerCase()] || KONTROL_CARD_MAP.chyna;
-    return encodeURI(`${getBaseUrl()}Kontrolla_Data/Graphics/${kontrolPath}`);
+    return `${getBaseUrl()}Kontrolla_Data/Graphics/${kontrolPath}`;
   }
 
   // Check if it's FLYER card
   if (cleanName.includes('ANIME EXPRESS') || cleanName.includes('FLYER')) {
     const flyerPath = FLYER_CARD_MAP['ANIME EXPRESS TV'];
-    return encodeURI(`${getBaseUrl()}Kontrolla_Data/Graphics/${flyerPath}`);
+    return `${getBaseUrl()}Kontrolla_Data/Graphics/${flyerPath}`;
   }
 
   // Check direct Action Card Map
   if (ACTION_CARD_IMAGE_MAP[cleanName]) {
-    return encodeURI(`${getBaseUrl()}Kontrolla_Data/Graphics/${ACTION_CARD_IMAGE_MAP[cleanName]}`);
+    return `${getBaseUrl()}Kontrolla_Data/Graphics/${ACTION_CARD_IMAGE_MAP[cleanName]}`;
   }
 
   // Check if it's a character combat move
   if (REGULAR_ATTACK_CARD_MAP[cleanName]) {
-    return encodeURI(`${getBaseUrl()}Kontrolla_Data/Graphics/${REGULAR_ATTACK_CARD_MAP[cleanName]}`);
+    return `${getBaseUrl()}Kontrolla_Data/Graphics/${REGULAR_ATTACK_CARD_MAP[cleanName]}`;
   }
 
   // Fallback to basic attack card
-  return encodeURI(`${getBaseUrl()}Kontrolla_Data/Graphics/ACTION CARDS/BASIC/ATTACK X1 CARD.png`);
+  return `${getBaseUrl()}Kontrolla_Data/Graphics/ACTION CARDS/BASIC/ATTACK X1 CARD.png`;
 };
 
 export const getCharacterAttackGraphicUrl = (attackName) => {
@@ -188,12 +192,12 @@ export const getCharacterAttackGraphicUrl = (attackName) => {
   const cleanName = attackName.trim().toUpperCase();
   const rel = REGULAR_ATTACK_CARD_MAP[cleanName];
   if (rel) {
-    return encodeURI(`${getBaseUrl()}Kontrolla_Data/Graphics/${rel}`);
+    return `${getBaseUrl()}Kontrolla_Data/Graphics/${rel}`;
   }
-  return encodeURI(`${getBaseUrl()}Kontrolla_Data/Graphics/ACTION CARDS/BASIC/ATTACK X1 CARD.png`);
+  return `${getBaseUrl()}Kontrolla_Data/Graphics/ACTION CARDS/BASIC/ATTACK X1 CARD.png`;
 };
 
 export const getWildCardGraphicUrl = (characterId) => {
   const rel = WILD_CARD_MAP[characterId?.toLowerCase()] || WILD_CARD_MAP.chyna;
-  return encodeURI(`${getBaseUrl()}Kontrolla_Data/Graphics/${rel}`);
+  return `${getBaseUrl()}Kontrolla_Data/Graphics/${rel}`;
 };
