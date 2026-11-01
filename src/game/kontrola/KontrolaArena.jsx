@@ -2732,7 +2732,7 @@ export default function KontrolaArena() {
     });
 
     // Level check for Vitality Gain cards (V20 -> Level 2, V30 -> Level 3, V40 -> Level 4)
-    const currentVLevel = myCharacter?.level || (myCharacter?.hp >= 200 ? 3 : (myCharacter?.hp >= 150 ? 2 : 1));
+    const currentVLevel = myCharacter?.level || (myCharacter?.hp >= 300 ? 4 : (myCharacter?.hp >= 200 ? 3 : (myCharacter?.hp >= 150 ? 2 : 1)));
     if (cardName.includes('V20') && currentVLevel < 2) {
       showNotice('Only available in level 2! Vitality Gain V20 requires reaching 150 HP (Level 2).', 'warning');
       return;
@@ -2789,7 +2789,7 @@ export default function KontrolaArena() {
           attacker: myCharacter,
           defender: targetChar,
           attackerId: playerId,
-          attackerPlayerName: myCharacter.name,
+          attackerPlayerName: myCharacter?.name || playerName || 'Attacker',
           defenderPlayerName: 'ALL OPPONENTS',
           precalculatedRolls,
           attackerPlayerId: playerId,
@@ -2816,7 +2816,7 @@ export default function KontrolaArena() {
           attacker: myCharacter,
           defender: targetChar,
           attackerId: playerId,
-          attackerPlayerName: myCharacter.name,
+          attackerPlayerName: myCharacter?.name || playerName || 'Attacker',
           defenderPlayerName: targetChar?.name || 'Defender'
         };
         
@@ -4835,7 +4835,7 @@ export default function KontrolaArena() {
                     const cardObj = typeof card === 'object' ? card : { id: cId, name: cName, type: cType, costET: cCost };
                     
                     // Level Lock Verification (Feedback Lines 6 & 15, AI Breakdowns Lines 346-356)
-                    const pLevel = myCharacter?.level || (myCharacter?.hp >= 150 ? 2 : 1);
+                    const pLevel = myCharacter?.level || (myCharacter?.hp >= 300 ? 4 : (myCharacter?.hp >= 200 ? 3 : (myCharacter?.hp >= 150 ? 2 : 1)));
                     const upperCardName = cName.toUpperCase();
                     const isV20Locked = upperCardName.includes('VITALITY') && upperCardName.includes('V20') && pLevel < 2;
                     const isV30Locked = upperCardName.includes('VITALITY') && upperCardName.includes('V30') && pLevel < 3;

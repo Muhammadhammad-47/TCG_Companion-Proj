@@ -835,7 +835,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       // Innate Defense: Only applies if defender rolled 6+ AND no +DEFENCE card was used
       // Per official rules: "+DEFENCE Cards should be FIRST priority. Whatever the card says is what you go by, if the defender wins.
       // If the defender does not win, but receives 6+ on their dice roll. This will activate their Basic Defense available."
-      if (defenderRoll.total >= 6 && !newDefenderState?.hasDefendBasic) {
+      if (newDefenderState && defenderRoll.total >= 6 && !newDefenderState.hasDefendBasic) {
         const innateDP = newDefenderState?.innateDP ?? newDefenderState?.defaultDP ?? 10;
         finalDamage = Math.max(0, finalDamage - innateDP);
         log += ` Defender rolled ${defenderRoll.total} (6+)! Innate DP reduced damage by ${innateDP}!`;
