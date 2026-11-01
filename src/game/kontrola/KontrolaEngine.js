@@ -265,9 +265,10 @@ export const tradeWithAlly = (traderState, recipientState, tradeData) => {
     }
 
     // Transfer REVIVE card from trader to recipient
+    updatedTrader.actionCardsHand = [...(updatedTrader.actionCardsHand || [])];
     const reviveCard = updatedTrader.actionCardsHand[reviveIndex];
     updatedTrader.actionCardsHand.splice(reviveIndex, 1);
-    updatedRecipient.actionCardsHand = updatedRecipient.actionCardsHand || [];
+    updatedRecipient.actionCardsHand = [...(updatedRecipient.actionCardsHand || [])];
     updatedRecipient.actionCardsHand.push(reviveCard);
 
     log = `🤝 REVIVE TRADE: ${updatedTrader.name} traded REVIVE card to ${updatedRecipient.name}!`;
@@ -368,6 +369,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   let aoeDamage = 0;
   let aoeSplitDamage = false;
   let stealActionCard = false;
+  let revealTargetHand = false;
 
   let newAttackerState = { ...attackerState };
   let newDefenderState = defenderState ? { ...defenderState } : null;
@@ -615,7 +617,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       attackElement = 'Fire';
       
       // Check if attacker rolled doubles
-      const rolledDoubles = attackerRoll.rolls[0] === attackerRoll.rolls[1];
+      const rolledDoubles = !!(attackerRoll?.rolls && attackerRoll.rolls.length >= 2 && attackerRoll.rolls[0] === attackerRoll.rolls[1]);
       
       if (!rolledDoubles) {
         log += ` 🔥 FIRE FLAME failed (no doubles)! ${newAttackerState.name} takes ${failurePenalty} HP penalty!`;
@@ -645,18 +647,18 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
 
     // Clash Contest: Attacker 2 dice vs Defender 2 dice
     // Apply any dice penalties (e.g., from FREEZE cards)
-    let adjustedAttackerRoll = attackerRoll.total;
-    let adjustedDefenderRoll = defenderRoll.total;
+    let adjustedAttackerRoll = attackerRoll?.total || 0;
+    let adjustedDefenderRoll = defenderRoll?.total || 0;
     
     if (newDefenderState?.dicePenalty) {
       adjustedDefenderRoll = Math.max(0, adjustedDefenderRoll - newDefenderState.dicePenalty);
-      log += ` ❄️ FREEZE penalty: -${newDefenderState.dicePenalty} to defender roll! (${defenderRoll.total} - ${newDefenderState.dicePenalty} = ${adjustedDefenderRoll})`;
+      log += ` ❄️ FREEZE penalty: -${newDefenderState.dicePenalty} to defender roll! (${defenderRoll?.total || 0} - ${newDefenderState.dicePenalty} = ${adjustedDefenderRoll})`;
       newDefenderState.dicePenalty = 0; // Penalty consumed for this clash
     }
     
     if (newAttackerState?.dicePenalty) {
       adjustedAttackerRoll = Math.max(0, adjustedAttackerRoll - newAttackerState.dicePenalty);
-      log += ` ❄️ FREEZE penalty: -${newAttackerState.dicePenalty} to attacker roll! (${attackerRoll.total} - ${newAttackerState.dicePenalty} = ${adjustedAttackerRoll})`;
+      log += ` ❄️ FREEZE penalty: -${newAttackerState.dicePenalty} to attacker roll! (${attackerRoll?.total || 0} - ${newAttackerState.dicePenalty} = ${adjustedAttackerRoll})`;
       newAttackerState.dicePenalty = 0; // Penalty consumed for this clash
     }
     
@@ -667,7 +669,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     if (isClashTie) {
       // Per the official rules: a tie means both must re-roll — the DiceRoller handles this UI-side.
       // We signal the tie back so the host does NOT resolve and the dice screen stays open for a re-roll.
-      log += ` ⚔️ CLASH TIED (${attackerRoll.total} vs ${defenderRoll.total})! Both players must re-roll!`;
+      log += ` ⚔️ CLASH TIED (${adjustedAttackerRoll} vs ${adjustedDefenderRoll})! Both players must re-roll!`;
       return {
         newAttackerState: attackerState,
         newDefenderState: defenderState,
@@ -740,7 +742,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       // TRAP CONSUMPTION
       if (newDefenderState && finalDamage > 0) {
         // SHIELD FIRE immunity: if defender played SHIELD FIRE, fire attacks deal 0 damage & no burn
-        if (newDefenderState.immuneFire && cardName.includes('FIRE FLAME')) {
+        if (newDefenderState.immuneFire && cardName.includes('FIRE')) {
           log += ` 🔥🚫 SHIELD FIRE IMMUNITY! ${newDefenderState.name} is immune to Fire damage this hit!`;
           finalDamage = 0;
           newDefenderState.immuneFire = false;
@@ -763,7 +765,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           
           if (dodgeCardName.includes('FULL GUARD')) {
             // DODGE FULL GUARD: Requires doubles to evade completely
-            const rolledDoubles = defenderRoll.rolls && defenderRoll.rolls[0] === defenderRoll.rolls[1];
+            const rolledDoubles = defenderRoll?.rolls && defenderRoll.rolls.length >= 2 && defenderRoll.rolls[0] === defenderRoll.rolls[1];
             const isBlitzActive = newAttackerState.isBlitzActive || false;
             
             if (rolledDoubles) {
@@ -785,12 +787,12 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         } else if (newDefenderState.hasBoomerang) {
           const defenseWon = adjustedDefenderRoll >= adjustedAttackerRoll;
           if (defenseWon) {
-            log += ` 🪃 BOOMERANG TRIGGERED! ${newDefenderState.name} rolled ${defenderRoll.total} (6+)! ${newAttackerState.name}'s attack reflected 100% back and loses next turn!`;
+            log += ` 🪃 BOOMERANG TRIGGERED! ${newDefenderState.name} rolled ${defenderRoll?.total || 0} (6+)! ${newAttackerState.name}'s attack reflected 100% back and loses next turn!`;
             newAttackerState.hp = Math.max(0, newAttackerState.hp - finalDamage);
             newAttackerState.sleepTurns = (newAttackerState.sleepTurns || 0) + 1;  // Attacker loses next turn
             finalDamage = 0;
           } else {
-            log += ` 🪃 BOOMERANG FAILED! ${newDefenderState.name} rolled ${defenderRoll.total} (needed 6+). Trap breaks, taking full damage.`;
+            log += ` 🪃 BOOMERANG FAILED! ${newDefenderState.name} rolled ${defenderRoll?.total || 0} (needed 6+). Trap breaks, taking full damage.`;
           }
           newDefenderState.hasBoomerang = false;
         } else if (newDefenderState.hasCounter) {
@@ -835,10 +837,10 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       // Innate Defense: Only applies if defender rolled 6+ AND no +DEFENCE card was used
       // Per official rules: "+DEFENCE Cards should be FIRST priority. Whatever the card says is what you go by, if the defender wins.
       // If the defender does not win, but receives 6+ on their dice roll. This will activate their Basic Defense available."
-      if (newDefenderState && defenderRoll.total >= 6 && !newDefenderState.hasDefendBasic) {
+      if (newDefenderState && (defenderRoll?.total || 0) >= 6 && !newDefenderState.hasDefendBasic) {
         const innateDP = newDefenderState?.innateDP ?? newDefenderState?.defaultDP ?? 10;
         finalDamage = Math.max(0, finalDamage - innateDP);
-        log += ` Defender rolled ${defenderRoll.total} (6+)! Innate DP reduced damage by ${innateDP}!`;
+        log += ` Defender rolled ${defenderRoll?.total || 0} (6+)! Innate DP reduced damage by ${innateDP}!`;
       }
 
       // Shield Absorption (Standard shield - only if no +DEFENCE was used above)
@@ -856,7 +858,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         newDefenderState.hp = Math.max(0, newDefenderState.hp - finalDamage);
         log += ` Attack lands! ${newDefenderState.name} takes ${finalDamage} damage (Base: ${baseAP} AP` +
           (newDefenderState.weakness && attackElement && newDefenderState.weakness.toLowerCase().includes(attackElement.toLowerCase()) ? ` + Weakness` : '') +
-          (defenderRoll.total >= 6 && !newDefenderState?.hasDefendBasic ? ` - Innate DP` : '') + `).`;
+          ((defenderRoll?.total || 0) >= 6 && !newDefenderState?.hasDefendBasic ? ` - Innate DP` : '') + `).`;
 
         // If Zombie is hit by Fire or Lightning -> removes 1 poison card
         if (isDefenderZombie && ['Fire', 'Lightning'].includes(attackElement)) {
@@ -880,6 +882,14 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           newDefenderState.burnCount = (newDefenderState.burnCount || 0) + burnStacks;
           log += ` 🔥 Applied ${burnStacks} Burn stack(s) to ${newDefenderState.name}!`;
         }
+
+        // Poochi's Lasso of Truth: Target reveals Action Cards
+        const currentAttackerChar = attackerChar || KONTROLA_CHARACTERS[newAttackerState.characterId] || {};
+        const chosenMove = currentAttackerChar?.attacks?.[attackSelectionName];
+        if (chosenMove?.revealCards) {
+          revealTargetHand = true;
+          log += ` 👁️ LASSO OF TRUTH: ${newDefenderState.name} must reveal all Action Cards!`;
+        }
       }
     } else {
       // DODGE BASIC: If defender has DODGE BASIC and is defending, they succeed on clash win
@@ -892,11 +902,11 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     }
 
     // Extinguish Burn on Doubles (Official Rule: Player continues to burn until doubles are rolled)
-    if (newAttackerState.burnCount > 0 && attackerRoll.rolls && attackerRoll.rolls.length >= 2 && attackerRoll.rolls[0] === attackerRoll.rolls[1]) {
+    if (newAttackerState.burnCount > 0 && attackerRoll?.rolls && attackerRoll.rolls.length >= 2 && attackerRoll.rolls[0] === attackerRoll.rolls[1]) {
       newAttackerState.burnCount = 0;
       log += ` 💧 ${newAttackerState.name} rolled doubles (${attackerRoll.rolls[0]} & ${attackerRoll.rolls[1]}) and EXTINGUISHED their Burn!`;
     }
-    if (newDefenderState?.burnCount > 0 && defenderRoll.rolls && defenderRoll.rolls.length >= 2 && defenderRoll.rolls[0] === defenderRoll.rolls[1]) {
+    if (newDefenderState?.burnCount > 0 && defenderRoll?.rolls && defenderRoll.rolls.length >= 2 && defenderRoll.rolls[0] === defenderRoll.rolls[1]) {
       newDefenderState.burnCount = 0;
       log += ` 💧 ${newDefenderState.name} rolled doubles (${defenderRoll.rolls[0]} & ${defenderRoll.rolls[1]}) and EXTINGUISHED their Burn!`;
     }
@@ -1238,6 +1248,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     triggerAttackX2SecondHit: cardName.includes('ATTACK X2'), // Trigger second attack regardless of first outcome
     triggerXChange: false, // Handled in Arena UI now
     stealActionCard: Boolean(stealActionCard),
+    revealTargetHand: Boolean(revealTargetHand),
     aoeDamage,
     aoeSplitDamage: aoeSplitDamage || false // Flag for 1vAll damage splitting
   };

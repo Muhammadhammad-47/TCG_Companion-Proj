@@ -1975,7 +1975,7 @@ export default function KontrolaArena() {
           let visionData = null;
           const playedCardName = getSafeCardName(actionCard);
           const playedCardType = getSafeCardType(actionCard);
-          if (playedCardName.includes('VISION')) {
+          if (playedCardName.includes('VISION') || resolved?.revealTargetHand) {
             if (playedCardName.includes('VISION FULL')) {
               const allCards = [];
               Object.keys(currentState.hands || {}).forEach(pid => {
@@ -2716,7 +2716,7 @@ export default function KontrolaArena() {
     const isAttack = (selectedActionCard.type === 'ATTACK' || isBackStab) && !isTrap && !isDrain;
     const isAoE = cardName.includes('BLITZ') || (selectedCharacterAttack && selectedCharacterAttack.includes('BLITZ')) || isFullXChange;
     const isLightning = cardName.includes('LIGHTNING');
-    const isFireFlame = cardName.includes('FIRE FLAME');
+    const isFire = cardName.includes('FIRE');
     const isVampire = cardName.includes('VAMPIRE');
 
     console.log('[playTurn] Card type analysis:', {
@@ -2725,7 +2725,7 @@ export default function KontrolaArena() {
       isAttack,
       isAoE,
       isLightning,
-      isFireFlame,
+      isFire,
       isVampire,
       isBackStab,
       isDrain,
@@ -2769,7 +2769,7 @@ export default function KontrolaArena() {
       return;
     }
 
-    if (isAttack && !isAoE && !isLightning && !isFireFlame && !isVampire && !isBackStab && !selectedCharacterAttack) {
+    if (isAttack && !isAoE && !isLightning && !isFire && !isVampire && !isBackStab && !selectedCharacterAttack) {
       console.log('[playTurn] VALIDATION FAILED: Attack requires character move selection');
       showNotice('Please select a character attack move to strike with!', 'warning');
       return;
@@ -2778,7 +2778,7 @@ export default function KontrolaArena() {
     const payload = {
       actorId: playerId,
       actionCard: selectedActionCard,
-      attackSelectionName: (isLightning || isFireFlame || isVampire || isBackStab) ? null : selectedCharacterAttack,
+      attackSelectionName: (isLightning || isFire || isVampire || isBackStab) ? null : selectedCharacterAttack,
       targetId: isAoE ? 'ALL' : (isTrap ? playerId : selectedTargetId)
     };
 
