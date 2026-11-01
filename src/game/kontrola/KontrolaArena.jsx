@@ -1993,7 +1993,7 @@ export default function KontrolaArena() {
               };
             } else if (targetId && targetId !== 'ALL') {
               visionData = {
-                targetId,
+                targetId: (targetId && targetId !== 'ALL') ? targetId : (opponents[0] || Object.keys(currentState.hands || {}).find(p => p !== actorId)),
                 isFull: false,
                 isXChange: false,
                 targetName: defenderChar?.name || 'Opponent',
@@ -2021,7 +2021,7 @@ export default function KontrolaArena() {
           }
 
           let triggerXChange = null;
-          if (playedCardName.includes('X-CHANGE') && targetId && targetId !== 'ALL') {
+          if (playedCardName.includes('X-CHANGE')) {
             // Filter out the played action card from the attacker's hand so they don't exchange the card they just spent
             const availableAttackerHand = newHand.filter(c => {
               const cName = getSafeCardName(c);
@@ -2032,10 +2032,10 @@ export default function KontrolaArena() {
             triggerXChange = {
               xChangeType: playedCardName.includes('FULL') ? 'FULL' : 'X1',
               actorId,
-              targetId,
+              targetId: (targetId && targetId !== 'ALL') ? targetId : (opponents[0] || Object.keys(currentState.hands || {}).find(p => p !== actorId)),
               defenderName: defenderChar?.name || 'Opponent',
               attackerHand: availableAttackerHand,
-              defenderHand: newDefenderHand
+              defenderHand: (targetId && targetId !== 'ALL') ? newDefenderHand : (currentState.hands?.[opponents[0]] || newDefenderHand || [])
             };
           }
 
@@ -2712,8 +2712,9 @@ export default function KontrolaArena() {
     const isTrap = ['BOOMERANG', 'MISDIRECT'].some(kw => cardName.includes(kw));
     const isDrain = cardName.includes('DRAIN');
     const isBackStab = cardName.includes('BACK STAB');
+    const isFullXChange = cardName.includes('X-CHANGE') && cardName.includes('FULL');
     const isAttack = (selectedActionCard.type === 'ATTACK' || isBackStab) && !isTrap && !isDrain;
-    const isAoE = cardName.includes('BLITZ') || (selectedCharacterAttack && selectedCharacterAttack.includes('BLITZ'));
+    const isAoE = cardName.includes('BLITZ') || (selectedCharacterAttack && selectedCharacterAttack.includes('BLITZ')) || isFullXChange;
     const isLightning = cardName.includes('LIGHTNING');
     const isFireFlame = cardName.includes('FIRE FLAME');
     const isVampire = cardName.includes('VAMPIRE');
@@ -2752,7 +2753,17 @@ export default function KontrolaArena() {
       return; // Must select target
     }
 
-    const needsTarget = ['POISON', 'SLEEPY', 'FREEZE', 'X-CHANGE', 'KONTROL', 'SOUL ALLIANCE', 'DRAIN', 'VAMPIRE'].some(kw => cardName.includes(kw)) || (cardName.includes('VISION') && !cardName.includes('FULL'));
+    // 3+ Player check for Soul Alliance, Abandon & Back Stab
+    const is3PlayerOnly = cardName.includes('BACK STAB') || cardName.includes('SOUL ALLIANCE') || cardName.includes('ABANDON');
+    const totalMatchPlayers = (gameState?.players?.length) || 2;
+    if (is3PlayerOnly && totalMatchPlayers <= 2) {
+      showNotice('⚠️ Only available in 3+ player matches! Cannot be played in a 1-on-1 duel.', 'warning');
+      return;
+    }
+
+    const needsTarget = ['POISON', 'SLEEPY', 'FREEZE', 'KONTROL', 'SOUL ALLIANCE', 'DRAIN', 'VAMPIRE'].some(kw => cardName.includes(kw)) ||
+      (cardName.includes('X-CHANGE') && !cardName.includes('FULL')) ||
+      (cardName.includes('VISION') && !cardName.includes('FULL'));
     if (needsTarget && !selectedTargetId) {
       showNotice('Please select a target player first!', 'warning');
       return;
@@ -4840,7 +4851,8 @@ export default function KontrolaArena() {
                     const isV20Locked = upperCardName.includes('VITALITY') && upperCardName.includes('V20') && pLevel < 2;
                     const isV30Locked = upperCardName.includes('VITALITY') && upperCardName.includes('V30') && pLevel < 3;
                     const isV40Locked = upperCardName.includes('VITALITY') && upperCardName.includes('V40') && pLevel < 4;
-                    const isCardLocked = isV20Locked || isV30Locked || isV40Locked;
+                    const is3PlayerLocked = (upperCardName.includes('BACK STAB') || upperCardName.includes('SOUL ALLIANCE') || upperCardName.includes('ABANDON')) && (gameState?.players?.length || 2) <= 2;
+                    const isCardLocked = isV20Locked || isV30Locked || isV40Locked || is3PlayerLocked;
                     const reqLvl = isV20Locked ? 2 : isV30Locked ? 3 : isV40Locked ? 4 : null;
                     
                     return (
@@ -4858,7 +4870,11 @@ export default function KontrolaArena() {
                         onClick={() => {
                           if (isCardLocked) {
                             playClick();
-                            showNotice(`🔒 Requires Level ${reqLvl}! (Current: Level ${pLevel}). Reach ${reqLvl === 2 ? '150 HP' : 'Level ' + reqLvl} first.`, 'warning');
+                            if (is3PlayerLocked) {
+                              showNotice('⚠️ Requires 3+ players! Not playable in a 1-on-1 match.', 'warning');
+                            } else {
+                              showNotice(`🔒 Requires Level ${reqLvl}! (Current: Level ${pLevel}). Reach ${reqLvl === 2 ? '150 HP' : 'Level ' + reqLvl} first.`, 'warning');
+                            }
                             return;
                           }
                           if (isMyTurn && !isPendingSecondAttack) {
@@ -4882,8 +4898,8 @@ export default function KontrolaArena() {
                             zIndex: 10,
                             boxShadow: '0 2px 8px rgba(0,0,0,0.8)'
                           }}>
-                            <span style={{ fontSize: '11px' }}>🔒</span>
-                            <span style={{ fontSize: '10px', color: '#FF7777', fontWeight: 'bold' }}>LVL {reqLvl}</span>
+                            <span style={{ fontSize: '11px' }}>{is3PlayerLocked ? '👥' : '🔒'}</span>
+                            <span style={{ fontSize: '10px', color: '#FF7777', fontWeight: 'bold' }}>{is3PlayerLocked ? '3+ PLY' : `LVL ${reqLvl}`}</span>
                           </div>
                         )}
                         <div className="uno-card-art">

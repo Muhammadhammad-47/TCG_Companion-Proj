@@ -891,6 +891,16 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       }
     }
 
+    // Extinguish Burn on Doubles (Official Rule: Player continues to burn until doubles are rolled)
+    if (newAttackerState.burnCount > 0 && attackerRoll.rolls && attackerRoll.rolls.length >= 2 && attackerRoll.rolls[0] === attackerRoll.rolls[1]) {
+      newAttackerState.burnCount = 0;
+      log += ` 💧 ${newAttackerState.name} rolled doubles (${attackerRoll.rolls[0]} & ${attackerRoll.rolls[1]}) and EXTINGUISHED their Burn!`;
+    }
+    if (newDefenderState?.burnCount > 0 && defenderRoll.rolls && defenderRoll.rolls.length >= 2 && defenderRoll.rolls[0] === defenderRoll.rolls[1]) {
+      newDefenderState.burnCount = 0;
+      log += ` 💧 ${newDefenderState.name} rolled doubles (${defenderRoll.rolls[0]} & ${defenderRoll.rolls[1]}) and EXTINGUISHED their Burn!`;
+    }
+
     // Lightning effect: ALWAYS applies whether attack succeeds or not per official rules
     // "This action occurs when the attack is successful and not successful"
     if (cardName.includes('LIGHTNING') && newDefenderState) {
