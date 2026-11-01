@@ -391,6 +391,7 @@ export default function KontrolaArena() {
               await authService.savePlayerMatchResult(currentUser.id, {
                 won: isWinner,
                 crystalsDelta: isWinner ? 3 : 1,
+                goldDelta: isWinner ? 100 : 40,
                 appSource: 'kontrola'
               });
             }

@@ -58,6 +58,7 @@ export default function GamePage() {
           await authService.savePlayerMatchResult(currentUser.id, {
             won: isWinner,
             crystalsDelta: isWinner ? 2 : 0,
+            goldDelta: isWinner ? 100 : 40,
             appSource: 'companion_hub'
           });
         }

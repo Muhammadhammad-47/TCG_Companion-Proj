@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient';
+﻿import { supabase } from './supabaseClient';
 
 export const economyService = {
   // Fetch global app settings (match costs, premium modules)
@@ -181,6 +181,159 @@ export const economyService = {
     } catch (e) {
       console.error('Economy: Failed to update user premium status', e);
       return false;
+    }
+  }
+,
+  // =========================================================================
+  // DOMAIN 1: MULTI-CURRENCY WALLET & FIRST DAILY WIN ENGINE
+  // =========================================================================
+
+  // Atomic wallet modification (Gold, Gems, Tournament Credits, Crystals)
+  async modifyWallet(userId, currency, amount, transactionType, referenceId = null) {
+    if (!userId) return { success: false, error: 'User ID required' };
+    if (!supabase) {
+      console.warn('[Economy] Supabase offline, using local fallback.');
+      return { success: true, localOnly: true, new_balance: amount };
+    }
+    try {
+      // 1. Try atomic database RPC first
+      const { data: rpcRes, error: rpcErr } = await supabase.rpc('rpc_modify_wallet', {
+        p_user_id: userId,
+        p_currency: currency,
+        p_amount: amount,
+        p_type: transactionType,
+        p_reference_id: referenceId
+      });
+
+      if (!rpcErr && rpcRes && rpcRes.success) {
+        return rpcRes;
+      }
+
+      // 2. Client fallback if RPC is not yet registered in database
+      const { data: profile, error: profErr } = await supabase
+        .from('profiles')
+        .select('gold, gems, tournament_credits, crystals_collected')
+        .eq('id', userId)
+        .single();
+
+      if (profErr || !profile) return { success: false, error: 'Profile not found' };
+
+      const col = currency === 'gold' ? 'gold'
+        : currency === 'gems' ? 'gems'
+        : currency === 'tournament_credits' ? 'tournament_credits'
+        : 'crystals_collected';
+
+      const currentBal = profile[col] ?? (currency === 'gold' ? 500 : currency === 'gems' ? 50 : 0);
+      if (currentBal + amount < 0) {
+        return { success: false, error: `Insufficient ${currency} balance.` };
+      }
+
+      const newBal = currentBal + amount;
+      const { error: updErr } = await supabase
+        .from('profiles')
+        .update({ [col]: newBal, updated_at: new Date().toISOString() })
+        .eq('id', userId);
+
+      if (updErr) throw updErr;
+
+      // Try logging to wallet_transactions if table exists
+      try {
+        await supabase.from('wallet_transactions').insert({
+          user_id: userId,
+          currency,
+          amount,
+          balance_after: newBal,
+          transaction_type: transactionType,
+          reference_id: referenceId
+        });
+      } catch (logErr) {
+        // Non-blocking log error
+      }
+
+      return { success: true, currency, new_balance: newBal };
+    } catch (e) {
+      console.error('[Economy] modifyWallet error:', e);
+      return { success: false, error: e.message || 'Transaction failed' };
+    }
+  },
+
+  // Check and grant First Daily Win (+200 Gold)
+  async checkDailyWinReward(userId) {
+    if (!userId) return { granted: false };
+    if (!supabase) return { granted: false };
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('last_daily_win_at, gold')
+        .eq('id', userId)
+        .single();
+
+      const now = new Date();
+      const lastWin = profile?.last_daily_win_at ? new Date(profile.last_daily_win_at) : null;
+      const isNewDay = !lastWin || (
+        now.getUTCDate() !== lastWin.getUTCDate() ||
+        now.getUTCFullYear() !== lastWin.getUTCFullYear() ||
+        now.getUTCMonth() !== lastWin.getUTCMonth()
+      );
+
+      if (isNewDay) {
+        await supabase
+          .from('profiles')
+          .update({ last_daily_win_at: now.toISOString() })
+          .eq('id', userId);
+
+        const res = await this.modifyWallet(userId, 'gold', 200, 'first_daily_win');
+        return { granted: true, bonusGold: 200, newGold: res.new_balance };
+      }
+      return { granted: false };
+    } catch (e) {
+      console.warn('[Economy] checkDailyWinReward error:', e);
+      return { granted: false };
+    }
+  },
+
+  // Fetch all wallet balances
+  async getWalletBalances(userId) {
+    if (!userId || !supabase) {
+      return { gold: 500, gems: 50, tournament_credits: 0, crystals: 0 };
+    }
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('gold, gems, tournament_credits, crystals_collected, crystals')
+        .eq('id', userId)
+        .single();
+
+      if (error || !data) {
+        return { gold: 500, gems: 50, tournament_credits: 0, crystals: 0 };
+      }
+
+      return {
+        gold: data.gold ?? 500,
+        gems: data.gems ?? 50,
+        tournament_credits: data.tournament_credits ?? 0,
+        crystals: data.crystals_collected ?? data.crystals ?? 0
+      };
+    } catch (e) {
+      return { gold: 500, gems: 50, tournament_credits: 0, crystals: 0 };
+    }
+  },
+
+  // Get transaction ledger history
+  async getWalletLedger(userId, limit = 20) {
+    if (!userId || !supabase) return [];
+    try {
+      const { data, error } = await supabase
+        .from('wallet_transactions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) return [];
+      return data || [];
+    } catch (e) {
+      return [];
     }
   }
 };

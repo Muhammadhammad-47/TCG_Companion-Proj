@@ -174,7 +174,16 @@ export const authService = {
       return null;
     }
 
-    return data;
+    if (!data) return null;
+
+    // Default multi-currency wallet values if columns were recently added
+    return {
+      ...data,
+      gold: data.gold ?? 500,
+      gems: data.gems ?? 50,
+      tournament_credits: data.tournament_credits ?? 0,
+      crystals_collected: data.crystals_collected ?? data.crystals ?? 0
+    };
   },
 
   // Update profile with unique callsign check if username changed
@@ -236,25 +245,60 @@ export const authService = {
     return data;
   },
 
-  // Save player match result and update crystals
-  async savePlayerMatchResult(userId, { won = false, crystalsDelta = 0, appSource = 'companion_hub' } = {}) {
+  // Save player match result and update crystals & gold (Domain 1 Multi-Currency)
+  async savePlayerMatchResult(userId, { won = false, crystalsDelta = 0, goldDelta = null, appSource = 'companion_hub' } = {}) {
     if (!supabase || !userId) return null;
     const current = await this.getProfile(userId);
     if (!current) return null;
 
-    const newPlayed = (current.matches_played || 0) + 1;
-    const newWon = (current.matches_won || 0) + (won ? 1 : 0);
+    const isMatch = !appSource.includes('toll') && appSource !== 'store';
+    const newPlayed = (current.matches_played || 0) + (isMatch ? 1 : 0);
+    const newWon = (current.matches_won || 0) + (won && isMatch ? 1 : 0);
     const newCrystals = Math.max(0, (current.crystals_collected || 0) + crystalsDelta);
+
+    let effectiveGoldDelta = goldDelta !== null ? goldDelta : (isMatch ? (won ? 100 : 40) : 0);
+    let dailyWinBonus = 0;
+    let dailyWinGranted = false;
+
+    // Check First Daily Win bonus (+200 Gold) on match victory
+    if (won && isMatch) {
+      try {
+        const now = new Date();
+        const lastWin = current.last_daily_win_at ? new Date(current.last_daily_win_at) : null;
+        const isNewDay = !lastWin || (
+          now.getUTCDate() !== lastWin.getUTCDate() ||
+          now.getUTCFullYear() !== lastWin.getUTCFullYear() ||
+          now.getUTCMonth() !== lastWin.getUTCMonth()
+        );
+
+        if (isNewDay) {
+          dailyWinBonus = 200;
+          dailyWinGranted = true;
+          effectiveGoldDelta += dailyWinBonus;
+        }
+      } catch (e) {
+        console.warn('Daily win check error:', e);
+      }
+    }
+
+    const newGold = Math.max(0, (current.gold ?? 500) + effectiveGoldDelta);
+
+    const updatePayload = {
+      matches_played: newPlayed,
+      matches_won: newWon,
+      crystals_collected: newCrystals,
+      gold: newGold,
+      last_active_app: appSource,
+      updated_at: new Date().toISOString()
+    };
+
+    if (dailyWinGranted) {
+      updatePayload.last_daily_win_at = new Date().toISOString();
+    }
 
     const { data, error } = await supabase
       .from('profiles')
-      .update({
-        matches_played: newPlayed,
-        matches_won: newWon,
-        crystals_collected: newCrystals,
-        last_active_app: appSource,
-        updated_at: new Date().toISOString()
-      })
+      .update(updatePayload)
       .eq('id', userId)
       .select()
       .single();
@@ -263,7 +307,29 @@ export const authService = {
       console.warn('Failed to save match result:', error);
       return null;
     }
-    return data;
+
+    // Try logging to wallet_transactions ledger if table exists
+    if (effectiveGoldDelta !== 0) {
+      try {
+        await supabase.from('wallet_transactions').insert({
+          user_id: userId,
+          currency: 'gold',
+          amount: effectiveGoldDelta,
+          balance_after: newGold,
+          transaction_type: dailyWinGranted ? 'match_win_with_daily_bonus' : (won ? 'match_win' : 'match_loss'),
+          reference_id: appSource
+        });
+      } catch (logErr) {
+        // Non-blocking log error
+      }
+    }
+
+    return {
+      ...data,
+      dailyWinAwarded: dailyWinGranted,
+      bonusGold: dailyWinBonus,
+      goldEarned: effectiveGoldDelta
+    };
   },
 
   // Query top players leaderboard

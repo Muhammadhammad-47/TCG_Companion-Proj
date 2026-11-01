@@ -1634,29 +1634,70 @@ export function Hub() {
               {/* Right: Auth area */}
               {currentUser ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', position: 'relative' }}>
-                  {/* Crystal balance chip */}
-                  <button
-                    onClick={() => setIsStoreOpen(true)}
-                    title="Buy more crystals"
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '6px',
-                      background: 'rgba(251, 200, 13, 0.08)',
-                      border: '1px solid rgba(251, 200, 13, 0.35)',
-                      borderRadius: '20px',
-                      padding: '6px 14px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      fontFamily: 'Bebas Neue, sans-serif'
-                    }}
-                    onMouseOver={e => e.currentTarget.style.background = 'rgba(0,240,255,0.18)'}
-                    onMouseOut={e => e.currentTarget.style.background = 'rgba(0,240,255,0.08)'}
-                  >
-                    <span style={{ fontSize: '1rem', lineHeight: 1 }}>💎</span>
-                    <span style={{ fontWeight: 'bold', color: 'var(--neon-cyan)', fontSize: '0.95rem' }}>
-                      {userProfile?.crystals_collected || 0}
-                    </span>
-                    <span style={{ fontSize: '0.62rem', color: 'rgba(0,240,255,0.55)', letterSpacing: '0.5px' }}>+ ADD</span>
-                  </button>
+                  {/* Multi-Currency Wallet Bar (Domain 1) */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {/* Gold balance pill */}
+                    <div
+                      title="Gold: Earned from matches, daily wins, and quests. Used for host fees and store items."
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '5px',
+                        background: 'rgba(251, 200, 13, 0.1)',
+                        border: '1px solid rgba(251, 200, 13, 0.4)',
+                        borderRadius: '20px',
+                        padding: '5px 12px',
+                        fontFamily: 'Bebas Neue, sans-serif',
+                        boxShadow: '0 0 10px rgba(251, 200, 13, 0.15)'
+                      }}
+                    >
+                      <span style={{ fontSize: '0.95rem' }}>🪙</span>
+                      <span style={{ fontWeight: 'bold', color: 'var(--neon-gold)', fontSize: '0.92rem', letterSpacing: '0.5px' }}>
+                        {userProfile?.gold ?? 500}
+                      </span>
+                    </div>
+
+                    {/* Gems balance pill (Click to open Store) */}
+                    <button
+                      onClick={() => setIsStoreOpen(true)}
+                      title="Gems: Premium currency for exclusive cosmetics, bundles, and season pass. Click to open Store."
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '5px',
+                        background: 'rgba(0, 240, 255, 0.1)',
+                        border: '1px solid rgba(0, 240, 255, 0.4)',
+                        borderRadius: '20px',
+                        padding: '5px 12px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        fontFamily: 'Bebas Neue, sans-serif',
+                        boxShadow: '0 0 10px rgba(0, 240, 255, 0.15)'
+                      }}
+                      onMouseOver={e => e.currentTarget.style.background = 'rgba(0,240,255,0.22)'}
+                      onMouseOut={e => e.currentTarget.style.background = 'rgba(0,240,255,0.1)'}
+                    >
+                      <span style={{ fontSize: '0.95rem' }}>💎</span>
+                      <span style={{ fontWeight: 'bold', color: 'var(--neon-cyan)', fontSize: '0.92rem', letterSpacing: '0.5px' }}>
+                        {userProfile?.gems ?? 50}
+                      </span>
+                      <span style={{ fontSize: '0.62rem', color: 'rgba(0,240,255,0.7)', letterSpacing: '0.5px' }}>+ ADD</span>
+                    </button>
+
+                    {/* Tournament Credits pill */}
+                    <div
+                      title="Tournament Credits: Earned from competitive tournament placements. Used for tournament entry."
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '5px',
+                        background: 'rgba(157, 78, 221, 0.12)',
+                        border: '1px solid rgba(157, 78, 221, 0.4)',
+                        borderRadius: '20px',
+                        padding: '5px 12px',
+                        fontFamily: 'Bebas Neue, sans-serif'
+                      }}
+                    >
+                      <span style={{ fontSize: '0.95rem' }}>🏆</span>
+                      <span style={{ fontWeight: 'bold', color: '#c77dff', fontSize: '0.92rem', letterSpacing: '0.5px' }}>
+                        {userProfile?.tournament_credits ?? 0}
+                      </span>
+                    </div>
+                  </div>
 
                   {/* Admin button — only if admin */}
                   {userProfile?.is_admin && (
