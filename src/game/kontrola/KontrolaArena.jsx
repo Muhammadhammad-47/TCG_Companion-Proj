@@ -4835,7 +4835,7 @@ export default function KontrolaArena() {
                     const cardObj = typeof card === 'object' ? card : { id: cId, name: cName, type: cType, costET: cCost };
                     
                     // Level Lock Verification (Feedback Lines 6 & 15, AI Breakdowns Lines 346-356)
-                    const pLevel = activePlayerState?.level || (activePlayerState?.hp >= 150 ? 2 : 1);
+                    const pLevel = myCharacter?.level || (myCharacter?.hp >= 150 ? 2 : 1);
                     const upperCardName = cName.toUpperCase();
                     const isV20Locked = upperCardName.includes('VITALITY') && upperCardName.includes('V20') && pLevel < 2;
                     const isV30Locked = upperCardName.includes('VITALITY') && upperCardName.includes('V30') && pLevel < 3;
