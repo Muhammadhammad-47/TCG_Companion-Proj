@@ -384,9 +384,18 @@ export default function KontrolaArena() {
                   matchIndex: tournamentMatchContext.matchIndex,
                   winnerUserId,
                   winnerName,
-                  roomCode: matchIdRef.current
+                  roomCode: matchIdRef.current,
+                  callerId: currentUser?.id
                 });
               }
+
+              // Award match participation Gold faucet
+              await authService.savePlayerMatchResult(currentUser.id, {
+                won: isWinner,
+                crystalsDelta: 0,
+                goldDelta: isWinner ? 100 : 40,
+                appSource: 'kontrola_tournament_match'
+              });
             } else {
               await authService.savePlayerMatchResult(currentUser.id, {
                 won: isWinner,

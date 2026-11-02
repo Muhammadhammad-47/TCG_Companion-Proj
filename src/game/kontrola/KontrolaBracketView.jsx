@@ -102,6 +102,31 @@ export default function KontrolaBracketView({
     setTimeout(() => setActionNotice(null), 4000);
   };
 
+  const handleCheckIn = async () => {
+    if (!tournament || !currentUser) return;
+    const res = await tournamentService.checkInParticipant(tournament.id, currentUser.id);
+    if (res.error) {
+      setActionNotice({ type: 'error', text: res.error });
+    } else {
+      setActionNotice({ type: 'success', text: 'You are confirmed and checked in!' });
+      loadData();
+    }
+    setTimeout(() => setActionNotice(null), 4000);
+  };
+
+  const handleSweepNoShows = async () => {
+    if (!tournament) return;
+    if (!window.confirm('Sweep all unconfirmed no-show contenders and issue 100% refunds?')) return;
+    const res = await tournamentService.sweepNoShows(tournament.id);
+    if (res.error) {
+      setActionNotice({ type: 'error', text: res.error });
+    } else {
+      setActionNotice({ type: 'success', text: `Sweep complete. Refunded ${res.refunded_players || 0} no-show contenders.` });
+      loadData();
+    }
+    setTimeout(() => setActionNotice(null), 4000);
+  };
+
   if (loading) {
     return (
       <div style={{ padding: '60px', textAlign: 'center', color: 'var(--neon-gold)' }}>
@@ -257,11 +282,51 @@ export default function KontrolaBracketView({
               textAlign: 'right'
             }}
           >
-            <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.6)' }}>1ST PLACE PRIZE</div>
+            <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.6)' }}>
+              {tournament.reward_split_type === 'top4' ? 'TOP-4 PRIZE POOL' : '1ST PLACE PRIZE'}
+            </div>
             <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--neon-gold)', fontFamily: 'Bebas Neue' }}>
-              💎 {tournament.winner_payout} Crystals
+              {(tournament.entry_currency === 'gold' ? '🪙 ' : tournament.entry_currency === 'tournament_credits' ? '🏆 ' : '💎 ')}
+              {tournament.winner_payout} {(tournament.entry_currency || 'crystals').toUpperCase()}
             </div>
           </div>
+
+          {/* Player Check-In Button / Badge */}
+          {isRegistration && myParticipant && (
+            myParticipant.is_checked_in ? (
+              <div
+                style={{
+                  background: 'rgba(34, 197, 94, 0.2)',
+                  border: '1px solid #22c55e',
+                  color: '#22c55e',
+                  padding: '8px 14px',
+                  borderRadius: '10px',
+                  fontSize: '0.85rem',
+                  fontWeight: 'bold',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Check size={16} /> CHECKED IN
+              </div>
+            ) : (
+              <button
+                onClick={handleCheckIn}
+                className="btn-enter-game-cta"
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '10px',
+                  fontSize: '0.9rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Check size={16} /> CHECK IN (15M WINDOW)
+              </button>
+            )
+          )}
 
           {/* Private Invite Code */}
           {tournament.invite_code && (
@@ -286,6 +351,28 @@ export default function KontrolaBracketView({
                 </div>
               </div>
               {copiedCode ? <Check size={18} color="#34d399" /> : <Copy size={18} />}
+            </button>
+          )}
+
+          {/* Host Sweep No-Shows Button */}
+          {isRegistration && (isHost || currentUser?.is_admin) && (
+            <button
+              onClick={handleSweepNoShows}
+              style={{
+                padding: '10px 14px',
+                borderRadius: '10px',
+                background: 'rgba(251, 200, 13, 0.15)',
+                border: '1px solid rgba(251, 200, 13, 0.4)',
+                color: 'var(--neon-gold)',
+                fontSize: '0.85rem',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <RefreshCw size={14} /> SWEEP NO-SHOWS
             </button>
           )}
 
@@ -449,12 +536,26 @@ export default function KontrolaBracketView({
                   >
                     {idx + 1}
                   </div>
-                  <div>
-                    <div style={{ fontWeight: 'bold', fontSize: '0.95rem', color: p ? '#fff' : 'rgba(255,255,255,0.4)' }}>
-                      {p ? p.player_name : 'Awaiting Contender'}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontWeight: 'bold', fontSize: '0.95rem', color: p ? '#fff' : 'rgba(255,255,255,0.4)' }}>
+                        {p ? p.player_name : 'Awaiting Contender'}
+                      </span>
+                      {p && (
+                        <span style={{
+                          fontSize: '0.65rem',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          background: p.is_checked_in ? 'rgba(34, 197, 94, 0.2)' : 'rgba(251, 191, 36, 0.15)',
+                          color: p.is_checked_in ? '#22c55e' : '#fbbf24',
+                          fontWeight: 'bold'
+                        }}>
+                          {p.is_checked_in ? '✓ READY' : '⏳ UNCONFIRMED'}
+                        </span>
+                      )}
                     </div>
                     {p && (
-                      <div style={{ fontSize: '0.75rem', color: 'var(--neon-cyan)' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--neon-cyan)', marginTop: '2px' }}>
                         {p.character_id?.toUpperCase() || 'WARRIOR'}
                       </div>
                     )}
@@ -483,7 +584,7 @@ export default function KontrolaBracketView({
             TOURNAMENT CHAMPION: {tournament.winner_name || 'VICTOR'}
           </h1>
           <p style={{ margin: '6px 0 0 0', fontSize: '1.1rem', color: 'rgba(255,255,255,0.8)' }}>
-            Claimed the Grand Prize of <strong>💎 {tournament.winner_payout} Crystals</strong>!
+            Claimed the Grand Prize of <strong>{(tournament.entry_currency === 'gold' ? '🪙 ' : tournament.entry_currency === 'tournament_credits' ? '🏆 ' : '💎 ')}{tournament.winner_payout}</strong> + <strong>🏆 100 Tournament Credits</strong> + <strong>Title: Tournament Champion</strong>!
           </p>
         </div>
       )}

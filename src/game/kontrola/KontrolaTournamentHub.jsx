@@ -67,9 +67,14 @@ export default function KontrolaTournamentHub({
       return;
     }
 
-    const crystals = userProfile?.crystals_collected || 0;
-    if (tourney.entry_fee > crystals) {
-      showToast(`Insufficient Stability Crystals! Requires ${tourney.entry_fee} 💎 (You have ${crystals} 💎).`, 'error');
+    const curr = tourney.entry_currency || 'gold';
+    const userBal = curr === 'gold' ? (userProfile?.gold ?? 500)
+      : curr === 'tournament_credits' ? (userProfile?.tournament_credits ?? 0)
+      : (userProfile?.gems ?? 50);
+    const sym = curr === 'gold' ? '🪙' : curr === 'tournament_credits' ? '🏆' : '💎';
+
+    if (tourney.entry_fee > userBal) {
+      showToast(`Insufficient balance! Requires ${tourney.entry_fee} ${sym} (You have ${userBal} ${sym}).`, 'error');
       return;
     }
 
@@ -336,13 +341,25 @@ export default function KontrolaTournamentHub({
                   >
                     <div>
                       <span style={{ color: 'rgba(255,255,255,0.5)' }}>Entry Fee:</span>
-                      <div style={{ fontWeight: 'bold', color: 'var(--neon-gold)' }}>💎 {t.entry_fee} Crystals</div>
+                      <div style={{ fontWeight: 'bold', color: 'var(--neon-gold)' }}>
+                        {(t.entry_currency === 'gold' ? '🪙 ' : t.entry_currency === 'tournament_credits' ? '🏆 ' : '💎 ')}
+                        {t.entry_fee} {(t.entry_currency || 'crystals').toUpperCase()}
+                      </div>
                     </div>
                     <div>
                       <span style={{ color: 'rgba(255,255,255,0.5)' }}>Prize Pot:</span>
-                      <div style={{ fontWeight: 'bold', color: '#22c55e' }}>💎 {t.winner_payout} Crystals</div>
+                      <div style={{ fontWeight: 'bold', color: '#22c55e' }}>
+                        {(t.entry_currency === 'gold' ? '🪙 ' : t.entry_currency === 'tournament_credits' ? '🏆 ' : '💎 ')}
+                        {t.winner_payout}
+                      </div>
                     </div>
                     <div style={{ gridColumn: 'span 2', display: 'flex', justifyContent: 'space-between', paddingTop: '4px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                      <span style={{ color: 'rgba(255,255,255,0.5)' }}>Format:</span>
+                      <span style={{ fontWeight: 'bold', color: '#38bdf8' }}>
+                        {t.reward_split_type === 'top4' ? 'Top-4 Split + Credits' : 'Winner-Take-All'}
+                      </span>
+                    </div>
+                    <div style={{ gridColumn: 'span 2', display: 'flex', justifyContent: 'space-between', paddingTop: '2px' }}>
                       <span style={{ color: 'rgba(255,255,255,0.5)' }}>Contenders:</span>
                       <span style={{ fontWeight: 'bold', color: '#fff' }}>{partCount} / {t.bracket_size} Players</span>
                     </div>
@@ -363,7 +380,7 @@ export default function KontrolaTournamentHub({
                         justifyContent: 'center'
                       }}
                     >
-                      REGISTER (💎 {t.entry_fee})
+                      REGISTER ({(t.entry_currency === 'gold' ? '🪙 ' : t.entry_currency === 'tournament_credits' ? '🏆 ' : '💎 ')}{t.entry_fee})
                     </button>
                   )}
                   <button

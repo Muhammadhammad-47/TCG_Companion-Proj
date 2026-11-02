@@ -17,6 +17,8 @@ export default function CreateTournamentModal({
   const [description, setDescription] = useState('');
   const [bracketSize, setBracketSize] = useState(8);
   const [seriesFormat, setSeriesFormat] = useState('bo1'); // 'bo1' | 'bo3' | 'bo5'
+  const [entryCurrency, setEntryCurrency] = useState('gold'); // 'gold' | 'tournament_credits' | 'gems'
+  const [rewardSplitType, setRewardSplitType] = useState('top4'); // 'top4' | 'winner_take_all'
   const [entryFee, setEntryFee] = useState(minEntryFee);
   const [durationHours, setDurationHours] = useState(24);
   const [loading, setLoading] = useState(false);
@@ -41,8 +43,14 @@ export default function CreateTournamentModal({
   // Live pot and deduction calculations
   const totalPot = bracketSize * entryFee;
   const adminRake = Math.floor(totalPot * (adminDeductionPct / 100));
-  const winnerPayout = totalPot - adminRake;
-  const userCrystals = userProfile?.crystals_collected || 0;
+  const netPot = totalPot - adminRake;
+  const userGold = userProfile?.gold ?? 500;
+  const userGems = userProfile?.gems ?? 50;
+  const userCredits = userProfile?.tournament_credits ?? 0;
+  const HOST_FEE_GOLD = 200;
+
+  const currentWalletBalance = entryCurrency === 'gold' ? userGold : entryCurrency === 'tournament_credits' ? userCredits : userGems;
+  const currencySymbol = entryCurrency === 'gold' ? '🪙' : entryCurrency === 'tournament_credits' ? '🏆' : '💎';
 
   const handleCancelActiveTournament = async () => {
     if (!activeTournament) return;
@@ -69,18 +77,23 @@ export default function CreateTournamentModal({
       return;
     }
 
+    if (userGold < HOST_FEE_GOLD) {
+      setError(`Hosting a tournament requires ${HOST_FEE_GOLD} 🪙 Gold. You currently have ${userGold} 🪙 Gold.`);
+      return;
+    }
+
     if (entryFee < minEntryFee) {
-      setError(`Entry fee cannot be less than the Admin minimum of ${minEntryFee} crystals.`);
+      setError(`Entry fee cannot be less than the Admin minimum of ${minEntryFee} ${entryCurrency}.`);
       return;
     }
 
     if (entryFee > maxEntryFee) {
-      setError(`Entry fee cannot exceed the Admin maximum of ${maxEntryFee} crystals.`);
+      setError(`Entry fee cannot exceed the Admin maximum of ${maxEntryFee} ${entryCurrency}.`);
       return;
     }
 
-    if (entryFee > userCrystals) {
-      setError(`You do not have enough Stability Crystals (${userCrystals} available) to fund the host entry fee.`);
+    if (entryFee > 0 && currentWalletBalance < entryFee) {
+      setError(`You do not have enough ${entryCurrency.replace('_', ' ')} (${currentWalletBalance} available) to fund your player entry fee.`);
       return;
     }
 
@@ -94,11 +107,14 @@ export default function CreateTournamentModal({
       bracket_size: bracketSize,
       series_format: seriesFormat,
       entry_fee: entryFee,
+      entry_currency: entryCurrency,
+      reward_split_type: rewardSplitType,
       bonus_prize: 0,
       admin_deduction_pct: adminDeductionPct,
       creator_id: currentUser?.id,
       creator_name: userProfile?.username || 'Player',
-      durationHours: durationHours
+      durationHours: durationHours,
+      check_in_window_minutes: 15
     });
 
     if (res.error) {
@@ -348,6 +364,8 @@ export default function CreateTournamentModal({
                 >
                   <option value={4} style={{ background: '#111' }}>4 Players (2 Rounds)</option>
                   <option value={8} style={{ background: '#111' }}>8 Players (3 Rounds)</option>
+                  <option value={16} style={{ background: '#111' }}>16 Players (4 Rounds)</option>
+                  <option value={32} style={{ background: '#111' }}>32 Players (5 Rounds - Championship)</option>
                 </select>
               </div>
 
@@ -372,6 +390,56 @@ export default function CreateTournamentModal({
                   <option value="bo1" style={{ background: '#111' }}>Best of 1 (First to 1 win)</option>
                   <option value="bo3" style={{ background: '#111' }}>Best of 3 (First to 2 wins)</option>
                   <option value="bo5" style={{ background: '#111' }}>Best of 5 (First to 3 wins)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Entry Currency & Reward Split Format */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', color: 'rgba(255,255,255,0.7)', marginBottom: '6px' }}>
+                  ENTRY FEE CURRENCY
+                </label>
+                <select
+                  value={entryCurrency}
+                  onChange={(e) => setEntryCurrency(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    background: 'rgba(0,0,0,0.5)',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '0.9rem',
+                    outline: 'none'
+                  }}
+                >
+                  <option value="gold" style={{ background: '#111' }}>🪙 Gold (In-game)</option>
+                  <option value="tournament_credits" style={{ background: '#111' }}>🏆 Tournament Credits</option>
+                  <option value="gems" style={{ background: '#111' }}>💎 Gems</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', color: 'rgba(255,255,255,0.7)', marginBottom: '6px' }}>
+                  REWARD SPLIT FORMAT
+                </label>
+                <select
+                  value={rewardSplitType}
+                  onChange={(e) => setRewardSplitType(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    background: 'rgba(0,0,0,0.5)',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '0.9rem',
+                    outline: 'none'
+                  }}
+                >
+                  <option value="top4" style={{ background: '#111' }}>Top-4 Split (60% / 25% / 7.5% / 7.5%)</option>
+                  <option value="winner_take_all" style={{ background: '#111' }}>Winner-Take-All (100% to 1st)</option>
                 </select>
               </div>
             </div>
@@ -404,7 +472,7 @@ export default function CreateTournamentModal({
                 <option value={48} style={{ background: '#111' }}>48 Hours (2 Days)</option>
               </select>
               <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)', marginTop: '4px' }}>
-                If required players are not achieved before the deadline, all entry fees will be 100% refunded automatically.
+                15-minute check-in begins prior to start. If required players are not achieved, all fees are 100% refunded.
               </div>
             </div>
 
@@ -415,7 +483,7 @@ export default function CreateTournamentModal({
                   ENTRY FEE PER PLAYER
                 </label>
                 <span style={{ color: 'var(--neon-gold)', fontWeight: 'bold', fontSize: '1rem' }}>
-                  💎 {entryFee} Crystals
+                  {currencySymbol} {entryFee} {entryCurrency.toUpperCase()}
                 </span>
               </div>
               <input
@@ -428,10 +496,29 @@ export default function CreateTournamentModal({
                 style={{ width: '100%', accentColor: 'var(--neon-gold)', cursor: 'pointer' }}
               />
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>
-                <span>Admin Min: {minEntryFee} 💎</span>
-                <span>Your Balance: {userCrystals} 💎</span>
-                <span>Admin Max: {maxEntryFee} 💎</span>
+                <span>Min: {minEntryFee}</span>
+                <span>Your Balance: {currentWalletBalance} {currencySymbol}</span>
+                <span>Max: {maxEntryFee}</span>
               </div>
+            </div>
+
+            {/* Hosting Fee Warning/Indicator */}
+            <div style={{
+              background: 'rgba(251, 200, 13, 0.08)',
+              border: '1px solid rgba(251, 200, 13, 0.3)',
+              borderRadius: '10px',
+              padding: '10px 14px',
+              marginBottom: '16px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <span style={{ fontSize: '0.85rem', color: '#fff' }}>
+                🪙 Host Fee: <strong>200 Gold</strong> (deducted upon creation)
+              </span>
+              <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: userGold >= 200 ? '#39ff14' : '#f87171' }}>
+                {userGold >= 200 ? `Balance: ${userGold} 🪙` : `Need ${200 - userGold} more Gold`}
+              </span>
             </div>
 
             {/* Live Prize Pot & Admin Deduction Breakdown */}
@@ -445,31 +532,49 @@ export default function CreateTournamentModal({
               }}
             >
               <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--neon-cyan)', marginBottom: '10px', letterSpacing: '0.5px' }}>
-                ESCROW PRIZE POOL BREAKDOWN
+                ESCROW PRIZE POOL & CREDITS BREAKDOWN
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '6px', color: 'rgba(255,255,255,0.8)' }}>
-                <span>Total Pot ({bracketSize} × {entryFee}):</span>
-                <span style={{ fontWeight: 'bold', color: '#fff' }}>💎 {totalPot}</span>
+                <span>Total Pot ({bracketSize} × {entryFee} {currencySymbol}):</span>
+                <span style={{ fontWeight: 'bold', color: '#fff' }}>{currencySymbol} {totalPot}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '6px', color: 'rgba(255,255,255,0.8)' }}>
-                <span>Admin House Deduction ({adminDeductionPct}%):</span>
-                <span style={{ color: '#f87171' }}>- 💎 {adminRake}</span>
+                <span>Admin Platform Rake ({adminDeductionPct}%):</span>
+                <span style={{ color: '#f87171' }}>- {currencySymbol} {adminRake}</span>
               </div>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  fontSize: '1rem',
-                  fontWeight: 'bold',
-                  borderTop: '1px solid rgba(255,255,255,0.1)',
-                  paddingTop: '8px',
-                  marginTop: '4px',
-                  color: 'var(--neon-gold)'
-                }}
-              >
-                <span>1st Place Champion Payout:</span>
-                <span>🏆 💎 {winnerPayout} Crystals</span>
-              </div>
+              
+              {rewardSplitType === 'top4' ? (
+                <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px', marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#FBC80D', fontWeight: 'bold' }}>
+                    <span>🥇 1st Place (60%):</span>
+                    <span>{currencySymbol} {Math.floor(netPot * 0.60)} + 🏆 100 Credits + Champion Title</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#c0c0c0' }}>
+                    <span>🥈 2nd Place (25%):</span>
+                    <span>{currencySymbol} {Math.floor(netPot * 0.25)} + 🏆 50 Credits</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cd7f32' }}>
+                    <span>🥉 3rd & 4th Place (7.5% ea):</span>
+                    <span>{currencySymbol} {Math.floor(netPot * 0.075)} ea + 🏆 25 Credits ea</span>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    borderTop: '1px solid rgba(255,255,255,0.1)',
+                    paddingTop: '8px',
+                    marginTop: '4px',
+                    color: 'var(--neon-gold)'
+                  }}
+                >
+                  <span>1st Place Champion Payout:</span>
+                  <span>🏆 {currencySymbol} {netPot} + 100 Credits</span>
+                </div>
+              )}
             </div>
 
             {/* Submit CTA */}

@@ -216,12 +216,15 @@ export const tournamentService = {
     bracket_size = 8,
     series_format = 'bo1',
     entry_fee = 0,
+    entry_currency = 'gold',
+    reward_split_type = 'top4',
     bonus_prize = 0,
     admin_deduction_pct = null,
     creator_id = null,
     creator_name = 'Player',
     registration_deadline = null,
-    durationHours = 24
+    durationHours = 24,
+    check_in_window_minutes = 15
   }) {
     if (!supabase) return { error: 'Database not connected' };
 
@@ -237,10 +240,10 @@ export const tournamentService = {
       // 2. Enforce limits for Private Tournaments
       if (type === 'private') {
         if (parsedFee < minFee) {
-          return { error: `Entry fee cannot be less than the minimum required by Admin (${minFee} 💎).` };
+          return { error: `Entry fee cannot be less than the minimum required by Admin (${minFee} ${entry_currency}).` };
         }
         if (parsedFee > maxFee) {
-          return { error: `Entry fee cannot exceed the maximum limit set by Admin (${maxFee} 💎).` };
+          return { error: `Entry fee cannot exceed the maximum limit set by Admin (${maxFee} ${entry_currency}).` };
         }
         // Force admin deduction percentage to match global platform settings
         admin_deduction_pct = globalRakePct;
@@ -254,6 +257,13 @@ export const tournamentService = {
               existingTournament: activeTourney
             };
           }
+
+          // 4. Host Fee in Gold: Deduct 200 Gold from host
+          const hostFeeGold = 200;
+          const hostFeeRes = await economyService.modifyWallet(creator_id, 'gold', -hostFeeGold, 'tournament_host_fee');
+          if (!hostFeeRes.success) {
+            return { error: `Hosting a tournament requires 200 🪙 Gold. Insufficient Gold balance.` };
+          }
         }
       } else {
         // Public Tournament: use provided rake or fallback to global
@@ -262,7 +272,7 @@ export const tournamentService = {
         }
       }
 
-      // 4. Calculate Registration Deadline / Expiry
+      // 5. Calculate Registration Deadline / Expiry
       let finalDeadline = registration_deadline;
       if (!finalDeadline) {
         const safeHours = Math.max(1, parseInt(durationHours, 10) || 24);
@@ -284,6 +294,10 @@ export const tournamentService = {
         bracket_size: parseInt(bracket_size, 10),
         series_format,
         entry_fee: parsedFee,
+        entry_currency,
+        host_fee_gold: type === 'private' ? 200 : 0,
+        reward_split_type,
+        check_in_window_minutes,
         bonus_prize: Math.max(0, parseInt(bonus_prize, 10) || 0),
         admin_deduction_pct: parseFloat(admin_deduction_pct) || 10.0,
         total_pot: initialTotalPot,
@@ -308,7 +322,7 @@ export const tournamentService = {
     }
   },
 
-  // Join tournament with atomic RPC and crystal deduction
+  // Join tournament with atomic RPC and multi-currency deduction
   async joinTournament({ tournamentId, userId, playerName, characterId = 'chynaman' }) {
     if (!supabase || !tournamentId || !userId) {
       return { error: 'Missing tournament or user credentials' };
@@ -351,29 +365,20 @@ export const tournamentService = {
         return { error: 'You are already registered in this tournament' };
       }
 
-      // Check balance
-      const { data: profile, error: profErr } = await supabase
-        .from('profiles')
-        .select('crystals_collected')
-        .eq('id', userId)
-        .single();
+      const currency = tourney.entry_currency || 'gold';
 
-      if (profErr || !profile) return { error: 'Unable to verify player crystals' };
-      if ((profile.crystals_collected || 0) < tourney.entry_fee) {
-        return { error: `Insufficient Stability Crystals. Requires ${tourney.entry_fee} crystals.` };
-      }
-
-      // Deduct balance
+      // Deduct balance via multi-currency wallet
       if (tourney.entry_fee > 0) {
-        const { error: deductErr } = await supabase
-          .from('profiles')
-          .update({
-            crystals_collected: profile.crystals_collected - tourney.entry_fee,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', userId);
-
-        if (deductErr) throw deductErr;
+        const deductRes = await economyService.modifyWallet(
+          userId,
+          currency,
+          -tourney.entry_fee,
+          'tournament_entry',
+          tournamentId
+        );
+        if (!deductRes.success) {
+          return { error: deductRes.error || `Insufficient ${currency} balance. Requires ${tourney.entry_fee} ${currency}.` };
+        }
       }
 
       // Insert participant
@@ -387,7 +392,9 @@ export const tournamentService = {
           character_id: characterId,
           seed,
           status: 'registered',
-          entry_fee_paid: tourney.entry_fee
+          entry_fee_paid: tourney.entry_fee,
+          currency_paid: currency,
+          is_checked_in: false
         }]);
 
       if (partErr) throw partErr;
@@ -420,6 +427,81 @@ export const tournamentService = {
     }
   },
 
+  // Check In participant for active/upcoming tournament
+  async checkInParticipant(tournamentId, userId) {
+    if (!supabase || !tournamentId || !userId) return { error: 'Missing parameters' };
+    try {
+      // 1. Try atomic database RPC
+      const { data: rpcRes, error: rpcErr } = await supabase.rpc('rpc_check_in_participant', {
+        p_tournament_id: tournamentId,
+        p_user_id: userId
+      });
+
+      if (!rpcErr && rpcRes) {
+        return rpcRes;
+      }
+
+      // 2. Client fallback
+      const { error: updErr } = await supabase
+        .from('kontrola_tournament_participants')
+        .update({
+          is_checked_in: true,
+          checked_in_at: new Date().toISOString()
+        })
+        .eq('tournament_id', tournamentId)
+        .eq('user_id', userId);
+
+      if (updErr) throw updErr;
+      return { success: true, message: 'Check-in confirmed!' };
+    } catch (e) {
+      console.error('tournamentService.checkInParticipant error:', e);
+      return { error: e.message || 'Failed to check in' };
+    }
+  },
+
+  // Sweep no-shows and refund entry fees automatically
+  async sweepNoShows(tournamentId) {
+    if (!supabase || !tournamentId) return { error: 'Missing tournament ID' };
+    try {
+      // 1. Try atomic database RPC
+      const { data: rpcRes, error: rpcErr } = await supabase.rpc('rpc_sweep_tournament_noshows', {
+        p_tournament_id: tournamentId
+      });
+
+      if (!rpcErr && rpcRes && rpcRes.success) {
+        return rpcRes;
+      }
+
+      // 2. Client fallback
+      const tourney = await this.getTournamentById(tournamentId);
+      const parts = await this.getParticipants(tournamentId);
+      const unchecked = parts.filter(p => !p.is_checked_in);
+      let refundCount = 0;
+
+      for (const u of unchecked) {
+        if (u.entry_fee_paid > 0) {
+          await economyService.modifyWallet(
+            u.user_id,
+            tourney?.entry_currency || 'gold',
+            u.entry_fee_paid,
+            'tournament_noshow_refund',
+            tournamentId
+          );
+        }
+        await supabase
+          .from('kontrola_tournament_participants')
+          .delete()
+          .eq('id', u.id);
+        refundCount++;
+      }
+
+      return { success: true, refunded_players: refundCount };
+    } catch (e) {
+      console.error('tournamentService.sweepNoShows error:', e);
+      return { error: e.message };
+    }
+  },
+
   // Build Single Elimination Bracket Structure
   buildBracket(participants, bracketSize, seriesFormat = 'bo1') {
     const targetWins = getTargetWins(seriesFormat);
@@ -442,12 +524,14 @@ export const tournamentService = {
       ]
     };
 
-    const roundNames = {
-      1: numRounds === 2 ? 'Semifinals' : numRounds === 3 ? 'Quarterfinals' : 'Round 1',
-      2: numRounds === 2 ? 'Grand Finals' : numRounds === 3 ? 'Semifinals' : 'Round 2',
-      3: numRounds === 3 ? 'Grand Finals' : 'Round 3',
-      4: numRounds === 4 ? 'Grand Finals' : 'Round 4',
-      5: 'Grand Finals'
+    const getRoundName = (round, totalRounds) => {
+      const remaining = totalRounds - round;
+      if (remaining === 0) return 'Grand Finals';
+      if (remaining === 1) return 'Semifinals';
+      if (remaining === 2) return 'Quarterfinals';
+      if (remaining === 3) return 'Round of 16';
+      if (remaining === 4) return 'Round of 32';
+      return `Round ${round}`;
     };
 
     const pairs = seedPairs[bracketSize] || seedPairs[8];
@@ -478,7 +562,7 @@ export const tournamentService = {
 
     rounds.push({
       roundNumber: 1,
-      name: roundNames[1] || 'Round 1',
+      name: getRoundName(1, numRounds),
       matches: r1Matches
     });
 
@@ -504,7 +588,7 @@ export const tournamentService = {
       }
       rounds.push({
         roundNumber: r,
-        name: roundNames[r] || `Round ${r}`,
+        name: getRoundName(r, numRounds),
         matches
       });
       currentMatchCount = currentMatchCount / 2;
@@ -628,8 +712,35 @@ export const tournamentService = {
         const isFinals = round === bracket.totalRounds;
 
         if (isFinals) {
-          // Final match won: Crown Champion and award Escrow Pot!
-          await this.concludeTournament(tournamentId, winnerUserId, match.winnerName);
+          // Identify 2nd, 3rd, and 4th place contenders for Top-4 payout
+          const runnerUpId = match.player1?.id === winnerUserId ? match.player2?.id : match.player1?.id;
+          let thirdPlaceId = null;
+          let fourthPlaceId = null;
+
+          if (round > 1) {
+            const semiRoundObj = rounds.find(r => r.roundNumber === round - 1);
+            if (semiRoundObj && semiRoundObj.matches) {
+              const semiLosers = [];
+              for (const sm of semiRoundObj.matches) {
+                if (sm.winnerId) {
+                  const loser = sm.player1?.id === sm.winnerId ? sm.player2?.id : sm.player1?.id;
+                  if (loser) semiLosers.push(loser);
+                }
+              }
+              thirdPlaceId = semiLosers[0] || null;
+              fourthPlaceId = semiLosers[1] || null;
+            }
+          }
+
+          // Final match won: Crown Champion and disburse multi-tier rewards!
+          await this.concludeTournament(
+            tournamentId,
+            winnerUserId,
+            match.winnerName,
+            runnerUpId,
+            thirdPlaceId,
+            fourthPlaceId
+          );
         } else {
           // Advance winner to next round
           const nextRoundObj = rounds.find(r => r.roundNumber === round + 1);
@@ -684,16 +795,26 @@ export const tournamentService = {
     }
   },
 
-  // Conclude tournament & award winner
-  async concludeTournament(tournamentId, winnerId, winnerName) {
+  // Conclude tournament & award winner(s) with Top-4 split and Tournament Credits
+  async concludeTournament(
+    tournamentId,
+    winnerId,
+    winnerName,
+    secondPlaceId = null,
+    thirdPlaceId = null,
+    fourthPlaceId = null
+  ) {
     if (!supabase || !tournamentId) return;
 
     try {
-      // 1. Try atomic RPC
-      const { data: rpcRes, error: rpcErr } = await supabase.rpc('rpc_conclude_tournament', {
+      // 1. Try atomic multi-payout RPC first
+      const { data: rpcRes, error: rpcErr } = await supabase.rpc('rpc_conclude_tournament_multi_payout', {
         p_tournament_id: tournamentId,
-        p_winner_id: winnerId,
-        p_winner_name: winnerName || 'Champion'
+        p_first_place_id: winnerId,
+        p_first_place_name: winnerName || 'Champion',
+        p_second_place_id: secondPlaceId,
+        p_third_place_id: thirdPlaceId,
+        p_fourth_place_id: fourthPlaceId
       });
 
       if (!rpcErr && rpcRes && rpcRes.success) {
@@ -704,30 +825,100 @@ export const tournamentService = {
       const tourney = await this.getTournamentById(tournamentId);
       if (!tourney) return;
 
-      if (tourney.winner_payout > 0 && winnerId) {
+      const pot = tourney.winner_payout || tourney.total_pot || 0;
+      const currency = tourney.entry_currency || 'gold';
+      const isTop4 = (tourney.reward_split_type || 'top4') === 'top4' && secondPlaceId;
+
+      let p1Cut = pot;
+      let p2Cut = 0;
+      let p3Cut = 0;
+      let p4Cut = 0;
+
+      if (isTop4) {
+        p1Cut = Math.floor(pot * 0.60);
+        p2Cut = Math.floor(pot * 0.25);
+        p3Cut = Math.floor(pot * 0.075);
+        p4Cut = pot - (p1Cut + p2Cut + p3Cut);
+      }
+
+      // Award 1st Place: Currency Cut + 100 Tournament Credits + Title + Trophy
+      if (winnerId) {
+        if (p1Cut > 0) {
+          await economyService.modifyWallet(winnerId, currency, p1Cut, 'tournament_payout_1st', tournamentId);
+        }
+        await economyService.modifyWallet(winnerId, 'tournament_credits', 100, 'tournament_credits_1st', tournamentId);
+
         const { data: prof } = await supabase
           .from('profiles')
-          .select('crystals_collected, matches_won')
+          .select('matches_won, tournament_trophies, tournament_titles')
           .eq('id', winnerId)
           .single();
 
         if (prof) {
-          await supabase
-            .from('profiles')
-            .update({
-              crystals_collected: (prof.crystals_collected || 0) + tourney.winner_payout,
-              matches_won: (prof.matches_won || 0) + 1,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', winnerId);
+          const titles = Array.isArray(prof.tournament_titles) ? [...prof.tournament_titles] : [];
+          if (!titles.includes('Tournament Champion')) titles.push('Tournament Champion');
+
+          await supabase.from('profiles').update({
+            matches_won: (prof.matches_won || 0) + 1,
+            tournament_trophies: (prof.tournament_trophies || 0) + 1,
+            tournament_titles: titles,
+            equipped_title: 'Tournament Champion',
+            updated_at: new Date().toISOString()
+          }).eq('id', winnerId);
         }
+
+        await supabase.from('kontrola_tournament_participants').update({
+          status: 'winner',
+          placement: 1,
+          credits_awarded: 100,
+          payout_awarded: p1Cut
+        }).eq('tournament_id', tournamentId).eq('user_id', winnerId);
       }
 
-      await supabase
-        .from('kontrola_tournament_participants')
-        .update({ status: 'winner' })
-        .eq('tournament_id', tournamentId)
-        .eq('user_id', winnerId);
+      // Award 2nd Place: Currency Cut + 50 Tournament Credits
+      if (secondPlaceId) {
+        if (p2Cut > 0) {
+          await economyService.modifyWallet(secondPlaceId, currency, p2Cut, 'tournament_payout_2nd', tournamentId);
+        }
+        await economyService.modifyWallet(secondPlaceId, 'tournament_credits', 50, 'tournament_credits_2nd', tournamentId);
+
+        await supabase.from('kontrola_tournament_participants').update({
+          status: 'runner_up',
+          placement: 2,
+          credits_awarded: 50,
+          payout_awarded: p2Cut
+        }).eq('tournament_id', tournamentId).eq('user_id', secondPlaceId);
+      }
+
+      // Award 3rd Place: Currency Cut + 25 Tournament Credits
+      if (thirdPlaceId) {
+        if (p3Cut > 0) {
+          await economyService.modifyWallet(thirdPlaceId, currency, p3Cut, 'tournament_payout_3rd', tournamentId);
+        }
+        await economyService.modifyWallet(thirdPlaceId, 'tournament_credits', 25, 'tournament_credits_3rd', tournamentId);
+
+        await supabase.from('kontrola_tournament_participants').update({
+          status: 'semifinalist',
+          placement: 3,
+          credits_awarded: 25,
+          payout_awarded: p3Cut
+        }).eq('tournament_id', tournamentId).eq('user_id', thirdPlaceId);
+      }
+
+      // Award 4th Place: Currency Cut + 25 Tournament Credits
+      if (fourthPlaceId) {
+        if (p4Cut > 0) {
+          await economyService.modifyWallet(fourthPlaceId, currency, p4Cut, 'tournament_payout_4th', tournamentId);
+        }
+        await economyService.modifyWallet(fourthPlaceId, 'tournament_credits', 25, 'tournament_credits_4th', tournamentId);
+
+        await supabase.from('kontrola_tournament_participants').update({
+          status: 'semifinalist',
+          placement: 4,
+          credits_awarded: 25,
+          payout_awarded: p4Cut
+        }).eq('tournament_id', tournamentId).eq('user_id', fourthPlaceId);
+      }
 
       await supabase
         .from('kontrola_tournaments')
