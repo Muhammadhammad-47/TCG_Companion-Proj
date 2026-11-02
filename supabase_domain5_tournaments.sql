@@ -296,3 +296,4 @@ GRANT EXECUTE ON FUNCTION rpc_record_verified_match_result(UUID, INT, INT, UUID,
 GRANT EXECUTE ON FUNCTION rpc_record_verified_match_result(UUID, INT, INT, UUID, TEXT, TEXT, UUID) TO anon;
 GRANT EXECUTE ON FUNCTION rpc_conclude_tournament_multi_payout(UUID, UUID, TEXT, UUID, UUID, UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION rpc_conclude_tournament_multi_payout(UUID, UUID, TEXT, UUID, UUID, UUID) TO anon;
+

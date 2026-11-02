@@ -27,6 +27,8 @@ export default function KontrolaTournamentHub({
       list = await tournamentService.getPublicTournaments();
     } else if (filterTab === 'private') {
       list = await tournamentService.getPrivateTournaments(currentUser?.id);
+    } else if (filterTab === 'history') {
+      list = await tournamentService.getPastTournaments();
     } else {
       const pubs = await tournamentService.getPublicTournaments();
       const privs = await tournamentService.getPrivateTournaments(currentUser?.id);
@@ -212,7 +214,8 @@ export default function KontrolaTournamentHub({
         {[
           { id: 'all', label: 'ALL TOURNAMENTS' },
           { id: 'public', label: 'PUBLIC OFFICIAL' },
-          { id: 'private', label: 'PRIVATE (FRIENDS)' }
+          { id: 'private', label: 'PRIVATE (FRIENDS)' },
+          { id: 'history', label: '🏆 PAST CHAMPIONS' }
         ].map((tab) => (
           <button
             key={tab.id}
@@ -325,6 +328,25 @@ export default function KontrolaTournamentHub({
                   <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginBottom: '12px' }}>
                     Hosted by: <strong style={{ color: '#fff' }}>{t.creator_name || 'Admin'}</strong> • Format: <strong>{t.series_format?.toUpperCase()}</strong>
                   </div>
+
+                  {isComp && (
+                    <div style={{
+                      background: 'linear-gradient(135deg, rgba(251, 200, 13, 0.2) 0%, rgba(0, 0, 0, 0.4) 100%)',
+                      border: '1px solid rgba(251, 200, 13, 0.4)',
+                      borderRadius: '8px',
+                      padding: '8px 12px',
+                      marginBottom: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <Trophy size={18} color="#FBC80D" />
+                      <div>
+                        <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase' }}>TOURNAMENT CHAMPION</div>
+                        <strong style={{ color: '#FBC80D', fontSize: '0.95rem' }}>{t.winner_name || 'Champion'}</strong>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Metrics Box */}
                   <div

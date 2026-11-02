@@ -6,6 +6,7 @@ import PlayerAvatar from './PlayerAvatar';
 
 export const LeaderboardModal = ({ isOpen, onClose }) => {
   const [players, setPlayers] = useState([]);
+  const [leaderboardTab, setLeaderboardTab] = useState('crystals'); // 'crystals' | 'tournaments'
   const [loading, setLoading] = useState(true);
   const [isStale, setIsStale] = useState(false);
 
@@ -22,7 +23,7 @@ export const LeaderboardModal = ({ isOpen, onClose }) => {
         // stale-while-revalidate: returns cached rows immediately if available,
         // calls onUpdate with fresh data once the network request completes
         const rows = await leaderboardCache.fetchWithCache(
-          () => authService.getLeaderboard(25, null),
+          () => authService.getLeaderboard(25, leaderboardTab),
           (fresh) => {
             if (isMounted) {
               setPlayers(fresh);
@@ -50,7 +51,7 @@ export const LeaderboardModal = ({ isOpen, onClose }) => {
     return () => {
       isMounted = false;
     };
-  }, [isOpen]);
+  }, [isOpen, leaderboardTab]);
 
   if (!isOpen) return null;
 
@@ -110,6 +111,40 @@ export const LeaderboardModal = ({ isOpen, onClose }) => {
             HALL OF FAME
           </h2>
           <p style={{ color: 'rgba(255,255,255,0.6)', margin: 0, fontSize: '0.9rem' }}>Top Ranked Kontrola Players</p>
+
+          {/* Category Tabs */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '14px' }}>
+            <button
+              onClick={() => setLeaderboardTab('crystals')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '8px',
+                background: leaderboardTab === 'crystals' ? 'rgba(251, 200, 13, 0.2)' : 'rgba(255,255,255,0.05)',
+                border: leaderboardTab === 'crystals' ? '1px solid var(--neon-gold)' : '1px solid rgba(255,255,255,0.1)',
+                color: leaderboardTab === 'crystals' ? 'var(--neon-gold)' : 'rgba(255,255,255,0.6)',
+                fontWeight: 'bold',
+                fontSize: '0.85rem',
+                cursor: 'pointer'
+              }}
+            >
+              PILOT WINS & CRYSTALS
+            </button>
+            <button
+              onClick={() => setLeaderboardTab('tournaments')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '8px',
+                background: leaderboardTab === 'tournaments' ? 'rgba(251, 200, 13, 0.2)' : 'rgba(255,255,255,0.05)',
+                border: leaderboardTab === 'tournaments' ? '1px solid var(--neon-gold)' : '1px solid rgba(255,255,255,0.1)',
+                color: leaderboardTab === 'tournaments' ? 'var(--neon-gold)' : 'rgba(255,255,255,0.6)',
+                fontWeight: 'bold',
+                fontSize: '0.85rem',
+                cursor: 'pointer'
+              }}
+            >
+              🏆 TOURNAMENT CHAMPIONS
+            </button>
+          </div>
           {isStale && (
             <p style={{ color: 'rgba(255,255,255,0.35)', margin: '4px 0 0', fontSize: '0.75rem' }}>
               ↻ Refreshing…

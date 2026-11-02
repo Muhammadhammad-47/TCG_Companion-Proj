@@ -130,6 +130,31 @@ export const tournamentService = {
     }
   },
 
+  // Fetch completed past tournaments (Hall of Champions History)
+  async getPastTournaments(limit = 25) {
+    if (!supabase) return [];
+    try {
+      const { data, error } = await supabase
+        .from('kontrola_tournaments')
+        .select(`
+          *,
+          participants:kontrola_tournament_participants(count)
+        `)
+        .eq('status', 'completed')
+        .order('ended_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      return (data || []).map(t => ({
+        ...t,
+        participantsCount: t.participants?.[0]?.count || 0
+      }));
+    } catch (e) {
+      console.warn('tournamentService.getPastTournaments failed:', e);
+      return [];
+    }
+  },
+
   // Admin: Fetch all tournaments
   async getAllTournaments() {
     if (!supabase) return [];
