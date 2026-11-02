@@ -178,6 +178,9 @@ export default function ProfileSettingsModal({
   const matchesPlayed = activeProfile?.matches_played || 0;
   const matchesWon = activeProfile?.matches_won || 0;
   const crystals = activeProfile?.crystals_collected || 0;
+  const gold = activeProfile?.gold ?? 500;
+  const gems = activeProfile?.gems ?? 50;
+  const tournamentCredits = activeProfile?.tournament_credits ?? 0;
   const winRate = matchesPlayed > 0 ? Math.round((matchesWon / matchesPlayed) * 100) : 0;
 
   if (!isOpen) return null;
@@ -543,6 +546,60 @@ export default function ProfileSettingsModal({
               </div>
               <div style={{ fontSize: '1.85rem', fontWeight: 'bold', color: 'var(--neon-gold, #FBC80D)', fontFamily: 'Bebas Neue, sans-serif', lineHeight: 1.1 }}>
                 {winRate}%
+              </div>
+            </div>
+
+                        {/* Gold */}
+            <div
+              style={{
+                background: 'rgba(251, 200, 13, 0.08)',
+                border: '1px solid rgba(251, 200, 13, 0.3)',
+                borderRadius: '12px',
+                padding: '12px 14px',
+                textAlign: 'center'
+              }}
+            >
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', marginBottom: '2px', fontWeight: 'bold' }}>
+                GOLD
+              </div>
+              <div style={{ fontSize: '1.85rem', fontWeight: 'bold', color: 'var(--neon-gold, #FBC80D)', fontFamily: 'Bebas Neue, sans-serif', lineHeight: 1.1 }}>
+                🪙 {gold.toLocaleString()}
+              </div>
+            </div>
+
+            {/* Gems */}
+            <div
+              style={{
+                background: 'rgba(0, 240, 255, 0.08)',
+                border: '1px solid rgba(0, 240, 255, 0.3)',
+                borderRadius: '12px',
+                padding: '12px 14px',
+                textAlign: 'center'
+              }}
+            >
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', marginBottom: '2px', fontWeight: 'bold' }}>
+                GEMS
+              </div>
+              <div style={{ fontSize: '1.85rem', fontWeight: 'bold', color: 'var(--neon-cyan, #00f0ff)', fontFamily: 'Bebas Neue, sans-serif', lineHeight: 1.1 }}>
+                💎 {gems.toLocaleString()}
+              </div>
+            </div>
+
+            {/* Tournament Credits */}
+            <div
+              style={{
+                background: 'rgba(57, 255, 20, 0.08)',
+                border: '1px solid rgba(57, 255, 20, 0.3)',
+                borderRadius: '12px',
+                padding: '12px 14px',
+                textAlign: 'center'
+              }}
+            >
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', marginBottom: '2px', fontWeight: 'bold' }}>
+                CREDITS
+              </div>
+              <div style={{ fontSize: '1.85rem', fontWeight: 'bold', color: '#39ff14', fontFamily: 'Bebas Neue, sans-serif', lineHeight: 1.1 }}>
+                🏆 {tournamentCredits.toLocaleString()}
               </div>
             </div>
 

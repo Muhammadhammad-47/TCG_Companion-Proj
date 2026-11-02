@@ -4314,6 +4314,29 @@ export default function KontrolaArena() {
                   <strong>{gameState?.playerNames?.[winner.playerId] || winner.name}</strong> emerged victorious in Kontrola!
                 </p>
 
+                {/* Match Economy Rewards Banner */}
+                <div style={{
+                  background: 'linear-gradient(135deg, rgba(251, 200, 13, 0.15) 0%, rgba(0, 240, 255, 0.1) 100%)',
+                  border: '1px solid rgba(251, 200, 13, 0.4)',
+                  borderRadius: '12px',
+                  padding: '12px 16px',
+                  marginBottom: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '12px'
+                }}>
+                  <span style={{ fontSize: '1.4rem' }}>🪙</span>
+                  <div style={{ textAlign: 'left' }}>
+                    <div style={{ color: 'var(--neon-gold, #FBC80D)', fontWeight: 'bold', fontSize: '1.05rem', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.8px' }}>
+                      {winner.playerId === playerId ? '+100 GOLD AWARDED FOR VICTORY' : '+40 GOLD AWARDED FOR PARTICIPATION'}
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: 'rgba(255, 255, 255, 0.7)' }}>
+                      {winner.playerId === playerId ? 'First daily victory also earns +200 bonus Gold!' : 'Keep battling to earn more Gold & unlock packs!'}
+                    </div>
+                  </div>
+                </div>
+
                 <div style={{ background: 'rgba(0,0,0,0.4)', borderRadius: '12px', padding: '16px', marginBottom: '24px', border: '1px solid rgba(255,255,255,0.1)' }}>
                   <h3 style={{ margin: '0 0 12px 0', color: 'var(--neon-cyan)', fontSize: '1.1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>MATCH SCOREBOARD</h3>
                   {gameState?.players?.map((pid, idx) => {

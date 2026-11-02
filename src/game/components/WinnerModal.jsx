@@ -307,6 +307,14 @@ export default function WinnerModal({ winner, players, turnNumber, gameStats = {
             </div>
           </div>
 
+          <div className="metric-chip" style={{ border: '1px solid rgba(251, 200, 13, 0.4)', background: 'rgba(251, 200, 13, 0.1)' }}>
+            <span style={{ fontSize: '1.2rem' }}>🪙</span>
+            <div className="metric-text-group">
+              <span className="metric-label" style={{ color: '#FBC80D' }}>REWARD</span>
+              <strong className="metric-value" style={{ color: '#FBC80D' }}>+100 GOLD</strong>
+            </div>
+          </div>
+
           <div className="metric-praise-box">
             <Sparkles size={16} color="#FBC80D" />
             <div className="praise-text">

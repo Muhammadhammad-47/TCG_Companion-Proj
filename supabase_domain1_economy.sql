@@ -82,3 +82,35 @@ BEGIN
     RETURN jsonb_build_object('success', true, 'currency', p_currency, 'new_balance', v_new_bal);
 END;
 $$ LANGUAGE plpgsql;
+
+-- 4. Row Level Security (RLS) for wallet_transactions
+ALTER TABLE wallet_transactions ENABLE ROW LEVEL SECURITY;
+
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'wallet_transactions' AND policyname = 'Users can view their own wallet transactions'
+    ) THEN
+        CREATE POLICY "Users can view their own wallet transactions"
+            ON wallet_transactions FOR SELECT
+            USING (auth.uid() = user_id);
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'wallet_transactions' AND policyname = 'Users can insert their own wallet transactions'
+    ) THEN
+        CREATE POLICY "Users can insert their own wallet transactions"
+            ON wallet_transactions FOR INSERT
+            WITH CHECK (auth.uid() = user_id);
+    END IF;
+END $$;
+
+-- 5. Permissions & RPC Grants
+GRANT SELECT, INSERT ON wallet_transactions TO authenticated;
+GRANT SELECT, INSERT ON wallet_transactions TO anon;
+GRANT EXECUTE ON FUNCTION rpc_modify_wallet(UUID, TEXT, INT, TEXT, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION rpc_modify_wallet(UUID, TEXT, INT, TEXT, TEXT) TO anon;
+
+
