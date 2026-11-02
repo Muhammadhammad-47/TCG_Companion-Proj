@@ -196,14 +196,29 @@ export const LeaderboardModal = ({ isOpen, onClose }) => {
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', fontWeight: 'bold' }}>Crystals</div>
-                        <div style={{ fontSize: '1.1rem', color: 'var(--neon-gold, #FBC80D)', fontWeight: 'bold' }}>{p.crystals_collected || 0}</div>
-                      </div>
-                      <div style={{ textAlign: 'right', borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '16px' }}>
-                        <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', fontWeight: 'bold' }}>Wins</div>
-                        <div style={{ fontSize: '1.1rem', color: '#39ff14', fontWeight: 'bold' }}>{p.matches_won || 0}</div>
-                      </div>
+                      {leaderboardTab === 'tournaments' ? (
+                        <>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', fontWeight: 'bold' }}>Trophies</div>
+                            <div style={{ fontSize: '1.1rem', color: 'var(--neon-gold, #FBC80D)', fontWeight: 'bold' }}>{p.tournament_trophies || 0}</div>
+                          </div>
+                          <div style={{ textAlign: 'right', borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '16px' }}>
+                            <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', fontWeight: 'bold' }}>Credits</div>
+                            <div style={{ fontSize: '1.1rem', color: '#c77dff', fontWeight: 'bold' }}>{p.tournament_credits || 0}</div>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', fontWeight: 'bold' }}>Crystals</div>
+                            <div style={{ fontSize: '1.1rem', color: 'var(--neon-gold, #FBC80D)', fontWeight: 'bold' }}>{p.crystals_collected || 0}</div>
+                          </div>
+                          <div style={{ textAlign: 'right', borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '16px' }}>
+                            <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', fontWeight: 'bold' }}>Wins</div>
+                            <div style={{ fontSize: '1.1rem', color: '#39ff14', fontWeight: 'bold' }}>{p.matches_won || 0}</div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 ))}
