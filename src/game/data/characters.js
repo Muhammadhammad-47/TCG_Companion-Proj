@@ -102,7 +102,7 @@ export const CHARACTERS = {
     avatar: '????',
     themeColor: '#FBC80D',
     bgGradient: 'linear-gradient(135deg, #093436 0%, #031517 100%)',
-    baseHP: 100,
+    baseHP: 70,
     maxHP: 200,
     mindStrength: 5, // Highest mind resistance
     defaultDP: 10,
@@ -341,7 +341,7 @@ export const CHARACTERS = {
     avatar: '????',
     themeColor: '#39ff14',
     bgGradient: 'linear-gradient(135deg, #173d09 0%, #061402 100%)',
-    baseHP: 100,
+    baseHP: 65,
     maxHP: 200,
     mindStrength: 2,
     mindDefBonus: 1, // Magical creature +1
@@ -399,7 +399,7 @@ export const CHARACTERS = {
     avatar: '????',
     themeColor: '#ff1a9d',
     bgGradient: 'linear-gradient(135deg, #4a0d2e 0%, #17040e 100%)',
-    baseHP: 100,
+    baseHP: 70,
     maxHP: 200,
     mindStrength: 2,
     mindDefBonus: 1, // Magical creature +1

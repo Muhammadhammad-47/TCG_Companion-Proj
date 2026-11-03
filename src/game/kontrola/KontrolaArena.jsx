@@ -9,7 +9,7 @@ import {
 import { DynamicScaleWrapper } from '../../components/DynamicScaleWrapper';
 import { soundFX } from '../utils/audio';
 import { getAssetUrl } from '../data/characters';
-import { KONTROLA_CHARACTERS, generateDeck, dealInitialHands, resolveTurn, rollDice } from './KontrolaEngine';
+import { KONTROLA_CHARACTERS, KONTROLA_ACTION_CARDS, generateDeck, dealInitialHands, resolveTurn, rollDice } from './KontrolaEngine';
 import {
   createMatch, joinMatch, subscribeToMatch, requestJoin, takeTurn, broadcastState,
   advertiseRoom, closeRoom, subscribeToGlobalLobby, broadcastLeave, requestSync,
@@ -68,7 +68,18 @@ const generateRoomCode = () => {
 
 // Bulletproof helpers to handle both string cards ('SHIELD BASIC') and card objects ({ id, name, type, costET })
 export const getSafeCardName = (c) => typeof c === 'string' ? c : (c?.name || '');
-export const getSafeCardType = (c) => typeof c === 'object' && c?.type ? c.type : 'ACTION';
+export const getSafeCardType = (c) => {
+  if (typeof c === 'object' && c?.type) return c.type;
+  const name = getSafeCardName(c).toUpperCase();
+  const found = KONTROLA_ACTION_CARDS.find(card => card.name.toUpperCase() === name);
+  if (found?.type) return found.type;
+  if (name.includes('HEAL') || name.includes('REVIVE') || name.includes('ANTIDOTE') || name.includes('VITALITY')) return 'HEAL';
+  if (name.includes('POISON') || name.includes('FREEZE') || name.includes('SLEEPY') || name.includes('BURN')) return 'STATUS';
+  if (name.includes('X-CHANGE') || name.includes('VISION') || name.includes('SWAP') || name.includes('TIME MACHINE')) return 'OTHERS';
+  if (name.includes('SHIELD') || name.includes('DEFENCE') || name.includes('DODGE') || name.includes('BOOMERANG')) return 'DEFENSE';
+  if (name.includes('DRAIN') || name.includes('SOUL ALLIANCE') || name.includes('ABANDON') || name.includes('KONTROL') || name.includes('RETREAT')) return 'TACTICAL';
+  return 'ATTACK';
+};
 export const getSafeCardId = (c, idx = 0) => (typeof c === 'object' && c?.id) ? c.id : `${getSafeCardName(c)}_${idx}`;
 export const getSafeCardCost = (c) => typeof c === 'object' && typeof c?.costET === 'number' ? c.costET : 0;
 
@@ -1103,8 +1114,8 @@ export default function KontrolaArena() {
         else if (event.type === 'ACTION_EFFECT') {
           const { actionType, actionName, dmgDealt, healDelta, visionData, triggerXChange, triggerRevivePrompt } = event.payload || {};
 
-          // Handle Vision Reveal for the player who played it
-          if (visionData) {
+          // Handle Vision Reveal for the player who played it (attacker only per Feedback Line 93)
+          if (visionData && visionData.actorId === playerIdRef.current) {
             setRevealedVision(visionData);
           }
 
@@ -1353,8 +1364,8 @@ export default function KontrolaArena() {
 
       // For RESOLVE_COMBAT, use rolls from payload.precalculatedRolls (set by dice screen)
       // or fallback to the parameter
-      const precalculatedRolls = payload.actionType === 'RESOLVE_COMBAT' 
-        ? (payload.precalculatedRolls || precalculatedRollsParam)
+      const precalculatedRolls = payload.actionType === 'RESOLVE_COMBAT'
+        ? { ...(precalculatedRollsParam || {}), ...(payload.precalculatedRolls || {}) }
         : precalculatedRollsParam;
 
       // RESOLVE_COMBAT: falls through to the generic resolution block at the bottom of this function.
@@ -1579,8 +1590,21 @@ export default function KontrolaArena() {
           const givenName = typeof cardGiven === 'string' ? cardGiven : (cardGiven?.name || 'Action Card');
           const takenName = typeof cardTaken === 'string' ? cardTaken : (cardTaken?.name || 'Action Card');
 
+          const livingPlayers = (currentState.players || []).filter(
+            (pId) => !currentState.characterStates?.[pId]?.isDefeated
+          );
+          let turnId = currentState.turn;
+          if (turnId === actorId && livingPlayers.length > 1) {
+            const currentIdx = livingPlayers.indexOf(actorId);
+            const step = currentState.turnDirection === 'counter' ? -1 : 1;
+            let nextIdx = (currentIdx + step) % livingPlayers.length;
+            if (nextIdx < 0) nextIdx += livingPlayers.length;
+            turnId = livingPlayers[nextIdx] || livingPlayers[0];
+          }
+
           const nextState = {
             ...currentState,
+            turn: turnId,
             hands: {
               ...(currentState.hands || {}),
               [actorId]: actorHand,
@@ -2014,7 +2038,7 @@ export default function KontrolaArena() {
             }
           }
 
-          if (visionData) {
+          if (visionData && visionData.actorId === playerIdRef.current) {
             setRevealedVision(visionData);
           }
 
@@ -2719,7 +2743,7 @@ export default function KontrolaArena() {
     }
 
     const cardName = getSafeCardName(selectedActionCard).toUpperCase();
-    const isTrap = ['BOOMERANG', 'MISDIRECT'].some(kw => cardName.includes(kw));
+    const isTrap = cardName.includes('BOOMERANG');
     const isDrain = cardName.includes('DRAIN');
     const isBackStab = cardName.includes('BACK STAB');
     const isFullXChange = cardName.includes('X-CHANGE') && cardName.includes('FULL');
@@ -2728,6 +2752,7 @@ export default function KontrolaArena() {
     const isLightning = cardName.includes('LIGHTNING');
     const isFire = cardName.includes('FIRE');
     const isVampire = cardName.includes('VAMPIRE');
+    const isMisdirect = cardName.includes('MISDIRECT');
 
     console.log('[playTurn] Card type analysis:', {
       cardName,
@@ -2779,7 +2804,7 @@ export default function KontrolaArena() {
       return;
     }
 
-    if (isAttack && !isAoE && !isLightning && !isFire && !isVampire && !isBackStab && !selectedCharacterAttack) {
+    if (isAttack && !isAoE && !isLightning && !isFire && !isVampire && !isBackStab && !isMisdirect && !selectedCharacterAttack) {
       console.log('[playTurn] VALIDATION FAILED: Attack requires character move selection');
       showNotice('Please select a character attack move to strike with!', 'warning');
       return;
@@ -2788,8 +2813,8 @@ export default function KontrolaArena() {
     const payload = {
       actorId: playerId,
       actionCard: selectedActionCard,
-      attackSelectionName: (isLightning || isFire || isVampire || isBackStab) ? null : selectedCharacterAttack,
-      targetId: isAoE ? 'ALL' : (isTrap ? playerId : selectedTargetId)
+      attackSelectionName: (isLightning || isFire || isVampire || isBackStab || isMisdirect) ? null : selectedCharacterAttack,
+      targetId: isAoE ? 'ALL' : selectedTargetId
     };
 
     console.log('[playTurn] Payload created:', payload);
@@ -4705,6 +4730,7 @@ export default function KontrolaArena() {
                             <span>?? {pChar.crystals || 0}/3</span>
                             {pChar.poisonCount > 0 && <span style={{ color: 'var(--neon-green)' }}>?? {pChar.poisonCount}</span>}
                             {typeof pChar.burnCount === 'number' && pChar.burnCount > 0 && <span style={{ color: '#ff4d00' }}>?? {pChar.burnCount}</span>}
+                            {typeof pChar.vampireStealTurnsLeft === 'number' && pChar.vampireStealTurnsLeft > 0 && <span style={{ color: '#ff2a6d' }}>🦹 {pChar.vampireStealTurnsLeft}t</span>}
                           </div>
                         </div>
 
@@ -4747,6 +4773,13 @@ export default function KontrolaArena() {
                       <span style={{ fontSize: '15px' }}>??</span>
                       <span className="effect-name" style={{ color: '#ff4d00' }}>Burn</span>
                       <span className="effect-count" style={{ color: '#ff4d00' }}>{myCharacter.burnCount}</span>
+                    </div>
+                  )}
+                  {typeof myCharacter?.vampireStealTurnsLeft === 'number' && myCharacter.vampireStealTurnsLeft > 0 && (
+                    <div className="effect-chip effect-poison" style={{ borderColor: 'rgba(255, 42, 109, 0.5)', background: 'rgba(255, 42, 109, 0.12)' }}>
+                      <span style={{ fontSize: '15px' }}>🦹</span>
+                      <span className="effect-name" style={{ color: '#ff2a6d' }}>Vampire</span>
+                      <span className="effect-count" style={{ color: '#ff2a6d' }}>{myCharacter.vampireStealTurnsLeft}t (-10HP)</span>
                     </div>
                   )}
                   <div className="effect-chip effect-shield">
@@ -4901,18 +4934,16 @@ export default function KontrolaArena() {
                           filter: isCardLocked ? 'grayscale(0.4)' : 'none'
                         }}
                         onClick={() => {
-                          if (isCardLocked) {
-                            playClick();
-                            if (is3PlayerLocked) {
-                              showNotice('⚠️ Requires 3+ players! Not playable in a 1-on-1 match.', 'warning');
-                            } else {
-                              showNotice(`🔒 Requires Level ${reqLvl}! (Current: Level ${pLevel}). Reach ${reqLvl === 2 ? '150 HP' : 'Level ' + reqLvl} first.`, 'warning');
-                            }
-                            return;
-                          }
                           if (isMyTurn && !isPendingSecondAttack) {
                             playClick();
                             setSelectedActionCard(cardObj);
+                            if (isCardLocked) {
+                              if (is3PlayerLocked) {
+                                showNotice('⚠️ Requires 3+ players to attack! (You can still discard & draw)', 'info');
+                              } else {
+                                showNotice(`🔒 Requires Level ${reqLvl} to attack! (Reach ${reqLvl === 2 ? '150 HP' : 'Level ' + reqLvl} first. You can still discard & draw)`, 'info');
+                              }
+                            }
                           }
                         }}
                       >
@@ -4994,7 +5025,7 @@ export default function KontrolaArena() {
 
               {/* Target & Move Selection Panel */}
               {selectedActionCard && !isSpectator && (
-                ((selectedActionCard.type === 'ATTACK' || getSafeCardName(selectedActionCard).toUpperCase().includes('BACK STAB')) && !['BOOMERANG', 'MISDIRECT'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw))) ||
+                ((selectedActionCard.type === 'ATTACK' || getSafeCardName(selectedActionCard).toUpperCase().includes('BACK STAB')) && !['BOOMERANG'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw))) ||
                 ['POISON', 'SLEEPY', 'FREEZE', 'X-CHANGE', 'KONTROL', 'SOUL ALLIANCE', 'DRAIN', 'VAMPIRE'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw)) ||
                 (getSafeCardName(selectedActionCard).toUpperCase().includes('VISION') && !getSafeCardName(selectedActionCard).toUpperCase().includes('FULL'))
               ) && (
@@ -5155,11 +5186,17 @@ export default function KontrolaArena() {
                       disabled={
                         !isMyTurn ||
                         !selectedActionCard ||
+                        Boolean(
+                          (getSafeCardName(selectedActionCard).toUpperCase().includes('V20') && (myCharacter?.level || 1) < 2) ||
+                          (getSafeCardName(selectedActionCard).toUpperCase().includes('V30') && (myCharacter?.level || 1) < 3) ||
+                          (getSafeCardName(selectedActionCard).toUpperCase().includes('V40') && (myCharacter?.level || 1) < 4) ||
+                          (['BACK STAB', 'SOUL ALLIANCE', 'ABANDON'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw)) && ((gameState?.players?.length) || 2) <= 2)
+                        ) ||
                         (selectedActionCard.type === 'ATTACK' &&
                           !['BLITZ', 'LIGHTNING', 'FIRE FLAME', 'VAMPIRE', 'DRAIN', 'BACK STAB', 'BOOMERANG', 'MISDIRECT'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw)) &&
                           (!selectedCharacterAttack || !selectedTargetId)) ||
                         (getSafeCardName(selectedActionCard).toUpperCase().includes('BACK STAB') && !selectedTargetId) ||
-                        (['POISON', 'SLEEPY', 'FREEZE', 'X-CHANGE', 'KONTROL', 'SOUL ALLIANCE', 'DRAIN', 'VAMPIRE'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw)) && !selectedTargetId) ||
+                        (['POISON', 'SLEEPY', 'FREEZE', 'X-CHANGE', 'KONTROL', 'SOUL ALLIANCE', 'DRAIN', 'VAMPIRE', 'MISDIRECT', 'LIGHTNING', 'FIRE FLAME'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw)) && !selectedTargetId) ||
                         (getSafeCardName(selectedActionCard).toUpperCase().includes('VISION') && !getSafeCardName(selectedActionCard).toUpperCase().includes('FULL') && !selectedTargetId)
                       }
                       onClick={playTurn}
@@ -5988,7 +6025,7 @@ export default function KontrolaArena() {
           )}
 
           {/* VISION REVEAL MODAL */}
-          {revealedVision && (
+          {revealedVision && (revealedVision.actorId === playerId) && (
             <div
               style={{
                 position: 'fixed',

@@ -1,0 +1,80 @@
+﻿Economy & Store Foundation
+Included features
+* Three-currency wallet system:
+   * Gold
+   * Gems
+   * Tournament Credits
+* Currency balance display and wallet update logic.
+* Gold earning from existing game activities:
+   * Match completion
+   * First daily win
+   * Daily reward or quest support
+   * Basic reward milestones
+* Gem purchase system through Google Play / Apple App Store.
+* Store interface with:
+   * Gem packs
+   * Gold items
+   * Gem items
+   * Featured offer section
+   * New-player / starter bundle
+* Basic cosmetic store and inventory:
+   * Avatars
+   * Profile icons
+   * Frames
+   * Card backs
+   * Emotes
+* Cosmetic equip and unequip system.
+* Purchase confirmation and receipt validation flow.yo
+* Basic backend or local data integration, depending on the current project architecture.
+* Basic analytics events for purchases, currency income/spending, and cosmetic usage.
+* QA testing for wallet, purchase, inventory, and reward flows.
+
+
+* Player-hosted tournament system.
+* Public and private tournament creation.
+* Tournament discovery and listing screen.
+* Tournament detail screen with:
+   * Player count
+   * Entry cost
+   * Prize pool
+   * Reward split
+   * Check-in time
+   * Tournament rules
+* Tournament Credits earning and spending system.
+* Tournament entry fee handling.
+* Host fee system using Gold.
+* Automatic 8-player tournament brackets.
+* Automatic 16-player tournament brackets.
+* Automatic 32-player tournament brackets.
+* Single-elimination bracket progression.
+* Player check-in system.
+* Tournament match assignment.
+* Automatic progression after verified match results.
+* Tournament placement and reward distribution.
+* Tournament winner history / leaderboard support.
+* Basic cancellation, no-show, and refund rules.
+* Tournament reward configuration.
+* Tournament-earned prestige cosmetics:
+   * Winner frame
+   * Tournament badge
+   * Profile title
+* Advanced cosmetic support:
+   * Animated avatars
+   * Animated frames
+   * VFX
+   * Cosmetic bundles
+   * Limited-time offers
+* Seasonal store content support.
+* Season-pass foundation:
+   * Free track
+   * Premium track
+   * XP progression
+   * Reward claiming
+   * Season configuration
+* Analytics for tournament joins, completion rate, entry fees, rewards, no-shows, and store conversion.
+* Full QA testing of tournament flow, rewards, wallet deductions, and purchase flows.
+Important assumptions
+* Existing multiplayer matches must already provide reliable match-completion results.
+* Tournament outcomes should be confirmed by the existing game server or backend, not only by the client device.
+* Tournament Credits remain in-game only: no withdrawal, cash-out, transfers, or real-world monetary value.
+* The bracket system in this package is single elimination. Swiss format, double elimination, round robin, guild tournaments, and streaming integrations would be quoted separately.

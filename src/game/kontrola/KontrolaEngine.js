@@ -27,6 +27,7 @@ export const KONTROLA_CHARACTERS = {
     id: 'bee',
     name: 'Zabina "Bee" Solé',
     title: 'Queen of the Hive',
+    hp: 70,
     maxHp: 70,
     mind: 5,
     element: 'Lightning',
@@ -90,6 +91,7 @@ export const KONTROLA_CHARACTERS = {
     id: 'poochi',
     name: 'Poochi',
     title: 'The Celestial Canine',
+    hp: 70,
     maxHp: 70,
     mind: 2,
     element: 'Magic',
@@ -111,6 +113,7 @@ export const KONTROLA_CHARACTERS = {
     id: 'queeny',
     name: 'Queeny',
     title: 'The Siren Empress',
+    hp: 100,
     maxHp: 100,
     mind: 2,
     element: 'Psychic',
@@ -132,6 +135,7 @@ export const KONTROLA_CHARACTERS = {
     id: 'shroomy',
     name: 'Shroomy',
     title: 'The Spore Alchemist',
+    hp: 65,
     maxHp: 65,
     mind: 2,
     element: 'Nature',
@@ -613,19 +617,14 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     } else if (cardName.includes('FIRE FLAME')) {
       const isX2 = cardName.includes('X2');
       baseAP = isX2 ? 20 : 10;
-      const failurePenalty = isX2 ? 20 : 10;
       attackElement = 'Fire';
       
-      // Check if attacker rolled doubles
       const rolledDoubles = !!(attackerRoll?.rolls && attackerRoll.rolls.length >= 2 && attackerRoll.rolls[0] === attackerRoll.rolls[1]);
-      
-      if (!rolledDoubles) {
-        log += ` 🔥 FIRE FLAME failed (no doubles)! ${newAttackerState.name} takes ${failurePenalty} HP penalty!`;
-        newAttackerState.hp = Math.max(0, newAttackerState.hp - failurePenalty);
-        return { newAttackerState, newDefenderState, log };
+      if (rolledDoubles) {
+        log += ` [${cardName}: Rolled doubles! Critical Elemental Fire strike dealing ${baseAP} AP]`;
+      } else {
+        log += ` [${cardName}: Elemental Fire strike dealing ${baseAP} AP]`;
       }
-      
-      log += ` [${cardName}: Rolled doubles! Elemental Fire strike dealing ${baseAP} AP]`;
     } else if (isAttackerZombie) {
       baseAP = 20; // Zombie Venom Strike
       attackElement = 'Poison';
@@ -755,8 +754,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
             // Attack is negated for original defender
             finalDamage = 0;
           } else {
-            log += ` 🪞 MISDIRECT FAILED! (${attackerRoll?.total || 0} vs ${defenderRoll?.total || 0}). ${newAttackerState.name} suffered -20 HP failure backlash!`;
-            newAttackerState.hp = Math.max(0, newAttackerState.hp - 20);
+            log += ` 🪞 MISDIRECT FAILED! Defender failed redirection and takes full attack damage.`;
           }
           newDefenderState.hasMisdirect = false;
         } else if (newDefenderState.hasDodge) {
@@ -785,7 +783,8 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           }
           newDefenderState.hasDodge = false;
         } else if (newDefenderState.hasBoomerang) {
-          const defenseWon = adjustedDefenderRoll >= adjustedAttackerRoll;
+          // Boomerang triggers if defender rolled 6+ OR if defender won clash per card description
+          const defenseWon = (defenderRoll?.total || 0) >= 6 || adjustedDefenderRoll >= adjustedAttackerRoll;
           if (defenseWon) {
             log += ` 🪃 BOOMERANG TRIGGERED! ${newDefenderState.name} rolled ${defenderRoll?.total || 0} (6+)! ${newAttackerState.name}'s attack reflected 100% back and loses next turn!`;
             newAttackerState.hp = Math.max(0, newAttackerState.hp - finalDamage);
@@ -834,13 +833,14 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         log += ` +DEFENCE CARD ACTIVE! Shield absorbed ${absorbed} damage.`;
       }
 
-      // Innate Defense: Only applies if defender rolled 6+ AND no +DEFENCE card was used
-      // Per official rules: "+DEFENCE Cards should be FIRST priority. Whatever the card says is what you go by, if the defender wins.
-      // If the defender does not win, but receives 6+ on their dice roll. This will activate their Basic Defense available."
-      if (newDefenderState && (defenderRoll?.total || 0) >= 6 && !newDefenderState.hasDefendBasic) {
-        const innateDP = newDefenderState?.innateDP ?? newDefenderState?.defaultDP ?? 10;
-        finalDamage = Math.max(0, finalDamage - innateDP);
-        log += ` Defender rolled ${defenderRoll?.total || 0} (6+)! Innate DP reduced damage by ${innateDP}!`;
+      // Innate Basic Defense: Activates when defender rolls 6+ on two dice during clash phase
+      // Per official rules: "Individual Defense w/o Defense Card 10 HP less on the AP.
+      // This is only activated when the player rolls a total of six or higher from two dices, even if the player loses the battle"
+      const defenderRolled6Plus = (defenderRoll?.total || 0) >= 6;
+      if (defenderRolled6Plus && !newDefenderState?.hasDefendBasic && finalDamage > 0) {
+        const innateAbsorb = Math.min(10, finalDamage);
+        finalDamage = Math.max(0, finalDamage - innateAbsorb);
+        log += ` 🛡️ Innate Basic Defense: Defender rolled ${defenderRoll?.total || 0} (≥6), reducing incoming damage by ${innateAbsorb} AP!`;
       }
 
       // Shield Absorption (Standard shield - only if no +DEFENCE was used above)
@@ -857,8 +857,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       if (newDefenderState) {
         newDefenderState.hp = Math.max(0, newDefenderState.hp - finalDamage);
         log += ` Attack lands! ${newDefenderState.name} takes ${finalDamage} damage (Base: ${baseAP} AP` +
-          (newDefenderState.weakness && attackElement && newDefenderState.weakness.toLowerCase().includes(attackElement.toLowerCase()) ? ` + Weakness` : '') +
-          ((defenderRoll?.total || 0) >= 6 && !newDefenderState?.hasDefendBasic ? ` - Innate DP` : '') + `).`;
+          (newDefenderState.weakness && attackElement && newDefenderState.weakness.toLowerCase().includes(attackElement.toLowerCase()) ? ` + Weakness` : '') + `).`;
 
         // If Zombie is hit by Fire or Lightning -> removes 1 poison card
         if (isDefenderZombie && ['Fire', 'Lightning'].includes(attackElement)) {
@@ -895,10 +894,19 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       // DODGE BASIC: If defender has DODGE BASIC and is defending, they succeed on clash win
       if (newDefenderState?.hasDodge && newDefenderState.dodgeCardName?.includes('BASIC')) {
         log += ` 💨 DODGE BASIC SUCCESS! ${newDefenderState.name} evaded all damage!`;
-        newDefenderState.hasDodge = false; // Consume the dodge
       } else {
         log += ` Defender blocked or dodged the attack! 0 damage taken.`;
       }
+    }
+
+    // Always consume defender reactive battle cards after clash concludes so traps never leak into future turns
+    if (newDefenderState) {
+      newDefenderState.hasBoomerang = false;
+      newDefenderState.hasCounter = false;
+      newDefenderState.hasDefendBasic = false;
+      newDefenderState.hasDodge = false;
+      newDefenderState.hasMisdirect = false;
+      newDefenderState.immuneFire = false;
     }
 
     // Extinguish Burn on Doubles (Official Rule: Player continues to burn until doubles are rolled)
@@ -918,12 +926,11 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       newDefenderState.sleepTurns = (newDefenderState.sleepTurns || 0) + skipTurns;
       log += ` ⚡ Lightning shock! ${newDefenderState.name} loses ${skipTurns} turn(s)!`;
       
-      // LIGHTNING X1 / X2 removes 1 poison card from defender per official rules
-      if (newDefenderState.poisonCount > 0) {
-        const wasZombie = newDefenderState.poisonCount >= 5;
+      // LIGHTNING removes 1 poison card ONLY if defender is in Zombie Mode (5+ poison cards) per client feedback Line 90
+      if (newDefenderState.poisonCount >= 5) {
         newDefenderState.poisonCount = Math.max(0, newDefenderState.poisonCount - 1);
-        log += ` ⚡ Lightning cleansed 1 Poison card from ${newDefenderState.name}!`;
-        if (wasZombie && newDefenderState.poisonCount < 5) {
+        log += ` ⚡ Lightning cleansed 1 Poison card from Zombie!`;
+        if (newDefenderState.poisonCount < 5) {
           newDefenderState.hp = newDefenderState.preZombieHp || 100;
           log += ` 🌟 ${newDefenderState.name} was cleansed of Zombie curse and restored to human form!`;
         }

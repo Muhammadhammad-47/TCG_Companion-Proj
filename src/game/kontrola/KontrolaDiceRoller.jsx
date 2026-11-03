@@ -263,9 +263,11 @@ export default function KontrolaDiceRoller({
   const [isRollingMultiplier, setIsRollingMultiplier] = useState(false);
   const [multiplierDie, setMultiplierDie] = useState(precalculatedRolls?.dRoll?.total || 1);
 
-  // Fate Card states for doubles detection
+  // Fate Card states for doubles detection & Snake Eyes re-roll
   const [attackerFateCard, setAttackerFateCard] = useState(false);
   const [defenderFateCard, setDefenderFateCard] = useState(false);
+  const [attackerDoubleOnes, setAttackerDoubleOnes] = useState(false);
+  const [defenderDoubleOnes, setDefenderDoubleOnes] = useState(false);
   const [showRerollOption, setShowRerollOption] = useState(false);
 
   // Authoritative dice sources: local clash dice OR precalculated broadcast dice
@@ -318,20 +320,40 @@ export default function KontrolaDiceRoller({
     setShowRerollOption(false);
     setAttackerFateCard(false);
     setDefenderFateCard(false);
+    setAttackerDoubleOnes(false);
+    setDefenderDoubleOnes(false);
     
     if (onTriggerRoll) {
       onTriggerRoll(null, true); // Signal reroll reset to parent
     }
   }
 
-  // Detect if player rolled doubles and award Fate Card
-  function handleDoubleDetection(dice1, dice2) {
-    const hasDouble = dice1 === dice2;
-    if (hasDouble) {
-      console.log('[Dice] Double detected!', { dice1, dice2, total: dice1 + dice2 });
-      return true;
+  function handleReRollSingle(role) {
+    if (role === 'attacker') {
+      setClashAtkDice(null);
+      setHasAttackerRolled(false);
+      setAttackerDoubleOnes(false);
+      setShowRerollOption(false);
+      if (onTriggerRoll) onTriggerRoll({ attackerRoll: null }, true);
+    } else {
+      setClashDefDice(null);
+      setHasDefenderRolled(false);
+      setDefenderDoubleOnes(false);
+      setShowRerollOption(false);
+      if (onTriggerRoll) onTriggerRoll({ defenderRoll: null }, true);
     }
-    return false;
+  }
+
+  // Client Rule (Line 9): Double 1s prompt Re-roll choice and do NOT grant Fate Card.
+  // Other doubles (2-2, 3-3, etc.) grant Fate Card and do NOT prompt re-roll.
+  function isSnakeEyes(dice1, dice2) {
+    return dice1 === 1 && dice2 === 1;
+  }
+  function isFateCardDouble(dice1, dice2) {
+    return dice1 === dice2 && dice1 !== 1;
+  }
+  function handleDoubleDetection(dice1, dice2) {
+    return isFateCardDouble(dice1, dice2);
   }
 
   // ─── ATTACKER ROLLS ────────────────────────────────────────────────────────
@@ -365,8 +387,8 @@ export default function KontrolaDiceRoller({
       setIsAttackerRolling(false);
       setHasAttackerRolled(true);
 
-      const hasDouble = handleDoubleDetection(atkRolls[0], atkRolls[1]);
-      if (hasDouble) { setAttackerFateCard(true); setShowRerollOption(true); }
+      if (isSnakeEyes(atkRolls[0], atkRolls[1])) { setAttackerDoubleOnes(true); setShowRerollOption(true); }
+      else if (isFateCardDouble(atkRolls[0], atkRolls[1])) { setAttackerFateCard(true); }
     }, 900);
   }
 
@@ -396,8 +418,8 @@ export default function KontrolaDiceRoller({
       setIsDefenderRolling(false);
       setHasDefenderRolled(true);
 
-      const hasDouble = handleDoubleDetection(defRolls[0], defRolls[1]);
-      if (hasDouble) { setDefenderFateCard(true); setShowRerollOption(true); }
+      if (isSnakeEyes(defRolls[0], defRolls[1])) { setDefenderDoubleOnes(true); setShowRerollOption(true); }
+      else if (isFateCardDouble(defRolls[0], defRolls[1])) { setDefenderFateCard(true); }
     }, 900);
   }
 
@@ -493,9 +515,11 @@ export default function KontrolaDiceRoller({
     // Attacker roll arrived via broadcast
     if (precalculatedRolls?.attackerRoll?.rolls) {
       const rolls = precalculatedRolls.attackerRoll.rolls;
-      if (precalculatedRolls.attackerDouble || (rolls[0] === rolls[1])) {
-        setAttackerFateCard(true);
+      if (isSnakeEyes(rolls[0], rolls[1])) {
+        setAttackerDoubleOnes(true);
         setShowRerollOption(true);
+      } else if (isFateCardDouble(rolls[0], rolls[1])) {
+        setAttackerFateCard(true);
       }
 
       if (!isAttacker) {
@@ -522,9 +546,11 @@ export default function KontrolaDiceRoller({
     // Defender roll arrived via broadcast
     if (precalculatedRolls?.defenderRoll?.rolls) {
       const rolls = precalculatedRolls.defenderRoll.rolls;
-      if (precalculatedRolls.defenderDouble || (rolls[0] === rolls[1])) {
-        setDefenderFateCard(true);
+      if (isSnakeEyes(rolls[0], rolls[1])) {
+        setDefenderDoubleOnes(true);
         setShowRerollOption(true);
+      } else if (isFateCardDouble(rolls[0], rolls[1])) {
+        setDefenderFateCard(true);
       }
 
       if (!isDefender) {
@@ -970,51 +996,104 @@ export default function KontrolaDiceRoller({
                 )
               )}
 
-              {/* Step 2: Attacker has rolled — defender rolls their own dice */}
+              {/* Step 2: Attacker has rolled — defender rolls their own dice or retreats */}
               {hasAttackerRolled && !hasDefenderRolled && (
                 isDefender ? (
-                  <button
-                    onClick={handleRollDefender}
-                    disabled={isDefenderRolling}
-                    style={{
-                      background: 'linear-gradient(90deg, #FBC80D 0%, #ff9900 100%)',
-                      border: 'none',
-                      color: '#000',
-                      padding: '16px 44px',
-                      borderRadius: '12px',
-                      fontSize: '1.25rem',
-                      fontWeight: '900',
-                      cursor: isDefenderRolling ? 'wait' : 'pointer',
-                      boxShadow: '0 0 30px rgba(251, 200, 13, 0.6)',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '14px',
-                      fontFamily: 'Bebas Neue, sans-serif',
-                      letterSpacing: '1px',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    <Shield size={26} />
-                    <span>{isDefenderRolling ? 'ROLLING DEFENSE DICE...' : '🎲 ROLL DEFENSE DICE'}</span>
-                  </button>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', justifyContent: 'center' }}>
+                    <button
+                      onClick={handleRollDefender}
+                      disabled={isDefenderRolling}
+                      style={{
+                        background: 'linear-gradient(90deg, #FBC80D 0%, #ff9900 100%)',
+                        border: 'none',
+                        color: '#000',
+                        padding: '16px 44px',
+                        borderRadius: '12px',
+                        fontSize: '1.25rem',
+                        fontWeight: '900',
+                        cursor: isDefenderRolling ? 'wait' : 'pointer',
+                        boxShadow: '0 0 30px rgba(251, 200, 13, 0.6)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '14px',
+                        fontFamily: 'Bebas Neue, sans-serif',
+                        letterSpacing: '1px',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <Shield size={26} />
+                      <span>{isDefenderRolling ? 'ROLLING DEFENSE DICE...' : '🎲 ROLL DEFENSE DICE'}</span>
+                    </button>
+                    {hasRetreatCard && onExecuteRetreat && (
+                      <button
+                        onClick={() => onExecuteRetreat('defender')}
+                        disabled={isDefenderRolling}
+                        style={{
+                          background: 'linear-gradient(135deg, #00d2ff, #0066ff)',
+                          color: '#fff',
+                          border: 'none',
+                          padding: '16px 36px',
+                          borderRadius: '12px',
+                          fontSize: '1.15rem',
+                          fontWeight: '900',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          fontFamily: 'Bebas Neue, sans-serif',
+                          letterSpacing: '1px',
+                          boxShadow: '0 0 25px rgba(0, 210, 255, 0.55)'
+                        }}
+                        title="Disengage battle and safely escape (lose next turn)"
+                      >
+                        <span>💨 PLAY RETREAT CARD (ESCAPE BATTLE - LOSE 1 TURN)</span>
+                      </button>
+                    )}
+                  </div>
                 ) : (
-                  <div
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      padding: '14px 28px',
-                      borderRadius: '12px',
-                      background: 'rgba(251, 200, 13, 0.08)',
-                      border: '1.5px solid rgba(251, 200, 13, 0.3)',
-                      color: 'var(--neon-gold)',
-                      fontSize: '1.1rem',
-                      fontFamily: 'Bebas Neue, sans-serif',
-                      letterSpacing: '1px'
-                    }}
-                  >
-                    <Shield size={22} />
-                    <span>⚡ Attacker rolled {atkSum}! Waiting for {defChar.name} to roll defense...</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                    <div
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '14px 28px',
+                        borderRadius: '12px',
+                        background: 'rgba(251, 200, 13, 0.08)',
+                        border: '1.5px solid rgba(251, 200, 13, 0.3)',
+                        color: 'var(--neon-gold)',
+                        fontSize: '1.1rem',
+                        fontFamily: 'Bebas Neue, sans-serif',
+                        letterSpacing: '1px'
+                      }}
+                    >
+                      <Shield size={22} />
+                      <span>⚡ Attacker rolled {atkSum}! Waiting for {defChar.name} to roll defense...</span>
+                    </div>
+                    {isAttacker && hasRetreatCard && onExecuteRetreat && (
+                      <button
+                        onClick={() => onExecuteRetreat('attacker')}
+                        style={{
+                          background: 'linear-gradient(135deg, #00d2ff, #0066ff)',
+                          color: '#fff',
+                          border: 'none',
+                          padding: '12px 28px',
+                          borderRadius: '12px',
+                          fontSize: '1.05rem',
+                          fontWeight: '900',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          fontFamily: 'Bebas Neue, sans-serif',
+                          letterSpacing: '1px',
+                          boxShadow: '0 0 20px rgba(0, 210, 255, 0.45)'
+                        }}
+                        title="Disengage attack without taking damage"
+                      >
+                        <span>💨 PLAY RETREAT CARD (DISENGAGE ATTACK)</span>
+                      </button>
+                    )}
                   </div>
                 )
               )}
@@ -1143,12 +1222,11 @@ export default function KontrolaDiceRoller({
                     <CanvasPipDie value={multiplierDie} theme="red" isRolling={isRollingMultiplier} size={54} />
                                         <div style={{ textAlign: 'left' }}>
                       {(() => {
-                        const isAtkX2 = resolvedCardName.includes('ATTACK X2');
-                        const perAp = isAtkX2 ? (selectedAttackInfo.ap * 2) : selectedAttackInfo.ap;
+                        const perAp = selectedAttackInfo.ap;
                         const total = multiplierDie * perAp;
                         return (
                           <div style={{ fontSize: '1rem', color: '#fff' }}>
-                            Roll: <strong>{multiplierDie}</strong> × {perAp} AP {isAtkX2 ? '(Attack X2 doubled)' : ''} = <strong style={{ color: '#39ff14' }}>{total} Total AP</strong>
+                            Roll: <strong>{multiplierDie}</strong> × {perAp} AP = <strong style={{ color: '#39ff14' }}>{total} Total AP</strong>
                           </div>
                         );
                       })()}
@@ -1221,11 +1299,15 @@ export default function KontrolaDiceRoller({
                   )
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
-                    {/* Doubles Re-Roll Bonus Option */}
-                    {((attackerFateCard && isAttacker) || (defenderFateCard && isDefender) || ((attackerFateCard || defenderFateCard) && isHost)) && !resolvedCardName?.includes('FIRE') && !resolvedCardName?.includes('LIGHTNING') && (
+                    {/* Snake Eyes (Double 1s) Re-Roll Option per Client Rule Line 9 */}
+                    {((attackerDoubleOnes && isAttacker) || (defenderDoubleOnes && isDefender) || ((attackerDoubleOnes || defenderDoubleOnes) && isHost)) && (
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center' }}>
                         <button
-                          onClick={handleReRoll}
+                          onClick={() => {
+                            if (attackerDoubleOnes && isAttacker) handleReRollSingle('attacker');
+                            else if (defenderDoubleOnes && isDefender) handleReRollSingle('defender');
+                            else handleReRoll();
+                          }}
                           style={{
                             background: 'linear-gradient(135deg, #FBC80D, #ff8800)',
                             color: '#000',
@@ -1244,8 +1326,14 @@ export default function KontrolaDiceRoller({
                           }}
                         >
                           <RotateCcw size={20} />
-                          <span>🔄 RE-ROLL (DOUBLES BONUS)</span>
+                          <span>🔄 RE-ROLL (SNAKE EYES DOUBLE 1s)</span>
                         </button>
+                      </div>
+                    )}
+                    {/* Fate Card notification badge for doubles */}
+                    {(attackerFateCard || defenderFateCard) && (
+                      <div style={{ color: '#FBC80D', fontWeight: 'bold', fontSize: '0.95rem' }}>
+                        🌟 Doubles rolled! Fate Card awarded.
                       </div>
                     )}
 
@@ -1292,7 +1380,7 @@ export default function KontrolaDiceRoller({
                         </div>
                       )
                     ) : null}
-                    {hasRetreatCard && onExecuteRetreat && (isAttacker || isDefender) && (
+                    {hasRetreatCard && onExecuteRetreat && isAttacker && (
                       <button
                         onClick={() => onExecuteRetreat(isAttacker ? 'attacker' : 'defender')}
                         style={{
