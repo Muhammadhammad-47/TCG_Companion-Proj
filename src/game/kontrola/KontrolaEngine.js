@@ -235,6 +235,8 @@ export const ACTION_CARDS_PREMIUM = [
   { name: 'FIRE INFERNO LOCK', type: 'ATTACK', count: 1, costET: 1, desc: 'Burns with spreading flames (-20 HP, spreads to neighbors, must roll doubles to extinguish, -5 HP/turn).' },
 ];
 
+export const KONTROLA_ACTION_CARDS = ACTION_CARDS_PREMIUM;
+
 export function shuffle(array) {
   let currentIndex = array.length, randomIndex;
   const arr = [...array];
