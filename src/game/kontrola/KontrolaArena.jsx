@@ -73,6 +73,7 @@ export const getSafeCardType = (c) => {
   const name = getSafeCardName(c).toUpperCase();
   const found = KONTROLA_ACTION_CARDS.find(card => card.name.toUpperCase() === name);
   if (found?.type) return found.type;
+  if (name.includes('DRAIN')) return 'ATTACK';
   if (name.includes('HEAL') || name.includes('REVIVE') || name.includes('ANTIDOTE') || name.includes('VITALITY')) return 'HEAL';
   if (name.includes('POISON') || name.includes('FREEZE') || name.includes('SLEEPY') || name.includes('BURN')) return 'STATUS';
   if (name.includes('X-CHANGE') || name.includes('VISION') || name.includes('SWAP') || name.includes('TIME MACHINE')) return 'OTHERS';
@@ -2747,7 +2748,7 @@ export default function KontrolaArena() {
     const isDrain = cardName.includes('DRAIN');
     const isBackStab = cardName.includes('BACK STAB');
     const isFullXChange = cardName.includes('X-CHANGE') && cardName.includes('FULL');
-    const isAttack = (selectedActionCard.type === 'ATTACK' || isBackStab) && !isTrap && !isDrain;
+    const isAttack = (selectedActionCard.type === 'ATTACK' || isBackStab || isDrain) && !isTrap;
     const isAoE = cardName.includes('BLITZ') || (selectedCharacterAttack && selectedCharacterAttack.includes('BLITZ')) || isFullXChange;
     const isLightning = cardName.includes('LIGHTNING');
     const isFire = cardName.includes('FIRE');
@@ -2768,7 +2769,7 @@ export default function KontrolaArena() {
     });
 
     // Level check for Vitality Gain cards (V20 -> Level 2, V30 -> Level 3, V40 -> Level 4)
-    const currentVLevel = myCharacter?.level || (myCharacter?.hp >= 300 ? 4 : (myCharacter?.hp >= 200 ? 3 : (myCharacter?.hp >= 150 ? 2 : 1)));
+    const currentVLevel = myCharacter?.level || 1;
     if (cardName.includes('V20') && currentVLevel < 2) {
       showNotice('Only available in level 2! Vitality Gain V20 requires reaching 150 HP (Level 2).', 'warning');
       return;
@@ -2804,7 +2805,7 @@ export default function KontrolaArena() {
       return;
     }
 
-    if (isAttack && !isAoE && !isLightning && !isFire && !isVampire && !isBackStab && !isMisdirect && !selectedCharacterAttack) {
+    if (isAttack && !isAoE && !isLightning && !isFire && !isVampire && !isBackStab && !isMisdirect && !isDrain && !selectedCharacterAttack) {
       console.log('[playTurn] VALIDATION FAILED: Attack requires character move selection');
       showNotice('Please select a character attack move to strike with!', 'warning');
       return;
@@ -2813,7 +2814,7 @@ export default function KontrolaArena() {
     const payload = {
       actorId: playerId,
       actionCard: selectedActionCard,
-      attackSelectionName: (isLightning || isFire || isVampire || isBackStab || isMisdirect) ? null : selectedCharacterAttack,
+      attackSelectionName: (isLightning || isFire || isVampire || isBackStab || isMisdirect || isDrain) ? null : selectedCharacterAttack,
       targetId: isAoE ? 'ALL' : selectedTargetId
     };
 
@@ -4912,13 +4913,14 @@ export default function KontrolaArena() {
                     const cardObj = typeof card === 'object' ? card : { id: cId, name: cName, type: cType, costET: cCost };
                     
                     // Level Lock Verification (Feedback Lines 6 & 15, AI Breakdowns Lines 346-356)
-                    const pLevel = myCharacter?.level || (myCharacter?.hp >= 300 ? 4 : (myCharacter?.hp >= 200 ? 3 : (myCharacter?.hp >= 150 ? 2 : 1)));
+                    const pLevel = myCharacter?.level || 1;
                     const upperCardName = cName.toUpperCase();
                     const isV20Locked = upperCardName.includes('VITALITY') && upperCardName.includes('V20') && pLevel < 2;
                     const isV30Locked = upperCardName.includes('VITALITY') && upperCardName.includes('V30') && pLevel < 3;
                     const isV40Locked = upperCardName.includes('VITALITY') && upperCardName.includes('V40') && pLevel < 4;
                     const is3PlayerLocked = (upperCardName.includes('BACK STAB') || upperCardName.includes('SOUL ALLIANCE') || upperCardName.includes('ABANDON')) && (gameState?.players?.length || 2) <= 2;
-                    const isCardLocked = isV20Locked || isV30Locked || isV40Locked || is3PlayerLocked;
+                    const isReviveLocked = upperCardName.includes('REVIVE') && (myCharacter?.hp || 0) > 0;
+                    const isCardLocked = isV20Locked || isV30Locked || isV40Locked || is3PlayerLocked || isReviveLocked;
                     const reqLvl = isV20Locked ? 2 : isV30Locked ? 3 : isV40Locked ? 4 : null;
                     
                     return (
@@ -4938,10 +4940,12 @@ export default function KontrolaArena() {
                             playClick();
                             setSelectedActionCard(cardObj);
                             if (isCardLocked) {
-                              if (is3PlayerLocked) {
+                              if (isReviveLocked) {
+                                showNotice('🔒 REVIVE can only be used when your character reaches 0 HP! (You can still discard & draw)', 'info');
+                              } else if (is3PlayerLocked) {
                                 showNotice('⚠️ Requires 3+ players to attack! (You can still discard & draw)', 'info');
                               } else {
-                                showNotice(`🔒 Requires Level ${reqLvl} to attack! (Reach ${reqLvl === 2 ? '150 HP' : 'Level ' + reqLvl} first. You can still discard & draw)`, 'info');
+                                showNotice(`🔒 Requires Level ${reqLvl} to play! (Reach Level ${reqLvl} first. You can still discard & draw)`, 'info');
                               }
                             }
                           }
@@ -4962,8 +4966,8 @@ export default function KontrolaArena() {
                             zIndex: 10,
                             boxShadow: '0 2px 8px rgba(0,0,0,0.8)'
                           }}>
-                            <span style={{ fontSize: '11px' }}>{is3PlayerLocked ? '👥' : '🔒'}</span>
-                            <span style={{ fontSize: '10px', color: '#FF7777', fontWeight: 'bold' }}>{is3PlayerLocked ? '3+ PLY' : `LVL ${reqLvl}`}</span>
+                            <span style={{ fontSize: '11px' }}>{isReviveLocked ? '💀' : (is3PlayerLocked ? '👥' : '🔒')}</span>
+                            <span style={{ fontSize: '10px', color: '#FF7777', fontWeight: 'bold' }}>{isReviveLocked ? '0 HP ONLY' : (is3PlayerLocked ? '3+ PLY' : `LVL ${reqLvl}`)}</span>
                           </div>
                         )}
                         <div className="uno-card-art">
@@ -5076,32 +5080,60 @@ export default function KontrolaArena() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '180px', overflowY: 'auto' }}>
                         {Object.entries(myCharacter.attacks || {}).map(([atkName, atkData]) => {
                           const isSelectedAtk = selectedCharacterAttack === atkName;
+                          const atkUpper = atkName.toUpperCase();
+                          const isBlitzMove = atkUpper.includes('BLITZ');
+                          const isKontrolMove = atkUpper.includes('KONTROL');
+
+                          const hasBlitzInHand = myHand.some(c => getSafeCardName(c).toUpperCase().includes('BLITZ'));
+                          const isBlitzHpEligible = (myCharacter?.hp || 0) <= 50;
+                          const isBlitzLocked = isBlitzMove && (!hasBlitzInHand || !isBlitzHpEligible);
+
+                          const hasKontrolInHand = myHand.some(c => getSafeCardName(c).toUpperCase().includes('KONTROL'));
+                          const isKontrolLocked = isKontrolMove && !hasKontrolInHand;
+
+                          const isMoveLocked = isBlitzLocked || isKontrolLocked;
                           return (
                             <button
                               key={atkName}
+                              disabled={isMoveLocked}
                               onClick={() => {
                                 playClick();
+                                if (isMoveLocked) {
+                                  if (isBlitzLocked) {
+                                    showNotice(!hasBlitzInHand ? '🔒 SAIGO NO BLITZ requires having the Blitz card in hand!' : '🔒 SAIGO NO BLITZ requires HP ≤ 50!', 'warning');
+                                  } else {
+                                    showNotice('🔒 KONTROL requires having the Kontrol card in hand!', 'warning');
+                                  }
+                                  return;
+                                }
                                 setSelectedCharacterAttack(atkName);
                               }}
                               style={{
-                                background: isSelectedAtk ? 'rgba(237, 30, 36, 0.25)' : 'rgba(0, 0, 0, 0.45)',
-                                border: isSelectedAtk ? '1.5px solid var(--neon-crimson)' : '1px solid rgba(255, 255, 255, 0.1)',
-                                color: isSelectedAtk ? 'var(--neon-crimson)' : '#fff',
+                                background: isSelectedAtk ? 'rgba(237, 30, 36, 0.25)' : (isMoveLocked ? 'rgba(0,0,0,0.2)' : 'rgba(0, 0, 0, 0.45)'),
+                                border: isSelectedAtk ? '1.5px solid var(--neon-crimson)' : (isMoveLocked ? '1px dashed rgba(255, 68, 68, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)'),
+                                color: isSelectedAtk ? 'var(--neon-crimson)' : (isMoveLocked ? '#888' : '#fff'),
                                 borderRadius: '8px',
                                 padding: '8px 10px',
-                                cursor: 'pointer',
+                                cursor: isMoveLocked ? 'not-allowed' : 'pointer',
                                 display: 'flex',
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
                                 fontSize: '0.8rem',
-                                textAlign: 'left'
+                                textAlign: 'left',
+                                opacity: isMoveLocked ? 0.5 : 1
                               }}
                             >
                               <div>
                                 <div style={{ fontWeight: 'bold' }}>{atkName}</div>
                                 <div style={{ fontSize: '0.68rem', opacity: 0.7 }}>{atkData.desc}</div>
                               </div>
-                              <span style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>{atkData.ap} AP</span>
+                              {isMoveLocked ? (
+                                <span style={{ color: '#FF4444', fontSize: '0.68rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                  <Lock size={11} /> {isBlitzLocked ? (!hasBlitzInHand ? 'CARD REQ' : 'HP ≤ 50') : 'CARD REQ'}
+                                </span>
+                              ) : (
+                                <span style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>{atkData.ap} AP</span>
+                              )}
                             </button>
                           );
                         })}
@@ -5181,43 +5213,69 @@ export default function KontrolaArena() {
                         <span>DISCARD & DRAW (TURN MOVE)</span>
                       </button>
                     )}
-                    <button
-                      className={`btn-end-turn-cta ${isMyTurn && selectedActionCard ? 'flashing-end-turn-cta' : ''}`}
-                      disabled={
-                        !isMyTurn ||
-                        !selectedActionCard ||
-                        Boolean(
-                          (getSafeCardName(selectedActionCard).toUpperCase().includes('V20') && (myCharacter?.level || 1) < 2) ||
-                          (getSafeCardName(selectedActionCard).toUpperCase().includes('V30') && (myCharacter?.level || 1) < 3) ||
-                          (getSafeCardName(selectedActionCard).toUpperCase().includes('V40') && (myCharacter?.level || 1) < 4) ||
-                          (['BACK STAB', 'SOUL ALLIANCE', 'ABANDON'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw)) && ((gameState?.players?.length) || 2) <= 2)
-                        ) ||
-                        (selectedActionCard.type === 'ATTACK' &&
-                          !['BLITZ', 'LIGHTNING', 'FIRE FLAME', 'VAMPIRE', 'DRAIN', 'BACK STAB', 'BOOMERANG', 'MISDIRECT'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw)) &&
-                          (!selectedCharacterAttack || !selectedTargetId)) ||
-                        (getSafeCardName(selectedActionCard).toUpperCase().includes('BACK STAB') && !selectedTargetId) ||
-                        (['POISON', 'SLEEPY', 'FREEZE', 'X-CHANGE', 'KONTROL', 'SOUL ALLIANCE', 'DRAIN', 'VAMPIRE', 'MISDIRECT', 'LIGHTNING', 'FIRE FLAME'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw)) && !selectedTargetId) ||
-                        (getSafeCardName(selectedActionCard).toUpperCase().includes('VISION') && !getSafeCardName(selectedActionCard).toUpperCase().includes('FULL') && !selectedTargetId)
-                      }
-                      onClick={playTurn}
-                      style={{
-                        boxShadow: isMyTurn && selectedActionCard ? '0 0 20px #39ff14' : 'none',
-                        border: isMyTurn && selectedActionCard ? '2px solid #39ff14' : '2px solid rgba(255,255,255,0.1)',
-                        background: isMyTurn && selectedActionCard ? 'rgba(57, 255, 20, 0.15)' : 'rgba(0,0,0,0.5)',
-                        color: isMyTurn && selectedActionCard ? '#39ff14' : 'rgba(255,255,255,0.3)',
-                        padding: '12px 28px',
-                        borderRadius: '8px',
-                        fontWeight: 'bold',
-                        cursor: isMyTurn && selectedActionCard ? 'pointer' : 'not-allowed',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        letterSpacing: '0.5px'
-                      }}
-                    >
-                      <Dices size={18} />
-                      <span>{selectedActionCard?.type === 'ATTACK' ? 'ROLL COMBAT CLASH' : 'PLAY ACTION CARD'}</span>
-                    </button>
+                    {(() => {
+                      const selCardUpper = getSafeCardName(selectedActionCard).toUpperCase();
+                      const isV20Blocked = selCardUpper.includes('V20') && (myCharacter?.level || 1) < 2;
+                      const isV30Blocked = selCardUpper.includes('V30') && (myCharacter?.level || 1) < 3;
+                      const isV40Blocked = selCardUpper.includes('V40') && (myCharacter?.level || 1) < 4;
+                      const is3PlayerBlocked = ['BACK STAB', 'SOUL ALLIANCE', 'ABANDON'].some(kw => selCardUpper.includes(kw)) && ((gameState?.players?.length) || 2) <= 2;
+                      const isReviveBlocked = selCardUpper.includes('REVIVE') && (myCharacter?.hp || 0) > 0;
+                      const isCtaCardLocked = isV20Blocked || isV30Blocked || isV40Blocked || is3PlayerBlocked || isReviveBlocked;
+
+                      const selMoveUpper = (selectedCharacterAttack || '').toUpperCase();
+                      const isSelBlitzLocked = selMoveUpper.includes('BLITZ') && (!myHand.some(c => getSafeCardName(c).toUpperCase().includes('BLITZ')) || (myCharacter?.hp || 0) > 50);
+                      const isSelKontrolLocked = selMoveUpper.includes('KONTROL') && !myHand.some(c => getSafeCardName(c).toUpperCase().includes('KONTROL'));
+                      const isSelMoveLocked = isSelBlitzLocked || isSelKontrolLocked;
+
+                      const isCtaDisabled = !isMyTurn || !selectedActionCard || isCtaCardLocked || isSelMoveLocked || (
+                        selectedActionCard.type === 'ATTACK' &&
+                        !['BLITZ', 'LIGHTNING', 'FIRE FLAME', 'VAMPIRE', 'DRAIN', 'BACK STAB', 'BOOMERANG', 'MISDIRECT'].some(kw => selCardUpper.includes(kw)) &&
+                        (!selectedCharacterAttack || !selectedTargetId)
+                      ) || (selCardUpper.includes('BACK STAB') && !selectedTargetId) ||
+                      (['POISON', 'SLEEPY', 'FREEZE', 'X-CHANGE', 'KONTROL', 'SOUL ALLIANCE', 'DRAIN', 'VAMPIRE', 'MISDIRECT', 'LIGHTNING', 'FIRE FLAME'].some(kw => selCardUpper.includes(kw)) && !selectedTargetId) ||
+                      (selCardUpper.includes('VISION') && !selCardUpper.includes('FULL') && !selectedTargetId);
+
+                      const buttonText = isReviveBlocked
+                        ? '🔒 REVIVE ONLY AT 0 HP'
+                        : isV20Blocked
+                        ? '🔒 REQUIRES LEVEL 2'
+                        : isV30Blocked
+                        ? '🔒 REQUIRES LEVEL 3'
+                        : isV40Blocked
+                        ? '🔒 REQUIRES LEVEL 4'
+                        : is3PlayerBlocked
+                        ? '🔒 REQUIRES 3+ PLAYERS'
+                        : isSelMoveLocked
+                        ? '🔒 MOVE LOCKED'
+                        : selectedActionCard?.type === 'ATTACK'
+                        ? 'ROLL COMBAT CLASH'
+                        : 'PLAY ACTION CARD';
+
+                      return (
+                        <button
+                          className={`btn-end-turn-cta ${isMyTurn && selectedActionCard && !isCtaDisabled ? 'flashing-end-turn-cta' : ''}`}
+                          disabled={isCtaDisabled}
+                          onClick={playTurn}
+                          style={{
+                            boxShadow: isMyTurn && selectedActionCard && !isCtaDisabled ? '0 0 20px #39ff14' : 'none',
+                            border: isCtaCardLocked ? '1.5px solid rgba(255, 68, 68, 0.4)' : (isMyTurn && selectedActionCard && !isCtaDisabled ? '2px solid #39ff14' : '2px solid rgba(255,255,255,0.1)'),
+                            background: isCtaCardLocked ? 'rgba(255, 68, 68, 0.08)' : (isMyTurn && selectedActionCard && !isCtaDisabled ? 'rgba(57, 255, 20, 0.15)' : 'rgba(0,0,0,0.5)'),
+                            color: isCtaCardLocked ? '#ff6666' : (isMyTurn && selectedActionCard && !isCtaDisabled ? '#39ff14' : 'rgba(255,255,255,0.3)'),
+                            padding: '12px 28px',
+                            borderRadius: '8px',
+                            fontWeight: 'bold',
+                            cursor: isMyTurn && selectedActionCard && !isCtaDisabled ? 'pointer' : 'not-allowed',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            letterSpacing: '0.5px'
+                          }}
+                        >
+                          <Dices size={18} />
+                          <span>{buttonText}</span>
+                        </button>
+                      );
+                    })()}
                   </>
                 )}
               </div>
@@ -5501,7 +5559,7 @@ export default function KontrolaArena() {
                       letterSpacing: '1px'
                     }}
                   >
-                    NO, ACCEPT DEFEAT
+                    DISCONTINUE GAME (ACCEPT DEFEAT)
                   </button>
                   <button
                     onClick={handleConfirmRevive}
@@ -5919,6 +5977,28 @@ export default function KontrolaArena() {
                 {/* RIGHT SIDE - CHARACTER SELECTION GRID */}
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
                   <h2 style={{ color: 'var(--neon-cyan)', fontSize: '2.5rem', marginBottom: '20px', textShadow: '0 0 20px var(--neon-cyan)' }}>? CHARACTER SELECTION ?</h2>
+                  {isHost && (
+                    <button
+                      onClick={() => {
+                        playClick();
+                        enqueueHostAction({ actionType: 'START_MATCH' });
+                      }}
+                      style={{
+                        background: 'linear-gradient(90deg, #FBC80D, #ff8800)',
+                        border: 'none',
+                        color: '#000',
+                        padding: '10px 24px',
+                        borderRadius: '8px',
+                        fontSize: '1rem',
+                        fontWeight: 'bold',
+                        marginBottom: '20px',
+                        cursor: 'pointer',
+                        boxShadow: '0 0 15px rgba(251, 200, 13, 0.5)'
+                      }}
+                    >
+                      ⚡ START MATCH NOW
+                    </button>
+                  )}
                   
                   {gameState.turn === playerId ? (
                     <p style={{ fontSize: '1.2rem', marginBottom: '30px', color: '#fff' }}>

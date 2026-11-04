@@ -476,7 +476,7 @@ export default function KontrolaDiceRoller({
             if (refs.isAttacker || refs.isHost) {
               if (refs.isTie) refs.handleReRoll();
               else if (refs.hasRolledMultiplier === false) refs.handleRollMultiplierDie();
-              else if (showRerollOption && (attackerFateCard || defenderFateCard)) { /* Wait for player to choose re-roll */ }
+              else if (attackerDoubleOnes || defenderDoubleOnes || attackerFateCard || defenderFateCard || showRerollOption) { /* Wait for player to choose re-roll */ }
               else if (typeof refs.handleFinishCombat === 'function') refs.handleFinishCombat();
             }
           }
@@ -1299,41 +1299,91 @@ export default function KontrolaDiceRoller({
                   )
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
-                    {/* Snake Eyes (Double 1s) Re-Roll Option per Client Rule Line 9 */}
-                    {((attackerDoubleOnes && isAttacker) || (defenderDoubleOnes && isDefender) || ((attackerDoubleOnes || defenderDoubleOnes) && isHost)) && (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center' }}>
-                        <button
-                          onClick={() => {
-                            if (attackerDoubleOnes && isAttacker) handleReRollSingle('attacker');
-                            else if (defenderDoubleOnes && isDefender) handleReRollSingle('defender');
-                            else handleReRoll();
-                          }}
-                          style={{
-                            background: 'linear-gradient(135deg, #FBC80D, #ff8800)',
-                            color: '#000',
-                            border: 'none',
-                            padding: '12px 28px',
-                            borderRadius: '12px',
-                            fontSize: '1.1rem',
-                            fontWeight: '900',
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            fontFamily: 'Bebas Neue, sans-serif',
-                            letterSpacing: '1px',
-                            boxShadow: '0 0 20px rgba(251, 200, 13, 0.5)'
-                          }}
-                        >
-                          <RotateCcw size={20} />
-                          <span>🔄 RE-ROLL (SNAKE EYES DOUBLE 1s)</span>
-                        </button>
-                      </div>
-                    )}
-                    {/* Fate Card notification badge for doubles */}
-                    {(attackerFateCard || defenderFateCard) && (
-                      <div style={{ color: '#FBC80D', fontWeight: 'bold', fontSize: '0.95rem' }}>
-                        🌟 Doubles rolled! Fate Card awarded.
+                    {/* Re-Roll Options: Snake Eyes (Double 1s) or Fate Card Doubles */}
+                    {(attackerDoubleOnes || defenderDoubleOnes || attackerFateCard || defenderFateCard) && (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                        <div style={{ color: '#FBC80D', fontWeight: 'bold', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Sparkles size={18} />
+                          <span>
+                            {attackerDoubleOnes || defenderDoubleOnes
+                              ? '🎲 SNAKE EYES (DOUBLE 1s) ROLLED! Re-roll available.'
+                              : '🌟 DOUBLES ROLLED! Fate Card awarded (Re-roll or accept).'}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
+                          {(attackerDoubleOnes || attackerFateCard) && (isAttacker || isHost) && (
+                            <button
+                              onClick={() => handleReRollSingle('attacker')}
+                              style={{
+                                background: 'linear-gradient(135deg, #FBC80D, #ff8800)',
+                                color: '#000',
+                                border: 'none',
+                                padding: '12px 26px',
+                                borderRadius: '12px',
+                                fontSize: '1.05rem',
+                                fontWeight: '900',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                fontFamily: 'Bebas Neue, sans-serif',
+                                letterSpacing: '1px',
+                                boxShadow: '0 0 20px rgba(251, 200, 13, 0.5)'
+                              }}
+                            >
+                              <RotateCcw size={20} />
+                              <span>🔄 RE-ROLL ATTACKER ({atkChar.name})</span>
+                            </button>
+                          )}
+                          {(defenderDoubleOnes || defenderFateCard) && (isDefender || isHost) && (
+                            <button
+                              onClick={() => handleReRollSingle('defender')}
+                              style={{
+                                background: 'linear-gradient(135deg, #FBC80D, #ff8800)',
+                                color: '#000',
+                                border: 'none',
+                                padding: '12px 26px',
+                                borderRadius: '12px',
+                                fontSize: '1.05rem',
+                                fontWeight: '900',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                fontFamily: 'Bebas Neue, sans-serif',
+                                letterSpacing: '1px',
+                                boxShadow: '0 0 20px rgba(251, 200, 13, 0.5)'
+                              }}
+                            >
+                              <RotateCcw size={20} />
+                              <span>🔄 RE-ROLL DEFENDER ({defChar.name})</span>
+                            </button>
+                          )}
+                          {((attackerDoubleOnes && defenderDoubleOnes) || (attackerFateCard && defenderFateCard)) && (
+                            <button
+                              onClick={handleReRoll}
+                              style={{
+                                background: 'linear-gradient(135deg, #ff8800, #ff2a55)',
+                                color: '#fff',
+                                border: 'none',
+                                padding: '12px 26px',
+                                borderRadius: '12px',
+                                fontSize: '1.05rem',
+                                fontWeight: '900',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                fontFamily: 'Bebas Neue, sans-serif',
+                                letterSpacing: '1px',
+                                boxShadow: '0 0 20px rgba(255, 42, 85, 0.5)'
+                              }}
+                            >
+                              <RotateCcw size={20} />
+                              <span>🔄 RE-ROLL BOTH CLASH DICE</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
                     )}
 

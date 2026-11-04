@@ -192,7 +192,7 @@ export const ACTION_CARDS_BASIC = [
   { name: 'ATTACK X2', type: 'ATTACK', count: 6, costET: 2, desc: 'Double character attack unleash.' },
   { name: 'BOOMERANG FULL', type: 'DEFENSE', count: 6, costET: 0, desc: 'Defender reactive card: On successful defense or 6+ roll, reflects 100% attack damage back to attacker.' },
   { name: 'HEAL H20', type: 'HEAL', count: 6, costET: 0, desc: 'Restores +20 HP.' },
-  { name: 'LIGHTNING X2', type: 'ATTACK', count: 6, costET: 2, desc: 'Heavy lightning dealing -20 HP and -2 turns.' },
+  { name: 'LIGHTNING X2', type: 'ATTACK', count: 6, costET: 2, desc: 'Heavy lightning dealing -20 HP and -1 turn.' },
   { name: 'MISDIRECT', type: 'ATTACK', count: 6, costET: 1, desc: 'Redirect an opponent attack.' },
   { name: 'POISON X2', type: 'STATUS', count: 6, costET: 0, desc: 'Inflicts 2 Poison stacks (-20 HP/turn).' },
   { name: 'REVIVE', type: 'HEAL', count: 6, costET: 0, desc: 'Brings player back to life with 50% HP.' },
@@ -227,7 +227,7 @@ export const ACTION_CARDS_PREMIUM = [
   { name: 'SHIELD ADVANCE +100HP', type: 'DEFENSE', count: 1, costET: 0, desc: '+100 Advanced Shield barrier.' },
   { name: 'SLEEPY X2', type: 'OTHERS', count: 3, costET: 0, desc: 'Target sleeps for 2 turns.' },
   { name: 'VAMPIRE LIFE STEAL', type: 'OTHERS', count: 1, costET: 1, desc: 'Steals 1 ET and 10 HP for 3 turns.' },
-  { name: 'DRAIN', type: 'OTHERS', count: 2, costET: 1, desc: 'Steals all opponent Energy Tokens.' },
+  { name: 'DRAIN', type: 'ATTACK', count: 2, costET: 1, desc: 'Steals all opponent Energy Tokens.' },
   { name: 'VITALITY GAIN V30', type: 'HEAL', count: 2, costET: 0, desc: '+30 HP vitality surge.' },
   { name: 'HEAL H40', type: 'HEAL', count: 2, costET: 0, desc: 'Restores +40 HP.' },
   { name: '+DEFENCE D20', type: 'DEFENSE', count: 4, costET: 0, desc: '+20 Defense points.' },
@@ -692,8 +692,8 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         if (newDefenderState) {
           const stolen = newDefenderState.energyTokens || 0;
           newDefenderState.energyTokens = 0;
-          newAttackerState.energyTokens = (newAttackerState.energyTokens || 0) + stolen;
-          log += ` DRAIN successful! Stole ${stolen} Energy Tokens from ${newDefenderState.name}.`;
+          newAttackerState.energyTokens = Math.min(10, (newAttackerState.energyTokens || 0) + stolen);
+          log += ` ⚡ DRAIN successful! Stole all ${stolen} Energy Tokens from ${newDefenderState.name}!`;
         }
         finalDamage = 0; // Handled directly above
       } else if (cardName === 'BACK STAB') {
@@ -893,6 +893,13 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         }
       }
     } else {
+      // DEFENCE COUNTER: Always negates 100% damage and reflects 25% of incoming attack damage to attacker
+      if (newDefenderState?.hasCounter) {
+        const reflectDmg = Math.floor(baseAP * 0.25);
+        newAttackerState.hp = Math.max(0, newAttackerState.hp - reflectDmg);
+        log += ` ⚔️ COUNTER TRIGGERED! 0% damage taken, reflected ${reflectDmg} AP back to ${newAttackerState.name}!`;
+        newDefenderState.hasCounter = false;
+      }
       // DODGE BASIC: If defender has DODGE BASIC and is defending, they succeed on clash win
       if (newDefenderState?.hasDodge && newDefenderState.dodgeCardName?.includes('BASIC')) {
         log += ` 💨 DODGE BASIC SUCCESS! ${newDefenderState.name} evaded all damage!`;
@@ -924,7 +931,8 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     // Lightning effect: ALWAYS applies whether attack succeeds or not per official rules
     // "This action occurs when the attack is successful and not successful"
     if (cardName.includes('LIGHTNING') && newDefenderState) {
-      const skipTurns = cardName.includes('X2') ? 2 : 1;
+      // Client feedback Nov 4: Both Lightning X1 and X2 give exactly 1 turn skip
+      const skipTurns = 1;
       newDefenderState.sleepTurns = (newDefenderState.sleepTurns || 0) + skipTurns;
       log += ` ⚡ Lightning shock! ${newDefenderState.name} loses ${skipTurns} turn(s)!`;
       
