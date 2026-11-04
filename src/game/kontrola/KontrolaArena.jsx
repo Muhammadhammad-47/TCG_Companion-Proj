@@ -547,6 +547,21 @@ export default function KontrolaArena() {
     return () => clearInterval(interval);
   }, [revealedVision]);
 
+  // Auto-trigger Revive prompt whenever player reaches 0 HP / defeated and holds REVIVE in hand
+  useEffect(() => {
+    if (myCharacter && (myCharacter.hp <= 0 || myCharacter.isDefeated) && !pendingRevivePrompt) {
+      const myHand = gameState?.hands?.[playerId] || [];
+      const hasRevive = myHand.some(c => getSafeCardName(c).includes('REVIVE'));
+      if (hasRevive) {
+        setPendingRevivePrompt({
+          victimId: playerId,
+          victimName: myCharacter.name,
+          maxHp: myCharacter.maxHp || 100
+        });
+      }
+    }
+  }, [myCharacter?.hp, myCharacter?.isDefeated, gameState?.hands, playerId, pendingRevivePrompt]);
+
   // Music player audio control
   useEffect(() => {
     if (!audioRef.current) return;
@@ -1545,6 +1560,37 @@ export default function KontrolaArena() {
       
       if (payload.actionType === 'START_MATCH') {
         let nextState = { ...currentState };
+        if (!nextState.characterStates) {
+          const selections = nextState.characterSelections || {};
+          const deck = generateDeck(nextState.isPremium, nextState.players?.length || 2);
+          const { updatedDeck, hands } = dealInitialHands(deck, nextState.players);
+          const startingCrystals = nextState.players.length === 2 ? 2 : 1;
+          const initialCharacterStates = {};
+          nextState.players.forEach((pId) => {
+            const charKey = selections[pId] || 'chynaman';
+            const customName = nextState.playerNames?.[pId];
+            const template = KONTROLA_CHARACTERS[charKey] || KONTROLA_CHARACTERS.chynaman;
+            initialCharacterStates[pId] = {
+              ...template,
+              name: customName || template.name,
+              playerId: pId,
+              hp: template.hp || template.baseHP || 100,
+              maxHp: template.maxHp || 100,
+              level: 1,
+              shield: 0,
+              energyTokens: 5,
+              crystals: startingCrystals,
+              poisonCount: 0,
+              burnCount: 0,
+              sleepTurns: 0,
+              isDefeated: false,
+              claimedTurnET: false
+            };
+          });
+          nextState.deck = updatedDeck;
+          nextState.hands = hands;
+          nextState.characterStates = initialCharacterStates;
+        }
         nextState.status = 'active';
         broadcastState(matchIdRef.current, nextState);
         return nextState;

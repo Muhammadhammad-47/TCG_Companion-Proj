@@ -506,7 +506,9 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       
       // KONTROL Options: Choose to force alternate target OR steal 1 action card (only if successful)
       if (success) {
-        const choice = Math.random() > 0.5 ? 'A' : 'B';
+        const playerCount = gameState?.players?.length || 2;
+        // In 2-player matches, only Option B (Steal Card) is valid since there are no other players to attack
+        const choice = playerCount > 2 ? (Math.random() > 0.5 ? 'A' : 'B') : 'B';
         if (choice === 'A') {
           // Option A: Opponent must attack another player next turn
           newDefenderState.kontrolForceAlternateTarget = true;
@@ -520,11 +522,11 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     }
     
     // Return early since Kontrol doesn't deal damage
-    return { newAttackerState, newDefenderState, log };
+    return { newAttackerState, newDefenderState, log, stealActionCard };
   }
   // 2. SAIGO NO BLITZ (200 AP)
   else if (isBlitzMove) {
-    // Official Rule: Requires HP < 50 AND 5 Energy Tokens
+    // Official Rule: Requires HP <= 50 AND 5 Energy Tokens
     
     // Check cooldown
     if (newAttackerState.blitzCooldown > 0) {
@@ -538,9 +540,9 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       return { newAttackerState, newDefenderState, log };
     }
 
-    // Check HP requirement (must be < 50)
-    if (newAttackerState.hp >= 50) {
-      log += ` ⚡ BLITZ requires HP < 50! Current HP: ${newAttackerState.hp}. Cannot activate.`;
+    // Check HP requirement (must be <= 50 per Nov 4 feedback Line 17)
+    if (newAttackerState.hp > 50) {
+      log += ` ⚡ BLITZ requires HP ≤ 50! Current HP: ${newAttackerState.hp}. Cannot activate.`;
       return { newAttackerState, newDefenderState, log };
     }
 
