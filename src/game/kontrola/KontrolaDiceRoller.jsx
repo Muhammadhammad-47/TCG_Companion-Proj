@@ -287,6 +287,8 @@ export default function KontrolaDiceRoller({
   const charTemplate = KONTROLA_CHARACTERS[charKey] || Object.values(KONTROLA_CHARACTERS).find(c => c.name?.toLowerCase() === atkChar?.name?.toLowerCase());
   const selectedAttackInfo = atkChar?.attacks?.[attackSelectionName] || charTemplate?.attacks?.[attackSelectionName];
   const hasMultiplierDie = Boolean(selectedAttackInfo && selectedAttackInfo.dice > 0);
+  const activeDefenseCard = combatData?.defenseCard || precalculatedRolls?.defenseCard || null;
+  const defCardName = activeDefenseCard ? (typeof activeDefenseCard === 'string' ? activeDefenseCard : (activeDefenseCard.name || '')).toUpperCase() : '';
 
   const handleFinishCombat = () => {
     const finalAtkRolls = activeAtkDice || [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
@@ -334,12 +336,14 @@ export default function KontrolaDiceRoller({
       setHasAttackerRolled(false);
       setAttackerDoubleOnes(false);
       setShowRerollOption(false);
+      setPhase('clash');
       if (onTriggerRoll) onTriggerRoll({ attackerRoll: null }, true);
     } else {
       setClashDefDice(null);
       setHasDefenderRolled(false);
       setDefenderDoubleOnes(false);
       setShowRerollOption(false);
+      setPhase('clash');
       if (onTriggerRoll) onTriggerRoll({ defenderRoll: null }, true);
     }
   }
@@ -917,6 +921,12 @@ export default function KontrolaDiceRoller({
                 <Shield size={20} />
                 <span>{defChar.name} (Defender)</span>
               </div>
+              {activeDefenseCard && (
+                <div style={{ fontSize: '0.82rem', fontWeight: 'bold', color: 'var(--neon-cyan)', background: 'rgba(0, 240, 255, 0.12)', border: '1px solid rgba(0, 240, 255, 0.4)', borderRadius: '6px', padding: '3px 8px', marginBottom: '10px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <Shield size={14} />
+                  <span>DEFENSE: {typeof activeDefenseCard === 'string' ? activeDefenseCard : activeDefenseCard.name}</span>
+                </div>
+              )}
 
               <div
                 style={{
@@ -1169,7 +1179,21 @@ export default function KontrolaDiceRoller({
                   }}
                 >
                   <Shield size={16} />
-                  <span>??? RULE OF 6+ ACTIVATED! Defender rolled {defSum} (=6): Innate Base Defense activated!</span>
+                  <span>🛡️ RULE OF 6+ ACTIVATED! Defender rolled {defSum} (≥6): Innate Base Defense (-10 AP) activated!</span>
+                </div>
+              )}
+
+              {/* Active Defense Card Outcome Banner */}
+              {activeDefenseCard && (
+                <div style={{ margin: '0 auto 16px auto', padding: '8px 18px', borderRadius: '10px', background: 'rgba(0, 240, 255, 0.15)', border: '1px solid var(--neon-cyan)', color: 'var(--neon-cyan)', fontWeight: 'bold', fontSize: '0.92rem', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                  <Shield size={16} />
+                  <span>
+                    {defCardName.includes('COUNTER')
+                      ? '⚔️ DEFENCE - COUNTER: 0% Damage Taken & Reflects 25% Back to Attacker!'
+                      : defCardName.includes('BOOMERANG')
+                      ? '🪃 BOOMERANG FULL: Reflects 100% Back on 6+ roll!'
+                      : `🛡️ DEFENSE CARD: ${typeof activeDefenseCard === 'string' ? activeDefenseCard : activeDefenseCard.name} is active!`}
+                  </span>
                 </div>
               )}
 
@@ -1311,7 +1335,7 @@ export default function KontrolaDiceRoller({
                           </span>
                         </div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
-                          {(attackerDoubleOnes || attackerFateCard) && (isAttacker || isHost) && (
+                          {(attackerDoubleOnes || attackerFateCard) && (
                             <button
                               onClick={() => handleReRollSingle('attacker')}
                               style={{
@@ -1335,7 +1359,7 @@ export default function KontrolaDiceRoller({
                               <span>🔄 RE-ROLL ATTACKER ({atkChar.name})</span>
                             </button>
                           )}
-                          {(defenderDoubleOnes || defenderFateCard) && (isDefender || isHost) && (
+                          {(defenderDoubleOnes || defenderFateCard) && (
                             <button
                               onClick={() => handleReRollSingle('defender')}
                               style={{

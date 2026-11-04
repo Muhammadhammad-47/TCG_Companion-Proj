@@ -2253,8 +2253,30 @@ export default function KontrolaArena() {
         while (updatedStates[nextTurnPlayerId]?.sleepTurns > 0 && checkedSleepCount < livingPlayers.length) {
           const sleepingChar = updatedStates[nextTurnPlayerId];
           sleepingChar.sleepTurns = Math.max(0, sleepingChar.sleepTurns - 1);
-          turnLogs.unshift(`?? ${sleepingChar.name} is asleep and skips their turn! (${sleepingChar.sleepTurns} turn(s) remaining)`);
-          
+          turnLogs.unshift(`💤 ${sleepingChar.name} is asleep and skips their turn! (${sleepingChar.sleepTurns} turn(s) remaining)`);
+
+          // Apply poison damage tick during skipped turn so poison continues to damage sleeping targets
+          if (sleepingChar.poisonCount > 0 && !sleepingChar.isDefeated) {
+            const pDmg = sleepingChar.poisonCount * 10;
+            sleepingChar.hp = Math.max(0, sleepingChar.hp - pDmg);
+            turnLogs.unshift(`☠️ ${sleepingChar.name} suffered ${pDmg} Poison damage while asleep! HP: ${sleepingChar.hp}`);
+            if (sleepingChar.hp <= 0) {
+              sleepingChar.isDefeated = true;
+              turnLogs.unshift(`💀 ${sleepingChar.name} succumbed to Poison and was eliminated!`);
+            }
+          }
+
+          // Apply burn damage tick during skipped turn
+          if (typeof sleepingChar.burnCount === 'number' && sleepingChar.burnCount > 0 && !sleepingChar.isDefeated) {
+            const bDmg = sleepingChar.burnCount * 10;
+            sleepingChar.hp = Math.max(0, sleepingChar.hp - bDmg);
+            turnLogs.unshift(`🔥 ${sleepingChar.name} suffered ${bDmg} Burn damage while asleep! HP: ${sleepingChar.hp}`);
+            if (sleepingChar.hp <= 0) {
+              sleepingChar.isDefeated = true;
+              turnLogs.unshift(`💀 ${sleepingChar.name} was incinerated by Burn damage and eliminated!`);
+            }
+          }
+
           // Advance to next player for sleeping turn check
           const sIdx = livingPlayers.indexOf(nextTurnPlayerId);
           const step = currentState.turnDirection === 'counter' ? -1 : 1;

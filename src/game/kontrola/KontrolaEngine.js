@@ -816,8 +816,8 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         }
       }
 
-      // Weakness Bonus (+10 or +15 AP)
-      if (newDefenderState && attackElement && newDefenderState.weakness) {
+      // Weakness Bonus (+10 or +15 AP) - only applies if attack was not negated/reflected by defense
+      if (newDefenderState && attackElement && newDefenderState.weakness && finalDamage > 0) {
         const matchesWeakness = newDefenderState.weakness.toLowerCase().includes(attackElement.toLowerCase());
         if (matchesWeakness) {
           const bonus = newDefenderState.weaknessBonus || 10;
@@ -988,7 +988,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     else if (cardName.includes('H40')) healAmount = 40;
     
     const charKey = (newAttackerState.characterId || newAttackerState.id || '').toLowerCase();
-    const currentLvl = newAttackerState.level || (newAttackerState.hp >= 150 ? 2 : 1);
+    const currentLvl = newAttackerState.level || 1;
     const lvlCap = getCanonicalLevelCap(charKey, currentLvl);
     const maxAllowed = newAttackerState.poisonCount >= 5 ? 40 : lvlCap;
 
@@ -1007,7 +1007,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       log += ` Zombies cannot gain Vitality! The card has no effect on undead forms.`;
     } else {
       const charKey = (newAttackerState.characterId || newAttackerState.id || '').toLowerCase();
-      const currentLevel = newAttackerState.level || (newAttackerState.hp >= 150 ? 2 : 1);
+      const currentLevel = newAttackerState.level || 1;
       let vitAmount = 10;
       let requiredLevel = 1;
 
