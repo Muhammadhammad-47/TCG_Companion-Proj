@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Wifi, Swords, Shield, Skull, Zap, ScrollText, MessageSquare,
@@ -321,6 +321,11 @@ export default function KontrolaArena() {
   const [xChangeModalData, setXChangeModalData] = useState(null); // { xChangeType, attackerHand, defenderHand, defenderName, targetId, actorId }
   const [soulAllianceTradeData, setSoulAllianceTradeData] = useState(null); // { allyId, allyName }
   const [pendingRevivePrompt, setPendingRevivePrompt] = useState(null); // { playerId, playerName, maxHp }
+  // Burn Extinguish State (Nov 5 Update)
+  const [hasAttemptedExtinguishThisTurn, setHasAttemptedExtinguishThisTurn] = useState(false);
+  const [isExtinguishRolling, setIsExtinguishRolling] = useState(false);
+  const [extinguishDice, setExtinguishDice] = useState(null);
+  const [extinguishResult, setExtinguishResult] = useState(null);
   
   // Room Persistence State
   const [roomCode, setRoomCode] = useState(null);
@@ -563,6 +568,14 @@ export default function KontrolaArena() {
       }
     }
   }, [myCharacter?.hp, myCharacter?.isDefeated, gameState?.hands, playerId, pendingRevivePrompt]);
+
+  // Reset Burn Extinguish attempt on turn change
+  useEffect(() => {
+    setHasAttemptedExtinguishThisTurn(false);
+    setExtinguishDice(null);
+    setExtinguishResult(null);
+    setIsExtinguishRolling(false);
+  }, [gameState?.turn]);
 
   // Music player audio control
   useEffect(() => {
@@ -1726,6 +1739,44 @@ export default function KontrolaArena() {
         return nextState;
       }
 
+      if (payload.actionType === 'EXTINGUISH_BURN') {
+        const { actorId, extinguished, rolls, damage } = payload;
+        const char = currentState.characterStates?.[actorId];
+        if (!char) return currentState;
+
+        const updatedCharStates = { ...currentState.characterStates };
+        let nextLogs = [...(currentState.logs || [])];
+
+        if (extinguished) {
+          updatedCharStates[actorId] = {
+            ...char,
+            burnCount: 0
+          };
+          nextLogs.unshift(`💧 ${char.name} rolled doubles [${rolls[0]}, ${rolls[1]}] and EXTINGUISHED the fire! 0 damage taken.`);
+        } else {
+          const dmg = damage || ((char.burnCount || 1) * 10);
+          const newHp = Math.max(0, char.hp - dmg);
+          const isDefeated = newHp <= 0;
+          updatedCharStates[actorId] = {
+            ...char,
+            hp: newHp,
+            isDefeated
+          };
+          nextLogs.unshift(`🔥 ${char.name} rolled [${rolls[0]}, ${rolls[1]}] (failed to roll doubles) and took -${dmg} HP Burn damage! HP: ${newHp}`);
+          if (isDefeated) {
+            nextLogs.unshift(`💀 ${char.name} was incinerated by Burn damage and eliminated!`);
+          }
+        }
+
+        const nextState = {
+          ...currentState,
+          characterStates: updatedCharStates,
+          logs: nextLogs
+        };
+        broadcastState(matchIdRef.current, nextState);
+        return nextState;
+      }
+
       if (payload.actionType === 'EXECUTE_RETREAT') {
         const { retreatingPlayerId, role, reason } = payload;
         const char = currentState.characterStates?.[retreatingPlayerId];
@@ -2367,22 +2418,7 @@ export default function KontrolaArena() {
           }
         }
 
-        // Check Burn damage tick on the player starting their turn (-10 HP per turn per burn stack)
-        if (incomingChar && typeof incomingChar.burnCount === 'number' && incomingChar.burnCount > 0 && !incomingChar.isDefeated) {
-          const burnDmg = incomingChar.burnCount * 10;
-          incomingChar.hp = Math.max(0, incomingChar.hp - burnDmg);
-          turnLogs.unshift(`?? ${incomingChar.name} suffered ${burnDmg} Burn damage (${incomingChar.burnCount} stack${incomingChar.burnCount > 1 ? 's' : ''})! HP: ${incomingChar.hp}`);
-          if (incomingChar.hp <= 0) {
-            incomingChar.isDefeated = true;
-            turnLogs.unshift(`?? ${incomingChar.name} was incinerated by Burn damage and eliminated!`);
-            const remainingLiving = currentState.players.filter((pId) => !updatedStates[pId]?.isDefeated);
-            if (remainingLiving.length === 1) {
-              matchWinner = updatedStates[remainingLiving[0]] ? { ...updatedStates[remainingLiving[0]], playerId: remainingLiving[0] } : null;
-            }
-            const dIdx = livingPlayers.indexOf(nextTurnPlayerId);
-            nextTurnPlayerId = livingPlayers[(dIdx + 1) % livingPlayers.length];
-          }
-        }
+        // Note: Burn damage is resolved via the interactive Extinguish Roll prompt before the active player's move per Nov 5 specification.
         // Check Vampire drain effect (-10 HP, -1 ET per turn for 3 turns)
         if (incomingChar && typeof incomingChar.vampireStealTurnsLeft === 'number' && incomingChar.vampireStealTurnsLeft > 0 && !incomingChar.isDefeated) {
           const vampireDrain = Math.min(10, incomingChar.hp);
@@ -2868,11 +2904,15 @@ export default function KontrolaArena() {
       return; // Must select target
     }
 
-    // 3+ Player check for Soul Alliance, Abandon & Back Stab
-    const is3PlayerOnly = cardName.includes('BACK STAB') || cardName.includes('SOUL ALLIANCE') || cardName.includes('ABANDON');
+    // 3+ Player check for Soul Alliance, Abandon, Back Stab & Misdirect
+    const is3PlayerOnly = cardName.includes('BACK STAB') || cardName.includes('SOUL ALLIANCE') || cardName.includes('ABANDON') || cardName.includes('MISDIRECT');
     const totalMatchPlayers = (gameState?.players?.length) || 2;
     if (is3PlayerOnly && totalMatchPlayers <= 2) {
-      showNotice('⚠️ Only available in 3+ player matches! Cannot be played in a 1-on-1 duel.', 'warning');
+      if (cardName.includes('MISDIRECT')) {
+        showNotice('⚠️ Valid only with more than two players.', 'warning');
+      } else {
+        showNotice('⚠️ Only available in 3+ player matches! Cannot be played in a 1-on-1 duel.', 'warning');
+      }
       return;
     }
 
@@ -3292,6 +3332,42 @@ export default function KontrolaArena() {
 
   const handleDeclineRevive = () => {
     setPendingRevivePrompt(null);
+  };
+
+  const handleRollExtinguishFire = () => {
+    if (isExtinguishRolling || hasAttemptedExtinguishThisTurn || !myCharacter) return;
+    setIsExtinguishRolling(true);
+    soundFX.playDiceRoll?.();
+
+    const d1 = Math.floor(Math.random() * 6) + 1;
+    const d2 = Math.floor(Math.random() * 6) + 1;
+    setExtinguishDice([d1, d2]);
+
+    setTimeout(() => {
+      const isDoubles = (d1 === d2);
+      const burnDmg = (myCharacter.burnCount || 1) * 10;
+      setIsExtinguishRolling(false);
+      setExtinguishResult({ success: isDoubles, d1, d2, damage: isDoubles ? 0 : burnDmg });
+
+      const payload = {
+        actionType: 'EXTINGUISH_BURN',
+        actorId: playerId,
+        extinguished: isDoubles,
+        rolls: [d1, d2],
+        damage: isDoubles ? 0 : burnDmg
+      };
+
+      if (isHostRef.current) {
+        enqueueHostAction(payload);
+      } else {
+        takeTurn(matchIdRef.current, { type: 'PLAYER_ACTION', payload });
+      }
+
+      setTimeout(() => {
+        setHasAttemptedExtinguishThisTurn(true);
+        setExtinguishResult(null);
+      }, 1800);
+    }, 800);
   };
 
   const handleConfirmAllianceTrade = (tradeData) => {
@@ -4997,7 +5073,7 @@ export default function KontrolaArena() {
                     const isV20Locked = upperCardName.includes('VITALITY') && upperCardName.includes('V20') && pLevel < 2;
                     const isV30Locked = upperCardName.includes('VITALITY') && upperCardName.includes('V30') && pLevel < 3;
                     const isV40Locked = upperCardName.includes('VITALITY') && upperCardName.includes('V40') && pLevel < 4;
-                    const is3PlayerLocked = (upperCardName.includes('BACK STAB') || upperCardName.includes('SOUL ALLIANCE') || upperCardName.includes('ABANDON')) && (gameState?.players?.length || 2) <= 2;
+                    const is3PlayerLocked = (upperCardName.includes('BACK STAB') || upperCardName.includes('SOUL ALLIANCE') || upperCardName.includes('ABANDON') || upperCardName.includes('MISDIRECT')) && (gameState?.players?.length || 2) <= 2;
                     const isReviveLocked = upperCardName.includes('REVIVE') && (myCharacter?.hp || 0) > 0;
                     const isCardLocked = isV20Locked || isV30Locked || isV40Locked || is3PlayerLocked || isReviveLocked;
                     const reqLvl = isV20Locked ? 2 : isV30Locked ? 3 : isV40Locked ? 4 : null;
@@ -5022,8 +5098,11 @@ export default function KontrolaArena() {
                               if (isReviveLocked) {
                                 showNotice('🔒 REVIVE can only be used when your character reaches 0 HP! (You can still discard & draw)', 'info');
                               } else if (is3PlayerLocked) {
-                                showNotice('⚠️ Requires 3+ players to attack! (You can still discard & draw)', 'info');
-                              } else {
+                                if (upperCardName.includes('MISDIRECT')) {
+                                  showNotice('⚠️ Valid only with more than two players. (You can still discard & draw)', 'info');
+                                } else {
+                                  showNotice('⚠️ Requires 3+ players to attack! (You can still discard & draw)', 'info');
+                                }                              } else {
                                 showNotice(`🔒 Requires Level ${reqLvl} to play! (Reach Level ${reqLvl} first. You can still discard & draw)`, 'info');
                               }
                             }
@@ -5046,7 +5125,7 @@ export default function KontrolaArena() {
                             boxShadow: '0 2px 8px rgba(0,0,0,0.8)'
                           }}>
                             <span style={{ fontSize: '11px' }}>{isReviveLocked ? '💀' : (is3PlayerLocked ? '👥' : '🔒')}</span>
-                            <span style={{ fontSize: '10px', color: '#FF7777', fontWeight: 'bold' }}>{isReviveLocked ? '0 HP ONLY' : (is3PlayerLocked ? '3+ PLY' : `LVL ${reqLvl}`)}</span>
+                            <span style={{ fontSize: '10px', color: '#FF7777', fontWeight: 'bold' }}>{isReviveLocked ? '0 HP ONLY' : (is3PlayerLocked ? (upperCardName.includes('MISDIRECT') ? '> 2 PLY' : '3+ PLY') : `LVL ${reqLvl}`)}</span>
                           </div>
                         )}
                         <div className="uno-card-art">
@@ -5297,7 +5376,7 @@ export default function KontrolaArena() {
                       const isV20Blocked = selCardUpper.includes('V20') && (myCharacter?.level || 1) < 2;
                       const isV30Blocked = selCardUpper.includes('V30') && (myCharacter?.level || 1) < 3;
                       const isV40Blocked = selCardUpper.includes('V40') && (myCharacter?.level || 1) < 4;
-                      const is3PlayerBlocked = ['BACK STAB', 'SOUL ALLIANCE', 'ABANDON'].some(kw => selCardUpper.includes(kw)) && ((gameState?.players?.length) || 2) <= 2;
+                      const is3PlayerBlocked = ['BACK STAB', 'SOUL ALLIANCE', 'ABANDON', 'MISDIRECT'].some(kw => selCardUpper.includes(kw)) && ((gameState?.players?.length) || 2) <= 2;
                       const isReviveBlocked = selCardUpper.includes('REVIVE') && (myCharacter?.hp || 0) > 0;
                       const isCtaCardLocked = isV20Blocked || isV30Blocked || isV40Blocked || is3PlayerBlocked || isReviveBlocked;
 
@@ -5323,7 +5402,7 @@ export default function KontrolaArena() {
                         : isV40Blocked
                         ? '🔒 REQUIRES LEVEL 4'
                         : is3PlayerBlocked
-                        ? '🔒 REQUIRES 3+ PLAYERS'
+                        ? (selCardUpper.includes('MISDIRECT') ? '🔒 VALID ONLY WITH > 2 PLAYERS' : '🔒 REQUIRES 3+ PLAYERS')
                         : isSelMoveLocked
                         ? '🔒 MOVE LOCKED'
                         : selectedActionCard?.type === 'ATTACK'
@@ -5659,6 +5738,142 @@ export default function KontrolaArena() {
                     YES, REVIVE (50% HP)
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* BURN EXTINGUISH PROMPT MODAL */}
+          {isMyTurn && myCharacter && myCharacter.burnCount > 0 && !myCharacter.isDefeated && !hasAttemptedExtinguishThisTurn && !pendingRevivePrompt && gameState?.status === 'active' && (
+            <div style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 11000,
+              background: 'rgba(25, 5, 0, 0.92)',
+              backdropFilter: 'blur(12px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '20px'
+            }}>
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(50, 15, 5, 0.98) 0%, rgba(25, 5, 0, 0.99) 100%)',
+                border: '2px solid #ff4d00',
+                borderRadius: '16px',
+                padding: '32px 36px',
+                maxWidth: '460px',
+                width: '100%',
+                textAlign: 'center',
+                boxShadow: '0 0 50px rgba(255, 77, 0, 0.55)',
+                fontFamily: 'Barlow Condensed, sans-serif',
+                animation: 'fadeIn 0.25s ease'
+              }}>
+                <div style={{ fontSize: '3.5rem', marginBottom: '8px' }}>🔥</div>
+                <h2 style={{
+                  color: '#ff7700',
+                  fontSize: '2.2rem',
+                  fontFamily: 'Bebas Neue, sans-serif',
+                  letterSpacing: '1.5px',
+                  margin: '0 0 8px 0',
+                  textShadow: '0 0 20px rgba(255, 77, 0, 0.8)'
+                }}>
+                  YOU ARE ON FIRE!
+                </h2>
+                <p style={{
+                  color: 'rgba(255, 255, 255, 0.9)',
+                  fontSize: '1.1rem',
+                  margin: '0 0 20px 0',
+                  lineHeight: '1.4'
+                }}>
+                  You have <strong style={{ color: '#ff4d00' }}>{myCharacter.burnCount} Burn stack{myCharacter.burnCount > 1 ? 's' : ''}</strong>!
+                  <br />
+                  Roll 2 dice to try to extinguish the flames before your move.
+                  <br />
+                  <strong style={{ color: '#00f0ff' }}>Must roll doubles</strong> to extinguish. If you fail, you take <strong style={{ color: '#ff4d00' }}>-{myCharacter.burnCount * 10} HP</strong> burn damage!
+                </p>
+
+                {extinguishDice && (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '16px',
+                    margin: '16px 0',
+                    fontSize: '2rem',
+                    fontWeight: '900',
+                    color: '#fff'
+                  }}>
+                    <div style={{
+                      width: '64px',
+                      height: '64px',
+                      background: '#1a1a2e',
+                      border: '2px solid #ff4d00',
+                      borderRadius: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '2rem',
+                      color: '#ff7700'
+                    }}>
+                      {extinguishDice[0]}
+                    </div>
+                    <span style={{ color: 'rgba(255,255,255,0.5)' }}>+</span>
+                    <div style={{
+                      width: '64px',
+                      height: '64px',
+                      background: '#1a1a2e',
+                      border: '2px solid #ff4d00',
+                      borderRadius: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '2rem',
+                      color: '#ff7700'
+                    }}>
+                      {extinguishDice[1]}
+                    </div>
+                  </div>
+                )}
+
+                {extinguishResult && (
+                  <div style={{
+                    padding: '12px',
+                    borderRadius: '8px',
+                    margin: '12px 0',
+                    fontSize: '1.15rem',
+                    fontWeight: 'bold',
+                    background: extinguishResult.success ? 'rgba(0, 240, 255, 0.15)' : 'rgba(255, 60, 60, 0.15)',
+                    border: extinguishResult.success ? '1px solid #00f0ff' : '1px solid #ff4444',
+                    color: extinguishResult.success ? '#00f0ff' : '#ff6666'
+                  }}>
+                    {extinguishResult.success
+                      ? `💧 DOUBLES! Rolled ${extinguishResult.d1} & ${extinguishResult.d2}! Fire extinguished (0 damage)!`
+                      : `🔥 FAILED! Rolled ${extinguishResult.d1} & ${extinguishResult.d2}. Took -${extinguishResult.damage} HP Burn damage!`}
+                  </div>
+                )}
+
+                {!extinguishResult && (
+                  <button
+                    onClick={handleRollExtinguishFire}
+                    disabled={isExtinguishRolling}
+                    style={{
+                      width: '100%',
+                      background: isExtinguishRolling ? '#666' : 'linear-gradient(90deg, #ff4d00 0%, #ff8800 100%)',
+                      border: 'none',
+                      color: '#fff',
+                      padding: '16px 24px',
+                      borderRadius: '12px',
+                      fontSize: '1.3rem',
+                      fontWeight: '900',
+                      fontFamily: 'Bebas Neue, sans-serif',
+                      letterSpacing: '1px',
+                      cursor: isExtinguishRolling ? 'wait' : 'pointer',
+                      boxShadow: '0 0 25px rgba(255, 77, 0, 0.6)',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    {isExtinguishRolling ? '🎲 ROLLING DICE...' : '🎲 ROLL TO EXTINGUISH FIRE (ROLL DOUBLES)'}
+                  </button>
+                )}
               </div>
             </div>
           )}

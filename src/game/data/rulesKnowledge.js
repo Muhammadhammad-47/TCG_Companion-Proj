@@ -1,4 +1,4 @@
-﻿// Attention TCG - Official Knowledge Base
+// Attention TCG - Official Knowledge Base
 // All rules sourced strictly from the official GDD document (document.txt)
 
 export const RULES_KNOWLEDGE = [
@@ -120,11 +120,38 @@ export const RULES_KNOWLEDGE = [
     topic: 'Key Terminology & Glossary',
     keywords: ['terminology', 'terms', 'glossary', 'hp', 'ap', 'dp', 'rp', 'et', 'stacking', 'critical hit', 'combo', 'miss', 'status', 'cooldown', 'round', 'turn', 'ability', 'passive', 'active'],
     shortAnswer: 'HP = Health Points, AP = Attack Power, DP = Defense Power, RP = Retreat Points, ET = Energy Tokens. Stacking means using the same card multiple times at once.',
-    details: 'Official Terminology:\n- HP (Health Points): The amount of life a player has. Reaches 0 = defeated.\n- AP (Attack Power): The damage dealt when an attack is successful.\n- DP (Defense Power): Reduces incoming AP when defender rolls 6+ on 2 dice during the clash.\n- RP (Retreat Points): Escape ability. Higher RP number = lower dice roll needed to flee.\n- ET (Energy Token): Resource spent to activate attacks and special abilities.\n- Stacking: Placing the same card on top of each other or using the same card simultaneously.\n- Critical Hit: An attack that deals additional damage when specific conditions are met.\n- Combo: A sequence of attacks or abilities working together for a stronger effect.\n- Counter: A defensive response that interrupts or retaliates against an opponent\'s action.\n- Miss: An attack that fails to hit and deals no damage.\n- Successful Attack: An attack that meets all requirements to hit and applies its effects.\n- Status Effect: A temporary condition like Poison, Stun, or Zombie Mode.\n- Cooldown: Number of turns to wait before using the same card or ability again.\n- Round: A complete cycle where every player has taken one turn.\n- Weakness: Attacks matching a character\'s elemental weakness deal bonus AP on hit.'
+    details: 'Official Terminology:\n- HP (Health Points): The amount of life a player has. Reaches 0 = defeated.\n- AP (Attack Power): The damage dealt when an attack is successful.\n- DP (Defense Power): Reduces incoming AP when defender rolls 6+ on 2 dice during the clash.\n- RP (Retreat Points): Escape ability. Higher RP number = lower dice roll needed to flee.\n- ET (Energy Token): Resource spent to activate attacks and special abilities.\n- Stacking: Placing the same card on top of each other or using the same card simultaneously.\n- Critical Hit: An attack that deals additional damage when specific conditions are met.\n- Combo: A sequence of attacks or abilities working together for a stronger effect.\n- Counter: A defensive response that interrupts or retaliates against an opponent\'s action.\n- Miss: An attack that fails to hit and deals no damage.\n- Successful Attack: An attack that meets all requirements to hit and applies its effects.\n- Status Effect: A temporary condition like Poison, Stun, or Zombie Mode.\n- Cooldown: Number of turns to wait before using the same card or ability again.\n- Round: A complete cycle where every player has taken one turn.\n- Weakness: Attacks matching a character\'s elemental weakness deal bonus AP on hit.'  },
+  {
+    topic: 'FIRE FLAME X1 & X2 & Fire Weakness Mechanics',
+    keywords: ['fire flame', 'fire flame x1', 'fire flame x2', 'burn', 'extinguish', 'fire weakness', 'doubles to extinguish', 'burning', 'shroomy fire', 'queeny fire'],
+    shortAnswer: 'Fire Flame inflicts initial damage (-10 HP for X1, -20 HP for X2) plus -10 HP one-time weakness penalty on Fire-weak characters (Shroomy, Queeny, Kiko). Player burns every turn until rolling doubles on an extinguish roll before their move!',
+    details: 'Official FIRE FLAME Mechanics (Nov 5 Update):\n\n1. Initial Attack Damage:\n- FIRE FLAME X1: Deals -10 HP on a successful hit.\n- FIRE FLAME X2: Deals -20 HP on a successful hit.\n\n2. Fire Weakness Penalty:\n- Characters with Fire weakness (Shroomy, Queeny, Kiko) suffer an additional -10 HP weakness penalty (one time per attack).\n- ***Crucial Rule: The additional -10 HP weakness penalty activates again every time another player hits with another Fire Card!***\n\n3. Ongoing Burn & Extinguish Mechanic:\n- Affected players receive ongoing burn damage each turn (-10 HP per turn on X1, -20 HP per turn on X2).\n- Mechanics: Before the affected player makes their move on their turn, a prompt pops up asking them to roll 2 dice to extinguish the fire before their move.\n- Must roll doubles! If doubles are rolled, the fire is extinguished with 0 damage taken.\n- If the extinguish roll fails (no doubles), the player takes -10 HP (X1) or -20 HP (X2) burn damage and continues burning on subsequent turns until a double is rolled.'
+  },
+  {
+    topic: 'Poison X1 & X2 & Poison Weakness Mechanics',
+    keywords: ['poison x1', 'poison x2', 'poison weakness', 'zombie poison weakness', 'chynaman poison', 'kiko poison', 'poochi poison', 'kat poison', 'bee poison', 'antidote'],
+    shortAnswer: 'Poison inflicts initial damage (-10 HP for X1, -20 HP for X2) plus -10 HP one-time weakness penalty on Poison-weak characters (Chynaman, Kiko, Poochi, Katsumi, Bee). Ongoing damage is -10 HP/turn per stack until treated with Antidote. Zombie attacks also trigger +10 AP weakness penalty on Poison-weak targets!',
+    details: 'Official Poison Mechanics (Nov 5 Update):\n\n1. Initial Damage & Poison Weakness Penalty:\n- Poison X1 deals initial -10 HP damage.\n- Poison X2 deals initial -20 HP damage.\n- Characters with Poison weakness (Chynaman, Kiko, Poochi, Katsumi, Zabina Bee) take an additional -10 HP weakness penalty (one time per poison attack).\n- ***Crucial Rule: The additional -10 HP weakness penalty activates again every time another player hits with another Poison Card!***\n\n2. Ongoing Poison Damage:\n- Afflicted player takes -10 HP per turn on Poison X1 and -20 HP per turn on Poison X2 (-10 HP per poison stack).\n- Continues each turn until treated with an Antidote Card or Heal Cleanse card.\n\n3. Zombie Attack on Poison-Weak Characters:\n- When a Zombie has a successful attack (Venom Strike), an additional weakness penalty of -10 HP is applied to any character with Poison weakness!'
+  },
+  {
+    topic: 'FREEZE Card & Dice Penalty Rules',
+    keywords: ['freeze', 'freeze x1', 'freeze x2', 'dice penalty', 'freeze penalty', '-4 on dice roll', 'lose 2 turns', 'frozen'],
+    shortAnswer: 'FREEZE X2 causes chosen opponent to lose 2 turns AND receive a -4 penalty on their dice roll during the combat clash! FREEZE X1 causes target to lose 1 turn and -2 dice penalty.',
+    details: 'Official FREEZE Card Rules (Nov 5 Update):\n- FREEZE X2: The chosen opponent loses 2 turns and receives a -4 penalty on their dice roll during the combat clash.\n- FREEZE X1: The chosen opponent loses 1 turn and receives a -2 penalty on their dice roll.\n- The dice penalty directly reduces the opponent\'s clash roll total, leveling the battlefield against powerful attackers.'
+  },
+  {
+    topic: 'DRAIN Card & Misdirect 2-Player Rules',
+    keywords: ['drain', 'drain card', 'steal energy tokens', 'misdirect', '2 player misdirect', 'two player misdirect', 'more than two players'],
+    shortAnswer: 'On hit, DRAIN steals 100% of opponent\'s Energy Tokens. MISDIRECT is locked in 2-player duels with the notice "Valid only with more than two players."',
+    details: 'DRAIN & MISDIRECT Card Rules (Nov 5 Update):\n\n1. DRAIN Card:\n- On a successful hit, the attacker steals 100% of the opponent\'s Energy Tokens (all energy tokens transferred to attacker).\n\n2. MISDIRECT Card:\n- In 2-player mode, the MISDIRECT card has locked opacity with a note: "Valid only with more than two players."\n- It cannot be played in a 1-on-1 match because redirecting requires at least 3 players. Players can still choose to discard and draw to cycle the card.'
   }
 ];
 
 export const SUGGESTED_QUERIES = [
+  "How does FIRE FLAME work and how do you extinguish fire?",
+  "How do Poison X1 and X2 work and what happens against Poison weakness?",
+  "What does FREEZE X2 do to opponent dice rolls and turns?",
+  "How does the DRAIN card work?",
   "How does the 2-Stage Clash combat system work?",
   "How does a player turn into a Zombie?",
   "Can Zombies win Stability Crystals?",

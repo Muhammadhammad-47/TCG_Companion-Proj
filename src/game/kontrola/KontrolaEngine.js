@@ -52,7 +52,7 @@ export const KONTROLA_CHARACTERS = {
     maxHp: 100,
     mind: 3,
     element: 'Sonic',
-    weakness: 'Fire',
+    weakness: 'Fire/Poison',
     weaknessBonus: 10,
     innateDP: 10,
     retreatSpeed: 1,
@@ -219,7 +219,7 @@ export const ACTION_CARDS_PREMIUM = [
   { name: 'DEFENCE FULL GUARD', type: 'DEFENSE', count: 4, costET: 0, desc: 'High defense barrier.' },
   { name: 'DODGE - COUNTER', type: 'DEFENSE', count: 3, costET: 0, desc: 'Dodge and immediately counter-attack.' },
   { name: 'FIRE FLAME X2', type: 'ATTACK', count: 3, costET: 1, desc: 'Intense fire dealing -20 HP burn.' },
-  { name: 'FREEZE X2', type: 'OTHERS', count: 4, costET: 0, desc: 'Freezes target for 2 turns.' },
+  { name: 'FREEZE X2', type: 'STATUS', count: 4, costET: 0, desc: 'Target loses 2 turns and receives -4 on dice roll.' },
   { name: 'VISION FULL', type: 'OTHERS', count: 3, costET: 0, desc: 'All players reveal Action Cards for 30s.' },
   { name: 'BACK STAB', type: 'ATTACK', count: 4, costET: 1, desc: 'Surprise rear assault.' },
   { name: 'SHIELD FIRE + 50HP', type: 'DEFENSE', count: 2, costET: 0, desc: '+50 Shield; immune to Fire damage.' },
@@ -810,17 +810,11 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           finalDamage = Math.max(0, finalDamage - absorb);
           newDefenderState.hasDefendBasic = false;
         }
-
-        // Apply Burn Status if Fire Flame (only if damage got through)
-        if (cardName.includes('FIRE FLAME') && finalDamage > 0) {
-          newDefenderState.burnCount = (newDefenderState.burnCount || 0) + 1;
-          log += ` Defender was BURNED! (+1 stack)`;
-        }
       }
 
       // Weakness Bonus (+10 or +15 AP) - only applies if attack was not negated/reflected by defense
       if (newDefenderState && attackElement && newDefenderState.weakness && finalDamage > 0) {
-        const matchesWeakness = newDefenderState.weakness.toLowerCase().includes(attackElement.toLowerCase());
+        const matchesWeakness = newDefenderState.weakness.toLowerCase().includes(attackElement.toLowerCase()) || (isAttackerZombie && newDefenderState.weakness.toLowerCase().includes('poison'));
         if (matchesWeakness) {
           const bonus = newDefenderState.weaknessBonus || 10;
           finalDamage += bonus;
@@ -957,12 +951,21 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       log += ` 😻 SHADOW PURR! ${newAttackerState.name} restored +15 HP and ${newDefenderState.name} falls asleep for 1 turn!`;
     }
   }
-  // 4. POISON CARDS
+  // 4. POISON CARDS (Per Nov 5 feedback: -10 HP for X1 / -20 HP for X2 initial damage, +10 HP weakness penalty, ongoing -10 HP/turn)
   else if (cardName.includes('POISON')) {
-    const stacks = cardName.includes('X2') ? 2 : 1;
+    const isX2 = cardName.includes('X2');
+    const stacks = isX2 ? 2 : 1;
+    const initialDamage = isX2 ? 20 : 10;
     if (newDefenderState) {
       newDefenderState.poisonCount = (newDefenderState.poisonCount || 0) + stacks;
-      log += ` Inflicted ${stacks} Poison card(s) on ${newDefenderState.name}.`;
+      const defWeakness = (newDefenderState.weakness || '').toLowerCase();
+      const hasPoisonWeakness = defWeakness.includes('poison');
+      const weaknessPenalty = hasPoisonWeakness ? (newDefenderState.weaknessBonus || 10) : 0;
+      const totalInitialDamage = initialDamage + weaknessPenalty;
+      newDefenderState.hp = Math.max(0, newDefenderState.hp - totalInitialDamage);
+      log += ` ☠️ ${cardName} hit ${newDefenderState.name}! Initial damage: -${initialDamage} HP` +
+        (weaknessPenalty > 0 ? ` (+${weaknessPenalty} HP Poison Weakness Penalty!)` : '') +
+        `, +${stacks} Poison stack(s) applied (-${stacks * 10} HP/turn ongoing).`;
     } else {
       newAttackerState.poisonCount = (newAttackerState.poisonCount || 0) + stacks;
       log += ` Attached ${stacks} Poison card(s) to self.`;
@@ -1125,9 +1128,9 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       newDefenderState.sleepTurns = (newDefenderState.sleepTurns || 0) + sleepRounds;
       if (dicePenalty > 0) {
         newDefenderState.dicePenalty = (newDefenderState.dicePenalty || 0) + dicePenalty;
-        log += ` ❄️ Put ${newDefenderState.name} to sleep for ${sleepRounds} turn(s)! Dice roll penalty: -${dicePenalty}`;
+        log += ` ❄️ ${cardName}! ${newDefenderState.name} loses ${sleepRounds} turn(s) and receives -${dicePenalty} on dice roll!`;
       } else {
-        log += ` 💤 Put ${newDefenderState.name} to sleep for ${sleepRounds} turn(s)!`;
+        log += ` 💤 ${cardName}! ${newDefenderState.name} falls asleep and loses ${sleepRounds} turn(s)!`;
       }
     }
   }

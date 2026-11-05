@@ -1,0 +1,83 @@
+﻿TCG Companion Notes:
+Nov 5, 2026
+
+
+FREEZE Card function I believe is incorrect. Freeze X2 causes the chosen opponent to receive -4 on your opponent’s dice roll. The affected opponent also loses 2 turns
+
+
+
+
+TCG Companion Notes:
+Nov 4, 2026
+
+
+DRAIN Card: Functionality is incorrect. If attack is successful attacker “Steals all of your opponent’s energy tokens"
+MISDIRECT cards: In two player mode the card’s opacity should be like with a note that pops up “Valid only with more than two players.”
+
+
+We need to add this to the AI Chatbot
+
+
+NOTES: Functionality of FIRE FLAME X1 & X2
+
+
+If an attack is successful from FIRE FLAME X1  the opponent will receive -10 HP every turn until they roll a double. The first hit will count -10 HP and continues to -10 HP each turn until the affected player rolls a double (Mechanics: Before the affected player turns a button will pop up to ask them to roll to extinguish the fire before their actual move.
+
+
+FIREFLAME X1 - Basic
+If the attack is successful, the opponent is burned. (Must roll doubles ) -10 HP if failed.
+
+
+Extra Notes: ChatBOT: Player continues to burn until a double has been rolled
+
+
+If an attack is successful from FIRE FLAME X1  the opponent will receive -10 HP every turn until they roll a double. The first hit will count -10 HP and continues to -10 HP each turn until the affected player rolls a double (Mechanics: Before the affected player turns a button will pop up to ask them to roll to extinguish the fire before their actual move.
+
+
+FIREFLAME X2 Roll - Prem
+If the attack is successful, the opponent is burned. (Must roll doubles ) -20 HP if failed
+ChatBOT: Player continues to burn until they roll a double.
+
+
+Similar to Poison, here are the mechanics of Fire Attacks on Characters with Fire Weakness:
+
+
+Character with Fire Weakness:
+Initial damage: -10 HP from the Fire X1 or -20 HP from the Fire X2
+Additional weakness penalty: -10 HP (one time)
+Ongoing damage: -10 HP per turn on Fire X1 and -20 HP per turn on Fire X2
+Continues until the player rolls a double on their next turn after the first initial attack.
+
+
+***Additional -10 HP weakness penalty activates again if another player attacks with another Fire Card***
+
+
+Character with Poison Weakness:
+Shroomy -10 HP
+Queeny -10 HP
+
+
+Adding to AI Chatbot and Defining Mechanics of Poison:
+I just realized that some of the characters have Poison weakness and we have Poison X1 & X2 which is a poison attack. Here are the Mechanics
+
+
+Character with Poison Weakness:
+Initial damage: -10 HP from the Poison X1 or -20 HP from the Poison X2
+Additional weakness penalty: -10 HP (one time)
+Ongoing damage: -10 HP per turn on Poison X1 and -20 HP per turn on Poison X2
+Continues until treated with an Antidote Card
+
+
+***Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card***
+
+
+Character with Poison Weakness:
+CHYNAMAN -10 HP
+Kiko -10 HP
+Poochi -10 HP
+Kat -10 HP
+Bee -10 HP
+
+
+IMPORTANT:
+Remember when Zombie has a successful attack and additional weakness penalty of -10 HP will be placed on characters with weakness of Poison

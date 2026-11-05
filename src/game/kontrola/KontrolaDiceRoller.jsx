@@ -276,8 +276,12 @@ export default function KontrolaDiceRoller({
 
   const isRolling = isAttackerRolling || isDefenderRolling || (isExternallyRolling && phase === 'clash');
 
-  const atkSum = activeAtkDice ? (activeAtkDice[0] + activeAtkDice[1]) : 0;
-  const defSum = activeDefDice ? (activeDefDice[0] + activeDefDice[1]) : 0;
+  const atkPenalty = combatData?.attacker?.dicePenalty || atkChar?.dicePenalty || 0;
+  const defPenalty = combatData?.defender?.dicePenalty || defChar?.dicePenalty || 0;
+  const rawAtkSum = activeAtkDice ? (activeAtkDice[0] + activeAtkDice[1]) : 0;
+  const rawDefSum = activeDefDice ? (activeDefDice[0] + activeDefDice[1]) : 0;
+  const atkSum = Math.max(0, rawAtkSum - atkPenalty);
+  const defSum = Math.max(0, rawDefSum - defPenalty);
   const isTie = hasAttackerRolled && hasDefenderRolled && atkSum === defSum;
   const atkWon = hasAttackerRolled && hasDefenderRolled && !isTie && atkSum > defSum;
   const defWon = hasAttackerRolled && hasDefenderRolled && !isTie && defSum > atkSum;
@@ -838,6 +842,11 @@ export default function KontrolaDiceRoller({
                 <Swords size={20} />
                 <span>{atkChar.name} (Attacker)</span>
               </div>
+              {atkPenalty > 0 && (
+                <div style={{ fontSize: '0.82rem', fontWeight: 'bold', color: 'var(--neon-cyan)', background: 'rgba(0, 240, 255, 0.12)', border: '1px solid rgba(0, 240, 255, 0.4)', borderRadius: '6px', padding: '3px 8px', marginBottom: '10px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <span>❄️ FREEZE PENALTY: -{atkPenalty}</span>
+                </div>
+              )}
 
               <div
                 style={{
@@ -860,7 +869,7 @@ export default function KontrolaDiceRoller({
                   letterSpacing: '1px'
                 }}
               >
-                TOTAL: {!hasAttackerRolled ? (isAttackerRolling ? '...' : '--') : atkSum}
+                TOTAL: {!hasAttackerRolled ? (isAttackerRolling ? '...' : '--') : (atkPenalty > 0 ? `${atkSum} (${rawAtkSum} - ${atkPenalty} ❄️)` : atkSum)}
               </div>
             </div>
 
@@ -921,6 +930,11 @@ export default function KontrolaDiceRoller({
                 <Shield size={20} />
                 <span>{defChar.name} (Defender)</span>
               </div>
+              {defPenalty > 0 && (
+                <div style={{ fontSize: '0.82rem', fontWeight: 'bold', color: 'var(--neon-cyan)', background: 'rgba(0, 240, 255, 0.12)', border: '1px solid rgba(0, 240, 255, 0.4)', borderRadius: '6px', padding: '3px 8px', marginBottom: '10px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <span>❄️ FREEZE PENALTY: -{defPenalty}</span>
+                </div>
+              )}
               {activeDefenseCard && (
                 <div style={{ fontSize: '0.82rem', fontWeight: 'bold', color: 'var(--neon-cyan)', background: 'rgba(0, 240, 255, 0.12)', border: '1px solid rgba(0, 240, 255, 0.4)', borderRadius: '6px', padding: '3px 8px', marginBottom: '10px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                   <Shield size={14} />
@@ -949,7 +963,7 @@ export default function KontrolaDiceRoller({
                   letterSpacing: '1px'
                 }}
               >
-                TOTAL: {!hasDefenderRolled ? (isDefenderRolling ? '...' : '--') : defSum}
+                TOTAL: {!hasDefenderRolled ? (isDefenderRolling ? '...' : '--') : (defPenalty > 0 ? `${defSum} (${rawDefSum} - ${defPenalty} ❄️)` : defSum)}
               </div>
             </div>
           </div>
