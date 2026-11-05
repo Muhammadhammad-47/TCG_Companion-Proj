@@ -160,6 +160,11 @@ export const sessionService = {
    * Source of truth order:  DB active_sessions → localStorage → generate new
    */
   async getPlayerId(userId = null) {
+    // 1. Check tab-isolated sessionStorage first (ensures multi-tab testing produces distinct player IDs)
+    try {
+      const tabCached = sessionStorage.getItem(SESSION_LS_PLAYER);
+      if (tabCached) return tabCached;
+    } catch {}
     // Authenticated: try to load a previously persisted session player ID
     if (userId && supabase) {
       try {
@@ -202,7 +207,9 @@ export const sessionService = {
    * @param {string|null} userId  Supabase auth UUID (nullable for guests)
    */
   async saveSession(matchId, playerId, role = 'player', userId = null) {
-    // Always save to localStorage first (instant, offline-safe)
+    // Save to tab-specific sessionStorage and localStorage
+    try { sessionStorage.setItem(SESSION_LS_MATCH, matchId); } catch {}
+    try { sessionStorage.setItem(SESSION_LS_PLAYER, playerId); } catch {}
     try { localStorage.setItem(SESSION_LS_MATCH, matchId); } catch {}
 
     if (!supabase) return;
@@ -227,6 +234,7 @@ export const sessionService = {
    * Remove the active session from DB and localStorage on intentional leave.
    */
   async clearSession(matchId, playerId) {
+    try { sessionStorage.removeItem(SESSION_LS_MATCH); } catch {}
     try { localStorage.removeItem(SESSION_LS_MATCH); } catch {}
 
     if (!supabase) return;

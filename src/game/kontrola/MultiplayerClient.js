@@ -13,7 +13,16 @@ const safeSubscribe = (channel, onStatus = null) => {
     return;
   }
   if (channel.state === 'joining') {
-    // Already in flight; let the existing join promise resolve
+    // Channel join is in flight: poll until joined/closed then invoke onStatus
+    const checkInterval = setInterval(() => {
+      if (channel.state === 'joined') {
+        clearInterval(checkInterval);
+        if (onStatus) onStatus('SUBSCRIBED');
+      } else if (channel.state === 'closed' || channel.state === 'errored') {
+        clearInterval(checkInterval);
+        if (onStatus) onStatus(channel.state.toUpperCase());
+      }
+    }, 50);
     return;
   }
   try {
@@ -53,24 +62,12 @@ export const createMatch = async (matchId, hostId, characterId = 'chynaman') => 
     logs: [`Match ${matchId} created by Host. Waiting for players to join...`]
   };
 
-  if (!channels[matchId]) {
-    channels[matchId] = supabase.channel(`match_${matchId}`, {
-      config: { broadcast: { self: true } }
-    });
-  }
-
   return initialState;
 };
 
 export const joinMatch = async (matchId, playerId, characterId = 'bee') => {
   if (!supabase) throw new Error('Supabase is not configured in .env');
 
-  if (!channels[matchId]) {
-    channels[matchId] = supabase.channel(`match_${matchId}`, {
-      config: { broadcast: { self: true } }
-    });
-  }
-  
   return {
     matchId,
     status: 'joining',
@@ -170,26 +167,19 @@ export const subscribeToMatch = (matchId, callback, onSubscribe = null, playerId
     }
   });
 
-  if (channel.state !== 'joined' && channel.state !== 'joining') {
-    safeSubscribe(channel, async (status) => {
-      if (status === 'SUBSCRIBED') {
-        console.log(`[Supabase] Connected to match room: match_${matchId}`);
-        if (playerId) {
-          try {
-            await channel.track({ playerId, status: 'online' });
-          } catch (e) {
-            console.warn('[Supabase] Failed tracking presence:', e);
-          }
+  safeSubscribe(channel, async (status) => {
+    if (status === 'SUBSCRIBED') {
+      console.log(`[Supabase] Connected to match room: match_${matchId}`);
+      if (playerId) {
+        try {
+          await channel.track({ playerId, status: 'online' });
+        } catch (e) {
+          console.warn('[Supabase] Failed tracking presence:', e);
         }
-        if (onSubscribe) onSubscribe();
       }
-    });
-  } else if (channel.state === 'joined') {
-    if (playerId) {
-      channel.track({ playerId, status: 'online' }).catch(() => {});
+      if (onSubscribe) onSubscribe();
     }
-    if (onSubscribe) onSubscribe();
-  }
+  });
 
   return {
     unsubscribe: () => {
@@ -204,13 +194,27 @@ export const subscribeToMatch = (matchId, callback, onSubscribe = null, playerId
 };
 
 export const requestJoin = async (matchId, joinData) => {
-  if (!channels[matchId]) return;
+  const channel = channels[matchId];
+  if (!channel) return;
   const payload = typeof joinData === 'object' ? joinData : { playerId: joinData };
-  await channels[matchId].send({
-    type: 'broadcast',
-    event: 'player_joined',
-    payload
-  });
+
+  // If channel is still joining, wait for it to join (up to 3 seconds)
+  if (channel.state === 'joining') {
+    for (let i = 0; i < 30; i++) {
+      if (channel.state === 'joined') break;
+      await new Promise((r) => setTimeout(r, 100));
+    }
+  }
+
+  try {
+    await channel.send({
+      type: 'broadcast',
+      event: 'player_joined',
+      payload
+    });
+  } catch (err) {
+    console.warn('[Supabase] requestJoin send error:', err);
+  }
 };
 
 export const rejectJoin = async (matchId, playerId, reason = 'ROOM_LOCKED') => {
@@ -335,6 +339,14 @@ export const advertiseRoom = async (roomData) => {
   if (channel.state !== 'joined' && channel.state !== 'joining') {
     safeSubscribe(channel);
   }
+
+  if (channel.state === 'joining') {
+    for (let i = 0; i < 20; i++) {
+      if (channel.state === 'joined') break;
+      await new Promise((r) => setTimeout(r, 100));
+    }
+  }
+
   try {
     await channel.send({
       type: 'broadcast',

@@ -45,7 +45,10 @@ import '../../pages/GamePage.css';
 // sessionService.getPlayerId() is called after auth loads to upgrade to DB-sourced ID.
 const generateUniquePlayerId = () => {
   try {
-    let pid = localStorage.getItem('kontrola_player_id');
+    let pid = sessionStorage.getItem('kontrola_player_id');
+    if (!pid) {
+      pid = localStorage.getItem('kontrola_player_id');
+    }
     if (!pid) {
       pid = 'warr_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 7);
       localStorage.setItem('kontrola_player_id', pid);
@@ -101,8 +104,8 @@ export const findSafeCardIndex = (hand, identifier) => {
 export default function KontrolaArena() {
   const navigate = useNavigate();
   const [matchId, setMatchId] = useState(() => {
-    // Fast init from localStorage; sessionService will verify against DB after auth
-    try { return localStorage.getItem('kontrola_current_match') || ''; }
+    // Fast init from sessionStorage (tab-isolated); avoids auto-connecting to old rooms on new tabs
+    try { return sessionStorage.getItem('kontrola_current_match') || ''; }
     catch (e) { return ''; }
   });
   const [gameState, setGameState] = useState(null);
@@ -146,7 +149,6 @@ export default function KontrolaArena() {
         if (!currentMatchId) {
           sessionService.getLastMatchId(user.id).then(async (savedMatchId) => {
             if (savedMatchId) {
-              setMatchId(savedMatchId);
               // Only show the rejoin banner if the game is still in-progress
               try {
                 const result = await fetchGameRoom(savedMatchId);
@@ -795,23 +797,26 @@ export default function KontrolaArena() {
     return () => clearInterval(interval);
   }, [isHost, matchId, gameState?.status, gameState?.players?.length, playerName, playerId, tournamentMatchContext, gameState?.isTournamentMatch]);
 
-  // Auto-sync heartbeat while in 'joining' state (handles guest entering before host in tournament duels)
+  // Auto-join heartbeat while guest is waiting to be confirmed in the match lobby
   useEffect(() => {
-    if (!matchId || isHost || gameState?.status !== 'joining') return;
+    if (!matchId || isHost) return;
+    // Once confirmed in the lobby player list, stop heartbeat
+    if (gameState?.players?.includes(playerId)) return;
 
-    const interval = setInterval(() => {
-      if (gameState?.status === 'joining' && matchIdRef.current) {
+    const sendJoin = () => {
+      if (matchIdRef.current && playerIdRef.current && !gameStateRef.current?.players?.includes(playerIdRef.current)) {
         requestJoin(matchIdRef.current, {
           playerId: playerIdRef.current,
           characterId: selectedCharacterRef.current,
           playerName: (playerNameRef.current || 'Player').trim()
         });
-        requestSync(matchIdRef.current, playerIdRef.current);
       }
-    }, 2500);
+    };
 
+    sendJoin();
+    const interval = setInterval(sendJoin, 1500);
     return () => clearInterval(interval);
-  }, [matchId, isHost, gameState?.status]);
+  }, [matchId, isHost, gameState?.players, playerId]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -848,7 +853,7 @@ export default function KontrolaArena() {
         // 1. Peer Joined
         if (event.type === 'PLAYER_JOINED') {
           const { playerId: joinedId, characterId: joinedChar, playerName: joinedName } = event.payload || {};
-          if (!joinedId) return;
+          if (!joinedId || joinedId === playerIdRef.current) return;
 
           const currentGS = gameStateRef.current;
           if (isHostRef.current && currentGS) {
@@ -905,8 +910,17 @@ export default function KontrolaArena() {
                 logs: [`${joinedName || 'Player'} entered the lobby!`, ...(currentGS.logs || [])]
               };
 
+              gameStateRef.current = updatedLobbyState;
               setGameState(updatedLobbyState);
               broadcastState(matchId, updatedLobbyState);
+              advertiseRoom({
+                roomCode: matchId,
+                hostName: playerNameRef.current || 'Host',
+                hostPlayerId: playerIdRef.current,
+                playersCount: updatedPlayers.length,
+                maxPlayers: 7,
+                status: 'waiting'
+              });
             }
           }
         }
@@ -1252,8 +1266,6 @@ export default function KontrolaArena() {
             playerName: playerNameRef.current.trim() || 'Player'
           });
           isJoiningRef.current = false;
-          // Request sync from host in case match is in progress
-          requestSync(matchId, playerIdRef.current);
         }
       },
       playerIdRef.current
@@ -2654,7 +2666,6 @@ export default function KontrolaArena() {
           characterId: selectedCharacterRef.current,
           playerName: finalName
         });
-        requestSync(cleanId, playerIdRef.current);
       } else {
         isJoiningRef.current = true; // Triggers requestJoin inside useEffect once channel connects
         setMatchId(cleanId);
