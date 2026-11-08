@@ -577,6 +577,16 @@ export default function KontrolaArena() {
     setIsExtinguishRolling(false);
   }, [gameState?.turn]);
 
+  // Safety timeout: Auto-roll extinguish dice after 20s if player is AFK so turn never stalls
+  useEffect(() => {
+    if (isMyTurn && myCharacter && myCharacter.burnCount > 0 && !myCharacter.isDefeated && !hasAttemptedExtinguishThisTurn && !isExtinguishRolling && !extinguishResult && gameState?.status === 'active') {
+      const timer = setTimeout(() => {
+        handleRollExtinguishFire();
+      }, 20000);
+      return () => clearTimeout(timer);
+    }
+  }, [isMyTurn, myCharacter?.burnCount, myCharacter?.isDefeated, hasAttemptedExtinguishThisTurn, isExtinguishRolling, extinguishResult, gameState?.status]);
+
   // Music player audio control
   useEffect(() => {
     if (!audioRef.current) return;
@@ -1746,6 +1756,8 @@ export default function KontrolaArena() {
 
         const updatedCharStates = { ...currentState.characterStates };
         let nextLogs = [...(currentState.logs || [])];
+        let nextTurn = currentState.turn;
+        let matchWinner = currentState.winner || null;
 
         if (extinguished) {
           updatedCharStates[actorId] = {
@@ -1765,13 +1777,52 @@ export default function KontrolaArena() {
           nextLogs.unshift(`🔥 ${char.name} rolled [${rolls[0]}, ${rolls[1]}] (failed to roll doubles) and took -${dmg} HP Burn damage! HP: ${newHp}`);
           if (isDefeated) {
             nextLogs.unshift(`💀 ${char.name} was incinerated by Burn damage and eliminated!`);
+            const livingPlayers = (currentState.players || []).filter(pId => !updatedCharStates[pId]?.isDefeated);
+            if (livingPlayers.length === 1) {
+              matchWinner = updatedCharStates[livingPlayers[0]] ? { ...updatedCharStates[livingPlayers[0]], playerId: livingPlayers[0] } : null;
+            } else if (livingPlayers.length > 1) {
+              const hasRevive = (currentState.hands?.[actorId] || []).some(c => getSafeCardName(c).toUpperCase().includes('REVIVE'));
+              if (!hasRevive) {
+                const currentIdx = livingPlayers.indexOf(actorId);
+                const step = currentState.turnDirection === 'counter' ? -1 : 1;
+                let nextIdx = (currentIdx + step) % livingPlayers.length;
+                if (nextIdx < 0) nextIdx += livingPlayers.length;
+                nextTurn = livingPlayers[nextIdx] || livingPlayers[0];
+              }
+            }
           }
         }
 
         const nextState = {
           ...currentState,
           characterStates: updatedCharStates,
-          logs: nextLogs
+          logs: nextLogs,
+          turn: nextTurn,
+          winner: matchWinner
+        };
+        broadcastState(matchIdRef.current, nextState);
+        return nextState;
+      }
+
+      if (payload.actionType === 'DECLINE_REVIVE') {
+        const victimId = payload.victimId;
+        const livingPlayers = (currentState.players || []).filter(pId => !currentState.characterStates?.[pId]?.isDefeated && pId !== victimId);
+        let nextTurn = currentState.turn;
+        let matchWinner = currentState.winner || null;
+        if (livingPlayers.length === 1) {
+          matchWinner = currentState.characterStates?.[livingPlayers[0]] ? { ...currentState.characterStates[livingPlayers[0]], playerId: livingPlayers[0] } : null;
+        } else if (livingPlayers.length > 1 && currentState.turn === victimId) {
+          const currentIdx = (currentState.players || []).indexOf(victimId);
+          const step = currentState.turnDirection === 'counter' ? -1 : 1;
+          let nextIdx = (currentIdx + step) % livingPlayers.length;
+          if (nextIdx < 0) nextIdx += livingPlayers.length;
+          nextTurn = livingPlayers[nextIdx] || livingPlayers[0];
+        }
+        const nextState = {
+          ...currentState,
+          turn: nextTurn,
+          winner: matchWinner,
+          logs: [`💀 ${currentState.characterStates?.[victimId]?.name || 'Player'} opted out of reviving and was eliminated!`, ...(currentState.logs || [])]
         };
         broadcastState(matchIdRef.current, nextState);
         return nextState;
@@ -3331,6 +3382,11 @@ export default function KontrolaArena() {
   };
 
   const handleDeclineRevive = () => {
+    if (pendingRevivePrompt && gameState?.turn === pendingRevivePrompt.victimId) {
+      const payload = { actionType: 'DECLINE_REVIVE', victimId: pendingRevivePrompt.victimId };
+      if (isHostRef.current) enqueueHostAction(payload);
+      else takeTurn(matchIdRef.current, { type: 'PLAYER_ACTION', payload });
+    }
     setPendingRevivePrompt(null);
   };
 
