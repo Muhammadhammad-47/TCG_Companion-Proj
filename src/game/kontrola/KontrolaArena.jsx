@@ -1783,11 +1783,18 @@ export default function KontrolaArena() {
             } else if (livingPlayers.length > 1) {
               const hasRevive = (currentState.hands?.[actorId] || []).some(c => getSafeCardName(c).toUpperCase().includes('REVIVE'));
               if (!hasRevive) {
-                const currentIdx = livingPlayers.indexOf(actorId);
+                const pList = currentState.players || [];
+                const currentIdx = pList.indexOf(actorId);
                 const step = currentState.turnDirection === 'counter' ? -1 : 1;
-                let nextIdx = (currentIdx + step) % livingPlayers.length;
-                if (nextIdx < 0) nextIdx += livingPlayers.length;
-                nextTurn = livingPlayers[nextIdx] || livingPlayers[0];
+                let nextIdx = (currentIdx + step) % pList.length;
+                if (nextIdx < 0) nextIdx += pList.length;
+                let attempts = 0;
+                while (updatedCharStates[pList[nextIdx]]?.isDefeated && attempts < pList.length) {
+                  nextIdx = (nextIdx + step) % pList.length;
+                  if (nextIdx < 0) nextIdx += pList.length;
+                  attempts++;
+                }
+                nextTurn = pList[nextIdx] || livingPlayers[0];
               }
             }
           }
@@ -1812,11 +1819,18 @@ export default function KontrolaArena() {
         if (livingPlayers.length === 1) {
           matchWinner = currentState.characterStates?.[livingPlayers[0]] ? { ...currentState.characterStates[livingPlayers[0]], playerId: livingPlayers[0] } : null;
         } else if (livingPlayers.length > 1 && currentState.turn === victimId) {
-          const currentIdx = (currentState.players || []).indexOf(victimId);
+          const pList = currentState.players || [];
+          const currentIdx = pList.indexOf(victimId);
           const step = currentState.turnDirection === 'counter' ? -1 : 1;
-          let nextIdx = (currentIdx + step) % livingPlayers.length;
-          if (nextIdx < 0) nextIdx += livingPlayers.length;
-          nextTurn = livingPlayers[nextIdx] || livingPlayers[0];
+          let nextIdx = (currentIdx + step) % pList.length;
+          if (nextIdx < 0) nextIdx += pList.length;
+          let attempts = 0;
+          while (currentState.characterStates?.[pList[nextIdx]]?.isDefeated && attempts < pList.length) {
+            nextIdx = (nextIdx + step) % pList.length;
+            if (nextIdx < 0) nextIdx += pList.length;
+            attempts++;
+          }
+          nextTurn = pList[nextIdx] || livingPlayers[0];
         }
         const nextState = {
           ...currentState,
