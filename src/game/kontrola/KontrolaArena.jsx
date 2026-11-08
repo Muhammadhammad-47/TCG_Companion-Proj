@@ -427,6 +427,7 @@ export default function KontrolaArena() {
 
             // Record match progress for daily quests & combat record
             cosmeticsService.recordMatchProgress(currentUser.id, isWinner);
+            cosmeticsService.addSeasonXP(currentUser.id, isWinner ? 250 : 100);
           }
         } catch (e) {
           console.warn('Failed to log match result to DB:', e);

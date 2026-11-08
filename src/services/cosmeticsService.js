@@ -211,6 +211,65 @@ export const DAILY_LOGIN_SCHEDULE = [
   { day: 7, label: 'Day 7', rewardType: 'bundle', amount: 500, bonusGems: 25, bonusCredits: 25, icon: '🎁', title: 'Grand Cache: 500 Gold + 25 Gems + 25 Credits!' }
 ];
 
+export const SEASON_CONFIG = {
+  id: 'season_1',
+  name: 'Season 1: Neon Vanguard',
+  seasonNumber: 1,
+  startDate: '2026-11-01',
+  endDate: '2026-12-31',
+  premiumPriceGems: 400,
+  tiers: [
+    {
+      tier: 1,
+      xpRequired: 100,
+      freeReward: { type: 'gold', amount: 150, name: '150 Gold', icon: '🪙' },
+      premiumReward: { type: 'gems', amount: 50, name: '50 Gems', icon: '💎' }
+    },
+    {
+      tier: 2,
+      xpRequired: 250,
+      freeReward: { type: 'gold', amount: 200, name: '200 Gold', icon: '🪙' },
+      premiumReward: { type: 'cosmetic', id: 'frame_neon_cyan', name: 'Cyber Matrix Cyan Frame', icon: '🖼️' }
+    },
+    {
+      tier: 3,
+      xpRequired: 450,
+      freeReward: { type: 'gems', amount: 20, name: '20 Gems', icon: '💎' },
+      premiumReward: { type: 'credits', amount: 25, name: '25 Tournament Credits', icon: '🏆' }
+    },
+    {
+      tier: 4,
+      xpRequired: 700,
+      freeReward: { type: 'gold', amount: 300, name: '300 Gold', icon: '🪙' },
+      premiumReward: { type: 'cosmetic', id: 'cardback_toxic_venom', name: 'Venom Spores Card Back', icon: '🃏' }
+    },
+    {
+      tier: 5,
+      xpRequired: 1000,
+      freeReward: { type: 'credits', amount: 15, name: '15 Tournament Credits', icon: '🏆' },
+      premiumReward: { type: 'gems', amount: 100, name: '100 Gems', icon: '💎' }
+    },
+    {
+      tier: 6,
+      xpRequired: 1400,
+      freeReward: { type: 'gold', amount: 500, name: '500 Gold', icon: '🪙' },
+      premiumReward: { type: 'cosmetic', id: 'title_cyber_pioneer', name: 'Cyber Pioneer Title', icon: '🎖️' }
+    },
+    {
+      tier: 7,
+      xpRequired: 1900,
+      freeReward: { type: 'gems', amount: 50, name: '50 Gems', icon: '💎' },
+      premiumReward: { type: 'credits', amount: 50, name: '50 Tournament Credits', icon: '🏆' }
+    },
+    {
+      tier: 8,
+      xpRequired: 2500,
+      freeReward: { type: 'bundle', amount: 1000, bonusGems: 50, name: 'Vanguard Cache (1000 Gold + 50 Gems)', icon: '🎁' },
+      premiumReward: { type: 'cosmetic', id: 'frame_tournament_champion', name: 'Apex Champion Halo Frame', icon: '👑' }
+    }
+  ]
+};
+
 // ============================================================================
 // SERVICE IMPLEMENTATION
 // ============================================================================
@@ -553,5 +612,143 @@ export const cosmeticsService = {
       console.log(`[Analytics Event] ${eventName}:`, payload);
       // Can be integrated with PostHog, Mixpanel, or Supabase telemetry table
     } catch {}
+  },
+
+  // 15. Season Pass state getter
+  getSeasonPassState(userId = null) {
+    const key = `attention_tcg_season_pass_${SEASON_CONFIG.id}_${userId || 'guest'}`;
+    let state = {
+      xp: 0,
+      isPremium: false,
+      claimedFreeTiers: [],
+      claimedPremiumTiers: []
+    };
+    try {
+      const stored = localStorage.getItem(key);
+      if (stored) state = { ...state, ...JSON.parse(stored) };
+    } catch {}
+
+    // Calculate current reached tier
+    let currentTier = 0;
+    for (const t of SEASON_CONFIG.tiers) {
+      if (state.xp >= t.xpRequired) {
+        currentTier = t.tier;
+      }
+    }
+
+    const nextTierObj = SEASON_CONFIG.tiers.find(t => t.tier === currentTier + 1);
+    const prevTierXP = currentTier > 0 ? (SEASON_CONFIG.tiers.find(t => t.tier === currentTier)?.xpRequired || 0) : 0;
+    const nextTierXP = nextTierObj ? nextTierObj.xpRequired : (SEASON_CONFIG.tiers[SEASON_CONFIG.tiers.length - 1].xpRequired);
+    const progressPercent = nextTierObj
+      ? Math.min(100, Math.max(0, Math.round(((state.xp - prevTierXP) / (nextTierXP - prevTierXP)) * 100)))
+      : 100;
+
+    return {
+      ...state,
+      currentTier,
+      maxTier: SEASON_CONFIG.tiers.length,
+      nextTierXP,
+      progressPercent,
+      season: SEASON_CONFIG
+    };
+  },
+
+  // 16. Add Season Pass XP
+  addSeasonXP(userId, amount) {
+    if (!amount || amount <= 0) return;
+    const state = this.getSeasonPassState(userId);
+    const newXP = state.xp + amount;
+    const key = `attention_tcg_season_pass_${SEASON_CONFIG.id}_${userId || 'guest'}`;
+    const updated = {
+      ...state,
+      xp: newXP
+    };
+    try {
+      localStorage.setItem(key, JSON.stringify({
+        xp: updated.xp,
+        isPremium: updated.isPremium,
+        claimedFreeTiers: updated.claimedFreeTiers,
+        claimedPremiumTiers: updated.claimedPremiumTiers
+      }));
+    } catch {}
+    this.trackEvent('season_xp_gained', { userId, amount, totalXP: newXP });
+    return this.getSeasonPassState(userId);
+  },
+
+  // 17. Upgrade to Premium Pass with Gems
+  async upgradeToPremiumPass(userId) {
+    if (!userId) return { success: false, error: 'Authentication required to upgrade Season Pass.' };
+    const cost = SEASON_CONFIG.premiumPriceGems;
+    const res = await economyService.modifyWallet(userId, 'gems', -cost, 'season_pass_upgrade', SEASON_CONFIG.id);
+    if (!res.success) {
+      return { success: false, error: res.error || `Insufficient Gems (Requires ${cost} Gems).` };
+    }
+
+    const key = `attention_tcg_season_pass_${SEASON_CONFIG.id}_${userId || 'guest'}`;
+    const state = this.getSeasonPassState(userId);
+    state.isPremium = true;
+    try {
+      localStorage.setItem(key, JSON.stringify({
+        xp: state.xp,
+        isPremium: true,
+        claimedFreeTiers: state.claimedFreeTiers,
+        claimedPremiumTiers: state.claimedPremiumTiers
+      }));
+    } catch {}
+
+    this.trackEvent('season_pass_purchased', { userId, seasonId: SEASON_CONFIG.id, costGems: cost });
+    return { success: true, message: `Upgraded to ${SEASON_CONFIG.name} Premium Pass! Premium track unlocked.` };
+  },
+
+  // 18. Claim Tier Reward
+  async claimSeasonReward(userId, tierNumber, isPremiumTrack = false) {
+    const state = this.getSeasonPassState(userId);
+    const tierConfig = SEASON_CONFIG.tiers.find(t => t.tier === tierNumber);
+    if (!tierConfig) return { success: false, error: 'Tier not found.' };
+
+    if (state.currentTier < tierNumber) {
+      return { success: false, error: `You need ${tierConfig.xpRequired} XP to unlock Tier ${tierNumber} (Current XP: ${state.xp}).` };
+    }
+
+    if (isPremiumTrack && !state.isPremium) {
+      return { success: false, error: 'Premium Pass required to claim rewards on this track.' };
+    }
+
+    const claimedList = isPremiumTrack ? state.claimedPremiumTiers : state.claimedFreeTiers;
+    if (claimedList.includes(tierNumber)) {
+      return { success: false, error: 'Reward already claimed!' };
+    }
+
+    const reward = isPremiumTrack ? tierConfig.premiumReward : tierConfig.freeReward;
+    if (!reward) return { success: false, error: 'No reward found for this tier.' };
+
+    // Grant reward
+    if (reward.type === 'gold') {
+      await economyService.modifyWallet(userId, 'gold', reward.amount, 'season_pass_reward', `tier_${tierNumber}`);
+    } else if (reward.type === 'gems') {
+      await economyService.modifyWallet(userId, 'gems', reward.amount, 'season_pass_reward', `tier_${tierNumber}`);
+    } else if (reward.type === 'credits') {
+      await economyService.modifyWallet(userId, 'tournament_credits', reward.amount, 'season_pass_reward', `tier_${tierNumber}`);
+    } else if (reward.type === 'bundle') {
+      await economyService.modifyWallet(userId, 'gold', reward.amount, 'season_pass_reward', `tier_${tierNumber}`);
+      if (reward.bonusGems) await economyService.modifyWallet(userId, 'gems', reward.bonusGems, 'season_pass_reward', `tier_${tierNumber}`);
+    } else if (reward.type === 'cosmetic' && reward.id) {
+      this.addOwnedCosmetic(userId, reward.id);
+    }
+
+    // Save claim
+    claimedList.push(tierNumber);
+    const key = `attention_tcg_season_pass_${SEASON_CONFIG.id}_${userId || 'guest'}`;
+    try {
+      localStorage.setItem(key, JSON.stringify({
+        xp: state.xp,
+        isPremium: state.isPremium,
+        claimedFreeTiers: state.claimedFreeTiers,
+        claimedPremiumTiers: state.claimedPremiumTiers
+      }));
+    } catch {}
+
+    this.trackEvent('season_reward_claimed', { userId, tier: tierNumber, isPremiumTrack, reward: reward.name });
+    return { success: true, reward, message: `Claimed Tier ${tierNumber}: ${reward.name}!` };
   }
 };

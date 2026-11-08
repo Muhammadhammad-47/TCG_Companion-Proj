@@ -796,3 +796,23 @@ body {
     overflow-y: auto !important;
   }
 }
+
+/* Prestige Animated Champion Frames & VFX */
+@keyframes championHaloGlow {
+  0% {
+    box-shadow: 0 0 10px #ffd700, 0 0 20px rgba(255, 215, 0, 0.4);
+    filter: drop-shadow(0 0 6px #ffd700);
+  }
+  50% {
+    box-shadow: 0 0 22px #ffae00, 0 0 35px rgba(255, 174, 0, 0.7);
+    filter: drop-shadow(0 0 14px #ffae00);
+  }
+  100% {
+    box-shadow: 0 0 10px #ffd700, 0 0 20px rgba(255, 215, 0, 0.4);
+    filter: drop-shadow(0 0 6px #ffd700);
+  }
+}
+
+.champion-halo-animated {
+  animation: championHaloGlow 2.5s infinite ease-in-out !important;
+}

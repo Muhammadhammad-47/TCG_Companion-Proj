@@ -13,7 +13,8 @@ import {
   COSMETIC_TITLES,
   GEM_PACKS,
   FEATURED_BUNDLES,
-  DAILY_LOGIN_SCHEDULE
+  DAILY_LOGIN_SCHEDULE,
+  SEASON_CONFIG
 } from '../services/cosmeticsService';
 import PlayerAvatar from './PlayerAvatar';
 
@@ -24,6 +25,7 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete })
   const [equippedCosmetics, setEquippedCosmetics] = useState({});
   const [dailyStatus, setDailyStatus] = useState(null);
   const [dailyQuests, setDailyQuests] = useState([]);
+  const [seasonPassState, setSeasonPassState] = useState(null);
   
   // Purchase confirmation modal state
   const [confirmItem, setConfirmItem] = useState(null);
@@ -64,6 +66,53 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete })
 
     const quests = cosmeticsService.getDailyQuests(userId);
     setDailyQuests(quests);
+
+    const spState = cosmeticsService.getSeasonPassState(userId);
+    setSeasonPassState(spState);
+  };
+
+  const handleUpgradeSeasonPass = async () => {
+    if (!userId) {
+      showToast('Please log in to upgrade your Season Pass.', 'error');
+      return;
+    }
+    setIsProcessing(true);
+    try {
+      const res = await cosmeticsService.upgradeToPremiumPass(userId);
+      if (res.success) {
+        showToast(res.message, 'success');
+        await refreshData();
+        if (onPurchaseComplete) onPurchaseComplete();
+      } else {
+        showToast(res.error || 'Failed to upgrade Season Pass.', 'error');
+      }
+    } catch (e) {
+      showToast(e.message || 'Error upgrading pass.', 'error');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleClaimSeasonReward = async (tierNumber, isPremiumTrack) => {
+    if (!userId) {
+      showToast('Please log in to claim Season rewards.', 'error');
+      return;
+    }
+    setIsProcessing(true);
+    try {
+      const res = await cosmeticsService.claimSeasonReward(userId, tierNumber, isPremiumTrack);
+      if (res.success) {
+        showToast(res.message, 'success');
+        await refreshData();
+        if (onPurchaseComplete) onPurchaseComplete();
+      } else {
+        showToast(res.error || 'Failed to claim reward.', 'error');
+      }
+    } catch (e) {
+      showToast(e.message || 'Error claiming reward.', 'error');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   useEffect(() => {
@@ -179,7 +228,8 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete })
     try {
       const res = await cosmeticsService.claimQuestReward(userId, questId);
       if (res.success) {
-        showToast(`⭐ ${res.message}`, 'success');
+        cosmeticsService.addSeasonXP(userId, 50);
+        showToast(`⭐ ${res.message} (+50 Season XP)`, 'success');
         await refreshData();
         if (onPurchaseComplete) onPurchaseComplete(0);
       } else {
@@ -423,6 +473,7 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete })
         <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px', marginBottom: '16px', overflowX: 'auto' }}>
           {[
             { id: 'featured', label: '⭐ FEATURED & BUNDLES' },
+            { id: 'season_pass', label: '⚡ SEASON PASS' },
             { id: 'gems', label: '💎 BUY GEMS (IAP)' },
             { id: 'gold_items', label: '🪙 GOLD ITEMS' },
             { id: 'gem_items', label: '🔮 GEM COSMETICS' },
@@ -548,6 +599,228 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete })
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB: SEASON PASS */}
+        {activeTab === 'season_pass' && (
+          <div style={{ flex: 1, overflowY: 'auto', paddingRight: '4px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* Season Banner Header */}
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(157, 78, 221, 0.25) 0%, rgba(0, 240, 255, 0.15) 100%)',
+              border: '1.5px solid rgba(157, 78, 221, 0.4)',
+              borderRadius: '16px',
+              padding: '20px 24px',
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: '16px'
+            }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '0.72rem', background: 'rgba(157, 78, 221, 0.3)', border: '1px solid #c77dff', color: '#c77dff', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
+                    OFFICIAL BATTLE PASS
+                  </span>
+                  <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)' }}>
+                    Ends December 31, 2026
+                  </span>
+                </div>
+                <h3 style={{ margin: 0, fontSize: '1.8rem', color: '#fff', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '1px' }}>
+                  {seasonPassState?.season?.name || 'Season 1: Neon Vanguard'}
+                </h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '0.88rem', color: 'rgba(255,255,255,0.7)' }}>
+                  Earn Season XP from matches, victories, and daily quests to unlock exclusive prestige rewards!
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                {seasonPassState?.isPremium ? (
+                  <div style={{
+                    background: 'rgba(57, 255, 20, 0.15)',
+                    border: '1.5px solid #39ff14',
+                    borderRadius: '12px',
+                    padding: '10px 18px',
+                    color: '#39ff14',
+                    fontWeight: 'bold',
+                    fontFamily: 'Bebas Neue, sans-serif',
+                    fontSize: '1.1rem',
+                    letterSpacing: '1px'
+                  }}>
+                    ✓ PREMIUM PASS ACTIVE
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleUpgradeSeasonPass}
+                    disabled={isProcessing}
+                    style={{
+                      background: 'linear-gradient(135deg, #ffd700 0%, #ff8800 100%)',
+                      border: 'none',
+                      borderRadius: '12px',
+                      padding: '12px 22px',
+                      color: '#000',
+                      fontWeight: 'bold',
+                      fontFamily: 'Bebas Neue, sans-serif',
+                      fontSize: '1.1rem',
+                      letterSpacing: '0.8px',
+                      cursor: 'pointer',
+                      boxShadow: '0 0 20px rgba(255, 215, 0, 0.4)'
+                    }}
+                  >
+                    ⭐ UNLOCK PREMIUM PASS (400 💎)
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Current Tier & XP Bar */}
+            <div style={{
+              background: 'rgba(0,0,0,0.4)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '14px',
+              padding: '16px 20px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '1.2rem', color: 'var(--neon-gold)', fontWeight: 'bold', fontFamily: 'Bebas Neue, sans-serif' }}>
+                    TIER {seasonPassState?.currentTier || 0} OF {seasonPassState?.maxTier || 8}
+                  </span>
+                  <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
+                    ({seasonPassState?.xp || 0} XP Total)
+                  </span>
+                </div>
+                <span style={{ fontSize: '0.85rem', color: 'var(--neon-cyan)', fontFamily: 'Bebas Neue, sans-serif' }}>
+                  Next Unlock: {seasonPassState?.nextTierXP || 100} XP ({seasonPassState?.progressPercent || 0}%)
+                </span>
+              </div>
+              <div style={{ height: '10px', background: 'rgba(255,255,255,0.1)', borderRadius: '5px', overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%',
+                  width: `${seasonPassState?.progressPercent || 0}%`,
+                  background: 'linear-gradient(90deg, #9d4edd, #00f0ff)',
+                  transition: 'width 0.4s ease'
+                }} />
+              </div>
+            </div>
+
+            {/* Dual Progression Track */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ fontSize: '1.1rem', color: 'var(--neon-gold)', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.8px' }}>
+                SEASON REWARD TRACKS
+              </div>
+
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))',
+                gap: '12px'
+              }}>
+                {seasonPassState?.season?.tiers.map(t => {
+                  const isReached = (seasonPassState?.currentTier || 0) >= t.tier;
+                  const isFreeClaimed = seasonPassState?.claimedFreeTiers?.includes(t.tier);
+                  const isPremiumClaimed = seasonPassState?.claimedPremiumTiers?.includes(t.tier);
+
+                  return (
+                    <div
+                      key={t.tier}
+                      style={{
+                        background: isReached ? 'rgba(8, 20, 44, 0.85)' : 'rgba(4, 10, 24, 0.6)',
+                        border: isReached ? '1px solid rgba(0, 240, 255, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
+                        borderRadius: '12px',
+                        padding: '14px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '10px'
+                      }}
+                    >
+                      {/* Tier Header */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontWeight: 'bold', color: isReached ? '#00f0ff' : 'rgba(255,255,255,0.5)', fontFamily: 'Bebas Neue, sans-serif', fontSize: '1.1rem' }}>
+                          TIER {t.tier}
+                        </span>
+                        <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>
+                          {t.xpRequired} XP
+                        </span>
+                      </div>
+
+                      {/* Free Track Row */}
+                      <div style={{
+                        background: 'rgba(255,255,255,0.04)',
+                        borderRadius: '8px',
+                        padding: '8px 10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                      }}>
+                        <div>
+                          <div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>FREE TRACK</div>
+                          <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#fff' }}>
+                            {t.freeReward.icon} {t.freeReward.name}
+                          </div>
+                        </div>
+                        {isFreeClaimed ? (
+                          <span style={{ fontSize: '0.75rem', color: '#39ff14', fontWeight: 'bold' }}>✓ CLAIMED</span>
+                        ) : (
+                          <button
+                            onClick={() => handleClaimSeasonReward(t.tier, false)}
+                            disabled={!isReached || isProcessing}
+                            style={{
+                              background: isReached ? 'var(--neon-gold)' : 'rgba(255,255,255,0.1)',
+                              border: 'none',
+                              color: isReached ? '#000' : 'rgba(255,255,255,0.4)',
+                              borderRadius: '6px',
+                              padding: '4px 10px',
+                              fontSize: '0.75rem',
+                              fontWeight: 'bold',
+                              cursor: isReached ? 'pointer' : 'not-allowed'
+                            }}
+                          >
+                            {isReached ? 'CLAIM' : 'LOCKED'}
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Premium Track Row */}
+                      <div style={{
+                        background: seasonPassState?.isPremium ? 'rgba(255, 215, 0, 0.08)' : 'rgba(0, 0, 0, 0.3)',
+                        border: seasonPassState?.isPremium ? '1px solid rgba(255, 215, 0, 0.25)' : '1px dashed rgba(255, 255, 255, 0.1)',
+                        borderRadius: '8px',
+                        padding: '8px 10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                      }}>
+                        <div>
+                          <div style={{ fontSize: '0.68rem', color: 'var(--neon-gold)', fontWeight: 'bold', textTransform: 'uppercase' }}>⭐ PREMIUM TRACK</div>
+                          <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#fff' }}>
+                            {t.premiumReward.icon} {t.premiumReward.name}
+                          </div>
+                        </div>
+                        {isPremiumClaimed ? (
+                          <span style={{ fontSize: '0.75rem', color: '#39ff14', fontWeight: 'bold' }}>✓ CLAIMED</span>
+                        ) : (
+                          <button
+                            onClick={() => handleClaimSeasonReward(t.tier, true)}
+                            disabled={!isReached || !seasonPassState?.isPremium || isProcessing}
+                            style={{
+                              background: isReached && seasonPassState?.isPremium ? 'linear-gradient(135deg, #ffd700, #ff8800)' : 'rgba(255,255,255,0.1)',
+                              border: 'none',
+                              color: isReached && seasonPassState?.isPremium ? '#000' : 'rgba(255,255,255,0.4)',
+                              borderRadius: '6px',
+                              padding: '4px 10px',
+                              fontSize: '0.75rem',
+                              fontWeight: 'bold',
+                              cursor: isReached && seasonPassState?.isPremium ? 'pointer' : 'not-allowed'
+                            }}
+                          >
+                            {isReached && seasonPassState?.isPremium ? 'CLAIM' : !seasonPassState?.isPremium ? 'LOCKED (PASS)' : 'LOCKED'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
