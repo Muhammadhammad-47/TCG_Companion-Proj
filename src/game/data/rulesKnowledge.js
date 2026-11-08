@@ -144,10 +144,31 @@ export const RULES_KNOWLEDGE = [
     keywords: ['drain', 'drain card', 'steal energy tokens', 'misdirect', '2 player misdirect', 'two player misdirect', 'more than two players'],
     shortAnswer: 'On hit, DRAIN steals 100% of opponent\'s Energy Tokens. MISDIRECT is locked in 2-player duels with the notice "Valid only with more than two players."',
     details: 'DRAIN & MISDIRECT Card Rules (Nov 5 Update):\n\n1. DRAIN Card:\n- On a successful hit, the attacker steals 100% of the opponent\'s Energy Tokens (all energy tokens transferred to attacker).\n\n2. MISDIRECT Card:\n- In 2-player mode, the MISDIRECT card has locked opacity with a note: "Valid only with more than two players."\n- It cannot be played in a 1-on-1 match because redirecting requires at least 3 players. Players can still choose to discard and draw to cycle the card.'
+  },
+  {
+    topic: 'BOOMERANG FULL Defense Card Mechanics',
+    keywords: ['boomerang', 'boomerang card', 'boomerang full', 'reflect', 'successful defense', 'defense victory', 'reflect damage'],
+    shortAnswer: 'BOOMERANG FULL reflects 100% of incoming attack damage back to the attacker and forces the attacker to lose their next turn, but ONLY when the defender wins the clash (successful defense)!',
+    details: 'Official BOOMERANG FULL Rules (Nov 8 Update):\n- Setting Trap: Played as a defense card during combat preparation.\n- Successful Defense: When the defender wins the clash (rolls equal to or higher than the attacker), 100% of the attack damage is reflected directly back to the attacking player!\n- Turn Loss: The attacker also loses their next turn.\n- Failed Defense: If the attacker wins the clash, the Boomerang trap breaks and the defender takes the incoming attack damage (reduced by innate 6+ defense if defender rolled 6+).'
+  },
+  {
+    topic: 'REVIVE Card & Quit or Be Revived Modal',
+    keywords: ['revive', 'revive card', 'quit or be revived', 'defeated', '0 hp', 'resurrection', 'be revived'],
+    shortAnswer: 'When a player holding the REVIVE card in hand reaches 0 HP, a prompt appears asking "Quit or Be Revived". Choosing "Be Revived" restores the player to 50% max HP and keeps them in the match!',
+    details: 'Official REVIVE Card Rules (Nov 8 Update):\n- Hand Requirement: The REVIVE card must be in the player\'s hand when their HP reaches 0.\n- Modal Prompt: An interactive prompt appears: "QUIT OR BE REVIVED?".\n- Be Revived (50% HP): Restores the character with 50% of their maximum HP, consumes the REVIVE card, and continues the match.\n- Quit (Accept Defeat): Allows the player to accept defeat and exit the match.'
+  },
+  {
+    topic: 'LIGHTNING X1 & X2 & Turn Loss Mechanics',
+    keywords: ['lightning', 'lightning x1', 'lightning x2', 'miss turn', 'skip turn', 'extra turns', 'lightning poison', 'shock'],
+    shortAnswer: 'Lightning X1 deals 10 AP and Lightning X2 deals 20 AP. The opponent loses 1 turn ONLY if the attack is successful! If the attack is unsuccessful, no turns are skipped. Lightning removes 1 Poison card ONLY from Zombies (5+ poison cards), not normal characters.',
+    details: 'Official LIGHTNING Attack Rules (Nov 8 Update):\n- Initial Damage: Lightning X1 deals 10 AP; Lightning X2 deals 20 AP.\n- Skip Turn Rule: The defending opponent loses 1 turn ONLY on a successful hit. If the attack is unsuccessful (blocked/evaded), the opponent does NOT lose any turns, and no extra turns are awarded.\n- Poison Cleansing Rule: Lightning cleanses 1 Poison card ONLY if the defender is in Zombie Mode (5+ Poison cards). For normal characters with 1-4 poison cards, Lightning does NOT remove any poison cards.'
   }
 ];
 
 export const SUGGESTED_QUERIES = [
+  "How does the BOOMERANG card work on successful defense?",
+  "When can you use the REVIVE card and what is Quit or Be Revived?",
+  "When does Lightning cause an opponent to miss a turn?",
   "How does FIRE FLAME work and how do you extinguish fire?",
   "How do Poison X1 and X2 work and what happens against Poison weakness?",
   "What does FREEZE X2 do to opponent dice rolls and turns?",
