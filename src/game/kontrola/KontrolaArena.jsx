@@ -834,6 +834,7 @@ export default function KontrolaArena() {
           characterId: selectedCharacterRef.current,
           playerName: (playerNameRef.current || 'Player').trim()
         });
+        requestSync(matchIdRef.current, playerIdRef.current);
       }
     };
 
@@ -1785,7 +1786,11 @@ export default function KontrolaArena() {
             hp: newHp,
             isDefeated
           };
-          nextLogs.unshift(`🔥 ${char.name} rolled [${rolls[0]}, ${rolls[1]}] (failed to roll doubles) and took -${dmg} HP Burn damage! HP: ${newHp}`);
+          if (rolls && rolls.length >= 2) {
+            nextLogs.unshift(`🔥 ${char.name} rolled [${rolls[0]}, ${rolls[1]}] (failed to roll doubles) and took -${dmg} HP Burn damage! HP: ${newHp}`);
+          } else {
+            nextLogs.unshift(`🔥 ${char.name} chose not to extinguish the flames and took -${dmg} HP Burn damage! HP: ${newHp}`);
+          }
           if (isDefeated) {
             nextLogs.unshift(`💀 ${char.name} was incinerated by Burn damage and eliminated!`);
             const livingPlayers = (currentState.players || []).filter(pId => !updatedCharStates[pId]?.isDefeated);
@@ -2368,6 +2373,19 @@ export default function KontrolaArena() {
           setShowCrystalSplitModal(true);
           // Pause combat resolution until crystal split completes
           return;
+        }
+      }
+
+      // Check if attacker was defeated (e.g. from Boomerang / Counter reflection)
+      if (newAttackerState && newAttackerState.hp <= 0 && !newAttackerState.isDefeated) {
+        newAttackerState.isDefeated = true;
+        if (newDefenderState) {
+          newDefenderState.crystals = (newDefenderState.crystals || 1) + (newAttackerState.crystals || 1);
+          newAttackerState.crystals = 0;
+          log += ` 💀 ${newAttackerState.name} was defeated by reflected damage! ${newDefenderState.name} claimed their Stability Crystals.`;
+          if (newDefenderState.crystals >= 3) {
+            matchWinner = { ...newDefenderState, playerId: targetId };
+          }
         }
       }
 
@@ -2989,7 +3007,7 @@ export default function KontrolaArena() {
     const totalMatchPlayers = (gameState?.players?.length) || 2;
     if (is3PlayerOnly && totalMatchPlayers <= 2) {
       if (cardName.includes('MISDIRECT')) {
-        showNotice('⚠️ Requires 3+ players! (You can still discard & draw)', 'warning');
+        showNotice('⚠️ Valid only with more than two players! Requires 3+ players. (You can still discard & draw)', 'warning');
       } else {
         showNotice('⚠️ Only available in 3+ player matches! Cannot be played in a 1-on-1 duel.', 'warning');
       }
@@ -3456,6 +3474,26 @@ export default function KontrolaArena() {
     }, 800);
   };
 
+  const handleDeclineExtinguishFire = () => {
+    if (!myCharacter || isExtinguishRolling) return;
+    const burnDmg = (myCharacter.burnCount || 1) * 10;
+    const payload = {
+      actionType: 'EXTINGUISH_BURN',
+      actorId: playerId,
+      extinguished: false,
+      rolls: null,
+      damage: burnDmg,
+      skippedRoll: true
+    };
+
+    if (isHostRef.current) {
+      enqueueHostAction(payload);
+    } else {
+      takeTurn(matchIdRef.current, { type: 'PLAYER_ACTION', payload });
+    }
+    setHasAttemptedExtinguishThisTurn(true);
+  };
+
   const handleConfirmAllianceTrade = (tradeData) => {
     if (!soulAllianceTradeData) return;
     soundFX.playMenuSelect?.();
@@ -3598,7 +3636,7 @@ export default function KontrolaArena() {
                 {/* 1. Verified Player Username Badge */}
                 <div
                   style={{
-                    background: 'var(--bg-card) 0.88)',
+                    background: 'var(--bg-card)',
                     border: '1.5px solid rgba(251, 200, 13, 0.3)',
                     borderRadius: '16px',
                     padding: '18px 24px',
@@ -3807,7 +3845,7 @@ export default function KontrolaArena() {
                 {lobbyTab === 'browse' && (
                   <div
                     style={{
-                      background: 'var(--bg-card) 0.88)',
+                      background: 'var(--bg-card)',
                       border: '1px solid rgba(251, 200, 13, 0.25)',
                       borderRadius: '16px',
                       padding: '20px'
@@ -4003,7 +4041,7 @@ export default function KontrolaArena() {
                 {lobbyTab === 'create' && (
                   <div
                     style={{
-                      background: 'var(--bg-card) 0.88)',
+                      background: 'var(--bg-card)',
                       border: '1px solid rgba(251, 200, 13, 0.25)',
                       borderRadius: '16px',
                       padding: '24px'
@@ -4048,7 +4086,7 @@ export default function KontrolaArena() {
                 {lobbyTab === 'join' && (
                   <div
                     style={{
-                      background: 'var(--bg-card) 0.88)',
+                      background: 'var(--bg-card)',
                       border: '1px solid rgba(251, 200, 13, 0.3)',
                       borderRadius: '16px',
                       padding: '24px'
@@ -4198,7 +4236,7 @@ export default function KontrolaArena() {
                   maxWidth: '680px',
                   margin: '0 auto',
                   zIndex: 10,
-                  background: 'var(--bg-card) 0.92)',
+                  background: 'var(--bg-card)',
                   border: '1.5px solid var(--neon-cyan)',
                   borderRadius: '20px',
                   padding: '28px 32px',
@@ -5185,7 +5223,7 @@ export default function KontrolaArena() {
                                 showNotice('🔒 REVIVE can only be used when your character reaches 0 HP! (You can still discard & draw)', 'info');
                               } else if (is3PlayerLocked) {
                                 if (upperCardName.includes('MISDIRECT')) {
-                                  showNotice('⚠️ Requires 3+ players! (You can still discard & draw)', 'info');
+                                  showNotice('⚠️ Valid only with more than two players! Requires 3+ players. (You can still discard & draw)', 'info');
                                 } else {
                                   showNotice('⚠️ Requires 3+ players to attack! (You can still discard & draw)', 'info');
                                 }                              } else {
@@ -5782,7 +5820,7 @@ export default function KontrolaArena() {
                   margin: '0 0 8px 0',
                   textShadow: '0 0 20px rgba(57, 255, 20, 0.6)'
                 }}>
-                  USE REVIVE CARD?
+                  QUIT OR BE REVIVED?
                 </h2>
                 <p style={{ color: '#fff', fontSize: '1.1rem', margin: '0 0 16px 0', lineHeight: 1.5 }}>
                   You have fallen in battle! Would you like to consume your <strong>REVIVE</strong> card to re-enter the game at <strong>50% HP ({Math.floor((pendingRevivePrompt.maxHp || 100) * 0.5)} HP)</strong>?
@@ -5803,7 +5841,7 @@ export default function KontrolaArena() {
                       letterSpacing: '1px'
                     }}
                   >
-                    DISCONTINUE GAME (ACCEPT DEFEAT)
+                    QUIT (ACCEPT DEFEAT)
                   </button>
                   <button
                     onClick={handleConfirmRevive}
@@ -5821,7 +5859,7 @@ export default function KontrolaArena() {
                       boxShadow: '0 0 25px rgba(57, 255, 20, 0.6)'
                     }}
                   >
-                    YES, REVIVE (50% HP)
+                    BE REVIVED (50% HP)
                   </button>
                 </div>
               </div>
@@ -5862,7 +5900,7 @@ export default function KontrolaArena() {
                   margin: '0 0 8px 0',
                   textShadow: '0 0 20px rgba(255, 77, 0, 0.8)'
                 }}>
-                  YOU ARE ON FIRE!
+                  WOULD YOU LIKE TO EXTINGUISH THE FLAME?
                 </h2>
                 <p style={{
                   color: 'rgba(255, 255, 255, 0.9)',
@@ -5872,9 +5910,9 @@ export default function KontrolaArena() {
                 }}>
                   You have <strong style={{ color: '#ff4d00' }}>{myCharacter.burnCount} Burn stack{myCharacter.burnCount > 1 ? 's' : ''}</strong>!
                   <br />
-                  Roll 2 dice to try to extinguish the flames before your move.
+                  Extinguish requires rolling doubles on 2 dice.
                   <br />
-                  <strong style={{ color: '#00f0ff' }}>Must roll doubles</strong> to extinguish. If you fail, you take <strong style={{ color: '#ff4d00' }}>-{myCharacter.burnCount * 10} HP</strong> burn damage!
+                  <strong style={{ color: '#00f0ff' }}>Must roll doubles</strong> to extinguish. If you fail (or skip roll), you take <strong style={{ color: '#ff4d00' }}>-{(myCharacter.burnCount || 1) * 10} HP</strong> burn damage!
                 </p>
 
                 {extinguishDice && (
@@ -5938,27 +5976,48 @@ export default function KontrolaArena() {
                 )}
 
                 {!extinguishResult && (
-                  <button
-                    onClick={handleRollExtinguishFire}
-                    disabled={isExtinguishRolling}
-                    style={{
-                      width: '100%',
-                      background: isExtinguishRolling ? '#666' : 'linear-gradient(90deg, #ff4d00 0%, #ff8800 100%)',
-                      border: 'none',
-                      color: '#fff',
-                      padding: '16px 24px',
-                      borderRadius: '12px',
-                      fontSize: '1.3rem',
-                      fontWeight: '900',
-                      fontFamily: 'Bebas Neue, sans-serif',
-                      letterSpacing: '1px',
-                      cursor: isExtinguishRolling ? 'wait' : 'pointer',
-                      boxShadow: '0 0 25px rgba(255, 77, 0, 0.6)',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    {isExtinguishRolling ? '🎲 ROLLING DICE...' : '🎲 ROLL TO EXTINGUISH FIRE (ROLL DOUBLES)'}
-                  </button>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <button
+                      onClick={handleRollExtinguishFire}
+                      disabled={isExtinguishRolling}
+                      style={{
+                        width: '100%',
+                        background: isExtinguishRolling ? '#666' : 'linear-gradient(90deg, #ff4d00 0%, #ff8800 100%)',
+                        border: 'none',
+                        color: '#fff',
+                        padding: '14px 20px',
+                        borderRadius: '12px',
+                        fontSize: '1.2rem',
+                        fontWeight: '900',
+                        fontFamily: 'Bebas Neue, sans-serif',
+                        letterSpacing: '1px',
+                        cursor: isExtinguishRolling ? 'wait' : 'pointer',
+                        boxShadow: '0 0 20px rgba(255, 77, 0, 0.6)',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      {isExtinguishRolling ? '🎲 ROLLING DICE...' : '🎲 YES (ROLL DOUBLES)'}
+                    </button>
+                    <button
+                      onClick={handleDeclineExtinguishFire}
+                      disabled={isExtinguishRolling}
+                      style={{
+                        width: '100%',
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        border: '1px solid rgba(255, 255, 255, 0.3)',
+                        color: '#fff',
+                        padding: '12px 20px',
+                        borderRadius: '12px',
+                        fontSize: '1.05rem',
+                        fontWeight: 'bold',
+                        fontFamily: 'Bebas Neue, sans-serif',
+                        letterSpacing: '1px',
+                        cursor: isExtinguishRolling ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      NO (TAKE -{(myCharacter.burnCount || 1) * 10} HP & CONTINUE BURNING)
+                    </button>
+                  </div>
                 )}
               </div>
             </div>

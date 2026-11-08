@@ -1205,7 +1205,7 @@ export default function KontrolaDiceRoller({
                     {defCardName.includes('COUNTER')
                       ? '⚔️ DEFENCE - COUNTER: 0% Damage Taken & Reflects 25% Back to Attacker!'
                       : defCardName.includes('BOOMERANG')
-                      ? '🪃 BOOMERANG FULL: Reflects 100% Back on 6+ roll!'
+                      ? '🪃 BOOMERANG FULL: Reflects 100% Back on 6+ roll or Win & Opponent Skips Turn!'
                       : `🛡️ DEFENSE CARD: ${typeof activeDefenseCard === 'string' ? activeDefenseCard : activeDefenseCard.name} is active!`}
                   </span>
                 </div>

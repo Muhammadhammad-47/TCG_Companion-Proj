@@ -77,7 +77,7 @@ export const KONTROLA_CHARACTERS = {
     mind: 3,
     element: 'Shadow',
     weakness: 'Poison',
-    weaknessBonus: 15,
+    weaknessBonus: 10,
     innateDP: 10,
     retreatSpeed: 1,
     themeColor: '#FBC80D',
@@ -120,7 +120,7 @@ export const KONTROLA_CHARACTERS = {
     maxHp: 100,
     mind: 2,
     element: 'Psychic',
-    weakness: 'Fire',
+    weakness: 'Fire/Poison',
     weaknessBonus: 10,
     innateDP: 10,
     retreatSpeed: 4,
@@ -142,7 +142,7 @@ export const KONTROLA_CHARACTERS = {
     maxHp: 65,
     mind: 2,
     element: 'Nature',
-    weakness: 'Fire',
+    weakness: 'Fire/Poison',
     weaknessBonus: 10,
     innateDP: 10,
     retreatSpeed: 1,
@@ -836,7 +836,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       }
 
       // Weakness Bonus (+10 or +15 AP) - only applies if attack was not negated/reflected by defense
-      if (newDefenderState && attackElement && newDefenderState.weakness && finalDamage > 0) {
+      if (newDefenderState && attackElement && newDefenderState.weakness && finalDamage > 0 && !newDefenderState.flyerNoWeakness) {
         const matchesWeakness = newDefenderState.weakness.toLowerCase().includes(attackElement.toLowerCase()) || (isAttackerZombie && newDefenderState.weakness.toLowerCase().includes('poison'));
         if (matchesWeakness) {
           const bonus = newDefenderState.weaknessBonus || 10;
@@ -936,10 +936,17 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         log += ` ⚔️ COUNTER TRIGGERED! 0% damage taken, reflected ${reflectDmg} AP back to ${newAttackerState.name}!`;
         newDefenderState.hasCounter = false;
       }
+      // BOOMERANG: Defender won clash / successful defense -> reflects 100% attack damage back and attacker loses next turn
+      if (newDefenderState?.hasBoomerang) {
+        log += ` 🪃 BOOMERANG SUCCESS! ${newDefenderState.name} defended successfully and reflected 100% of the attack (${baseAP} AP) back to ${newAttackerState.name}! ${newAttackerState.name} loses their next turn!`;
+        newAttackerState.hp = Math.max(0, newAttackerState.hp - baseAP);
+        newAttackerState.sleepTurns = (newAttackerState.sleepTurns || 0) + 1;
+        newDefenderState.hasBoomerang = false;
+      }
       // DODGE BASIC: If defender has DODGE BASIC and is defending, they succeed on clash win
       if (newDefenderState?.hasDodge && newDefenderState.dodgeCardName?.includes('BASIC')) {
         log += ` 💨 DODGE BASIC SUCCESS! ${newDefenderState.name} evaded all damage!`;
-      } else {
+      } else if (!newDefenderState?.hasCounter && !newDefenderState?.hasBoomerang) {
         log += ` Defender blocked or dodged the attack! 0 damage taken.`;
       }
     }
