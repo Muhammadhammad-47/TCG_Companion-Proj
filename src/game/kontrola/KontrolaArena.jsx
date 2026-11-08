@@ -37,6 +37,7 @@ import { createGameRoom, updateGameRoom, fetchGameRoom } from '../../services/ro
 import { tournamentService } from '../../services/tournamentService';
 import KontrolaTournamentHub from './KontrolaTournamentHub';
 import KontrolaBracketView from './KontrolaBracketView';
+import { cosmeticsService } from '../../services/cosmeticsService';
 
 import '../../pages/GamePage.css';
 
@@ -423,6 +424,9 @@ export default function KontrolaArena() {
                 appSource: 'kontrola'
               });
             }
+
+            // Record match progress for daily quests & combat record
+            cosmeticsService.recordMatchProgress(currentUser.id, isWinner);
           }
         } catch (e) {
           console.warn('Failed to log match result to DB:', e);
@@ -3072,6 +3076,10 @@ export default function KontrolaArena() {
     };
 
     console.log('[playTurn] Payload created:', payload);
+
+    if (currentUser?.id) {
+      cosmeticsService.recordCardPlayed(currentUser.id);
+    }
 
     if (isAttack) {
       if (isAoE) {

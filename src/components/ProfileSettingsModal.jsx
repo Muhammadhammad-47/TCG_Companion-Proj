@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { X, User, Lock, Award, Trophy, Check, AlertCircle, Save, Sparkles, Edit3 } from 'lucide-react';
+import { X, User, Lock, Award, Trophy, Check, AlertCircle, Save, Sparkles, Edit3, Shield, Palette } from 'lucide-react';
 import { authService } from '../services/authService';
 import { AVAILABLE_AVATARS, getAvatarUrl, DEFAULT_AVATAR } from '../utils/avatarUtils';
+import { cosmeticsService, COSMETIC_FRAMES, COSMETIC_CARDBACKS, COSMETIC_TITLES } from '../services/cosmeticsService';
 import PlayerAvatar from './PlayerAvatar';
 
 /**
@@ -38,6 +39,10 @@ export default function ProfileSettingsModal({
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
+  // Cosmetics state
+  const [equippedCosmetics, setEquippedCosmetics] = useState(cosmeticsService.getEquippedCosmetics(currentUser?.id));
+  const [ownedCosmetics, setOwnedCosmetics] = useState(cosmeticsService.getOwnedCosmetics(currentUser?.id));
+
   // Live profile state fetched directly from database
   const [profileData, setProfileData] = useState(userProfile);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
@@ -47,6 +52,8 @@ export default function ProfileSettingsModal({
     if (isOpen) {
       const activeProf = profileData || userProfile;
       setSelectedAvatar(activeProf?.avatar_id || DEFAULT_AVATAR);
+      setEquippedCosmetics(cosmeticsService.getEquippedCosmetics(currentUser?.id));
+      setOwnedCosmetics(cosmeticsService.getOwnedCosmetics(currentUser?.id));
       setUsername(activeProf?.username || '');
       setUsernameError('');
       setPasswordError('');
@@ -174,6 +181,11 @@ export default function ProfileSettingsModal({
     }
   };
 
+  const handleEquipCosmetic = async (slot, id) => {
+    const updated = await cosmeticsService.equipCosmetic(currentUser?.id, slot, id);
+    setEquippedCosmetics({ ...updated });
+  };
+
   const activeProfile = profileData || userProfile;
   const matchesPlayed = activeProfile?.matches_played || 0;
   const matchesWon = activeProfile?.matches_won || 0;
@@ -224,6 +236,7 @@ export default function ProfileSettingsModal({
           >
             <PlayerAvatar
               avatarId={selectedAvatar}
+              frameId={equippedCosmetics.frame}
               username={activeProfile?.username}
               size={48}
               borderColor="var(--neon-gold, #FBC80D)"
@@ -397,6 +410,7 @@ export default function ProfileSettingsModal({
             >
               <PlayerAvatar
                 avatarId={selectedAvatar}
+                frameId={equippedCosmetics.frame}
                 username={activeProfile?.username}
                 size={70}
                 borderColor="var(--neon-gold, #FBC80D)"
@@ -423,8 +437,13 @@ export default function ProfileSettingsModal({
             </div>
 
             <div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--neon-cyan, #00f0ff)', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold' }}>
-                ACTIVE PILOT CALLSIGN
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--neon-cyan, #00f0ff)', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold' }}>
+                  ACTIVE PILOT CALLSIGN
+                </span>
+                <span style={{ fontSize: '0.72rem', background: 'rgba(0,240,255,0.15)', border: '1px solid #00f0ff', color: '#00f0ff', borderRadius: '4px', padding: '1px 6px', fontWeight: 'bold' }}>
+                  {COSMETIC_TITLES.find(t => t.id === equippedCosmetics.title)?.name || 'PILOT'}
+                </span>
               </div>
               <h2
                 style={{
@@ -869,6 +888,186 @@ export default function ProfileSettingsModal({
                 </div>
               )}
             </form>
+          </div>
+        </div>
+
+        {/* ROW 4: COSMETIC LOADOUT & LOCKER */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div
+            style={{
+              fontSize: '1.15rem',
+              color: 'var(--neon-gold, #FBC80D)',
+              fontFamily: 'Bebas Neue, sans-serif',
+              letterSpacing: '0.8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <Palette size={16} />
+            <span>COSMETIC LOADOUT & CUSTOMIZATION LOCKER</span>
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '14px'
+          }}>
+            {/* Frames Locker */}
+            <div style={{
+              background: 'rgba(4, 12, 28, 0.75)',
+              padding: '16px',
+              borderRadius: '14px',
+              border: '1px solid rgba(0, 240, 255, 0.25)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.95rem', fontWeight: 'bold', color: 'var(--neon-cyan, #00f0ff)', fontFamily: 'Bebas Neue, sans-serif' }}>
+                  AVATAR FRAMES
+                </span>
+                <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)' }}>
+                  Active: {COSMETIC_FRAMES.find(f => f.id === equippedCosmetics.frame)?.name || 'Standard'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {COSMETIC_FRAMES.map(f => {
+                  const isOwned = ownedCosmetics.includes(f.id) || f.isDefault;
+                  const isEquipped = equippedCosmetics.frame === f.id;
+                  return (
+                    <button
+                      key={f.id}
+                      onClick={() => isOwned && handleEquipCosmetic('frame', f.id)}
+                      disabled={!isOwned}
+                      title={isOwned ? (isEquipped ? 'Currently Equipped' : 'Click to Equip') : 'Locked in Store'}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: isEquipped ? 'rgba(0, 240, 255, 0.2)' : isOwned ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.4)',
+                        border: isEquipped ? '1.5px solid #00f0ff' : isOwned ? '1px solid rgba(255, 255, 255, 0.15)' : '1px dashed rgba(255, 255, 255, 0.1)',
+                        borderRadius: '8px',
+                        padding: '6px 10px',
+                        color: isEquipped ? '#00f0ff' : isOwned ? '#fff' : 'rgba(255, 255, 255, 0.3)',
+                        fontSize: '0.78rem',
+                        cursor: isOwned ? 'pointer' : 'not-allowed',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: `2px solid ${f.borderColor || '#fff'}` }} />
+                      <span>{f.name}</span>
+                      {isEquipped && <Check size={12} />}
+                      {!isOwned && <Lock size={12} />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Titles Locker */}
+            <div style={{
+              background: 'rgba(4, 12, 28, 0.75)',
+              padding: '16px',
+              borderRadius: '14px',
+              border: '1px solid rgba(251, 200, 13, 0.25)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.95rem', fontWeight: 'bold', color: 'var(--neon-gold, #FBC80D)', fontFamily: 'Bebas Neue, sans-serif' }}>
+                  PILOT TITLES
+                </span>
+                <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)' }}>
+                  Active: {COSMETIC_TITLES.find(t => t.id === equippedCosmetics.title)?.name || 'Pilot'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {COSMETIC_TITLES.map(t => {
+                  const isOwned = ownedCosmetics.includes(t.id) || t.isDefault;
+                  const isEquipped = equippedCosmetics.title === t.id;
+                  return (
+                    <button
+                      key={t.id}
+                      onClick={() => isOwned && handleEquipCosmetic('title', t.id)}
+                      disabled={!isOwned}
+                      title={isOwned ? (isEquipped ? 'Currently Equipped' : 'Click to Equip') : 'Locked in Store'}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: isEquipped ? 'rgba(251, 200, 13, 0.2)' : isOwned ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.4)',
+                        border: isEquipped ? '1.5px solid var(--neon-gold)' : isOwned ? '1px solid rgba(255, 255, 255, 0.15)' : '1px dashed rgba(255, 255, 255, 0.1)',
+                        borderRadius: '8px',
+                        padding: '6px 10px',
+                        color: isEquipped ? 'var(--neon-gold)' : isOwned ? '#fff' : 'rgba(255, 255, 255, 0.3)',
+                        fontSize: '0.78rem',
+                        cursor: isOwned ? 'pointer' : 'not-allowed',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <Award size={12} />
+                      <span>{t.name}</span>
+                      {isEquipped && <Check size={12} />}
+                      {!isOwned && <Lock size={12} />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Card Backs Locker */}
+            <div style={{
+              background: 'rgba(4, 12, 28, 0.75)',
+              padding: '16px',
+              borderRadius: '14px',
+              border: '1px solid rgba(157, 78, 221, 0.25)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.95rem', fontWeight: 'bold', color: '#c77dff', fontFamily: 'Bebas Neue, sans-serif' }}>
+                  CARD BACK SLEEVES
+                </span>
+                <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)' }}>
+                  Active: {COSMETIC_CARDBACKS.find(c => c.id === equippedCosmetics.card_back)?.name || 'Attention Classic'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {COSMETIC_CARDBACKS.map(cb => {
+                  const isOwned = ownedCosmetics.includes(cb.id) || cb.isDefault;
+                  const isEquipped = equippedCosmetics.card_back === cb.id;
+                  return (
+                    <button
+                      key={cb.id}
+                      onClick={() => isOwned && handleEquipCosmetic('card_back', cb.id)}
+                      disabled={!isOwned}
+                      title={isOwned ? (isEquipped ? 'Currently Equipped' : 'Click to Equip') : 'Locked in Store'}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: isEquipped ? 'rgba(157, 78, 221, 0.25)' : isOwned ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.4)',
+                        border: isEquipped ? '1.5px solid #c77dff' : isOwned ? '1px solid rgba(255, 255, 255, 0.15)' : '1px dashed rgba(255, 255, 255, 0.1)',
+                        borderRadius: '8px',
+                        padding: '6px 10px',
+                        color: isEquipped ? '#c77dff' : isOwned ? '#fff' : 'rgba(255, 255, 255, 0.3)',
+                        fontSize: '0.78rem',
+                        cursor: isOwned ? 'pointer' : 'not-allowed',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <Shield size={12} />
+                      <span>{cb.name}</span>
+                      {isEquipped && <Check size={12} />}
+                      {!isOwned && <Lock size={12} />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       </div>

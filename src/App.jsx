@@ -29,6 +29,7 @@ import MusicUploadProgress from './components/MusicUploadProgress.jsx';
 import { LeaderboardModal } from './components/LeaderboardModal.jsx';
 import PlayerAvatar from './components/PlayerAvatar.jsx';
 import ProfileSettingsModal from './components/ProfileSettingsModal.jsx';
+import { cosmeticsService } from './services/cosmeticsService.js';
 
 // ============================================================================
 // HELPER FUNCTIONS FOR MODULE ACCESS & BADGES
@@ -1745,6 +1746,7 @@ export function Hub() {
                         avatarId={userProfile?.avatar_id}
                         username={userProfile?.username}
                         size={42}
+                        frameId={cosmeticsService.getEquippedCosmetics(userProfile?.id).frame}
                         borderColor={isProfileDropdownOpen ? 'var(--neon-cyan, #00f0ff)' : 'var(--neon-gold, #FBC80D)'}
                         showGlow={isProfileDropdownOpen}
                       />
@@ -1783,6 +1785,7 @@ export function Hub() {
                               avatarId={userProfile?.avatar_id}
                               username={userProfile?.username}
                               size={38}
+                              frameId={cosmeticsService.getEquippedCosmetics(userProfile?.id).frame}
                               borderColor="var(--neon-gold, #FBC80D)"
                             />
                             <div style={{ minWidth: 0, flex: 1 }}>
@@ -1866,8 +1869,18 @@ export function Hub() {
               isOpen={isStoreOpen} 
               onClose={() => setIsStoreOpen(false)} 
               userProfile={userProfile} 
-              onPurchaseComplete={(amount) => {
-                setUserProfile(prev => ({ ...prev, crystals_collected: (prev?.crystals_collected || 0) + amount }));
+              onPurchaseComplete={async (amount) => {
+                if (userProfile?.id) {
+                  try {
+                    const fresh = await authService.getProfile(userProfile.id);
+                    if (fresh) setUserProfile(fresh);
+                  } catch (e) {
+                    console.warn('Could not refresh profile after purchase:', e);
+                  }
+                }
+                if (amount) {
+                  setUserProfile(prev => ({ ...prev, crystals_collected: (prev?.crystals_collected || 0) + amount }));
+                }
               }} 
             />
 

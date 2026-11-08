@@ -1,74 +1,235 @@
 import React, { useState, useEffect } from 'react';
-import { X, ShoppingCart, Sparkles } from 'lucide-react';
+import {
+  X, ShoppingCart, Sparkles, Trophy, Gift, Check, Shield, Flame,
+  Zap, Crown, Coins, Tag, ArrowRight, CheckCircle2, AlertCircle
+} from 'lucide-react';
 import { authService } from '../services/authService';
 import { economyService } from '../services/economyService';
+import {
+  cosmeticsService,
+  COSMETIC_FRAMES,
+  COSMETIC_CARDBACKS,
+  COSMETIC_EMOTES,
+  COSMETIC_TITLES,
+  GEM_PACKS,
+  FEATURED_BUNDLES,
+  DAILY_LOGIN_SCHEDULE
+} from '../services/cosmeticsService';
+import PlayerAvatar from './PlayerAvatar';
 
 export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete }) => {
-  const [bundles, setBundles] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [purchasingId, setPurchasingId] = useState(null);
-  const [redeemCode, setRedeemCode] = useState('');
-  const [redeemMsg, setRedeemMsg] = useState({ text: '', type: '' });
-  const [redeeming, setRedeeming] = useState(false);
+  const [activeTab, setActiveTab] = useState('featured'); // 'featured' | 'gems' | 'gold_items' | 'gem_items' | 'daily' | 'promo'
+  const [wallet, setWallet] = useState({ gold: 500, gems: 50, tournament_credits: 0, crystals: 0 });
+  const [ownedCosmetics, setOwnedCosmetics] = useState([]);
+  const [equippedCosmetics, setEquippedCosmetics] = useState({});
+  const [dailyStatus, setDailyStatus] = useState(null);
+  const [dailyQuests, setDailyQuests] = useState([]);
+  
+  // Purchase confirmation modal state
+  const [confirmItem, setConfirmItem] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [notification, setNotification] = useState(null);
+
+  // Promo code & legacy bundles
+  const [promoCode, setPromoCode] = useState('');
+  const [promoMsg, setPromoMsg] = useState({ text: '', type: '' });
+  const [isRedeeming, setIsRedeeming] = useState(false);
+  const [diamondBundles, setDiamondBundles] = useState([]);
+  const [loadingBundles, setLoadingBundles] = useState(false);
+
+  const userId = userProfile?.id || null;
+
+  // Refresh wallet and inventory
+  const refreshData = async () => {
+    if (userId) {
+      const balances = await economyService.getWalletBalances(userId);
+      setWallet(balances);
+    } else {
+      setWallet({
+        gold: userProfile?.gold ?? 500,
+        gems: userProfile?.gems ?? 50,
+        tournament_credits: userProfile?.tournament_credits ?? 0,
+        crystals: userProfile?.crystals_collected ?? userProfile?.crystals ?? 0
+      });
+    }
+
+    const owned = cosmeticsService.getOwnedCosmetics(userId);
+    setOwnedCosmetics(owned);
+
+    const equipped = cosmeticsService.getEquippedCosmetics(userId);
+    setEquippedCosmetics(equipped);
+
+    const dStatus = cosmeticsService.getDailyRewardStatus(userId);
+    setDailyStatus(dStatus);
+
+    const quests = cosmeticsService.getDailyQuests(userId);
+    setDailyQuests(quests);
+  };
 
   useEffect(() => {
     if (!isOpen) return;
-    let isMounted = true;
-    setLoading(true);
+    refreshData();
 
+    // Fetch legacy diamond bundles
+    setLoadingBundles(true);
     economyService.getStoreBundles().then(data => {
-      if (isMounted) {
-        setBundles(data);
-        setLoading(false);
+      setDiamondBundles(data || []);
+      setLoadingBundles(false);
+    }).catch(() => setLoadingBundles(false));
+  }, [isOpen, userId]);
+
+  const showToast = (text, type = 'success') => {
+    setNotification({ text, type });
+    setTimeout(() => setNotification(null), 3800);
+  };
+
+  // 1. Purchase Gem Pack (Simulated App Store / Google Play / Web IAP)
+  const handleBuyGemPack = async (pack) => {
+    setIsProcessing(true);
+    try {
+      const res = await cosmeticsService.purchaseGemPack(userId, pack);
+      if (res.success) {
+        showToast(`🎉 ${res.message} (Receipt: ${res.receiptId})`, 'success');
+        await refreshData();
+        if (onPurchaseComplete) onPurchaseComplete(pack.gems);
+      } else {
+        showToast(res.error || 'Transaction could not be completed.', 'error');
       }
-    }).catch(err => {
-      if (isMounted) {
-        setLoading(false);
-      }
-    });
-
-    return () => { isMounted = false; };
-  }, [isOpen]);
-
-  const handlePurchase = async (bundle) => {
-    if (!userProfile) return;
-    setPurchasingId(bundle.id);
-    
-    // Simulate Stripe payment delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Directly add crystals to account (simulating successful webhook)
-    const success = await authService.savePlayerMatchResult(userProfile.id, {
-      won: false,
-      crystalsDelta: bundle.crystal_amount,
-      appSource: 'store'
-    });
-
-    setPurchasingId(null);
-    if (success && onPurchaseComplete) {
-      onPurchaseComplete(bundle.crystal_amount);
+    } catch (e) {
+      showToast('Purchase error: ' + e.message, 'error');
+    } finally {
+      setIsProcessing(false);
+      setConfirmItem(null);
     }
   };
 
-  const handleRedeem = async () => {
-    if (!userProfile || !redeemCode.trim() || redeeming) return;
-    setRedeeming(true);
-    setRedeemMsg({ text: 'Verifying code...', type: 'info' });
-    
-    const res = await economyService.redeemCode(userProfile.id, redeemCode.trim());
-    if (res.success) {
-      setRedeemMsg({ text: res.message, type: 'success' });
-      setRedeemCode('');
-      if (onPurchaseComplete) {
-         // Tell the parent we got crystals!
-         // Wait for authService to reflect DB changes or just force parent update.
-         // We can just call onPurchaseComplete(amount) but the service handles it.
-         onPurchaseComplete(0); // This just triggers a refresh in App.jsx usually
+  // 2. Purchase Bundle
+  const handleBuyBundle = async (bundle, payWithGems = false) => {
+    setIsProcessing(true);
+    try {
+      const res = await cosmeticsService.purchaseBundle(userId, bundle, payWithGems);
+      if (res.success) {
+        showToast(`✨ ${res.message}`, 'success');
+        await refreshData();
+        if (onPurchaseComplete) onPurchaseComplete(0);
+      } else {
+        showToast(res.error || 'Failed to unlock bundle.', 'error');
       }
-    } else {
-      setRedeemMsg({ text: res.message, type: 'error' });
+    } catch (e) {
+      showToast('Bundle purchase failed: ' + e.message, 'error');
+    } finally {
+      setIsProcessing(false);
+      setConfirmItem(null);
     }
-    setRedeeming(false);
+  };
+
+  // 3. Purchase Cosmetic Item with Gold or Gems
+  const handleBuyCosmetic = async (item) => {
+    setIsProcessing(true);
+    try {
+      const res = await cosmeticsService.purchaseCosmetic(userId, item);
+      if (res.success) {
+        showToast(`🎉 ${res.message} Equipped to your pilot profile!`, 'success');
+        await refreshData();
+        if (onPurchaseComplete) onPurchaseComplete(0);
+      } else {
+        showToast(res.error || 'Purchase failed.', 'error');
+      }
+    } catch (e) {
+      showToast('Purchase error: ' + e.message, 'error');
+    } finally {
+      setIsProcessing(false);
+      setConfirmItem(null);
+    }
+  };
+
+  // 4. Equip / Unequip Cosmetic Item
+  const handleEquip = async (slot, cosmeticId) => {
+    try {
+      await cosmeticsService.equipCosmetic(userId, slot, cosmeticId);
+      await refreshData();
+      showToast('Cosmetic equipped!', 'info');
+    } catch (e) {
+      showToast('Failed to equip item.', 'error');
+    }
+  };
+
+  // 5. Claim Daily Login Reward
+  const handleClaimDailyReward = async () => {
+    setIsProcessing(true);
+    try {
+      const res = await cosmeticsService.claimDailyReward(userId);
+      if (res.success) {
+        showToast(`🎁 ${res.message}`, 'success');
+        await refreshData();
+        if (onPurchaseComplete) onPurchaseComplete(0);
+      } else {
+        showToast(res.error || 'Could not claim daily reward.', 'error');
+      }
+    } catch (e) {
+      showToast('Daily claim error.', 'error');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // 6. Claim Daily Quest
+  const handleClaimQuest = async (questId) => {
+    setIsProcessing(true);
+    try {
+      const res = await cosmeticsService.claimQuestReward(userId, questId);
+      if (res.success) {
+        showToast(`⭐ ${res.message}`, 'success');
+        await refreshData();
+        if (onPurchaseComplete) onPurchaseComplete(0);
+      } else {
+        showToast(res.error || 'Could not claim quest reward.', 'error');
+      }
+    } catch (e) {
+      showToast('Quest claim error.', 'error');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // 7. Promo Code Redemption
+  const handleRedeemPromo = async () => {
+    if (!userId || !promoCode.trim() || isRedeeming) return;
+    setIsRedeeming(true);
+    setPromoMsg({ text: 'Verifying code...', type: 'info' });
+
+    const res = await economyService.redeemCode(userId, promoCode.trim());
+    if (res.success) {
+      setPromoMsg({ text: res.message, type: 'success' });
+      setPromoCode('');
+      await refreshData();
+      if (onPurchaseComplete) onPurchaseComplete(0);
+    } else {
+      setPromoMsg({ text: res.message, type: 'error' });
+    }
+    setIsRedeeming(false);
+  };
+
+  // 8. Purchase Diamond Bundle (Legacy)
+  const handlePurchaseDiamondBundle = async (bundle) => {
+    if (!userId) return;
+    setIsProcessing(true);
+    await new Promise(r => setTimeout(r, 1200));
+
+    const success = await authService.savePlayerMatchResult(userId, {
+      won: false,
+      crystalsDelta: bundle.crystal_amount,
+      appSource: 'store_diamond_bundle'
+    });
+
+    setIsProcessing(false);
+    if (success) {
+      showToast(`💎 Added ${bundle.crystal_amount} Diamonds to your account!`, 'success');
+      await refreshData();
+      if (onPurchaseComplete) onPurchaseComplete(bundle.crystal_amount);
+    } else {
+      showToast('Failed to credit diamonds.', 'error');
+    }
   };
 
   if (!isOpen) return null;
@@ -78,176 +239,938 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete })
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(2, 6, 18, 0.85)',
-        backdropFilter: 'blur(6px)',
+        background: 'rgba(2, 6, 18, 0.88)',
+        backdropFilter: 'blur(8px)',
         zIndex: 999999,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '20px'
+        padding: '16px',
+        fontFamily: 'Barlow Condensed, sans-serif'
       }}
       onClick={onClose}
     >
       <div
         style={{
           width: '100%',
-          maxWidth: '700px',
-          background: 'rgba(0, 0, 0, 0.95)',
+          maxWidth: '980px',
+          height: '92vh',
+          maxHeight: '820px',
+          background: 'linear-gradient(135deg, rgba(10, 18, 38, 0.98) 0%, rgba(4, 8, 20, 0.99) 100%)',
           border: '2px solid var(--neon-gold, #FBC80D)',
-          borderRadius: '16px',
-          padding: '32px',
-          boxShadow: '0 0 40px rgba(251, 200, 13, 0.25)',
-          fontFamily: 'Bebas Neue, sans-serif',
-          position: 'relative'
+          borderRadius: '20px',
+          padding: '24px 28px',
+          boxShadow: '0 0 50px rgba(251, 200, 13, 0.3)',
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+          boxSizing: 'border-box',
+          overflow: 'hidden'
         }}
-        onClick={(e) => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
       >
+        {/* Close Button */}
         <button
           onClick={onClose}
           style={{
             position: 'absolute',
-            top: '16px',
-            right: '16px',
-            background: 'rgba(255,255,255,0.1)',
-            border: 'none',
+            top: '18px',
+            right: '18px',
+            background: 'rgba(255, 255, 255, 0.08)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
             color: '#fff',
             borderRadius: '50%',
-            width: '32px',
-            height: '32px',
+            width: '36px',
+            height: '36px',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            zIndex: 10,
+            transition: 'all 0.2s'
           }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,0,85,0.4)'; e.currentTarget.style.borderColor = '#ff0055'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; }}
         >
-          <X size={18} />
+          <X size={20} />
         </button>
 
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <ShoppingCart size={48} color="var(--neon-gold, #FBC80D)" style={{ margin: '0 auto 10px auto' }} />
-          <h2 style={{ color: 'var(--neon-gold, #FBC80D)', margin: '0 0 4px 0', fontSize: '2.2rem', textTransform: 'uppercase', letterSpacing: '2px' }}>
-            CRYSTAL STORE
-          </h2>
-          <p style={{ color: 'rgba(255,255,255,0.6)', margin: 0, fontSize: '1.1rem' }}>Purchase Diamonds to access premium game modes.</p>
+        {/* HEADER: Title & Multi-Currency Live Wallet Bar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px', borderBottom: '1px solid rgba(251,200,13,0.2)', paddingBottom: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(251,200,13,0.2) 0%, rgba(255,100,0,0.1) 100%)',
+              border: '1.5px solid var(--neon-gold, #FBC80D)',
+              borderRadius: '12px',
+              padding: '8px 10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <ShoppingCart size={28} color="var(--neon-gold, #FBC80D)" />
+            </div>
+            <div>
+              <h2 style={{
+                color: 'var(--neon-gold, #FBC80D)',
+                margin: 0,
+                fontSize: '2rem',
+                fontFamily: 'Bebas Neue, sans-serif',
+                letterSpacing: '2px',
+                lineHeight: 1
+              }}>
+                ATTENTION TCG STORE & VAULT
+              </h2>
+              <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
+                Equip cosmetics, purchase gems, and claim daily rewards
+              </div>
+            </div>
+          </div>
+
+          {/* Wallet Pills */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <div title="Gold: Earned from matches and daily rewards" style={{
+              background: 'rgba(251, 200, 13, 0.12)',
+              border: '1px solid rgba(251, 200, 13, 0.4)',
+              borderRadius: '16px',
+              padding: '6px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontFamily: 'Bebas Neue, sans-serif'
+            }}>
+              <span style={{ fontSize: '1rem' }}>🪙</span>
+              <span style={{ color: 'var(--neon-gold, #FBC80D)', fontWeight: 'bold', fontSize: '1.1rem' }}>
+                {wallet.gold.toLocaleString()}
+              </span>
+            </div>
+
+            <div title="Gems: Premium store currency" style={{
+              background: 'rgba(0, 240, 255, 0.12)',
+              border: '1px solid rgba(0, 240, 255, 0.4)',
+              borderRadius: '16px',
+              padding: '6px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontFamily: 'Bebas Neue, sans-serif'
+            }}>
+              <span style={{ fontSize: '1rem' }}>💎</span>
+              <span style={{ color: 'var(--neon-cyan, #00f0ff)', fontWeight: 'bold', fontSize: '1.1rem' }}>
+                {wallet.gems.toLocaleString()}
+              </span>
+            </div>
+
+            <div title="Tournament Credits: Earned from tournaments" style={{
+              background: 'rgba(157, 78, 221, 0.15)',
+              border: '1px solid rgba(157, 78, 221, 0.4)',
+              borderRadius: '16px',
+              padding: '6px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontFamily: 'Bebas Neue, sans-serif'
+            }}>
+              <span style={{ fontSize: '1rem' }}>🏆</span>
+              <span style={{ color: '#c77dff', fontWeight: 'bold', fontSize: '1.1rem' }}>
+                {wallet.tournament_credits.toLocaleString()}
+              </span>
+            </div>
+
+            <div title="Diamonds: Match toll bypass" style={{
+              background: 'rgba(255, 255, 255, 0.08)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '16px',
+              padding: '6px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontFamily: 'Bebas Neue, sans-serif'
+            }}>
+              <span style={{ fontSize: '0.9rem' }}>💠</span>
+              <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '1rem' }}>
+                {wallet.crystals.toLocaleString()}
+              </span>
+            </div>
+          </div>
         </div>
 
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px 0', color: 'rgba(255,255,255,0.5)' }}>
-            <div className="spinner" style={{ margin: '0 auto 16px auto' }}></div>
-            Loading Store Inventory...
+        {/* NOTIFICATION TOAST */}
+        {notification && (
+          <div style={{
+            position: 'absolute',
+            top: '80px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: notification.type === 'error' ? 'rgba(255,0,85,0.95)' : 'rgba(10,40,25,0.95)',
+            border: `1.5px solid ${notification.type === 'error' ? '#ff0055' : '#39ff14'}`,
+            borderRadius: '12px',
+            padding: '10px 24px',
+            color: '#fff',
+            zIndex: 100,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            fontWeight: 'bold',
+            boxShadow: '0 8px 30px rgba(0,0,0,0.8)',
+            animation: 'fadeIn 0.2s ease'
+          }}>
+            {notification.type === 'error' ? <AlertCircle size={20} color="#fff" /> : <CheckCircle2 size={20} color="#39ff14" />}
+            <span>{notification.text}</span>
           </div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
-            {bundles.length === 0 ? (
-              <div style={{ gridColumn: '1 / -1', textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>No bundles available.</div>
-            ) : (
-              bundles.map((bundle) => (
+        )}
+
+        {/* NAVIGATION TABS */}
+        <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px', marginBottom: '16px', overflowX: 'auto' }}>
+          {[
+            { id: 'featured', label: '⭐ FEATURED & BUNDLES' },
+            { id: 'gems', label: '💎 BUY GEMS (IAP)' },
+            { id: 'gold_items', label: '🪙 GOLD ITEMS' },
+            { id: 'gem_items', label: '🔮 GEM COSMETICS' },
+            { id: 'daily', label: '🎁 DAILY REWARDS & QUESTS' },
+            { id: 'promo', label: '🏷️ PROMO & DIAMONDS' }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                background: activeTab === tab.id ? 'linear-gradient(135deg, rgba(251,200,13,0.2) 0%, rgba(255,100,0,0.1) 100%)' : 'rgba(255,255,255,0.04)',
+                border: activeTab === tab.id ? '1.5px solid var(--neon-gold, #FBC80D)' : '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '10px',
+                padding: '8px 16px',
+                color: activeTab === tab.id ? 'var(--neon-gold, #FBC80D)' : 'rgba(255,255,255,0.7)',
+                fontWeight: 'bold',
+                fontFamily: 'Bebas Neue, sans-serif',
+                fontSize: '1.05rem',
+                cursor: 'pointer',
+                letterSpacing: '1px',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.15s'
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* TAB 1: FEATURED OFFERS & BUNDLES */}
+        {activeTab === 'featured' && (
+          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px', paddingRight: '4px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+              {FEATURED_BUNDLES.map(bundle => (
                 <div
                   key={bundle.id}
                   style={{
-                    background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.5) 100%)',
-                    border: '1px solid rgba(255,255,255,0.1)',
+                    background: 'linear-gradient(135deg, rgba(20, 30, 60, 0.8) 0%, rgba(10, 15, 35, 0.95) 100%)',
+                    border: '2px solid var(--neon-gold, #FBC80D)',
                     borderRadius: '16px',
-                    padding: '24px 16px',
+                    padding: '24px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    position: 'relative',
+                    boxShadow: '0 8px 30px rgba(251, 200, 13, 0.2)'
+                  }}
+                >
+                  <div style={{
+                    position: 'absolute',
+                    top: '12px',
+                    right: '12px',
+                    background: 'linear-gradient(90deg, #ff0055 0%, #ff5500 100%)',
+                    color: '#fff',
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    fontSize: '0.75rem',
+                    fontWeight: 'bold',
+                    letterSpacing: '1px'
+                  }}>
+                    {bundle.discountBadge}
+                  </div>
+
+                  <div style={{ fontSize: '1.6rem', color: 'var(--neon-gold, #FBC80D)', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '1px', marginBottom: '4px' }}>
+                    {bundle.title}
+                  </div>
+                  <div style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.7)', marginBottom: '16px' }}>
+                    {bundle.subtitle}
+                  </div>
+
+                  {/* Included Items */}
+                  <div style={{ background: 'rgba(0,0,0,0.5)', borderRadius: '10px', padding: '12px 14px', marginBottom: '18px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--neon-cyan, #00f0ff)', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                      INCLUDES:
+                    </div>
+                    {bundle.items.map((it, idx) => (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', color: '#fff' }}>
+                        <Check size={16} color="#39ff14" />
+                        <span>{it.name}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Actions */}
+                  <div style={{ marginTop: 'auto', display: 'flex', gap: '10px' }}>
+                    <button
+                      onClick={() => setConfirmItem({ type: 'bundle_usd', bundle })}
+                      style={{
+                        flex: 1,
+                        background: 'linear-gradient(90deg, #39ff14 0%, #00cc66 100%)',
+                        border: 'none',
+                        borderRadius: '10px',
+                        padding: '12px',
+                        color: '#000',
+                        fontWeight: 'bold',
+                        fontSize: '1.2rem',
+                        fontFamily: 'Bebas Neue, sans-serif',
+                        letterSpacing: '1px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      BUY FOR ${bundle.priceUsd}
+                    </button>
+                    {bundle.canBuyWithGems && (
+                      <button
+                        onClick={() => setConfirmItem({ type: 'bundle_gems', bundle })}
+                        style={{
+                          flex: 1,
+                          background: 'rgba(0, 240, 255, 0.15)',
+                          border: '1.5px solid var(--neon-cyan, #00f0ff)',
+                          borderRadius: '10px',
+                          padding: '12px',
+                          color: 'var(--neon-cyan, #00f0ff)',
+                          fontWeight: 'bold',
+                          fontSize: '1.2rem',
+                          fontFamily: 'Bebas Neue, sans-serif',
+                          letterSpacing: '1px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        💎 {bundle.gemEquivalent} GEMS
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: BUY GEMS (IAP PACKS) */}
+        {activeTab === 'gems' && (
+          <div style={{ flex: 1, overflowY: 'auto', paddingRight: '4px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
+              {GEM_PACKS.map(pack => (
+                <div
+                  key={pack.id}
+                  style={{
+                    background: pack.popular ? 'linear-gradient(135deg, rgba(0, 240, 255, 0.15) 0%, rgba(10, 25, 45, 0.95) 100%)' : 'rgba(255,255,255,0.04)',
+                    border: pack.popular ? '2px solid var(--neon-cyan, #00f0ff)' : '1px solid rgba(255,255,255,0.15)',
+                    borderRadius: '16px',
+                    padding: '20px 16px',
                     textAlign: 'center',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    transition: 'transform 0.2s, box-shadow 0.2s',
-                    cursor: 'pointer',
-                    position: 'relative',
-                    overflow: 'hidden'
+                    position: 'relative'
                   }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.transform = 'translateY(-5px)';
-                    e.currentTarget.style.borderColor = 'var(--neon-gold, #FBC80D)';
-                    e.currentTarget.style.boxShadow = '0 10px 20px rgba(251, 200, 13, 0.2)';
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                  onClick={() => !purchasingId && handlePurchase(bundle)}
                 >
-                  {bundle.discount_percent > 0 && (
-                    <div style={{ position: 'absolute', top: '10px', right: '10px', background: '#ff4444', color: '#fff', fontSize: '0.75rem', fontWeight: 'bold', padding: '4px 8px', borderRadius: '4px' }}>
-                      -{bundle.discount_percent}% OFF
+                  {pack.popular && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '-10px',
+                      background: 'var(--neon-cyan, #00f0ff)',
+                      color: '#000',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      fontSize: '0.72rem',
+                      fontWeight: 'bold'
+                    }}>
+                      MOST POPULAR
                     </div>
                   )}
-                  {bundle.image_url ? (
-                    <img src={bundle.image_url} alt={bundle.title} style={{ width: '80px', height: '80px', objectFit: 'contain', marginBottom: '10px' }} />
-                  ) : (
-                    <div style={{ fontSize: '3rem', marginBottom: '10px', textShadow: '0 0 20px rgba(251, 200, 13, 0.8)' }}>💎</div>
-                  )}
-                  <div style={{ fontSize: '1.4rem', fontWeight: 'bold', color: '#fff', marginBottom: '4px' }}>{bundle.crystal_amount} Diamonds</div>
-                  <div style={{ fontSize: '0.9rem', color: 'var(--neon-gold, #FBC80D)', fontWeight: 'bold', marginBottom: '4px' }}>{bundle.title}</div>
-                  {bundle.description && (
-                    <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', marginBottom: '16px', lineHeight: '1.3' }}>
-                      {bundle.description}
+                  {pack.bonusText && (
+                    <div style={{ position: 'absolute', top: '10px', right: '10px', color: '#39ff14', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                      {pack.bonusText}
                     </div>
                   )}
-                  
+
+                  <div style={{ fontSize: '3rem', margin: '10px 0 6px 0', textShadow: '0 0 20px rgba(0,240,255,0.8)' }}>
+                    💎
+                  </div>
+                  <div style={{ fontSize: '1.7rem', color: '#fff', fontFamily: 'Bebas Neue, sans-serif', lineHeight: 1 }}>
+                    {pack.gems.toLocaleString()} GEMS
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', marginBottom: '16px' }}>
+                    {pack.title}
+                  </div>
+
                   <button
-                    disabled={purchasingId !== null}
+                    onClick={() => setConfirmItem({ type: 'gem_pack', pack })}
                     style={{
-                      background: purchasingId === bundle.id ? 'rgba(255,255,255,0.2)' : 'rgba(57, 255, 20, 0.15)',
-                      border: purchasingId === bundle.id ? '1px solid rgba(255,255,255,0.4)' : '1px solid rgba(57, 255, 20, 0.4)',
-                      color: purchasingId === bundle.id ? '#fff' : '#39ff14',
-                      padding: '10px 24px',
-                      borderRadius: '8px',
-                      fontWeight: 'bold',
-                      fontSize: '1.2rem',
-                      cursor: purchasingId !== null ? 'not-allowed' : 'pointer',
+                      marginTop: 'auto',
                       width: '100%',
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      gap: '8px',
-                      transition: 'all 0.2s'
+                      background: 'linear-gradient(90deg, #00f0ff 0%, #0099ff 100%)',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '10px',
+                      color: '#000',
+                      fontWeight: 'bold',
+                      fontSize: '1.15rem',
+                      fontFamily: 'Bebas Neue, sans-serif',
+                      letterSpacing: '1px',
+                      cursor: 'pointer'
                     }}
                   >
-                    {purchasingId === bundle.id ? (
-                      <span className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2px' }}></span>
-                    ) : (
-                      <>${bundle.price_usd}</>
-                    )}
+                    ${pack.priceUsd} USD
                   </button>
                 </div>
-              ))
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: GOLD COSMETICS */}
+        {activeTab === 'gold_items' && (
+          <div style={{ flex: 1, overflowY: 'auto', paddingRight: '4px' }}>
+            <div style={{ fontSize: '1.2rem', color: 'var(--neon-gold)', fontFamily: 'Bebas Neue', letterSpacing: '1px', marginBottom: '12px' }}>
+              FRAMES & SLEEVES (PURCHASABLE WITH EARNED GOLD)
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+              {[...COSMETIC_FRAMES.filter(f => f.currency === 'gold'), ...COSMETIC_CARDBACKS.filter(c => c.currency === 'gold')].map(item => {
+                const isOwned = ownedCosmetics.includes(item.id);
+                const isEquipped = equippedCosmetics[item.type] === item.id;
+
+                return (
+                  <div
+                    key={item.id}
+                    style={{
+                      background: 'rgba(0,0,0,0.45)',
+                      border: isEquipped ? '2px solid #39ff14' : isOwned ? '1px solid rgba(255,255,255,0.4)' : '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: '14px',
+                      padding: '16px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      textAlign: 'center'
+                    }}
+                  >
+                    {/* Item Preview */}
+                    {item.type === 'frame' ? (
+                      <div style={{ marginBottom: '12px' }}>
+                        <PlayerAvatar
+                          avatarId={userProfile?.avatar_id || 'frame_001.png'}
+                          frameId={item.id}
+                          size={64}
+                          showGlow={true}
+                        />
+                      </div>
+                    ) : (
+                      <div style={{
+                        width: '60px',
+                        height: '84px',
+                        borderRadius: '8px',
+                        background: item.pattern,
+                        border: `2px solid ${item.accentColor}`,
+                        boxShadow: `0 0 12px ${item.accentColor}`,
+                        marginBottom: '12px'
+                      }} />
+                    )}
+
+                    <div style={{ fontSize: '1.15rem', color: '#fff', fontWeight: 'bold', fontFamily: 'Bebas Neue', letterSpacing: '0.5px' }}>
+                      {item.name}
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', marginBottom: '12px' }}>
+                      {item.description}
+                    </div>
+
+                    <div style={{ marginTop: 'auto', width: '100%' }}>
+                      {isEquipped ? (
+                        <div style={{ background: 'rgba(57,255,20,0.15)', border: '1px solid #39ff14', color: '#39ff14', borderRadius: '8px', padding: '8px', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                          EQUIPPED
+                        </div>
+                      ) : isOwned ? (
+                        <button
+                          onClick={() => handleEquip(item.type, item.id)}
+                          style={{
+                            width: '100%',
+                            background: 'rgba(255,255,255,0.1)',
+                            border: '1px solid rgba(255,255,255,0.3)',
+                            color: '#fff',
+                            borderRadius: '8px',
+                            padding: '8px',
+                            fontSize: '0.9rem',
+                            fontWeight: 'bold',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          EQUIP
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmItem({ type: 'cosmetic', item })}
+                          style={{
+                            width: '100%',
+                            background: 'linear-gradient(90deg, #FBC80D 0%, #ff9900 100%)',
+                            border: 'none',
+                            color: '#000',
+                            borderRadius: '8px',
+                            padding: '8px',
+                            fontSize: '1rem',
+                            fontWeight: 'bold',
+                            fontFamily: 'Bebas Neue',
+                            letterSpacing: '0.5px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          BUY FOR 🪙 {item.cost.toLocaleString()}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Emotes Section */}
+            <div style={{ fontSize: '1.2rem', color: 'var(--neon-gold)', fontFamily: 'Bebas Neue', letterSpacing: '1px', marginBottom: '12px' }}>
+              COMBAT EMOTES
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
+              {COSMETIC_EMOTES.filter(e => e.currency === 'gold').map(em => {
+                const isOwned = ownedCosmetics.includes(em.id);
+                return (
+                  <div key={em.id} style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '4px' }}>{em.emoji}</div>
+                    <div style={{ fontSize: '0.85rem', color: '#fff', fontWeight: 'bold', marginBottom: '8px' }}>{em.name}</div>
+                    {isOwned ? (
+                      <span style={{ fontSize: '0.75rem', color: '#39ff14', fontWeight: 'bold' }}>UNLOCKED</span>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmItem({ type: 'cosmetic', item: em })}
+                        style={{ background: 'rgba(251,200,13,0.2)', border: '1px solid var(--neon-gold)', color: 'var(--neon-gold)', borderRadius: '6px', padding: '4px 8px', fontSize: '0.8rem', fontWeight: 'bold', cursor: 'pointer', width: '100%' }}
+                      >
+                        🪙 {em.cost}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: GEM COSMETICS */}
+        {activeTab === 'gem_items' && (
+          <div style={{ flex: 1, overflowY: 'auto', paddingRight: '4px' }}>
+            <div style={{ fontSize: '1.2rem', color: 'var(--neon-cyan)', fontFamily: 'Bebas Neue', letterSpacing: '1px', marginBottom: '12px' }}>
+              PRESTIGE & HOLOGRAPHIC VAULT (EXCLUSIVE GEM ITEMS)
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+              {[...COSMETIC_FRAMES.filter(f => f.currency === 'gems'), ...COSMETIC_CARDBACKS.filter(c => c.currency === 'gems')].map(item => {
+                const isOwned = ownedCosmetics.includes(item.id);
+                const isEquipped = equippedCosmetics[item.type] === item.id;
+
+                return (
+                  <div
+                    key={item.id}
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.08) 0%, rgba(10, 20, 40, 0.95) 100%)',
+                      border: isEquipped ? '2px solid #39ff14' : isOwned ? '1.5px solid var(--neon-cyan)' : '1px solid rgba(0, 240, 255, 0.3)',
+                      borderRadius: '14px',
+                      padding: '16px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      textAlign: 'center'
+                    }}
+                  >
+                    {item.type === 'frame' ? (
+                      <div style={{ marginBottom: '12px' }}>
+                        <PlayerAvatar
+                          avatarId={userProfile?.avatar_id || 'frame_001.png'}
+                          frameId={item.id}
+                          size={64}
+                          showGlow={true}
+                        />
+                      </div>
+                    ) : (
+                      <div style={{
+                        width: '60px',
+                        height: '84px',
+                        borderRadius: '8px',
+                        background: item.pattern,
+                        border: `2px solid ${item.accentColor}`,
+                        boxShadow: `0 0 16px ${item.accentColor}`,
+                        marginBottom: '12px'
+                      }} />
+                    )}
+
+                    <div style={{ fontSize: '1.15rem', color: 'var(--neon-cyan)', fontWeight: 'bold', fontFamily: 'Bebas Neue', letterSpacing: '0.5px' }}>
+                      {item.name}
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.6)', marginBottom: '12px' }}>
+                      {item.description}
+                    </div>
+
+                    <div style={{ marginTop: 'auto', width: '100%' }}>
+                      {isEquipped ? (
+                        <div style={{ background: 'rgba(57,255,20,0.15)', border: '1px solid #39ff14', color: '#39ff14', borderRadius: '8px', padding: '8px', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                          EQUIPPED
+                        </div>
+                      ) : isOwned ? (
+                        <button
+                          onClick={() => handleEquip(item.type, item.id)}
+                          style={{
+                            width: '100%',
+                            background: 'rgba(0, 240, 255, 0.15)',
+                            border: '1px solid var(--neon-cyan)',
+                            color: 'var(--neon-cyan)',
+                            borderRadius: '8px',
+                            padding: '8px',
+                            fontSize: '0.9rem',
+                            fontWeight: 'bold',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          EQUIP
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmItem({ type: 'cosmetic', item })}
+                          style={{
+                            width: '100%',
+                            background: 'linear-gradient(90deg, #00f0ff 0%, #0088ff 100%)',
+                            border: 'none',
+                            color: '#000',
+                            borderRadius: '8px',
+                            padding: '8px',
+                            fontSize: '1rem',
+                            fontWeight: 'bold',
+                            fontFamily: 'Bebas Neue',
+                            letterSpacing: '0.5px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          BUY FOR 💎 {item.cost} GEMS
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 5: DAILY LOGIN REWARDS & QUESTS */}
+        {activeTab === 'daily' && (
+          <div style={{ flex: 1, overflowY: 'auto', paddingRight: '4px' }}>
+            {/* 7-Day Login Streak Calendar */}
+            <div style={{ background: 'rgba(0,0,0,0.4)', borderRadius: '14px', padding: '16px 20px', marginBottom: '20px', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <div>
+                  <div style={{ fontSize: '1.4rem', color: 'var(--neon-gold)', fontFamily: 'Bebas Neue', letterSpacing: '1px' }}>
+                    7-DAY PILOT LOGIN STREAK
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
+                    Log in every calendar day to claim escalating rewards!
+                  </div>
+                </div>
+                {dailyStatus?.canClaimToday && (
+                  <button
+                    onClick={handleClaimDailyReward}
+                    disabled={isProcessing}
+                    style={{
+                      background: 'linear-gradient(90deg, #39ff14 0%, #00cc66 100%)',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '8px 18px',
+                      color: '#000',
+                      fontWeight: 'bold',
+                      fontFamily: 'Bebas Neue',
+                      fontSize: '1.1rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    CLAIM TODAY'S REWARD
+                  </button>
+                )}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))', gap: '8px' }}>
+                {DAILY_LOGIN_SCHEDULE.map(day => {
+                  const isClaimed = dailyStatus ? day.day < dailyStatus.currentDay || (day.day === dailyStatus.currentDay && dailyStatus.alreadyClaimedToday) : false;
+                  const isCurrent = dailyStatus?.currentDay === day.day && dailyStatus.canClaimToday;
+
+                  return (
+                    <div
+                      key={day.day}
+                      style={{
+                        background: isCurrent ? 'rgba(57, 255, 20, 0.15)' : isClaimed ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.5)',
+                        border: isCurrent ? '1.5px solid #39ff14' : isClaimed ? '1px solid rgba(57, 255, 20, 0.4)' : '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: '10px',
+                        padding: '10px 6px',
+                        textAlign: 'center',
+                        position: 'relative'
+                      }}
+                    >
+                      {isClaimed && (
+                        <div style={{ position: 'absolute', top: '4px', right: '4px', background: '#39ff14', color: '#000', borderRadius: '50%', width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Check size={12} strokeWidth={3} />
+                        </div>
+                      )}
+                      <div style={{ fontSize: '0.75rem', color: isCurrent ? '#39ff14' : 'rgba(255,255,255,0.6)', fontWeight: 'bold' }}>
+                        {day.label}
+                      </div>
+                      <div style={{ fontSize: '1.8rem', margin: '4px 0' }}>{day.icon}</div>
+                      <div style={{ fontSize: '0.8rem', color: '#fff', fontWeight: 'bold' }}>
+                        {day.rewardType === 'gold' ? `${day.amount} G` : day.rewardType === 'gems' ? `${day.amount} Gems` : 'Grand Cache'}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Daily Quests List */}
+            <div style={{ fontSize: '1.3rem', color: 'var(--neon-cyan)', fontFamily: 'Bebas Neue', letterSpacing: '1px', marginBottom: '10px' }}>
+              DAILY COMBAT MISSIONS
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {dailyQuests.map(q => (
+                <div
+                  key={q.id}
+                  style={{
+                    background: 'rgba(0,0,0,0.45)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: '12px',
+                    padding: '14px 18px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px'
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: '1.1rem', color: '#fff', fontWeight: 'bold' }}>{q.title}</div>
+                    <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>{q.desc}</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--neon-gold)', marginTop: '4px' }}>
+                      Reward: +{q.rewardGold} Gold {q.rewardGems > 0 ? `+ ${q.rewardGems} Gems 💎` : ''}
+                    </div>
+                  </div>
+
+                  <div>
+                    {q.claimed ? (
+                      <span style={{ color: '#39ff14', fontWeight: 'bold', fontSize: '0.9rem' }}>COMPLETED</span>
+                    ) : q.current >= q.target ? (
+                      <button
+                        onClick={() => handleClaimQuest(q.id)}
+                        style={{
+                          background: 'linear-gradient(90deg, #39ff14 0%, #00cc66 100%)',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '8px 16px',
+                          color: '#000',
+                          fontWeight: 'bold',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        CLAIM
+                      </button>
+                    ) : (
+                      <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', fontFamily: 'Bebas Neue' }}>
+                        PROGRESS: {q.current}/{q.target}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 6: PROMO CODES & DIAMONDS */}
+        {activeTab === 'promo' && (
+          <div style={{ flex: 1, overflowY: 'auto', paddingRight: '4px' }}>
+            {/* Promo Code Box */}
+            <div style={{ background: 'rgba(0,0,0,0.5)', borderRadius: '14px', padding: '20px', marginBottom: '24px', border: '1px solid rgba(255,255,255,0.12)' }}>
+              <h3 style={{ margin: '0 0 8px 0', color: 'var(--neon-gold)', fontSize: '1.2rem', fontFamily: 'Bebas Neue', letterSpacing: '1px' }}>
+                REDEEM PROMOTIONAL CODE
+              </h3>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <input
+                  type="text"
+                  placeholder="ENTER PROMO CODE..."
+                  value={promoCode}
+                  onChange={e => setPromoCode(e.target.value.toUpperCase())}
+                  style={{
+                    flex: 1,
+                    background: 'rgba(255,255,255,0.08)',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    color: '#fff',
+                    padding: '12px 14px',
+                    borderRadius: '8px',
+                    fontSize: '1rem',
+                    textTransform: 'uppercase'
+                  }}
+                />
+                <button
+                  onClick={handleRedeemPromo}
+                  disabled={isRedeeming || !promoCode.trim()}
+                  style={{
+                    background: 'linear-gradient(90deg, #FBC80D 0%, #ff9900 100%)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '0 24px',
+                    color: '#000',
+                    fontWeight: 'bold',
+                    fontSize: '1.1rem',
+                    fontFamily: 'Bebas Neue',
+                    cursor: (isRedeeming || !promoCode.trim()) ? 'not-allowed' : 'pointer',
+                    opacity: (isRedeeming || !promoCode.trim()) ? 0.5 : 1
+                  }}
+                >
+                  {isRedeeming ? 'VERIFYING...' : 'REDEEM'}
+                </button>
+              </div>
+              {promoMsg.text && (
+                <div style={{ marginTop: '10px', fontSize: '0.9rem', color: promoMsg.type === 'error' ? '#ff4444' : '#39ff14' }}>
+                  {promoMsg.text}
+                </div>
+              )}
+            </div>
+
+            {/* Diamond Bundles */}
+            <div style={{ fontSize: '1.3rem', color: '#fff', fontFamily: 'Bebas Neue', letterSpacing: '1px', marginBottom: '12px' }}>
+              DIAMOND PACKAGES (MATCH ENTRY BYPASS)
+            </div>
+            {loadingBundles ? (
+              <div style={{ textAlign: 'center', padding: '30px', color: 'rgba(255,255,255,0.5)' }}>Loading bundles...</div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                {diamondBundles.map(bundle => (
+                  <div
+                    key={bundle.id}
+                    style={{
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      borderRadius: '12px',
+                      padding: '16px',
+                      textAlign: 'center',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center'
+                    }}
+                  >
+                    <div style={{ fontSize: '2.5rem', marginBottom: '6px' }}>💠</div>
+                    <div style={{ fontSize: '1.4rem', color: '#fff', fontFamily: 'Bebas Neue' }}>
+                      {bundle.crystal_amount} Diamonds
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', marginBottom: '14px' }}>
+                      {bundle.title}
+                    </div>
+                    <button
+                      onClick={() => handlePurchaseDiamondBundle(bundle)}
+                      style={{
+                        marginTop: 'auto',
+                        width: '100%',
+                        background: 'rgba(255,255,255,0.1)',
+                        border: '1px solid rgba(255,255,255,0.3)',
+                        borderRadius: '6px',
+                        padding: '8px',
+                        color: '#fff',
+                        fontWeight: 'bold',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      ${bundle.price_usd} USD
+                    </button>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         )}
 
-        {/* Redeem Code Section */}
-        <div style={{ marginTop: '32px', background: 'rgba(0,0,0,0.4)', borderRadius: '12px', padding: '20px', border: '1px solid rgba(255,255,255,0.1)' }}>
-          <h3 style={{ margin: '0 0 10px 0', color: '#fff', fontSize: '1.1rem' }}>Have a Promo Code?</h3>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <input 
-              type="text" 
-              placeholder="Enter code here..." 
-              value={redeemCode}
-              onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
-              style={{ flex: 1, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '10px', borderRadius: '8px', textTransform: 'uppercase' }}
-            />
-            <button 
-              onClick={handleRedeem}
-              disabled={redeeming || !redeemCode.trim()}
-              className="btn-enter-game-cta"
-              style={{ padding: '10px 20px', borderRadius: '8px', cursor: (redeeming || !redeemCode.trim()) ? 'not-allowed' : 'pointer', opacity: (redeeming || !redeemCode.trim()) ? 0.5 : 1 }}
+        {/* CONFIRMATION PURCHASE MODAL */}
+        {confirmItem && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.85)',
+              zIndex: 1000000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '20px'
+            }}
+            onClick={() => !isProcessing && setConfirmItem(null)}
+          >
+            <div
+              style={{
+                background: 'linear-gradient(135deg, #101c38 0%, #060c1c 100%)',
+                border: '2px solid var(--neon-gold, #FBC80D)',
+                borderRadius: '16px',
+                padding: '28px',
+                maxWidth: '420px',
+                width: '100%',
+                textAlign: 'center',
+                boxShadow: '0 0 40px rgba(251, 200, 13, 0.4)'
+              }}
+              onClick={e => e.stopPropagation()}
             >
-              {redeeming ? 'Verifying...' : 'Redeem'}
-            </button>
-          </div>
-          {redeemMsg.text && (
-            <div style={{ marginTop: '10px', fontSize: '0.9rem', color: redeemMsg.type === 'error' ? '#ff4444' : '#39ff14' }}>
-              {redeemMsg.text}
+              <div style={{ fontSize: '3rem', marginBottom: '10px' }}>🛒</div>
+              <h3 style={{ margin: '0 0 6px 0', color: 'var(--neon-gold, #FBC80D)', fontFamily: 'Bebas Neue', fontSize: '1.8rem', letterSpacing: '1px' }}>
+                CONFIRM TRANSACTION
+              </h3>
+              <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '1rem', margin: '0 0 20px 0' }}>
+                {confirmItem.type === 'cosmetic' && `Unlock ${confirmItem.item.name} for ${confirmItem.item.cost} ${confirmItem.item.currency.toUpperCase()}?`}
+                {confirmItem.type === 'gem_pack' && `Purchase ${confirmItem.pack.gems.toLocaleString()} Gems for $${confirmItem.pack.priceUsd} USD?`}
+                {confirmItem.type === 'bundle_usd' && `Purchase ${confirmItem.bundle.title} for $${confirmItem.bundle.priceUsd} USD?`}
+                {confirmItem.type === 'bundle_gems' && `Unlock ${confirmItem.bundle.title} for ${confirmItem.bundle.gemEquivalent} Gems?`}
+              </p>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  onClick={() => setConfirmItem(null)}
+                  disabled={isProcessing}
+                  style={{
+                    flex: 1,
+                    background: 'rgba(255,255,255,0.1)',
+                    border: '1px solid rgba(255,255,255,0.25)',
+                    borderRadius: '8px',
+                    padding: '10px',
+                    color: '#fff',
+                    fontWeight: 'bold',
+                    cursor: isProcessing ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  CANCEL
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirmItem.type === 'cosmetic') handleBuyCosmetic(confirmItem.item);
+                    else if (confirmItem.type === 'gem_pack') handleBuyGemPack(confirmItem.pack);
+                    else if (confirmItem.type === 'bundle_usd') handleBuyBundle(confirmItem.bundle, false);
+                    else if (confirmItem.type === 'bundle_gems') handleBuyBundle(confirmItem.bundle, true);
+                  }}
+                  disabled={isProcessing}
+                  style={{
+                    flex: 1,
+                    background: 'linear-gradient(90deg, #39ff14 0%, #00cc66 100%)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '10px',
+                    color: '#000',
+                    fontWeight: 'bold',
+                    cursor: isProcessing ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {isProcessing ? 'PROCESSING...' : 'CONFIRM'}
+                </button>
+              </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
 };
-
-
