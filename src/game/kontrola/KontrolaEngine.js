@@ -810,16 +810,8 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           }
           newDefenderState.hasDodge = false;
         } else if (newDefenderState.hasBoomerang) {
-          // Boomerang triggers if defender rolled 6+ OR if defender won clash per card description
-          const defenseWon = (defenderRoll?.total || 0) >= 6 || adjustedDefenderRoll >= adjustedAttackerRoll;
-          if (defenseWon) {
-            log += ` 🪃 BOOMERANG TRIGGERED! ${newDefenderState.name} rolled ${defenderRoll?.total || 0} (6+)! ${newAttackerState.name}'s attack reflected 100% back and loses next turn!`;
-            newAttackerState.hp = Math.max(0, newAttackerState.hp - finalDamage);
-            newAttackerState.sleepTurns = (newAttackerState.sleepTurns || 0) + 1;  // Attacker loses next turn
-            finalDamage = 0;
-          } else {
-            log += ` 🪃 BOOMERANG FAILED! ${newDefenderState.name} rolled ${defenderRoll?.total || 0} (needed 6+). Trap breaks, taking full damage.`;
-          }
+          // Attacker won the clash: defender's defense failed, Boomerang trap breaks
+          log += ` 🪃 BOOMERANG FAILED! ${newDefenderState.name} lost the clash. Defense failed, taking incoming damage.`;
           newDefenderState.hasBoomerang = false;
         } else if (newDefenderState.hasCounter) {
           const reflectDmg = Math.floor(finalDamage * 0.25);

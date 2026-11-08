@@ -294,11 +294,22 @@ export default function KontrolaDiceRoller({
   const activeDefenseCard = combatData?.defenseCard || precalculatedRolls?.defenseCard || null;
   const defCardName = activeDefenseCard ? (typeof activeDefenseCard === 'string' ? activeDefenseCard : (activeDefenseCard.name || '')).toUpperCase() : '';
 
+  const [isApplyingResult, setIsApplyingResult] = useState(false);
+
   const handleFinishCombat = () => {
-    const finalAtkRolls = activeAtkDice || [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
+    if (isApplyingResult) return;
+    setIsApplyingResult(true);
+
+    const finalAtkRolls = activeAtkDice 
+      || precalculatedRolls?.attackerRoll?.rolls 
+      || combatData?.precalculatedRolls?.attackerRoll?.rolls 
+      || [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
     const finalAtkTotal = finalAtkRolls[0] + finalAtkRolls[1];
 
-    const finalDefRolls = activeDefDice || [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
+    const finalDefRolls = activeDefDice 
+      || precalculatedRolls?.defenderRoll?.rolls 
+      || combatData?.precalculatedRolls?.defenderRoll?.rolls 
+      || [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
     const finalDefTotal = finalDefRolls[0] + finalDefRolls[1];
 
     const finalRolls = {
@@ -315,6 +326,7 @@ export default function KontrolaDiceRoller({
   function handleReRoll() {
     if (isAttackerRolling || isDefenderRolling) return;
     // Reset internal state for re-rolling on tie
+    setIsApplyingResult(false);
     setPhase('clash');
     setRerollKey(k => k + 1);
     setHasAttackerRolled(false);
@@ -335,6 +347,7 @@ export default function KontrolaDiceRoller({
   }
 
   function handleReRollSingle(role) {
+    setIsApplyingResult(false);
     if (role === 'attacker') {
       setClashAtkDice(null);
       setHasAttackerRolled(false);
@@ -1205,7 +1218,7 @@ export default function KontrolaDiceRoller({
                     {defCardName.includes('COUNTER')
                       ? '⚔️ DEFENCE - COUNTER: 0% Damage Taken & Reflects 25% Back to Attacker!'
                       : defCardName.includes('BOOMERANG')
-                      ? '🪃 BOOMERANG FULL: Reflects 100% Back on 6+ roll or Win & Opponent Skips Turn!'
+                      ? '🪃 BOOMERANG FULL: Reflects 100% Back on Defense Victory & Opponent Skips Turn!'
                       : `🛡️ DEFENSE CARD: ${typeof activeDefenseCard === 'string' ? activeDefenseCard : activeDefenseCard.name} is active!`}
                   </span>
                 </div>
@@ -1494,26 +1507,28 @@ export default function KontrolaDiceRoller({
                     )}
                     <button
                       onClick={handleFinishCombat}
+                      disabled={isApplyingResult}
                       style={{
-                        background: '#39ff14',
+                        background: isApplyingResult ? 'rgba(57, 255, 20, 0.4)' : '#39ff14',
                         color: '#000',
                         border: 'none',
                         padding: '14px 38px',
                         borderRadius: '12px',
                         fontSize: '1.15rem',
                         fontWeight: '900',
-                        cursor: 'pointer',
+                        cursor: isApplyingResult ? 'wait' : 'pointer',
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '10px',
                         fontFamily: 'Bebas Neue, sans-serif',
                         letterSpacing: '1px',
                         boxShadow: '0 0 25px rgba(57, 255, 20, 0.45)',
-                        transition: 'all 0.2s ease'
+                        transition: 'all 0.2s ease',
+                        opacity: isApplyingResult ? 0.6 : 1
                       }}
                     >
                       <Check size={22} />
-                      <span>APPLY RESULT & CONTINUE</span>
+                      <span>{isApplyingResult ? 'APPLYING RESULT...' : 'APPLY RESULT & CONTINUE'}</span>
                     </button>
                   </div>
                 )}

@@ -1045,8 +1045,10 @@ export default function KontrolaArena() {
           // Ensure actionCard exists
           const actionCard = event.payload?.actionCard || { name: 'ATTACK', ap: 5 };
           const attackSelectionName = event.payload?.attackSelectionName || null;
+          const combatId = event.payload?.combatId || ('combat_' + (actorId || 'atk') + '_' + (targetId || 'def') + '_' + (actionCard?.id || actionCard?.name || 'action'));
           
           const combatData = {
+            combatId,
             // Core IDs - NEVER null
             actorId: actorId || 'unknown-attacker',
             targetId: targetId || 'unknown-defender',
@@ -1113,19 +1115,25 @@ export default function KontrolaArena() {
         // 8. Synchronized Dice Screen Close
         else if (event.type === 'DICE_SCREEN_CLOSE') {
           const { resolved, combatData, precalculatedRolls, senderId } = event.payload || {};
-          const mergedRolls = {
-            ...(activeCombat?.precalculatedRolls || {}),
-            ...(precalculatedRolls || {})
-          };
+          const cId = combatData?.combatId || (combatData?.actorId + '_' + combatData?.targetId + '_' + (combatData?.actionCard?.id || combatData?.actionCard?.name || 'combat'));
           setActiveCombat(null);
           setIsDiceRollingSync(false);
           // If the event was broadcast by this client (host), it was already handled locally - DO NOT re-enqueue
           if (senderId && senderId === playerIdRef.current) {
             return;
           }
+          // If already resolved for this combatId, NEVER re-enqueue to prevent duplicate turn resolution
+          if (cId && lastResolvedCombatIdRef.current === cId) {
+            console.warn('[DICE_SCREEN_CLOSE] Combat already resolved for ID:', cId);
+            return;
+          }
           // If a non-host client finished combat, the host must execute RESOLVE_COMBAT
           if (resolved && isHostRef.current && combatData) {
-            enqueueHostAction({ ...combatData, actionType: 'RESOLVE_COMBAT' }, mergedRolls);
+            const mergedRolls = {
+              ...(activeCombat?.precalculatedRolls || {}),
+              ...(precalculatedRolls || {})
+            };
+            enqueueHostAction({ ...combatData, combatId: cId, actionType: 'RESOLVE_COMBAT' }, mergedRolls);
           }
         }
         // 9. Client Action received by Host
@@ -1436,6 +1444,7 @@ export default function KontrolaArena() {
           return currentState;
         }
         lastResolvedCombatIdRef.current = combatId;
+        payload.combatId = combatId;
         payload = { ...payload }; // safe copy � avoid mutating the caller's object
       }
 
@@ -3150,16 +3159,21 @@ export default function KontrolaArena() {
       ...(activeCombat?.precalculatedRolls || {}),
       ...(finalRolls || {})
     };
+    const cId = activeCombat?.combatId || (activeCombat?.actorId + '_' + activeCombat?.targetId + '_' + (activeCombat?.actionCard?.id || activeCombat?.actionCard?.name || 'combat'));
     await broadcastUIEvent(matchId, 'dice_screen_close', {
       resolved,
-      combatData: activeCombat,
+      combatData: activeCombat ? { ...activeCombat, combatId: cId } : null,
       precalculatedRolls: rollsToApply,
       senderId: playerIdRef.current
     });
     setActiveCombat(null);
     setIsDiceRollingSync(false);
     if (resolved && isHost && activeCombat) {
-      enqueueHostAction({ ...activeCombat, actionType: 'RESOLVE_COMBAT' }, rollsToApply);
+      if (cId && lastResolvedCombatIdRef.current === cId) {
+        console.warn('[handleCloseDiceScreen] Combat already resolved for ID:', cId);
+      } else {
+        enqueueHostAction({ ...activeCombat, combatId: cId, actionType: 'RESOLVE_COMBAT' }, rollsToApply);
+      }
     }
   };
 
