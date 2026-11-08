@@ -113,7 +113,7 @@ export const joinMatch = async (matchId, playerId, characterId = 'bee') => {
   return {
     matchId,
     status: 'joining',
-    players: [playerId],
+    players: [], // empty until confirmed by host in sync_state
     characterSelections: { [playerId]: characterId }
   };
 };
@@ -236,9 +236,19 @@ export const subscribeToMatch = (matchId, callback, onSubscribe = null, playerId
 };
 
 export const requestJoin = async (matchId, joinData) => {
-  if (!supabase || !channels[matchId]) return;
+  if (!supabase) return;
+  let channel = channels[matchId];
+  if (!channel) {
+    let waitCount = 0;
+    while (!channels[matchId] && waitCount < 20) {
+      await new Promise(r => setTimeout(r, 50));
+      waitCount++;
+    }
+    channel = channels[matchId];
+  }
+  if (!channel) return;
   const payload = typeof joinData === 'object' ? joinData : { playerId: joinData };
-  await safeSend(channels[matchId], {
+  await safeSend(channel, {
     type: 'broadcast',
     event: 'player_joined',
     payload
@@ -255,8 +265,18 @@ export const rejectJoin = async (matchId, playerId, reason = 'ROOM_LOCKED') => {
 };
 
 export const requestSync = async (matchId, playerId) => {
-  if (!channels[matchId]) return;
-  await safeSend(channels[matchId], {
+  if (!supabase) return;
+  let channel = channels[matchId];
+  if (!channel) {
+    let waitCount = 0;
+    while (!channels[matchId] && waitCount < 20) {
+      await new Promise(r => setTimeout(r, 50));
+      waitCount++;
+    }
+    channel = channels[matchId];
+  }
+  if (!channel) return;
+  await safeSend(channel, {
     type: 'broadcast',
     event: 'request_sync',
     payload: { requesterId: playerId }

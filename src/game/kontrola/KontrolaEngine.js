@@ -379,6 +379,8 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   let aoeSplitDamage = false;
   let stealActionCard = false;
   let revealTargetHand = false;
+  let isSuccessfulAttack = false;
+  let boomerangReflected = false;
 
   let newAttackerState = { ...attackerState };
   let newDefenderState = defenderState ? { ...defenderState } : null;
@@ -690,6 +692,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     
     const isClashTie = adjustedAttackerRoll === adjustedDefenderRoll;
     const atkWin = !isClashTie && adjustedAttackerRoll > adjustedDefenderRoll;
+    isSuccessfulAttack = atkWin;
     log += ` Clash: Attacker ${adjustedAttackerRoll} vs Defender ${adjustedDefenderRoll}.`;
 
     if (isClashTie) {
@@ -820,11 +823,8 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           log += ` 🪃 BOOMERANG FAILED! ${newDefenderState.name} lost the clash. Defense failed, taking incoming damage.`;
           newDefenderState.hasBoomerang = false;
         } else if (newDefenderState.hasCounter) {
-          // DEFENCE - COUNTER: Receive 0% damage, reflect 25% back to attacker
-          const reflectDmg = Math.floor(baseAP * 0.25);
-          log += ` ⚔️ DEFENCE - COUNTER TRIGGERED! 0% damage taken, reflected ${reflectDmg} AP back to ${newAttackerState.name}!`;
-          newAttackerState.hp = Math.max(0, newAttackerState.hp - reflectDmg);
-          finalDamage = 0;
+          // Attacker won the clash: DEFENCE - COUNTER defense failed, takes full damage
+          log += ` ⚔️ DEFENCE - COUNTER FAILED! ${newDefenderState.name} lost the clash. Defense failed, taking incoming damage.`;
           newDefenderState.hasCounter = false;
         } else if (newDefenderState.hasDefendBasic) {
           const absorb = Math.floor(finalDamage * 0.25);
@@ -899,7 +899,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
 
         // Lightning effect: Client feedback Nov 8: Miss turn is ONLY when Lightning X1 & X2 is successful
         if (cardName.includes('LIGHTNING')) {
-          const skipTurns = 1;
+          const skipTurns = cardName.includes('X2') ? 2 : 1;
           newDefenderState.sleepTurns = (newDefenderState.sleepTurns || 0) + skipTurns;
           log += ` ⚡ Lightning shock! ${newDefenderState.name} loses ${skipTurns} turn(s)!`;
 
@@ -936,6 +936,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         newAttackerState.hp = Math.max(0, newAttackerState.hp - baseAP);
         newAttackerState.sleepTurns = (newAttackerState.sleepTurns || 0) + 1;
         newDefenderState.hasBoomerang = false;
+        boomerangReflected = true;
       }
       // DODGE CARDS: Defender won clash -> evades all damage
       if (newDefenderState?.hasDodge) {
@@ -946,7 +947,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           log += ` 💨 ${newDefenderState.dodgeCardName || 'DODGE'} SUCCESS! ${newDefenderState.name} evaded all damage!`;
         }
         newDefenderState.hasDodge = false;
-      } else if (!newDefenderState?.hasCounter && !newDefenderState?.hasBoomerang) {
+      } else if (!newDefenderState?.hasCounter && !boomerangReflected) {
         log += ` Defender blocked or dodged the attack! 0 damage taken.`;
       }
     }
@@ -1309,7 +1310,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     newDefenderState,
     log,
     extraTurnGranted: cardName === 'TIME MACHINE',
-    triggerAttackX2SecondHit: cardName.includes('ATTACK X2'), // Trigger second attack regardless of first outcome
+    triggerAttackX2SecondHit: cardName.includes('ATTACK X2') && isSuccessfulAttack && !boomerangReflected && ((newAttackerState?.hp || 0) > 0),
     triggerXChange: false, // Handled in Arena UI now
     stealActionCard: Boolean(stealActionCard),
     revealTargetHand: Boolean(revealTargetHand),

@@ -829,11 +829,11 @@ export default function KontrolaArena() {
   // Auto-join heartbeat while guest is waiting to be confirmed in the match lobby
   useEffect(() => {
     if (!matchId || isHost) return;
-    // Once confirmed in the lobby player list, stop heartbeat
-    if (gameState?.players?.includes(playerId)) return;
+    // Once confirmed by host (host is set and players list includes playerId, and not in joining state), stop heartbeat
+    if (gameState?.host && gameState?.players?.includes(playerId) && gameState?.status !== 'joining') return;
 
     const sendJoin = () => {
-      if (matchIdRef.current && playerIdRef.current && !gameStateRef.current?.players?.includes(playerIdRef.current)) {
+      if (matchIdRef.current && playerIdRef.current) {
         requestJoin(matchIdRef.current, {
           playerId: playerIdRef.current,
           characterId: selectedCharacterRef.current,
@@ -846,7 +846,7 @@ export default function KontrolaArena() {
     sendJoin();
     const interval = setInterval(sendJoin, 1500);
     return () => clearInterval(interval);
-  }, [matchId, isHost, gameState?.players, playerId]);
+  }, [matchId, isHost, gameState?.players, gameState?.host, gameState?.status, playerId]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -1134,6 +1134,7 @@ export default function KontrolaArena() {
           }
           // If a non-host client finished combat, the host must execute RESOLVE_COMBAT
           if (resolved && isHostRef.current && combatData) {
+            lastResolvedCombatIdRef.current = cId;
             const mergedRolls = {
               ...(activeCombat?.precalculatedRolls || {}),
               ...(precalculatedRolls || {})
@@ -1184,7 +1185,7 @@ export default function KontrolaArena() {
         }
         // 11. Action Effects (Syncs Vision, Shakes, Sounds, Damage Popups)
         else if (event.type === 'ACTION_EFFECT') {
-          const { actionType, actionName, dmgDealt, healDelta, visionData, triggerXChange, triggerRevivePrompt } = event.payload || {};
+          const { actionType, actionName, dmgDealt, atkDmgDealt, healDelta, visionData, triggerXChange, triggerRevivePrompt } = event.payload || {};
 
           // Handle Vision Reveal for the player who played it (attacker only per Feedback Line 93)
           if (visionData && visionData.actorId === playerIdRef.current) {
@@ -1208,6 +1209,7 @@ export default function KontrolaArena() {
             soundFX.init();
             
             if (dmgDealt > 0) spawnDamagePopup(`-${dmgDealt}`, false);
+            if (atkDmgDealt > 0) spawnDamagePopup(`-${atkDmgDealt}`, false);
             
             if (actionName && actionName.includes('FIRE FLAME')) {
               soundFX.playTimeout();
@@ -2280,10 +2282,15 @@ export default function KontrolaArena() {
 
           let dmgDealt = 0;
           let healDelta = 0;
+          let atkDmgDealt = 0;
           if (playedCardType === 'ATTACK') {
              const prevDefHP = (currentState.characterStates?.[targetId]?.hp) ?? 0;
              const newDefHP = newDefenderState?.hp ?? 0;
              dmgDealt = Math.max(0, prevDefHP - newDefHP);
+
+             const prevAtkHP = (currentState.characterStates?.[actorId]?.hp) ?? 0;
+             const newAtkHP = newAttackerState?.hp ?? 0;
+             atkDmgDealt = Math.max(0, prevAtkHP - newAtkHP);
           } else if (playedCardType === 'HEAL') {
              const prevAtkHP = (currentState.characterStates?.[actorId]?.hp) ?? 0;
              const newAtkHP = newAttackerState?.hp ?? 0;
@@ -2334,6 +2341,7 @@ export default function KontrolaArena() {
             actionType: actionCard?.type,
             actionName: actionCard?.name,
             dmgDealt,
+            atkDmgDealt,
             healDelta,
             visionData,
             triggerXChange,
@@ -3208,6 +3216,7 @@ export default function KontrolaArena() {
       if (cId && lastResolvedCombatIdRef.current === cId) {
         console.warn('[handleCloseDiceScreen] Combat already resolved for ID:', cId);
       } else {
+        lastResolvedCombatIdRef.current = cId;
         enqueueHostAction({ ...activeCombat, combatId: cId, actionType: 'RESOLVE_COMBAT' }, rollsToApply);
       }
     }
