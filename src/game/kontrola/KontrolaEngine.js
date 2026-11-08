@@ -391,6 +391,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
 
   // Process Defender's Played Card (if any) during Preparation Window
   const defCard = precalculatedRolls?.defenseCard;
+  let wasImmuneFire = false;
   if (defCard && newDefenderState) {
     const dName = (typeof defCard === 'string' ? defCard : (defCard?.name || '')).toUpperCase();
     log += ` [Defender played ${typeof defCard === 'string' ? defCard : (defCard?.name || 'Defense Card')}]`;
@@ -399,7 +400,10 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       let gain = 25;
       if (dName.includes('100HP') || dName.includes('ADVANCE') || dName.includes('SACRED')) gain = 100;
       else if (dName.includes('50HP') || dName.includes('FIRE')) gain = 50;
-      else if (dName.includes('25') || dName.includes('BASIC')) gain = 25;
+      else if (dName.includes('25') || dName.includes('BASIC')) {
+        gain = 25;
+        newDefenderState.hasBasicShield = true;
+      }
       else if (dName.includes('20')) gain = 20;
 
       newDefenderState.shield = (newDefenderState.shield || 0) + gain;
@@ -409,18 +413,14 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       if (dName.includes('FIRE')) newDefenderState.immuneFire = true;
     } else if (dName.includes('BOOMERANG')) {
       newDefenderState.hasBoomerang = true;
-      log += ` 🪃 Boomerang Trap set! (Will reflect 100% on 6+ roll or clash win).`;
-    } else if (dName.includes('COUNTER')) {
+      log += ` 🪃 Boomerang Trap set! (Will reflect 100% on clash defense win).`;
+    } else if (dName.includes('DEFENCE') && dName.includes('COUNTER')) {
       newDefenderState.hasCounter = true;
-      if (dName.includes('DODGE')) {
-        newDefenderState.hasDodge = true;
-        newDefenderState.dodgeCardName = typeof defCard === 'string' ? defCard : (defCard?.name || 'DODGE - COUNTER');
-      }
-      log += ` ⚔️ Counter Trap set! (Will negate 100% damage & reflect 25% back).`;
+      log += ` ⚔️ DEFENCE - COUNTER active! (0% damage taken, reflect 25% back to attacker).`;
     } else if (dName.includes('DODGE')) {
       newDefenderState.hasDodge = true;
-      newDefenderState.dodgeCardName = typeof defCard === 'string' ? defCard : (defCard?.name || 'DODGE');
-      log += ` 💨 Dodge prepared!`;
+      newDefenderState.dodgeCardName = typeof defCard === 'string' ? defCard : (defCard?.name || 'DODGE - BASIC');
+      log += ` 💨 ${newDefenderState.dodgeCardName} prepared!`;
     } else if (dName.includes('FULL GUARD')) {
       newDefenderState.shield = (newDefenderState.shield || 0) + 50;
       log += ` 🛡️ Defense Full Guard active! +50 shield barrier.`;
@@ -768,9 +768,10 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       // TRAP CONSUMPTION
       if (newDefenderState && finalDamage > 0) {
         // SHIELD FIRE immunity: if defender played SHIELD FIRE, fire attacks deal 0 damage & no burn
-        if (newDefenderState.immuneFire && cardName.includes('FIRE')) {
+        if (newDefenderState.immuneFire && (cardName.includes('FIRE') || attackElement === 'Fire')) {
           log += ` 🔥🚫 SHIELD FIRE IMMUNITY! ${newDefenderState.name} is immune to Fire damage this hit!`;
           finalDamage = 0;
+          wasImmuneFire = true;
           newDefenderState.immuneFire = false;
         } else if (newDefenderState.hasMisdirect) {
           // MISDIRECT: Try to redirect attack to random other player or fail with -20 HP penalty
@@ -786,12 +787,12 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           newDefenderState.hasMisdirect = false;
         } else if (newDefenderState.hasDodge) {
           // Check which DODGE card was used
-          const dodgeCardName = newDefenderState.dodgeCardName || 'DODGE - FULL GUARD';
+          const dodgeCardName = (newDefenderState.dodgeCardName || 'DODGE - BASIC').toUpperCase();
           
-          if (dodgeCardName.includes('FULL GUARD')) {
+          if (dodgeCardName.includes('FULL GUARD') || dodgeCardName.includes('DODGE / FULL')) {
             // DODGE FULL GUARD: Requires doubles to evade completely
             const rolledDoubles = defenderRoll?.rolls && defenderRoll.rolls.length >= 2 && defenderRoll.rolls[0] === defenderRoll.rolls[1];
-            const isBlitzActive = newAttackerState.isBlitzActive || false;
+            const isBlitzActive = newAttackerState.isBlitzActive || isBlitzMove || false;
             
             if (rolledDoubles) {
               log += ` 💨 DODGE FULL GUARD SUCCESS! Rolled doubles, evaded all damage!`;
@@ -802,11 +803,16 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
             } else {
               log += ` ❌ DODGE FULL GUARD failed (no doubles), taking full damage!`;
             }
-          } else if (dodgeCardName.includes('BASIC')) {
-            // DODGE BASIC: Check clash result - if won clash, evade. If lost clash, attacker damage +25%
-            // This is a passive defense card - it acts during clash, not during trap phase
-            // Will be handled in clash validation section below
-            log += ` 💨 DODGE BASIC triggered! Clash already determined outcome above.`;
+          } else if (dodgeCardName.includes('COUNTER')) {
+            // DODGE - COUNTER: If lost clash, player receives total attack damage plus 25% penalty
+            const penalty = Math.floor(finalDamage * 0.25);
+            finalDamage += penalty;
+            log += ` ❌ DODGE - COUNTER failed clash! Received total damage + 25% (+${penalty} AP penalty)!`;
+          } else {
+            // DODGE - BASIC: If failed, opponent's attack increases by 25%
+            const penalty = Math.floor(finalDamage * 0.25);
+            finalDamage += penalty;
+            log += ` ❌ DODGE - BASIC failed clash! Attack increased by 25% (+${penalty} AP penalty)!`;
           }
           newDefenderState.hasDodge = false;
         } else if (newDefenderState.hasBoomerang) {
@@ -814,8 +820,9 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           log += ` 🪃 BOOMERANG FAILED! ${newDefenderState.name} lost the clash. Defense failed, taking incoming damage.`;
           newDefenderState.hasBoomerang = false;
         } else if (newDefenderState.hasCounter) {
-          const reflectDmg = Math.floor(finalDamage * 0.25);
-          log += ` ⚔️ COUNTER TRIGGERED! 0% damage taken, reflected ${reflectDmg} AP back!`;
+          // DEFENCE - COUNTER: Receive 0% damage, reflect 25% back to attacker
+          const reflectDmg = Math.floor(baseAP * 0.25);
+          log += ` ⚔️ DEFENCE - COUNTER TRIGGERED! 0% damage taken, reflected ${reflectDmg} AP back to ${newAttackerState.name}!`;
           newAttackerState.hp = Math.max(0, newAttackerState.hp - reflectDmg);
           finalDamage = 0;
           newDefenderState.hasCounter = false;
@@ -837,33 +844,28 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         }
       }
 
-      // +DEFENCE PRIORITY: These cards should be FIRST priority per official rules
-      // If defender has +DEFENCE card, apply its bonus BEFORE innate DP
-      if (newDefenderState?.shield > 0) {
-        const absorbed = Math.min(newDefenderState.shield, finalDamage);
-        newDefenderState.shield -= absorbed;
-        finalDamage -= absorbed;
-        log += ` +DEFENCE CARD ACTIVE! Shield absorbed ${absorbed} damage.`;
+      // Shield Absorption: Absorbs damage before HP is reduced
+      // Official Rule: "SHIELD BASIC + 25HP - Prevents all damage except poison and fire"
+      const isFireAttack = (attackElement === 'Fire') || cardName.includes('FIRE');
+      if (newDefenderState?.shield > 0 && finalDamage > 0) {
+        if (newDefenderState.hasBasicShield && isFireAttack) {
+          log += ` 🔥 SHIELD BASIC cannot block Fire damage! Fire bypasses basic shield!`;
+        } else {
+          const absorbed = Math.min(newDefenderState.shield, finalDamage);
+          newDefenderState.shield -= absorbed;
+          finalDamage -= absorbed;
+          log += ` 🛡️ Shield absorbed ${absorbed} damage.`;
+        }
       }
 
-      // Innate Basic Defense: Activates when defender rolls 6+ on two dice during clash phase
+      // Innate Basic Defense: Activates when defender rolls 6+ on two dice during clash phase without a defense card
       // Per official rules: "Individual Defense w/o Defense Card 10 HP less on the AP.
       // This is only activated when the player rolls a total of six or higher from two dices, even if the player loses the battle"
       const defenderRolled6Plus = (defenderRoll?.total || 0) >= 6;
-      if (defenderRolled6Plus && !newDefenderState?.hasDefendBasic && finalDamage > 0) {
+      if (defenderRolled6Plus && !defCard && finalDamage > 0) {
         const innateAbsorb = Math.min(10, finalDamage);
         finalDamage = Math.max(0, finalDamage - innateAbsorb);
         log += ` 🛡️ Innate Basic Defense: Defender rolled ${defenderRoll?.total || 0} (≥6), reducing incoming damage by ${innateAbsorb} AP!`;
-      }
-
-      // Shield Absorption (Standard shield - only if no +DEFENCE was used above)
-      // This is now handled by the +DEFENCE priority section above
-      // Keeping this check only for shields that weren't set as +DEFENCE
-      if (newDefenderState?.shield > 0 && !newDefenderState?.hasDefendBasic) {
-        const absorbed = Math.min(newDefenderState.shield, finalDamage);
-        newDefenderState.shield -= absorbed;
-        finalDamage -= absorbed;
-        log += ` Additional shield absorbed ${absorbed} damage.`;
       }
 
       // Apply damage to defender
@@ -888,8 +890,8 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           log += ` Venom Strike infected ${newDefenderState.name} with 1 Poison card!`;
         }
 
-        // Apply Burn Status if Fire Flame X1 or X2
-        if (cardName === 'FIRE FLAME X1' || cardName === 'FIRE FLAME X2') {
+        // Apply Burn Status if Fire Flame X1 or X2 (only if not immune to Fire)
+        if ((cardName === 'FIRE FLAME X1' || cardName === 'FIRE FLAME X2') && !wasImmuneFire) {
           const burnStacks = cardName === 'FIRE FLAME X2' ? 2 : 1;
           newDefenderState.burnCount = (newDefenderState.burnCount || 0) + burnStacks;
           log += ` 🔥 Applied ${burnStacks} Burn stack(s) to ${newDefenderState.name}!`;
@@ -921,11 +923,11 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         }
       }
     } else {
-      // DEFENCE COUNTER: Always negates 100% damage and reflects 25% of incoming attack damage to attacker
+      // DEFENCE - COUNTER: If defender played DEFENCE - COUNTER and won clash
       if (newDefenderState?.hasCounter) {
         const reflectDmg = Math.floor(baseAP * 0.25);
         newAttackerState.hp = Math.max(0, newAttackerState.hp - reflectDmg);
-        log += ` ⚔️ COUNTER TRIGGERED! 0% damage taken, reflected ${reflectDmg} AP back to ${newAttackerState.name}!`;
+        log += ` ⚔️ DEFENCE - COUNTER TRIGGERED! 0% damage taken, reflected ${reflectDmg} AP back to ${newAttackerState.name}!`;
         newDefenderState.hasCounter = false;
       }
       // BOOMERANG: Defender won clash / successful defense -> reflects 100% attack damage back and attacker loses next turn
@@ -935,9 +937,15 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         newAttackerState.sleepTurns = (newAttackerState.sleepTurns || 0) + 1;
         newDefenderState.hasBoomerang = false;
       }
-      // DODGE BASIC: If defender has DODGE BASIC and is defending, they succeed on clash win
-      if (newDefenderState?.hasDodge && newDefenderState.dodgeCardName?.includes('BASIC')) {
-        log += ` 💨 DODGE BASIC SUCCESS! ${newDefenderState.name} evaded all damage!`;
+      // DODGE CARDS: Defender won clash -> evades all damage
+      if (newDefenderState?.hasDodge) {
+        const dodgeCardName = (newDefenderState.dodgeCardName || 'DODGE').toUpperCase();
+        if (dodgeCardName.includes('COUNTER')) {
+          log += ` 💨 DODGE - COUNTER SUCCESS! ${newDefenderState.name} avoided all damage and counter-attacks immediately!`;
+        } else {
+          log += ` 💨 ${newDefenderState.dodgeCardName || 'DODGE'} SUCCESS! ${newDefenderState.name} evaded all damage!`;
+        }
+        newDefenderState.hasDodge = false;
       } else if (!newDefenderState?.hasCounter && !newDefenderState?.hasBoomerang) {
         log += ` Defender blocked or dodged the attack! 0 damage taken.`;
       }
@@ -951,6 +959,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       newDefenderState.hasDodge = false;
       newDefenderState.hasMisdirect = false;
       newDefenderState.immuneFire = false;
+      newDefenderState.hasBasicShield = false;
     }
 
     // Extinguish Burn on Doubles (Official Rule: Player continues to burn until doubles are rolled)
@@ -1116,21 +1125,34 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   }
   // 8. DEFENSE CARDS
   else if (cardType === 'DEFENSE') {
-    if (cardName.includes('D20')) {
-      newAttackerState.shield = (newAttackerState.shield || 0) + 20;
-      log += ` Fortified defense (+20 temporary barrier).`;
-    } else if (cardName.includes('FULL GUARD') || cardName.includes('SHIELD ADVANCE') || cardName.includes('SHIELD FIRE') || cardName.includes('SHIELD SACRED')) {
+    if (cardName.includes('D20') || cardName.includes('D15') || cardName.includes('D10') || cardName.includes('D5')) {
+      let bonus = 20;
+      if (cardName.includes('D5')) bonus = 5;
+      else if (cardName.includes('D10')) bonus = 10;
+      else if (cardName.includes('D15')) bonus = 15;
+      newAttackerState.shield = (newAttackerState.shield || 0) + bonus;
+      log += ` Fortified defense (+${bonus} temporary barrier).`;
+    } else if (cardName.includes('100HP') || cardName.includes('ADVANCE') || cardName.includes('SACRED')) {
+      newAttackerState.shield = (newAttackerState.shield || 0) + 100;
+      log += ` Advanced Sacred Shield Barrier Activated (+100 temporary barrier).`;
+    } else if (cardName.includes('50HP') || cardName.includes('FIRE') || cardName.includes('FULL GUARD')) {
       newAttackerState.shield = (newAttackerState.shield || 0) + 50;
-      log += ` Ultimate Defense Barrier Activated (+50 temporary barrier).`;
+      if (cardName.includes('FIRE')) newAttackerState.immuneFire = true;
+      log += ` Defense Barrier Activated (+50 temporary barrier).`;
+    } else if (cardName.includes('25') || (cardName.includes('BASIC') && cardName.includes('SHIELD'))) {
+      newAttackerState.shield = (newAttackerState.shield || 0) + 25;
+      newAttackerState.hasBasicShield = true;
+      log += ` Basic Shield Activated (+25 temporary barrier).`;
     } else if (cardName.includes('DODGE')) {
       newAttackerState.hasDodge = true;
-      log += ` Preparing to Evade! Next incoming attack will be completely dodged.`;
+      newAttackerState.dodgeCardName = cardName;
+      log += ` Preparing to Evade! Next incoming attack will trigger dodge check.`;
     } else if (cardName.includes('COUNTER')) {
       newAttackerState.hasCounter = true;
       log += ` Counter Stance! Next incoming attack will be negated and reflected by 25%.`;
     } else if (cardName.includes('BOOMERANG')) {
       newAttackerState.hasBoomerang = true;
-      log += ` Boomerang Guard activated! Next incoming attack will be reflected 100% back to attacker.`;
+      log += ` Boomerang Guard activated! Next incoming attack will be reflected 100% on successful defense.`;
     } else if (cardName.includes('BASIC')) {
       newAttackerState.hasDefendBasic = true;
       log += ` Defensive Guard. Next incoming damage reduced by 25%.`;

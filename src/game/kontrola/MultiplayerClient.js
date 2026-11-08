@@ -32,23 +32,14 @@ const safeSubscribe = (channel, onStatus = null) => {
       if (status === 'SUBSCRIBED') {
         if (onStatus) onStatus('SUBSCRIBED');
       } else if (status === 'TIMED_OUT' || status === 'CHANNEL_ERROR') {
-        console.warn(`[Supabase] Channel ${channel.topic} ${status}, retrying in 1.2s...`, err);
-        setTimeout(() => {
-          if (channel.state !== 'joined') {
-            try {
-              channel.subscribe((retryStatus) => {
-                if (retryStatus === 'SUBSCRIBED' && onStatus) onStatus('SUBSCRIBED');
-              });
-            } catch (e) {}
-          }
-        }, 1200);
+        console.warn(`[Supabase] Channel ${channel.topic} ${status}:`, err);
         if (onStatus) onStatus(status);
       } else {
         if (onStatus) onStatus(status);
       }
     });
   } catch (err) {
-    console.warn('[Supabase] safeSubscribe ignored re-subscribe error:', err);
+    console.warn('[Supabase] safeSubscribe ignored subscribe error:', err);
   }
 };
 
@@ -63,7 +54,7 @@ const safeSend = async (channel, message, maxWaitMs = 3500) => {
     }
   }
 
-  if (channel.state !== 'joined') {
+  if (channel.state !== 'joined' && channel.state !== 'joining') {
     safeSubscribe(channel);
     const start = Date.now();
     while (channel.state !== 'joined' && Date.now() - start < maxWaitMs) {

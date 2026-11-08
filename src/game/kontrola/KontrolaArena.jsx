@@ -1302,6 +1302,7 @@ export default function KontrolaArena() {
             characterId: selectedCharacterRef.current,
             playerName: playerNameRef.current.trim() || 'Player'
           });
+          requestSync(matchId, playerIdRef.current);
           isJoiningRef.current = false;
         }
       },
@@ -1312,6 +1313,32 @@ export default function KontrolaArena() {
       subscription.unsubscribe();
     };
   }, [matchId]);
+
+  // Safety timeout for joining state (especially for Safari / slow mobile connections)
+  useEffect(() => {
+    if (gameState?.status !== 'joining' || !matchId) return;
+
+    let attempts = 0;
+    const retryInterval = setInterval(() => {
+      attempts += 1;
+      if (attempts <= 3) {
+        console.log(`[KontrolaArena] Retrying join request (attempt ${attempts}/3) for room ${matchId}...`);
+        requestJoin(matchId, {
+          playerId: playerIdRef.current,
+          characterId: selectedCharacterRef.current,
+          playerName: playerNameRef.current.trim() || 'Player'
+        });
+        requestSync(matchId, playerIdRef.current);
+      } else {
+        clearInterval(retryInterval);
+        setError('Connection timed out. The host may be in a different match or unreachable. Please try again.');
+        setGameState(null);
+        setMatchId('');
+      }
+    }, 3000);
+
+    return () => clearInterval(retryInterval);
+  }, [gameState?.status, matchId]);
 
   // ==========================================
   // DISCONNECT & HOST PROMOTION HANDLER
