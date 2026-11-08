@@ -449,6 +449,7 @@ export default function KontrolaArena() {
   // even when React batches multiple setGameState calls in the same render cycle.
   const pendingStateRef = useRef(null);
   const prevTurnRef = useRef(null);
+  const lastResolvedCombatIdRef = useRef(null);
 
   // Persistent refs to prevent WebSocket reconnection loops on state changes
   const gameStateRef = useRef(gameState);
@@ -1110,13 +1111,17 @@ export default function KontrolaArena() {
         }
         // 8. Synchronized Dice Screen Close
         else if (event.type === 'DICE_SCREEN_CLOSE') {
-          const { resolved, combatData, precalculatedRolls } = event.payload || {};
+          const { resolved, combatData, precalculatedRolls, senderId } = event.payload || {};
           const mergedRolls = {
             ...(activeCombat?.precalculatedRolls || {}),
             ...(precalculatedRolls || {})
           };
           setActiveCombat(null);
           setIsDiceRollingSync(false);
+          // If the event was broadcast by this client (host), it was already handled locally - DO NOT re-enqueue
+          if (senderId && senderId === playerIdRef.current) {
+            return;
+          }
           // If a non-host client finished combat, the host must execute RESOLVE_COMBAT
           if (resolved && isHostRef.current && combatData) {
             enqueueHostAction({ ...combatData, actionType: 'RESOLVE_COMBAT' }, mergedRolls);
@@ -1416,7 +1421,7 @@ export default function KontrolaArena() {
       // For RESOLVE_COMBAT, use rolls from payload.precalculatedRolls (set by dice screen)
       // or fallback to the parameter
       const precalculatedRolls = payload.actionType === 'RESOLVE_COMBAT'
-        ? { ...(precalculatedRollsParam || {}), ...(payload.precalculatedRolls || {}) }
+        ? { ...(payload.precalculatedRolls || {}), ...(precalculatedRollsParam || {}) }
         : precalculatedRollsParam;
 
       // RESOLVE_COMBAT: falls through to the generic resolution block at the bottom of this function.
@@ -1424,6 +1429,12 @@ export default function KontrolaArena() {
       // from the original ATTACK_DECLARED spread � no special handling needed here.
       // IMPORTANT: do NOT add an early return inside this block or combat resolution will be skipped.
       if (payload.actionType === 'RESOLVE_COMBAT') {
+        const combatId = payload.combatId || (payload.actorId + '_' + payload.targetId + '_' + (payload.actionCard?.id || payload.actionCard?.name || 'combat'));
+        if (combatId && lastResolvedCombatIdRef.current === combatId) {
+          console.warn('[RESOLVE_COMBAT] Skipping duplicate combat resolution for ID:', combatId);
+          return currentState;
+        }
+        lastResolvedCombatIdRef.current = combatId;
         payload = { ...payload }; // safe copy � avoid mutating the caller's object
       }
 
@@ -2002,9 +2013,10 @@ export default function KontrolaArena() {
           targetId: payload.targetId
         });
         
+        const combatId = payload.combatId || ('combat_' + Date.now() + '_' + payload.actorId + '_' + payload.targetId);
         const nextState = {
           ...currentState,
-          activeDefenseState: { ...payload, expiresAt: Date.now() + 15000 },
+          activeDefenseState: { ...payload, combatId, expiresAt: Date.now() + 15000 },
           logs: [`?? ${payload.attackerPlayerName} is attacking ${payload.defenderPlayerName}! Waiting for defender to prepare...`, ...(currentState.logs || [])]
         };
         broadcastState(matchIdRef.current, nextState);
@@ -2040,7 +2052,9 @@ export default function KontrolaArena() {
         
         // IMPORTANT: Don't send full character objects via WebSocket - they have complex data
         // Instead, send minimal data and let clients reconstruct from their gameState
+        const combatId = activeDefense.combatId || ('combat_' + Date.now() + '_' + activeDefense.actorId + '_' + activeDefense.targetId);
         const activeCombat = {
+          combatId,
           actorId: activeDefense.actorId,
           targetId: activeDefense.targetId,
           attackerPlayerId: activeDefense.actorId,
@@ -2068,6 +2082,7 @@ export default function KontrolaArena() {
 
         // Broadcast lightweight data - clients will reconstruct character objects from their gameState
         const broadcastData = {
+          combatId: activeCombat.combatId,
           actorId: activeCombat.actorId,
           targetId: activeCombat.targetId,
           actionCard: activeCombat.actionCard,
@@ -2974,7 +2989,7 @@ export default function KontrolaArena() {
     const totalMatchPlayers = (gameState?.players?.length) || 2;
     if (is3PlayerOnly && totalMatchPlayers <= 2) {
       if (cardName.includes('MISDIRECT')) {
-        showNotice('⚠️ Valid only with more than two players.', 'warning');
+        showNotice('⚠️ Requires 3+ players! (You can still discard & draw)', 'warning');
       } else {
         showNotice('⚠️ Only available in 3+ player matches! Cannot be played in a 1-on-1 duel.', 'warning');
       }
@@ -3120,7 +3135,8 @@ export default function KontrolaArena() {
     await broadcastUIEvent(matchId, 'dice_screen_close', {
       resolved,
       combatData: activeCombat,
-      precalculatedRolls: rollsToApply
+      precalculatedRolls: rollsToApply,
+      senderId: playerIdRef.current
     });
     setActiveCombat(null);
     setIsDiceRollingSync(false);
@@ -5156,7 +5172,7 @@ export default function KontrolaArena() {
                           transform: `rotate(${rotation}deg) translateY(${yOffset}px)`,
                           zIndex: isSelected ? 100 : index,
                           marginLeft: index === 0 ? '0' : '-25px',
-                          opacity: isCardLocked ? 0.55 : 1,
+                          opacity: isCardLocked ? (is3PlayerLocked ? 0.45 : 0.55) : 1,
                           position: 'relative',
                           filter: isCardLocked ? 'grayscale(0.4)' : 'none'
                         }}
@@ -5169,7 +5185,7 @@ export default function KontrolaArena() {
                                 showNotice('🔒 REVIVE can only be used when your character reaches 0 HP! (You can still discard & draw)', 'info');
                               } else if (is3PlayerLocked) {
                                 if (upperCardName.includes('MISDIRECT')) {
-                                  showNotice('⚠️ Valid only with more than two players. (You can still discard & draw)', 'info');
+                                  showNotice('⚠️ Requires 3+ players! (You can still discard & draw)', 'info');
                                 } else {
                                   showNotice('⚠️ Requires 3+ players to attack! (You can still discard & draw)', 'info');
                                 }                              } else {
@@ -5195,7 +5211,7 @@ export default function KontrolaArena() {
                             boxShadow: '0 2px 8px rgba(0,0,0,0.8)'
                           }}>
                             <span style={{ fontSize: '11px' }}>{isReviveLocked ? '💀' : (is3PlayerLocked ? '👥' : '🔒')}</span>
-                            <span style={{ fontSize: '10px', color: '#FF7777', fontWeight: 'bold' }}>{isReviveLocked ? '0 HP ONLY' : (is3PlayerLocked ? (upperCardName.includes('MISDIRECT') ? '> 2 PLY' : '3+ PLY') : `LVL ${reqLvl}`)}</span>
+                            <span style={{ fontSize: '10px', color: '#FF7777', fontWeight: 'bold' }}>{isReviveLocked ? '0 HP ONLY' : (is3PlayerLocked ? ('3+ PLY') : `LVL ${reqLvl}`)}</span>
                           </div>
                         )}
                         <div className="uno-card-art">
@@ -5472,7 +5488,7 @@ export default function KontrolaArena() {
                         : isV40Blocked
                         ? '🔒 REQUIRES LEVEL 4'
                         : is3PlayerBlocked
-                        ? (selCardUpper.includes('MISDIRECT') ? '🔒 VALID ONLY WITH > 2 PLAYERS' : '🔒 REQUIRES 3+ PLAYERS')
+                        ? ('🔒 REQUIRES 3+ PLAYERS')
                         : isSelMoveLocked
                         ? '🔒 MOVE LOCKED'
                         : selectedActionCard?.type === 'ATTACK'

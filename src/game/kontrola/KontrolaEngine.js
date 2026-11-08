@@ -394,28 +394,48 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   if (defCard && newDefenderState) {
     const dName = (typeof defCard === 'string' ? defCard : (defCard?.name || '')).toUpperCase();
     log += ` [Defender played ${typeof defCard === 'string' ? defCard : (defCard?.name || 'Defense Card')}]`;
+    // 1. SHIELD CARDS (Shield Basic +25HP, Shield Advance +100HP, Shield Sacred Protection, Shield Fire +50HP)
     if (dName.includes('SHIELD')) {
-      const gain = dName.includes('100HP') || dName.includes('ADVANCE') ? 100
-                 : dName.includes('50HP')  || dName.includes('FIRE')    ? 50
-                 : 20;
+      let gain = 25;
+      if (dName.includes('100HP') || dName.includes('ADVANCE') || dName.includes('SACRED')) gain = 100;
+      else if (dName.includes('50HP') || dName.includes('FIRE')) gain = 50;
+      else if (dName.includes('25') || dName.includes('BASIC')) gain = 25;
+      else if (dName.includes('20')) gain = 20;
+
       newDefenderState.shield = (newDefenderState.shield || 0) + gain;
+      log += ` 🛡️ Shield active! +${gain} barrier points.`;
+
       // SHIELD FIRE grants fire immunity for this hit
       if (dName.includes('FIRE')) newDefenderState.immuneFire = true;
     } else if (dName.includes('BOOMERANG')) {
       newDefenderState.hasBoomerang = true;
+      log += ` 🪃 Boomerang Trap set! (Will reflect 100% on 6+ roll or clash win).`;
+    } else if (dName.includes('COUNTER')) {
+      newDefenderState.hasCounter = true;
+      if (dName.includes('DODGE')) {
+        newDefenderState.hasDodge = true;
+        newDefenderState.dodgeCardName = typeof defCard === 'string' ? defCard : (defCard?.name || 'DODGE - COUNTER');
+      }
+      log += ` ⚔️ Counter Trap set! (Will negate 100% damage & reflect 25% back).`;
     } else if (dName.includes('DODGE')) {
       newDefenderState.hasDodge = true;
-      newDefenderState.dodgeCardName = defCard.name; // Track which DODGE card for later resolution
-    } else if (dName.includes('COUNTER')) {
-      // covers DEFENCE - COUNTER and DODGE - COUNTER
-      newDefenderState.hasCounter = true;
+      newDefenderState.dodgeCardName = typeof defCard === 'string' ? defCard : (defCard?.name || 'DODGE');
+      log += ` 💨 Dodge prepared!`;
     } else if (dName.includes('FULL GUARD')) {
       newDefenderState.shield = (newDefenderState.shield || 0) + 50;
-    } else if (dName.includes('DEFENCE') || dName.includes('+DEFENCE')) {
-      // e.g. +DEFENCE D20, DEFENCE - BASIC, etc.
-      const bonus = dName.includes('D20') ? 20 : 15;
-      newDefenderState.hasDefendBasic = true;
+      log += ` 🛡️ Defense Full Guard active! +50 shield barrier.`;
+    } else if (dName.includes('+DEFENCE') || dName.startsWith('+DEF') || dName.includes(' D20') || dName.includes(' D15') || dName.includes(' D10') || dName.includes(' D5')) {
+      let bonus = 20;
+      if (dName.includes('D5')) bonus = 5;
+      else if (dName.includes('D10')) bonus = 10;
+      else if (dName.includes('D15')) bonus = 15;
+      else if (dName.includes('D20')) bonus = 20;
+
       newDefenderState.shield = (newDefenderState.shield || 0) + bonus;
+      log += ` 🛡️ +DEFENCE active! +${bonus} shield barrier.`;
+    } else if (dName.includes('DEFENCE') && dName.includes('BASIC')) {
+      newDefenderState.hasDefendBasic = true;
+      log += ` 🛡️ DEFENCE BASIC active! Incoming damage will be reduced by 25%.`;
     } else if (dName.includes('ANIME EXPRESS') || dName.includes('FLYER')) {
       // ANIME EXPRESS TV: No Weakness Shield for one turn
       newDefenderState.flyerNoWeakness = true;
@@ -883,6 +903,23 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           log += ` 🔥 Applied ${burnStacks} Burn stack(s) to ${newDefenderState.name}!`;
         }
 
+        // Lightning effect: Client feedback Nov 8: Miss turn is ONLY when Lightning X1 & X2 is successful
+        if (cardName.includes('LIGHTNING')) {
+          const skipTurns = 1;
+          newDefenderState.sleepTurns = (newDefenderState.sleepTurns || 0) + skipTurns;
+          log += ` ⚡ Lightning shock! ${newDefenderState.name} loses ${skipTurns} turn(s)!`;
+
+          // LIGHTNING removes 1 poison card ONLY if defender is in Zombie Mode (5+ poison cards) per client feedback Line 90
+          if (newDefenderState.poisonCount >= 5) {
+            newDefenderState.poisonCount = Math.max(0, newDefenderState.poisonCount - 1);
+            log += ` ⚡ Lightning cleansed 1 Poison card from Zombie!`;
+            if (newDefenderState.poisonCount < 5) {
+              newDefenderState.hp = newDefenderState.preZombieHp || 100;
+              log += ` 🌟 ${newDefenderState.name} was cleansed of Zombie curse and restored to human form!`;
+            }
+          }
+        }
+
         // Poochi's Lasso of Truth: Target reveals Action Cards
         const currentAttackerChar = attackerChar || KONTROLA_CHARACTERS[newAttackerState.characterId] || {};
         const chosenMove = currentAttackerChar?.attacks?.[attackSelectionName];
@@ -925,25 +962,6 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     if (newDefenderState?.burnCount > 0 && defenderRoll?.rolls && defenderRoll.rolls.length >= 2 && defenderRoll.rolls[0] === defenderRoll.rolls[1]) {
       newDefenderState.burnCount = 0;
       log += ` 💧 ${newDefenderState.name} rolled doubles (${defenderRoll.rolls[0]} & ${defenderRoll.rolls[1]}) and EXTINGUISHED their Burn!`;
-    }
-
-    // Lightning effect: ALWAYS applies whether attack succeeds or not per official rules
-    // "This action occurs when the attack is successful and not successful"
-    if (cardName.includes('LIGHTNING') && newDefenderState) {
-      // Client feedback Nov 4: Both Lightning X1 and X2 give exactly 1 turn skip
-      const skipTurns = 1;
-      newDefenderState.sleepTurns = (newDefenderState.sleepTurns || 0) + skipTurns;
-      log += ` ⚡ Lightning shock! ${newDefenderState.name} loses ${skipTurns} turn(s)!`;
-      
-      // LIGHTNING removes 1 poison card ONLY if defender is in Zombie Mode (5+ poison cards) per client feedback Line 90
-      if (newDefenderState.poisonCount >= 5) {
-        newDefenderState.poisonCount = Math.max(0, newDefenderState.poisonCount - 1);
-        log += ` ⚡ Lightning cleansed 1 Poison card from Zombie!`;
-        if (newDefenderState.poisonCount < 5) {
-          newDefenderState.hp = newDefenderState.preZombieHp || 100;
-          log += ` 🌟 ${newDefenderState.name} was cleansed of Zombie curse and restored to human form!`;
-        }
-      }
     }
 
     // Shadow Purr: Heals attacker + puts defender to sleep (only on successful hit)

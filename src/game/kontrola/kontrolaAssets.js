@@ -1,4 +1,4 @@
-﻿// TCG Companion — Official Kontrola Asset Resolver
+﻿// TCG Companion � Official Kontrola Asset Resolver
 // Resolves authentic high-res cards from public/Kontrolla_Data/Graphics
 
 export const getBaseUrl = () => {
@@ -43,7 +43,7 @@ const ACTION_CARD_IMAGE_MAP = {
   'STABILITY CRYSTAL': 'ACTION CARDS/BASIC/STABILITY CRYSTAL CARD.png',
   'TIME MACHINE': 'ACTION CARDS/BASIC/TIME MACHINE CARD.png',
   'VISION X1': 'ACTION CARDS/BASIC/VISION X1 CARD.png',
-  'VITALITY GAIN V10': 'ACTION CARDS/BASIC/VITALITY GAIN V20 CARD.png',
+  'VITALITY GAIN V10': 'ACTION CARDS/BASIC/VITALITY GAIN V10 CARD.png',
   'VITALITY GAIN V20': 'ACTION CARDS/BASIC/VITALITY GAIN V20 CARD.png',
   'X-CHANGE X1': 'ACTION CARDS/BASIC/XCHANGE X1 CARD.png',
   'ZOMBIE MODE': 'ACTION CARDS/BASIC/ZOMBIE MODE CARD.png',
