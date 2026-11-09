@@ -182,6 +182,68 @@
 }
 
 /* --------------------------------------------------------------------------
+   8. FX_CardFlash: Radial Burst Shockwave on Play / Clash Impact
+   -------------------------------------------------------------------------- */
+.fx-flash-burst::after {
+  content: '';
+  position: absolute;
+  inset: -20px;
+  border-radius: inherit;
+  background: radial-gradient(circle, var(--fx-color, #00f0ff) 10%, transparent 70%);
+  animation: fx-flash-expand 0.65s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+  pointer-events: none;
+  z-index: 5;
+}
+
+@keyframes fx-flash-expand {
+  0%   { transform: scale(0.6); opacity: 1; filter: brightness(3); }
+  100% { transform: scale(1.6); opacity: 0; filter: brightness(1); }
+}
+
+/* --------------------------------------------------------------------------
+   9. FX_CardFlare: Anamorphic Horizontal Lens Flare for Rare / Super Moves
+   -------------------------------------------------------------------------- */
+.fx-flare-glow {
+  position: absolute;
+  top: 50%;
+  left: -20%;
+  right: -20%;
+  height: 8px;
+  background: linear-gradient(90deg, transparent 0%, var(--fx-color, #ffd700) 40%, #ffffff 50%, var(--fx-color, #ffd700) 60%, transparent 100%);
+  filter: drop-shadow(0 0 12px var(--fx-color, #ffd700)) drop-shadow(0 0 24px #fff);
+  transform: translateY(-50%);
+  animation: fx-flare-shimmer 2.4s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 4;
+}
+
+@keyframes fx-flare-shimmer {
+  0%   { opacity: 0.5; transform: translateY(-50%) scaleX(0.85); }
+  100% { opacity: 1;   transform: translateY(-50%) scaleX(1.15); }
+}
+
+/* --------------------------------------------------------------------------
+   10. FX_CardEdgeFlow: Undulating Continuous Flow Along Top & Bottom Borders
+   -------------------------------------------------------------------------- */
+.fx-edge-flow::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  border-top: 3px solid var(--fx-color, #00f0ff);
+  border-bottom: 3px solid var(--fx-color, #00f0ff);
+  filter: drop-shadow(0 0 8px var(--fx-color, #00f0ff));
+  animation: fx-edge-pulse 1.8s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 2;
+}
+
+@keyframes fx-edge-pulse {
+  0%   { opacity: 0.6; filter: drop-shadow(0 0 4px var(--fx-color, #00f0ff)); }
+  100% { opacity: 1.0; filter: drop-shadow(0 0 14px var(--fx-color, #00f0ff)); }
+}
+
+/* --------------------------------------------------------------------------
    5 Elemental Color Themes (Matching Asset 355942 Suffixes _G, _B, _Y, _P, _R)
    -------------------------------------------------------------------------- */
 /* _G: Green (Vitality Gain V10-V40, Heals) */
@@ -274,3 +336,4 @@
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+

@@ -227,6 +227,7 @@ export default function KontrolaArena() {
   }, [userProfile]);
 
   const [selectedActionCard, setSelectedActionCard] = useState(null);
+  const [dissolvingCardId, setDissolvingCardId] = useState(null);
   const [selectedCharacterAttack, setSelectedCharacterAttack] = useState(null);
   const [selectedTargetId, setSelectedTargetId] = useState(null);
 
@@ -845,6 +846,16 @@ export default function KontrolaArena() {
     // Once confirmed by host (host is set and players list includes playerId, and not in joining state), stop heartbeat
     if (gameState?.host && gameState?.players?.includes(playerId) && gameState?.status !== 'joining') return;
 
+    // Quota Safeguard: Block join heartbeat if character or all characters are exhausted
+    const charLic = characterLicenseService.getLicenseSync(currentUser?.id, selectedCharacterRef.current);
+    if (!charLic.canPlay || !characterLicenseService.hasAnyPlayableCharacterSync(currentUser?.id)) {
+      setError(`Cannot join match: ${charLic.characterName} has exhausted the 10-match free quota!`);
+      setQuotaUnlockChar(selectedCharacterRef.current);
+      setGameState(null);
+      setMatchId(null);
+      return;
+    }
+
     const sendJoin = () => {
       if (matchIdRef.current && playerIdRef.current) {
         requestJoin(matchIdRef.current, {
@@ -1317,6 +1328,16 @@ export default function KontrolaArena() {
       () => {
         // Callback fired when channel is fully SUBSCRIBED
         if (isJoiningRef.current) {
+          const charLic = characterLicenseService.getLicenseSync(currentUser?.id, selectedCharacterRef.current);
+          if (!charLic.canPlay || !characterLicenseService.hasAnyPlayableCharacterSync(currentUser?.id)) {
+            setError(`Cannot join match: ${charLic.characterName} has exhausted the 10-match free quota!`);
+            setQuotaUnlockChar(selectedCharacterRef.current);
+            setGameState(null);
+            setMatchId(null);
+            isJoiningRef.current = false;
+            return;
+          }
+
           requestJoin(matchId, {
             playerId: playerIdRef.current,
             characterId: selectedCharacterRef.current,
@@ -1333,6 +1354,31 @@ export default function KontrolaArena() {
       subscription.unsubscribe();
     };
   }, [matchId]);
+
+  // Quota Safeguard: Validate character and record match usage when match actually begins (roll_off or active)
+  useEffect(() => {
+    if (!matchId || !gameState) return;
+    if (gameState.status !== 'roll_off' && gameState.status !== 'active') return;
+    if (!gameState.players?.includes(playerId)) return;
+
+    const charLic = characterLicenseService.getLicenseSync(currentUser?.id, selectedCharacterRef.current);
+    if (!charLic.canPlay || !characterLicenseService.hasAnyPlayableCharacterSync(currentUser?.id)) {
+      setError(`Cannot participate in match: ${charLic.characterName} has exhausted the 10-match free quota!`);
+      setQuotaUnlockChar(selectedCharacterRef.current);
+      handleLeaveRoom();
+      return;
+    }
+
+    const storageKey = `kontrola_match_used_${matchId}_${playerId}`;
+    try {
+      if (!sessionStorage.getItem(storageKey)) {
+        sessionStorage.setItem(storageKey, 'true');
+        characterLicenseService.recordMatchUse(currentUser?.id, selectedCharacterRef.current);
+      }
+    } catch {
+      // Ignore sessionStorage errors
+    }
+  }, [matchId, gameState?.status, playerId, currentUser?.id]);
 
   // Safety timeout for joining state (especially for Safari / slow mobile connections)
   useEffect(() => {
@@ -2921,7 +2967,9 @@ export default function KontrolaArena() {
       return;
     }
 
-    // Record match usage for host
+    // Record match usage for host (guarded by sessionStorage so useEffect won't double count)
+    const hostStorageKey = `kontrola_match_used_${matchId}_${playerId}`;
+    try { sessionStorage.setItem(hostStorageKey, 'true'); } catch {}
     characterLicenseService.recordMatchUse(currentUser?.id, selectedCharacter);
 
     // Remove room from global lobby broadcast
@@ -3001,6 +3049,9 @@ export default function KontrolaArena() {
       return;
     }
     setIsProcessingAction(true);
+    const targetKey = typeof selectedActionCard === 'object' ? (selectedActionCard?.instanceId || selectedActionCard?.id || selectedActionCard?.name) : selectedActionCard;
+    setDissolvingCardId(targetKey);
+
     const payload = {
       actionType: 'DISCARD_AND_DRAW',
       actorId: playerId,
@@ -3012,10 +3063,13 @@ export default function KontrolaArena() {
     } else {
       takeTurn(matchId, { type: 'PLAYER_ACTION', payload });
     }
-    setTimeout(() => setIsProcessingAction(false), 2500);
-    setSelectedActionCard(null);
-    setSelectedCharacterAttack(null);
-    setSelectedTargetId(null);
+    setTimeout(() => {
+      setIsProcessingAction(false);
+      setDissolvingCardId(null);
+      setSelectedActionCard(null);
+      setSelectedCharacterAttack(null);
+      setSelectedTargetId(null);
+    }, 600);
   };
 
   // Host force skip for stalled / AFK player
@@ -3873,6 +3927,88 @@ export default function KontrolaArena() {
                   </button>
                 </div>
 
+                {/* Character Quota Warning in Lobby */}
+                {(() => {
+                  const lic = characterLicenseService.getLicenseSync(currentUser?.id, selectedCharacter);
+                  const hasAny = characterLicenseService.hasAnyPlayableCharacterSync(currentUser?.id);
+                  if (!hasAny) {
+                    return (
+                      <div style={{
+                        marginBottom: '16px',
+                        padding: '12px 16px',
+                        borderRadius: '12px',
+                        background: 'rgba(239, 68, 68, 0.2)',
+                        border: '1.5px solid rgba(239, 68, 68, 0.6)',
+                        color: '#fca5a5',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        fontSize: '0.85rem',
+                        fontWeight: 'bold',
+                        boxShadow: '0 0 20px rgba(239, 68, 68, 0.3)'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Lock size={16} color="#ef4444" />
+                          <span>All 7 characters have reached their 10-match quota! Unlock a character to host or join matches.</span>
+                        </div>
+                        <button
+                          onClick={() => setQuotaUnlockChar(selectedCharacter)}
+                          style={{
+                            padding: '6px 14px',
+                            background: '#ef4444',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontWeight: 'bold',
+                            fontSize: '0.75rem'
+                          }}
+                        >
+                          UNLOCK ACCESS
+                        </button>
+                      </div>
+                    );
+                  }
+                  if (!lic.canPlay) {
+                    return (
+                      <div style={{
+                        marginBottom: '16px',
+                        padding: '10px 14px',
+                        borderRadius: '10px',
+                        background: 'rgba(239, 68, 68, 0.15)',
+                        border: '1px solid rgba(239, 68, 68, 0.5)',
+                        color: '#fca5a5',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        fontSize: '0.82rem',
+                        fontWeight: 'bold'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Lock size={15} color="#ef4444" />
+                          <span>Active Warrior ({lic.characterName}) is Locked (10/10 Used). Unlock or choose another warrior to host or join.</span>
+                        </div>
+                        <button
+                          onClick={() => setQuotaUnlockChar(selectedCharacter)}
+                          style={{
+                            padding: '4px 10px',
+                            background: '#ef4444',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontWeight: 'bold',
+                            fontSize: '0.72rem'
+                          }}
+                        >
+                          UNLOCK
+                        </button>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+
                 {/* 4. Three-Tab Lobby Navigation */}
                 <div style={{ display: 'flex', gap: '10px', borderBottom: '1px solid rgba(251, 200, 13, 0.2)', paddingBottom: '8px' }}>
                   <button
@@ -4535,29 +4671,38 @@ export default function KontrolaArena() {
                   </div>
                 </div>
 
-                {isHost ? (
-                  <button
-                    onClick={handleStartGame}
-                    disabled={gameState.players?.length < 2}
-                    className="btn-end-turn-cta flashing-end-turn-cta"
-                    style={{
-                      width: '100%',
-                      padding: '16px',
-                      borderRadius: '14px',
-                      fontSize: '1.3rem',
-                      justifyContent: 'center',
-                      cursor: gameState.players?.length >= 2 ? 'pointer' : 'not-allowed',
-                      opacity: gameState.players?.length >= 2 ? 1 : 0.5
-                    }}
-                  >
-                    <Swords size={24} />
-                    <span>
-                      {gameState.players?.length >= 2
-                        ? 'COMMENCE BATTLE (LOCK ROOM)'
-                        : 'WAITING FOR PLAYERS (MIN 2)...'}
-                    </span>
-                  </button>
-                ) : (
+                {isHost ? (() => {
+                  const hostLic = characterLicenseService.getLicenseSync(currentUser?.id, selectedCharacter);
+                  const isHostCharLocked = !hostLic.canPlay;
+                  return (
+                    <button
+                      onClick={isHostCharLocked ? () => setQuotaUnlockChar(selectedCharacter) : handleStartGame}
+                      disabled={!isHostCharLocked && gameState.players?.length < 2}
+                      className="btn-end-turn-cta flashing-end-turn-cta"
+                      style={{
+                        width: '100%',
+                        padding: '16px',
+                        borderRadius: '14px',
+                        fontSize: '1.3rem',
+                        justifyContent: 'center',
+                        cursor: (isHostCharLocked || gameState.players?.length >= 2) ? 'pointer' : 'not-allowed',
+                        opacity: (isHostCharLocked || gameState.players?.length >= 2) ? 1 : 0.5,
+                        background: isHostCharLocked ? 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)' : undefined,
+                        boxShadow: isHostCharLocked ? '0 0 25px rgba(239, 68, 68, 0.6)' : undefined,
+                        border: isHostCharLocked ? '1.5px solid #f87171' : undefined
+                      }}
+                    >
+                      {isHostCharLocked ? <Lock size={24} /> : <Swords size={24} />}
+                      <span>
+                        {isHostCharLocked
+                          ? `WARRIOR LOCKED (${hostLic.characterName.toUpperCase()}) - UNLOCK TO BATTLE`
+                          : gameState.players?.length >= 2
+                          ? 'COMMENCE BATTLE (LOCK ROOM)'
+                          : 'WAITING FOR PLAYERS (MIN 2)...'}
+                      </span>
+                    </button>
+                  );
+                })() : (
                   <div
                     style={{
                       color: 'var(--neon-gold)',
@@ -5383,7 +5528,11 @@ export default function KontrolaArena() {
                             <span style={{ fontSize: '10px', color: '#FF7777', fontWeight: 'bold' }}>{isReviveLocked ? '0 HP ONLY' : (is3PlayerLocked ? ('3+ PLY') : `LVL ${reqLvl}`)}</span>
                           </div>
                         )}
-                        <CardVFXWrapper cardName={cName} isSelected={isSelected}>
+                        <CardVFXWrapper
+                          cardName={cName}
+                          isSelected={isSelected}
+                          isDissolving={dissolvingCardId === (cardObj.instanceId || cardObj.id || cName) || dissolvingCardId === cName}
+                        >
                           <div className="uno-card-art">
                             <img src={cardArt} alt={cName} loading="eager" decoding="async" />
                           </div>
@@ -5449,6 +5598,35 @@ export default function KontrolaArena() {
                 (getSafeCardName(selectedActionCard).toUpperCase().includes('VISION') && !getSafeCardName(selectedActionCard).toUpperCase().includes('FULL'))
               ) && (
                 <div className="arena-panel" style={{ background: 'rgba(20, 10, 20, 0.95)', border: '1.5px solid var(--neon-crimson)', padding: '12px' }}>
+                  {/* Staged Card Visual Banner */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', background: 'rgba(0,0,0,0.5)', padding: '6px 10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <CardVFXWrapper
+                      cardName={getSafeCardName(selectedActionCard)}
+                      isSelected={true}
+                      style={{
+                        width: '38px',
+                        height: '54px',
+                        borderRadius: '6px',
+                        overflow: 'hidden',
+                        flexShrink: 0
+                      }}
+                    >
+                      <img
+                        src={getCardGraphicUrl(getSafeCardName(selectedActionCard))}
+                        alt={getSafeCardName(selectedActionCard)}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    </CardVFXWrapper>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '0.86rem', fontWeight: 'bold', color: 'var(--neon-gold)', textTransform: 'uppercase' }}>
+                        {getSafeCardName(selectedActionCard)}
+                      </div>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.6)' }}>
+                        Action Staged  Choose target opponent below
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="panel-title-bar" style={{ marginBottom: '8px' }}>
                     <span className="panel-kicker" style={{ color: 'var(--neon-crimson)' }}>1. SELECT TARGET</span>
                   </div>

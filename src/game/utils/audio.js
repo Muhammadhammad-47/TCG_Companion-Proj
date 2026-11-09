@@ -224,14 +224,43 @@ class SoundEffects {
     }
   }
 
+  // Punch SFX (randomized 1..19) from public/SFX/
+  playPunch() {
+    if (this.muted) return;
+    try {
+      const idx = Math.floor(Math.random() * 19) + 1;
+      const base = (typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL) || '/';
+      const cleanBase = base.endsWith('/') ? base : `${base}/`;
+      const audio = new Audio(`${cleanBase}SFX/PUNCH ${idx} SFX.mp3`);
+      audio.volume = 0.55;
+      audio.play().catch(() => this.playHit());
+    } catch {
+      this.playHit();
+    }
+  }
+
+  // Whip SFX from public/SFX/
+  playWhip() {
+    if (this.muted) return;
+    try {
+      const base = (typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL) || '/';
+      const cleanBase = base.endsWith('/') ? base : `${base}/`;
+      const audio = new Audio(`${cleanBase}SFX/Whip SFX.mp3`);
+      audio.volume = 0.6;
+      audio.play().catch(() => this.playHit());
+    } catch {
+      this.playHit();
+    }
+  }
+
   // Aliases used by the arena UI — kept as thin wrappers so a missing
   // sound can never break the action that triggered it.
   playDamage() {
-    this.playHit();
+    this.playPunch();
   }
 
   playAttack() {
-    this.playHit();
+    this.playPunch();
   }
 
   playDefeat() {

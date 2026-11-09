@@ -10,6 +10,9 @@ $files = @(
   "src/components/CharacterUnlockModal.jsx",
   "src/components/AdminCharacterManager.jsx",
   "src/game/components/GameSetup.jsx",
+  "src/game/components/CardActionModal.jsx",
+  "src/game/components/PlayerCard.jsx",
+  "src/game/utils/audio.js",
   "src/pages/GamePage.jsx",
   "src/pages/admin/AdminPage.jsx"
 )

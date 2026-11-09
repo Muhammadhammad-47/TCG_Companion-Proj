@@ -319,7 +319,14 @@ export default function GamePage() {
         {/* Main Menu Screen (Page 7) */}
         {activeTab === 'menu' && (
           <MainMenu
-            onStartCustomGame={() => setActiveTab('setup')}
+            onStartCustomGame={() => {
+              if (!characterLicenseService.hasAnyPlayableCharacterSync(currentUser?.id)) {
+                soundFX.playMenuHover();
+                setLockedCharacterForModal('chynaman');
+                return;
+              }
+              setActiveTab('setup');
+            }}
             onStartQuickDuel={handleStartQuickDuel}
             onOpenRules={handleOpenRules}
             tvMode={tvMode}

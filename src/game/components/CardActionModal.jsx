@@ -3,6 +3,7 @@ import { ACTION_CARDS } from '../data/cards';
 import { CHARACTERS, ZOMBIE_PROFILE, getAssetUrl } from '../data/characters';
 import { soundFX } from '../utils/audio';
 import { ArrowLeft, Zap, Shield, Sparkles, Flame, Brain, Skull, Heart, Swords, Target, Play, X, Trash2 } from 'lucide-react';
+import CardVFXWrapper from '../kontrola/vfx/CardVFXWrapper';
 
 export default function CardActionModal({
   activePlayer,
@@ -427,18 +428,18 @@ export default function CardActionModal({
                     const disabledForZombie = false; // Kontrol/Blitz are character abilities, not action cards
 
                     return (
-                      <div
+                      <CardVFXWrapper
                         key={card.instanceId}
+                        cardName={card.name}
+                        isSelected={isSelected}
                         onClick={() => !disabledForZombie && handleActionClick(card)}
                         style={{
                           background: isSelected ? 'rgba(251, 200, 13, 0.18)' : 'rgba(255, 255, 255, 0.04)',
-                          border: isSelected ? `2px solid ${card.color || 'var(--neon-gold)'}` : '1px solid rgba(255, 255, 255, 0.12)',
                           borderRadius: '10px',
                           padding: '12px',
                           cursor: disabledForZombie ? 'not-allowed' : 'pointer',
                           opacity: disabledForZombie ? 0.4 : 1,
                           transition: 'all 0.2s ease',
-                          boxShadow: isSelected ? `0 0 15px rgba(251, 200, 13, 0.3)` : 'none',
                           display: 'flex',
                           flexDirection: 'column',
                           gap: '4px'
@@ -499,7 +500,7 @@ export default function CardActionModal({
                             <Trash2 size={11} /> DISCARD
                           </button>
                         )}
-                      </div>
+                      </CardVFXWrapper>
                     );
                   })}
                 </div>

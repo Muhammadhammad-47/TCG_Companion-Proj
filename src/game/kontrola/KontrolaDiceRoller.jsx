@@ -792,6 +792,8 @@ export default function KontrolaDiceRoller({
           <CardVFXWrapper
             cardName={resolvedCardName || attackSelectionName}
             isOvercharged={isRollingAttacker || isRollingDefender}
+            isFlashing={phase === 'resolved'}
+            hasFlare={true}
             style={{
               width: '200px',
               height: '280px',
@@ -951,9 +953,30 @@ export default function KontrolaDiceRoller({
                 </div>
               )}
               {activeDefenseCard && (
-                <div style={{ fontSize: '0.82rem', fontWeight: 'bold', color: 'var(--neon-cyan)', background: 'rgba(0, 240, 255, 0.12)', border: '1px solid rgba(0, 240, 255, 0.4)', borderRadius: '6px', padding: '3px 8px', marginBottom: '10px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                  <Shield size={14} />
-                  <span>DEFENSE: {typeof activeDefenseCard === 'string' ? activeDefenseCard : activeDefenseCard.name}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '12px' }}>
+                  <CardVFXWrapper
+                    cardName={typeof activeDefenseCard === 'string' ? activeDefenseCard : activeDefenseCard.name}
+                    isOvercharged={isAttackerRolling || isDefenderRolling}
+                    isFlashing={phase === 'resolved'}
+                    style={{
+                      width: '110px',
+                      height: '154px',
+                      borderRadius: '10px',
+                      overflow: 'hidden',
+                      boxShadow: '0 0 20px rgba(0, 240, 255, 0.4)',
+                      marginBottom: '6px'
+                    }}
+                  >
+                    <img
+                      src={getCardGraphicUrl(typeof activeDefenseCard === 'string' ? activeDefenseCard : activeDefenseCard.name)}
+                      alt="Defense Card"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  </CardVFXWrapper>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 'bold', color: 'var(--neon-cyan)', background: 'rgba(0, 240, 255, 0.12)', border: '1px solid rgba(0, 240, 255, 0.4)', borderRadius: '6px', padding: '3px 8px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <Shield size={14} />
+                    <span>DEFENSE: {typeof activeDefenseCard === 'string' ? activeDefenseCard : activeDefenseCard.name}</span>
+                  </div>
                 </div>
               )}
 

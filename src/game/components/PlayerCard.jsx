@@ -2,6 +2,7 @@ import React from 'react';
 import { CHARACTERS, ZOMBIE_PROFILE } from '../data/characters';
 import { Shield, Skull, Zap, Gem, Plus, Minus, Flame, Sparkles } from 'lucide-react';
 import { soundFX } from '../utils/audio';
+import CardVFXWrapper from '../kontrola/vfx/CardVFXWrapper';
 
 export default function PlayerCard({
   player,
@@ -35,31 +36,38 @@ export default function PlayerCard({
 
       {/* Card Header */}
       <div className="card-top-row">
-        <div className="player-avatar-box" style={{ position: 'relative' }}>
-          <span className="avatar-emoji">{isZombie ? '🧟‍♂️' : char.avatar}</span>
-          {isZombie && <span className="zombie-tag-overlay">ZOMBIE</span>}
-          {/* Level Badge */}
-          <div style={{
-            position: 'absolute',
-            top: '-6px',
-            right: '-6px',
-            background: 'linear-gradient(135deg, #FBC80D 0%, #FF7700 100%)',
-            width: '24px',
-            height: '24px',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '0.7rem',
-            fontWeight: 'bold',
-            color: '#000',
-            border: '2px solid rgba(0,0,0,0.8)',
-            boxShadow: '0 0 10px rgba(255, 215, 0, 0.7)',
-            zIndex: 10
-          }}>
-            {player.level || 1}
+        <CardVFXWrapper
+          cardName={char.name}
+          isSelected={isActive}
+          isOvercharged={isActive}
+          style={{ borderRadius: '12px', display: 'inline-block' }}
+        >
+          <div className="player-avatar-box" style={{ position: 'relative' }}>
+            <span className="avatar-emoji">{isZombie ? '🧟‍♂️' : char.avatar}</span>
+            {isZombie && <span className="zombie-tag-overlay">ZOMBIE</span>}
+            {/* Level Badge */}
+            <div style={{
+              position: 'absolute',
+              top: '-6px',
+              right: '-6px',
+              background: 'linear-gradient(135deg, #FBC80D 0%, #FF7700 100%)',
+              width: '24px',
+              height: '24px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '0.7rem',
+              fontWeight: 'bold',
+              color: '#000',
+              border: '2px solid rgba(0,0,0,0.8)',
+              boxShadow: '0 0 10px rgba(255, 215, 0, 0.7)',
+              zIndex: 10
+            }}>
+              {player.level || 1}
+            </div>
           </div>
-        </div>
+        </CardVFXWrapper>
 
         <div className="player-meta-box">
           <div className="name-and-crystals">

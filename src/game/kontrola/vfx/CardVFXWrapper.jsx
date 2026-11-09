@@ -21,6 +21,9 @@ export default function CardVFXWrapper({
   isSelected = false,
   isOvercharged = false,
   isDissolving = false,
+  isFlashing = false,
+  hasFlare = false,
+  hasEdgeFlow = false,
   showSunlight = false,
   showShock = false,
   showEmbers = false,
@@ -45,6 +48,8 @@ export default function CardVFXWrapper({
     hasRim ? 'fx-rim-line' : '',
     hasSunlight ? 'fx-sunlight' : '',
     hasShock ? 'fx-shock' : '',
+    hasEdgeFlow ? 'fx-edge-flow' : '',
+    isFlashing ? 'fx-flash-burst' : '',
     isOvercharged ? 'fx-overcharge' : '',
     isSelected ? 'selected active' : '',
     isDissolving ? 'fx-dissolve-active' : '',
@@ -57,11 +62,13 @@ export default function CardVFXWrapper({
       style={style}
       onClick={onClick}
     >
-      {/* Layer 1: Corner Star Flares */}
+      {/* Layer 1: Corner Star Flares (All 4 Corners) */}
       {hasStars && (
         <>
           <span className="fx-star-flare fx-star-top-left" />
-          <span className="fx-star-top-right" />
+          <span className="fx-star-flare fx-star-top-right" />
+          <span className="fx-star-flare fx-star-bottom-left" />
+          <span className="fx-star-flare fx-star-bottom-right" />
         </>
       )}
 
@@ -75,11 +82,17 @@ export default function CardVFXWrapper({
         </div>
       )}
 
-      {/* Layer 3: Card Content & Art */}
+      {/* Layer 3: Central Lens Flare for Rare/Super Moves */}
+      {(hasFlare || (config.stars && config.sunlight)) && (
+        <span className="fx-flare-glow" />
+      )}
+
+      {/* Layer 4: Card Content & Art */}
       {children}
 
-      {/* Layer 4: Holographic Foil Sheen Sweep */}
+      {/* Layer 5: Holographic Foil Sheen Sweep */}
       <div className="fx-foil-sweep" />
     </div>
   );
 }
+
