@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { Send, X, Bot, Swords, ArrowLeft, ThumbsUp, ThumbsDown, User, Shield, LogOut, Check, Trophy, Settings, Music, Lock, MessageSquare } from 'lucide-react';
+import { Send, X, Bot, Swords, ArrowLeft, ThumbsUp, ThumbsDown, User, Shield, LogOut, Check, Trophy, Settings, Music, Lock, MessageSquare, ShoppingBag } from 'lucide-react';
 import axios from 'axios';
 import { Groq } from 'groq-sdk';
 import './App.css';
@@ -1591,6 +1591,31 @@ export function Hub() {
     return () => subscription?.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    const handleWalletOrLicUpdate = async () => {
+      if (currentUser?.id) {
+        try {
+          const fresh = await authService.getProfile(currentUser.id);
+          if (fresh) setUserProfile(fresh);
+        } catch (e) {}
+      } else {
+        try {
+          const raw = localStorage.getItem('tcg_local_wallet');
+          if (raw) {
+            const p = JSON.parse(raw);
+            setUserProfile(prev => ({ ...(prev || {}), gold: p.gold ?? 500, gems: p.gems ?? 50 }));
+          }
+        } catch (e) {}
+      }
+    };
+    window.addEventListener('tcg_wallet_updated', handleWalletOrLicUpdate);
+    window.addEventListener('character_license_updated', handleWalletOrLicUpdate);
+    return () => {
+      window.removeEventListener('tcg_wallet_updated', handleWalletOrLicUpdate);
+      window.removeEventListener('character_license_updated', handleWalletOrLicUpdate);
+    };
+  }, [currentUser]);
+
   const handleLogout = async () => {
     await authService.signOut();
     setCurrentUser(null);
@@ -1725,6 +1750,36 @@ export function Hub() {
                     </button>
                   )}
 
+                  {/* Shop Button */}
+                  <button
+                    onClick={() => setIsStoreOpen(true)}
+                    title="Kontrola Store: Unlock Warriors, Avatars, Cards & Currencies"
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      background: 'linear-gradient(135deg, rgba(251, 200, 13, 0.18) 0%, rgba(0, 240, 255, 0.18) 100%)',
+                      border: '1px solid rgba(251, 200, 13, 0.5)',
+                      color: 'var(--neon-gold, #FBC80D)',
+                      borderRadius: '20px',
+                      padding: '6px 14px',
+                      fontSize: '0.85rem', fontWeight: 'bold',
+                      cursor: 'pointer',
+                      fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.8px',
+                      boxShadow: '0 0 10px rgba(251, 200, 13, 0.2)',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseOver={e => {
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                      e.currentTarget.style.boxShadow = '0 0 16px rgba(251, 200, 13, 0.4)';
+                    }}
+                    onMouseOut={e => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 0 10px rgba(251, 200, 13, 0.2)';
+                    }}
+                  >
+                    <ShoppingBag size={14} color="var(--neon-gold)" />
+                    <span>SHOP</span>
+                  </button>
+
                   {/* Avatar circle — click to open dropdown / profile settings */}
                   <div style={{ position: 'relative' }}>
                     <button
@@ -1806,6 +1861,34 @@ export function Hub() {
                           <button
                             onClick={() => {
                               setIsProfileDropdownOpen(false);
+                              setIsStoreOpen(true);
+                            }}
+                            style={{
+                              width: '100%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '10px',
+                              background: 'transparent',
+                              border: 'none',
+                              color: 'var(--neon-gold, #FBC80D)',
+                              padding: '10px 12px',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              fontSize: '0.92rem',
+                              fontWeight: 'bold',
+                              fontFamily: 'Bebas Neue, sans-serif',
+                              letterSpacing: '0.5px',
+                              transition: 'background 0.15s'
+                            }}
+                            onMouseOver={e => e.currentTarget.style.background = 'rgba(251, 200, 13, 0.12)'}
+                            onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                          >
+                            <ShoppingBag size={16} /><span>Shop & Combat Warriors</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setIsProfileDropdownOpen(false);
                               setIsProfileSettingsOpen(true);
                             }}
                             style={{
@@ -1843,25 +1926,56 @@ export function Hub() {
                   </div>
                 </div>
               ) : (
-                <button
-                  onClick={() => setIsAuthModalOpen(true)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '8px',
-                    background: 'rgba(0,240,255,0.12)',
-                    border: '1px solid rgba(0,240,255,0.4)',
-                    color: 'var(--neon-cyan)',
-                    borderRadius: '20px',
-                    padding: '8px 20px',
-                    fontSize: '0.9rem', fontWeight: 'bold',
-                    cursor: 'pointer',
-                    fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.5px',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseOver={e => e.currentTarget.style.background = 'rgba(0,240,255,0.22)'}
-                  onMouseOut={e => e.currentTarget.style.background = 'rgba(0,240,255,0.12)'}
-                >
-                  <User size={15} />Login / Play
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <button
+                    onClick={() => setIsStoreOpen(true)}
+                    title="Kontrola Store: Unlock Warriors, Avatars, Cards & Currencies"
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      background: 'linear-gradient(135deg, rgba(251, 200, 13, 0.18) 0%, rgba(0, 240, 255, 0.18) 100%)',
+                      border: '1px solid rgba(251, 200, 13, 0.5)',
+                      color: 'var(--neon-gold, #FBC80D)',
+                      borderRadius: '20px',
+                      padding: '8px 16px',
+                      fontSize: '0.85rem', fontWeight: 'bold',
+                      cursor: 'pointer',
+                      fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.8px',
+                      boxShadow: '0 0 10px rgba(251, 200, 13, 0.2)',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseOver={e => {
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                      e.currentTarget.style.boxShadow = '0 0 16px rgba(251, 200, 13, 0.4)';
+                    }}
+                    onMouseOut={e => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 0 10px rgba(251, 200, 13, 0.2)';
+                    }}
+                  >
+                    <ShoppingBag size={15} color="var(--neon-gold)" />
+                    <span>SHOP</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsAuthModalOpen(true)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '8px',
+                      background: 'rgba(0,240,255,0.12)',
+                      border: '1px solid rgba(0,240,255,0.4)',
+                      color: 'var(--neon-cyan)',
+                      borderRadius: '20px',
+                      padding: '8px 20px',
+                      fontSize: '0.9rem', fontWeight: 'bold',
+                      cursor: 'pointer',
+                      fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.5px',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseOver={e => e.currentTarget.style.background = 'rgba(0,240,255,0.22)'}
+                    onMouseOut={e => e.currentTarget.style.background = 'rgba(0,240,255,0.12)'}
+                  >
+                    <User size={15} />Login / Play
+                  </button>
+                </div>
               )}
             </div>
             

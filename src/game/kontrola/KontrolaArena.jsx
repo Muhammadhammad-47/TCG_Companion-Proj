@@ -4,7 +4,7 @@ import {
   ArrowLeft, Wifi, Swords, Shield, Skull, Zap, ScrollText, MessageSquare,
   Dices, Crown, Trophy, Layers, Clock, HelpCircle, X, Eye, Users, RefreshCw,
   Lock, Radio, AlertTriangle, Play, Sparkles, CheckCircle2, SkipForward, FastForward,
-  Music, Pause, Volume2, VolumeX, ChevronDown, ChevronUp, Trash2
+  Music, Pause, Volume2, VolumeX, ChevronDown, ChevronUp, Trash2, ShoppingBag
 } from 'lucide-react';
 import { DynamicScaleWrapper } from '../../components/DynamicScaleWrapper';
 import { soundFX } from '../utils/audio';
@@ -40,6 +40,7 @@ import KontrolaBracketView from './KontrolaBracketView';
 import { cosmeticsService } from '../../services/cosmeticsService';
 import { characterLicenseService, FREE_USAGE_LIMIT } from '../../services/characterLicenseService';
 import CharacterUnlockModal from '../../components/CharacterUnlockModal';
+import { StoreModal } from '../../components/StoreModal';
 import CardVFXWrapper from './vfx/CardVFXWrapper';
 
 import '../../pages/GamePage.css';
@@ -199,8 +200,24 @@ export default function KontrolaArena() {
 
   const [selectedCharacter, setSelectedCharacter] = useState('chynaman');
   const [quotaUnlockChar, setQuotaUnlockChar] = useState(null);
+  const [isStoreOpen, setIsStoreOpen] = useState(false);
+  const [storeInitialTab, setStoreInitialTab] = useState('featured');
+  const [licenseVersion, setLicenseVersion] = useState(0);
   const [isPremium, setIsPremium] = useState(false);
   const [appSettings, setAppSettings] = useState({ match_cost: 1, premium_modules: ['kontrola'], module_costs: {} });
+
+  // Subscribe to character license & wallet updates across app
+  useEffect(() => {
+    const handleUpdate = () => setLicenseVersion(v => v + 1);
+    const unsub = characterLicenseService.subscribe(handleUpdate);
+    window.addEventListener('character_license_updated', handleUpdate);
+    window.addEventListener('tcg_wallet_updated', handleUpdate);
+    return () => {
+      unsub();
+      window.removeEventListener('character_license_updated', handleUpdate);
+      window.removeEventListener('tcg_wallet_updated', handleUpdate);
+    };
+  }, []);
 
   // Ensure default selected character is a playable character (not exhausted)
   useEffect(() => {
@@ -209,7 +226,7 @@ export default function KontrolaArena() {
       const firstPlayable = characterLicenseService.getFirstPlayableCharacter(currentUser?.id);
       if (firstPlayable) setSelectedCharacter(firstPlayable);
     }
-  }, [currentUser]);
+  }, [currentUser, licenseVersion]);
 
   useEffect(() => {
     economyService.getAppSettings().then(settings => {
@@ -3781,8 +3798,33 @@ export default function KontrolaArena() {
               >
                 <ArrowLeft size={18} /> BACK TO HUB
               </button>
-              <div className="brand-pill-badge" style={{ margin: 0, padding: '6px 16px', fontSize: '0.95rem' }}>
-                ONLINE LOBBY
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <button
+                  onClick={() => { playClick(); setStoreInitialTab('characters'); setIsStoreOpen(true); }}
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(251, 200, 13, 0.18) 0%, rgba(0, 240, 255, 0.18) 100%)',
+                    border: '1px solid rgba(251, 200, 13, 0.5)',
+                    borderRadius: '10px',
+                    padding: '8px 16px',
+                    color: 'var(--neon-gold, #FBC80D)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    fontFamily: 'Bebas Neue, sans-serif',
+                    fontSize: '0.95rem',
+                    letterSpacing: '0.8px',
+                    boxShadow: '0 0 10px rgba(251, 200, 13, 0.2)'
+                  }}
+                  title="Unlock playable warriors, avatars, and cosmetics"
+                >
+                  <ShoppingBag size={16} color="var(--neon-gold)" />
+                  <span>STORE & WARRIORS</span>
+                </button>
+                <div className="brand-pill-badge" style={{ margin: 0, padding: '6px 16px', fontSize: '0.95rem' }}>
+                  ONLINE LOBBY
+                </div>
               </div>
             </div>
 
@@ -3886,48 +3928,410 @@ export default function KontrolaArena() {
                   </div>
                 </div>
 
-                {/* Removed Character Selection Carousel from Lobby */}
-
-                {/* 3. Leaderboard Button */}
-                <div style={{ marginBottom: '16px' }}>
+                {/* 2. Action Toolbar: Leaderboard & Store */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
                   <button
                     onClick={() => { playClick(); setIsLeaderboardOpen(true); }}
                     style={{
-                      width: '100%',
-                      padding: '14px 20px',
+                      padding: '14px 16px',
                       borderRadius: '12px',
-                      border: '2px solid var(--neon-gold)',
-                      background: 'linear-gradient(135deg, rgba(251, 200, 13, 0.2) 0%, rgba(255, 200, 0, 0.1) 100%)',
+                      border: '1.5px solid var(--neon-gold)',
+                      background: 'linear-gradient(135deg, rgba(251, 200, 13, 0.2) 0%, rgba(255, 200, 0, 0.08) 100%)',
                       color: 'var(--neon-gold)',
                       fontWeight: 'bold',
                       fontFamily: 'Bebas Neue, sans-serif',
-                      fontSize: '1.2rem',
+                      fontSize: '1.15rem',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '12px',
-                      transition: 'all 0.3s ease',
+                      gap: '10px',
+                      transition: 'all 0.25s ease',
                       boxShadow: '0 4px 15px rgba(251, 200, 13, 0.2)',
-                      textTransform: 'uppercase',
                       letterSpacing: '1px'
                     }}
                     onMouseOver={(e) => {
-                      e.target.style.background = 'linear-gradient(135deg, rgba(251, 200, 13, 0.3) 0%, rgba(255, 200, 0, 0.2) 100%)';
-                      e.target.style.boxShadow = '0 6px 20px rgba(251, 200, 13, 0.3)';
-                      e.target.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.background = 'linear-gradient(135deg, rgba(251, 200, 13, 0.3) 0%, rgba(255, 200, 0, 0.15) 100%)';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
                     }}
                     onMouseOut={(e) => {
-                      e.target.style.background = 'linear-gradient(135deg, rgba(251, 200, 13, 0.2) 0%, rgba(255, 200, 0, 0.1) 100%)';
-                      e.target.style.boxShadow = '0 4px 15px rgba(251, 200, 13, 0.2)';
-                      e.target.style.transform = 'translateY(0)';
+                      e.currentTarget.style.background = 'linear-gradient(135deg, rgba(251, 200, 13, 0.2) 0%, rgba(255, 200, 0, 0.08) 100%)';
+                      e.currentTarget.style.transform = 'translateY(0)';
                     }}
                   >
-                    <Trophy size={24} />
+                    <Trophy size={20} />
                     <span>VIEW LEADERBOARD</span>
-                    <Crown size={20} />
+                  </button>
+
+                  <button
+                    onClick={() => { playClick(); setStoreInitialTab('characters'); setIsStoreOpen(true); }}
+                    style={{
+                      padding: '14px 16px',
+                      borderRadius: '12px',
+                      border: '1.5px solid var(--neon-cyan)',
+                      background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.2) 0%, rgba(0, 180, 255, 0.08) 100%)',
+                      color: 'var(--neon-cyan)',
+                      fontWeight: 'bold',
+                      fontFamily: 'Bebas Neue, sans-serif',
+                      fontSize: '1.15rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '10px',
+                      transition: 'all 0.25s ease',
+                      boxShadow: '0 4px 15px rgba(0, 240, 255, 0.2)',
+                      letterSpacing: '1px'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0, 240, 255, 0.3) 0%, rgba(0, 180, 255, 0.15) 100%)';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0, 240, 255, 0.2) 0%, rgba(0, 180, 255, 0.08) 100%)';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    <ShoppingBag size={20} />
+                    <span>STORE & WARRIOR UNLOCKS</span>
                   </button>
                 </div>
+
+                {/* 3. COMBAT WARRIOR SELECTION & STATUS (Eliminates Avatar vs Character confusion) */}
+                {(() => {
+                  const currentWarrior = KONTROLA_CHARACTERS[selectedCharacter] || KONTROLA_CHARACTERS.chynaman;
+                  const activeLic = characterLicenseService.getLicenseSync(currentUser?.id, selectedCharacter);
+                  const isArenaAdmin = Boolean(
+                    userProfile?.is_admin ||
+                    userProfile?.role === 'admin' ||
+                    (typeof window !== 'undefined' && localStorage.getItem('tcg_admin_mode') === 'true')
+                  );
+
+                  const elementIcons = {
+                    Fire: '🔥',
+                    Lightning: '⚡',
+                    Sonic: '🎵',
+                    'Magic/Poison': '🍃',
+                    Earth: '🛡️',
+                    Nature: '🌿',
+                    Divine: '🌟'
+                  };
+
+                  return (
+                    <div style={{
+                      background: 'linear-gradient(135deg, rgba(10, 18, 35, 0.95) 0%, rgba(6, 10, 22, 0.98) 100%)',
+                      border: `1.5px solid ${activeLic.canPlay ? 'rgba(0, 240, 255, 0.4)' : 'rgba(239, 68, 68, 0.6)'}`,
+                      borderRadius: '16px',
+                      padding: '18px 20px',
+                      marginBottom: '16px',
+                      boxShadow: '0 8px 30px rgba(0,0,0,0.6)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '14px'
+                    }}>
+                      {/* Top banner explaining Combat Warrior vs Profile Avatar */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <Swords size={18} color="var(--neon-cyan)" />
+                            <span style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: '1.25rem', color: '#fff', letterSpacing: '1px' }}>
+                              ACTIVE COMBAT WARRIOR (MATCH FIGHTER)
+                            </span>
+                          </div>
+                          <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.65)', marginTop: '2px' }}>
+                            Your in-game fighter with unique elemental attacks & HP. (Profile avatar is set in your user profile).
+                          </div>
+                        </div>
+
+                        {/* Status badge */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {activeLic.isUnlocked ? (
+                            <span style={{
+                              background: 'rgba(16, 185, 129, 0.18)',
+                              border: '1px solid #10b981',
+                              color: '#34d399',
+                              padding: '5px 12px',
+                              borderRadius: '20px',
+                              fontSize: '0.8rem',
+                              fontWeight: 'bold',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px'
+                            }}>
+                              <Crown size={14} color="#34d399" /> UNLIMITED ACCESS
+                            </span>
+                          ) : activeLic.canPlay ? (
+                            <span style={{
+                              background: 'rgba(251, 200, 13, 0.18)',
+                              border: '1px solid #FBC80D',
+                              color: '#FBC80D',
+                              padding: '5px 12px',
+                              borderRadius: '20px',
+                              fontSize: '0.8rem',
+                              fontWeight: 'bold',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px'
+                            }}>
+                              <Sparkles size={14} /> FREE TRIAL: {10 - activeLic.usageCount}/10 MATCHES
+                            </span>
+                          ) : (
+                            <span style={{
+                              background: 'rgba(239, 68, 68, 0.2)',
+                              border: '1px solid #ef4444',
+                              color: '#fca5a5',
+                              padding: '5px 12px',
+                              borderRadius: '20px',
+                              fontSize: '0.8rem',
+                              fontWeight: 'bold',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px'
+                            }}>
+                              <Lock size={14} color="#ef4444" /> 10/10 EXHAUSTED (LOCKED)
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* 7-Warrior Horizontal Selection Ribbon */}
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))',
+                        gap: '8px',
+                        background: 'rgba(0,0,0,0.4)',
+                        padding: '10px',
+                        borderRadius: '12px',
+                        border: '1px solid rgba(255,255,255,0.08)'
+                      }}>
+                        {Object.values(KONTROLA_CHARACTERS).map((char) => {
+                          const lic = characterLicenseService.getLicenseSync(currentUser?.id, char.id);
+                          const isSelected = selectedCharacter === char.id;
+                          const icon = elementIcons[char.element] || '⚡';
+
+                          return (
+                            <button
+                              key={char.id}
+                              type="button"
+                              onClick={() => {
+                                playClick();
+                                if (!lic.canPlay) {
+                                  setQuotaUnlockChar(char.id);
+                                } else {
+                                  setSelectedCharacter(char.id);
+                                }
+                              }}
+                              style={{
+                                background: isSelected
+                                  ? 'linear-gradient(135deg, rgba(0, 240, 255, 0.25) 0%, rgba(20, 40, 70, 0.8) 100%)'
+                                  : !lic.canPlay
+                                  ? 'rgba(30, 10, 15, 0.6)'
+                                  : 'rgba(255,255,255,0.03)',
+                                border: isSelected
+                                  ? '2px solid var(--neon-cyan)'
+                                  : !lic.canPlay
+                                  ? '1.5px solid rgba(239, 68, 68, 0.5)'
+                                  : '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: '10px',
+                                padding: '8px 6px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: '4px',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease',
+                                position: 'relative',
+                                boxShadow: isSelected ? '0 0 15px rgba(0, 240, 255, 0.3)' : 'none'
+                              }}
+                            >
+                              <div style={{ position: 'relative' }}>
+                                <img
+                                  src={getAssetUrl(char.image)}
+                                  alt={char.name}
+                                  style={{
+                                    width: '42px',
+                                    height: '42px',
+                                    borderRadius: '50%',
+                                    objectFit: 'cover',
+                                    border: `2px solid ${char.themeColor || 'rgba(255,255,255,0.3)'}`,
+                                    filter: !lic.canPlay ? 'grayscale(0.6)' : 'none'
+                                  }}
+                                />
+                                <span style={{
+                                  position: 'absolute',
+                                  bottom: -2,
+                                  right: -2,
+                                  fontSize: '0.8rem',
+                                  background: '#000',
+                                  borderRadius: '50%',
+                                  padding: '1px'
+                                }}>
+                                  {icon}
+                                </span>
+                              </div>
+
+                              <div style={{
+                                fontSize: '0.75rem',
+                                fontWeight: 'bold',
+                                color: isSelected ? 'var(--neon-cyan)' : '#fff',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                maxWidth: '85px'
+                              }}>
+                                {char.name.split(' ')[0]}
+                              </div>
+
+                              {/* Tiny Quota Pill */}
+                              <div style={{
+                                fontSize: '0.62rem',
+                                padding: '1px 5px',
+                                borderRadius: '4px',
+                                fontWeight: 'bold',
+                                background: lic.isUnlocked
+                                  ? 'rgba(16, 185, 129, 0.25)'
+                                  : !lic.canPlay
+                                  ? 'rgba(239, 68, 68, 0.3)'
+                                  : 'rgba(251, 200, 13, 0.2)',
+                                color: lic.isUnlocked
+                                  ? '#34d399'
+                                  : !lic.canPlay
+                                  ? '#fca5a5'
+                                  : '#FBC80D'
+                              }}>
+                                {lic.isUnlocked ? '👑 UNLOCKED' : !lic.canPlay ? '🔒 LOCKED' : `${10 - lic.usageCount}/10`}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Selected Warrior Combat Detail Drawer */}
+                      <div style={{
+                        background: 'rgba(0,0,0,0.5)',
+                        borderRadius: '12px',
+                        padding: '14px',
+                        border: '1px solid rgba(255,255,255,0.06)',
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '12px'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                          <img
+                            src={getAssetUrl(currentWarrior.image)}
+                            alt={currentWarrior.name}
+                            style={{
+                              width: '56px',
+                              height: '56px',
+                              borderRadius: '12px',
+                              objectFit: 'cover',
+                              border: `2px solid ${currentWarrior.themeColor || 'var(--neon-cyan)'}`,
+                              boxShadow: `0 0 12px ${currentWarrior.themeColor || 'rgba(0,240,255,0.4)'}`
+                            }}
+                          />
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: '1.25rem', color: currentWarrior.themeColor || '#fff', letterSpacing: '0.5px' }}>
+                                {currentWarrior.name}
+                              </span>
+                              <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', fontStyle: 'italic' }}>
+                                {currentWarrior.title}
+                              </span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.76rem', color: 'rgba(255,255,255,0.7)', marginTop: '2px' }}>
+                              <span>Element: <strong style={{ color: '#fff' }}>{elementIcons[currentWarrior.element]} {currentWarrior.element}</strong></span>
+                              <span>HP: <strong style={{ color: '#34d399' }}>{currentWarrior.hp || 100}</strong></span>
+                              <span>Innate DP: <strong style={{ color: '#60a5fa' }}>{currentWarrior.innateDP || 10}</strong></span>
+                              <span>Mind: <strong style={{ color: '#c084fc' }}>{currentWarrior.mind || 4}</strong></span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Action buttons */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          {!activeLic.canPlay ? (
+                            <button
+                              type="button"
+                              onClick={() => { playClick(); setQuotaUnlockChar(selectedCharacter); }}
+                              style={{
+                                background: '#ef4444',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: '8px',
+                                padding: '8px 16px',
+                                fontWeight: 'bold',
+                                fontSize: '0.82rem',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                boxShadow: '0 0 12px rgba(239, 68, 68, 0.4)'
+                              }}
+                            >
+                              <Lock size={14} />
+                              <span>UNLOCK WARRIOR NOW</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => { playClick(); setStoreInitialTab('characters'); setIsStoreOpen(true); }}
+                              style={{
+                                background: 'rgba(0, 240, 255, 0.12)',
+                                border: '1px solid rgba(0, 240, 255, 0.4)',
+                                color: 'var(--neon-cyan)',
+                                borderRadius: '8px',
+                                padding: '8px 14px',
+                                fontWeight: 'bold',
+                                fontSize: '0.8rem',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                              }}
+                            >
+                              <ShoppingBag size={14} />
+                              <span>MANAGE / BUY IN STORE</span>
+                            </button>
+                          )}
+
+                          {isArenaAdmin && (
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                playClick();
+                                await characterLicenseService.adminGrantAllCharacters(currentUser?.id || 'guest', true);
+                                await characterLicenseService.adminGrantWallet(currentUser?.id || 'guest', 5000, 500);
+                                setLicenseVersion(v => v + 1);
+                                showNotice('Admin: All 7 Warriors Unlocked + 5,000G & 500 Gems!', 'success');
+                              }}
+                              style={{
+                                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                                border: 'none',
+                                borderRadius: '8px',
+                                padding: '8px 14px',
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontSize: '0.8rem',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                                fontFamily: 'Bebas Neue, sans-serif',
+                                letterSpacing: '0.5px'
+                              }}
+                              title="Instant unlock all 7 characters and grant currencies"
+                            >
+                              <Crown size={14} />
+                              <span>ADMIN: GRANT ALL (VIP)</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Character Quota Warning in Lobby */}
                 {(() => {
@@ -7256,6 +7660,18 @@ export default function KontrolaArena() {
         userProfile={userProfile || currentUser}
         onUnlockSuccess={() => {
           setQuotaUnlockChar(null);
+          setLicenseVersion(v => v + 1);
+        }}
+      />
+
+      {/* Unified Store Modal */}
+      <StoreModal
+        isOpen={isStoreOpen}
+        onClose={() => setIsStoreOpen(false)}
+        userProfile={userProfile || currentUser}
+        initialTab={storeInitialTab}
+        onPurchaseComplete={() => {
+          setLicenseVersion(v => v + 1);
         }}
       />
     </div>

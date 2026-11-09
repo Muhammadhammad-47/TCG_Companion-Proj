@@ -447,22 +447,63 @@ export default function CardActionModal({
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span style={{ fontSize: '1.3rem' }}>{card.icon}</span>
-                          <span
-                            style={{
-                              fontSize: '0.72rem',
-                              background: 'rgba(251, 200, 13, 0.15)',
-                              border: '1px solid #FBC80D',
-                              color: '#FBC80D',
-                              padding: '2px 6px',
-                              borderRadius: '4px',
-                              fontWeight: 'bold',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '2px'
-                            }}
-                          >
-                            <Zap size={10} fill="#FBC80D" /> {card.costET} ET
-                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            {card.category === 'Attack' && (
+                              <span style={{
+                                fontSize: '0.65rem',
+                                background: 'rgba(237, 30, 36, 0.2)',
+                                border: '1px solid #ED1E24',
+                                color: '#ff6b8f',
+                                padding: '1px 5px',
+                                borderRadius: '4px',
+                                fontWeight: 'bold'
+                              }}>
+                                ⚔️ ATTACK
+                              </span>
+                            )}
+                            {card.category === 'Defense' && (
+                              <span style={{
+                                fontSize: '0.65rem',
+                                background: 'rgba(0, 240, 255, 0.15)',
+                                border: '1px solid #00f0ff',
+                                color: '#00f0ff',
+                                padding: '1px 5px',
+                                borderRadius: '4px',
+                                fontWeight: 'bold'
+                              }}>
+                                🛡️ DEFENSE
+                              </span>
+                            )}
+                            {card.category === 'Vitality' && (
+                              <span style={{
+                                fontSize: '0.65rem',
+                                background: 'rgba(57, 255, 20, 0.15)',
+                                border: '1px solid #39ff14',
+                                color: '#39ff14',
+                                padding: '1px 5px',
+                                borderRadius: '4px',
+                                fontWeight: 'bold'
+                              }}>
+                                💚 HEAL
+                              </span>
+                            )}
+                            <span
+                              style={{
+                                fontSize: '0.72rem',
+                                background: 'rgba(251, 200, 13, 0.15)',
+                                border: '1px solid #FBC80D',
+                                color: '#FBC80D',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                fontWeight: 'bold',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '2px'
+                              }}
+                            >
+                              <Zap size={10} fill="#FBC80D" /> {card.costET} ET
+                            </span>
+                          </div>
                         </div>
                         <strong style={{ fontSize: '0.92rem', color: isSelected ? '#fff' : '#e0e0e0', marginTop: '4px' }}>
                           {card.name}

@@ -2,18 +2,20 @@ import React, { useState, useEffect } from 'react';
 import {
   QrCode, Users, Shield, Sparkles, CheckCircle2, AlertTriangle,
   RefreshCw, Unlock, Lock, Search, Copy, Check, ExternalLink,
-  Crown, Coins, Gem, ArrowRight, Zap, Filter
+  Crown, Coins, Gem, ArrowRight, Zap, Filter, Gift, Palette
 } from 'lucide-react';
 import { CHARACTERS, getAssetUrl } from '../game/data/characters';
 import { characterLicenseService, CHARACTER_PRICES, FREE_USAGE_LIMIT } from '../services/characterLicenseService';
+import { cosmeticsService } from '../services/cosmeticsService';
 import { supabase } from '../services/supabaseClient';
 
 export default function AdminCharacterManager({ currentUser, usersList = [] }) {
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(currentUser || null);
   const [userSearch, setUserSearch] = useState('');
   const [userLicenses, setUserLicenses] = useState({});
   const [isLoadingLicenses, setIsLoadingLicenses] = useState(false);
   const [actionFeedback, setActionFeedback] = useState({ text: '', type: '' });
+  const [isPerformingBulkAction, setIsPerformingBulkAction] = useState(false);
 
   // QR Generator state
   const [qrCharId, setQrCharId] = useState('chynaman');
@@ -25,6 +27,13 @@ export default function AdminCharacterManager({ currentUser, usersList = [] }) {
   useEffect(() => {
     generateNewQR();
   }, [qrCharId, qrPassType]);
+
+  // Load licenses on initial mount if currentUser available
+  useEffect(() => {
+    if (currentUser && !selectedUser) {
+      loadUserLicenses(currentUser);
+    }
+  }, [currentUser]);
 
   const generateNewQR = () => {
     if (qrPassType === 'vip_all') {
@@ -58,7 +67,7 @@ export default function AdminCharacterManager({ currentUser, usersList = [] }) {
     }
   };
 
-  // Execute admin grant or reset
+  // Execute admin grant or reset for single character
   const handleAdminAction = async (charId, isUnlocked, resetCount) => {
     if (!selectedUser) return;
     try {
@@ -77,18 +86,89 @@ export default function AdminCharacterManager({ currentUser, usersList = [] }) {
     }
   };
 
-  // Grant all characters to user
+  // 1. Grant ALL 7 characters to user
   const handleGrantAll = async () => {
     if (!selectedUser) return;
+    setIsPerformingBulkAction(true);
     try {
-      for (const charId of Object.keys(CHARACTERS)) {
-        await characterLicenseService.adminGrantCharacter(selectedUser.id, charId, true, false);
-      }
-      setActionFeedback({ text: `Granted permanent access for ALL characters to ${selectedUser.username || 'user'}!`, type: 'success' });
-      loadUserLicenses(selectedUser);
+      const res = await characterLicenseService.adminGrantAllCharacters(selectedUser.id, true);
+      setActionFeedback({ text: res.message || `Granted ALL characters to ${selectedUser.username || 'user'}!`, type: 'success' });
+      await loadUserLicenses(selectedUser);
     } catch (e) {
       setActionFeedback({ text: 'Error granting all characters.', type: 'error' });
+    } finally {
+      setIsPerformingBulkAction(false);
     }
+  };
+
+  // 2. Refill all 7 character quotas back to 10
+  const handleResetAllQuotas = async () => {
+    if (!selectedUser) return;
+    setIsPerformingBulkAction(true);
+    try {
+      const res = await characterLicenseService.adminResetAllQuotas(selectedUser.id);
+      setActionFeedback({ text: res.message || 'Refilled all character quotas back to 10/10!', type: 'success' });
+      await loadUserLicenses(selectedUser);
+    } catch (e) {
+      setActionFeedback({ text: 'Error refilling quotas.', type: 'error' });
+    } finally {
+      setIsPerformingBulkAction(false);
+    }
+  };
+
+  // 3. Grant Gold and Gems currency to user
+  const handleGrantWallet = async (gold = 5000, gems = 500) => {
+    if (!selectedUser) return;
+    setIsPerformingBulkAction(true);
+    try {
+      const res = await characterLicenseService.adminGrantWallet(selectedUser.id, gold, gems);
+      setActionFeedback({ text: res.message, type: 'success' });
+    } catch (e) {
+      setActionFeedback({ text: 'Error granting wallet funds.', type: 'error' });
+    } finally {
+      setIsPerformingBulkAction(false);
+    }
+  };
+
+  // 4. Grant all cosmetics, avatars, frames, cardbacks, emotes
+  const handleGrantCosmetics = async () => {
+    if (!selectedUser) return;
+    setIsPerformingBulkAction(true);
+    try {
+      cosmeticsService.unlockAllCosmetics(selectedUser.id);
+      setActionFeedback({ text: `Unlocked ALL Profile Avatars, Frames, Card Backs, and Emotes for ${selectedUser.username || 'user'}!`, type: 'success' });
+    } catch (e) {
+      setActionFeedback({ text: 'Error unlocking cosmetics.', type: 'error' });
+    } finally {
+      setIsPerformingBulkAction(false);
+    }
+  };
+
+  // 5. Grant Master VIP Package (All Warriors + 10k Gold + 1k Gems + All Cosmetics)
+  const handleGrantFullVIP = async () => {
+    if (!selectedUser) return;
+    setIsPerformingBulkAction(true);
+    try {
+      const res = await characterLicenseService.adminGrantFullVIP(selectedUser.id, cosmeticsService);
+      setActionFeedback({ text: res.message, type: 'success' });
+      await loadUserLicenses(selectedUser);
+    } catch (e) {
+      setActionFeedback({ text: 'Error granting Master VIP.', type: 'error' });
+    } finally {
+      setIsPerformingBulkAction(false);
+    }
+  };
+
+  // Inspect arbitrary user by typed ID or Email
+  const handleInspectCustomTarget = () => {
+    if (!userSearch.trim()) return;
+    const clean = userSearch.trim();
+    const mockUser = {
+      id: clean,
+      username: clean.includes('@') ? clean.split('@')[0] : clean,
+      email: clean.includes('@') ? clean : null
+    };
+    loadUserLicenses(mockUser);
   };
 
   const qrImageUrl = generatedPayload
@@ -255,22 +335,62 @@ export default function AdminCharacterManager({ currentUser, usersList = [] }) {
               <span>PLAYER QUOTA INSPECTOR & GRANT TOOL</span>
             </div>
 
-            {/* User Search Input */}
-            <div className="relative w-full sm:w-60">
-              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search user..."
-                value={userSearch}
-                onChange={(e) => setUserSearch(e.target.value)}
-                className="w-full bg-black/60 border border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-amber-400"
-              />
+            {/* User Search & Custom Target Input */}
+            <div className="flex items-center gap-1.5 w-full sm:w-auto">
+              <div className="relative flex-1 sm:w-56">
+                <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search or enter user ID/email..."
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleInspectCustomTarget(); }}
+                  className="w-full bg-black/60 border border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-amber-400"
+                />
+              </div>
+              {userSearch.trim() && (
+                <button
+                  type="button"
+                  onClick={handleInspectCustomTarget}
+                  className="px-2.5 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-bold shrink-0 transition-colors"
+                >
+                  Inspect
+                </button>
+              )}
             </div>
           </div>
 
-          {/* User selector chips */}
+          {/* Quick Target Chips */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin">
+            {currentUser && (
+              <button
+                type="button"
+                onClick={() => loadUserLicenses(currentUser)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 transition-all border flex items-center gap-1.5 ${
+                  selectedUser?.id === currentUser.id
+                    ? 'border-cyan-400 bg-cyan-500/20 text-cyan-300 shadow-[0_0_10px_rgba(0,240,255,0.3)]'
+                    : 'border-white/15 bg-black/50 text-gray-300 hover:text-white'
+                }`}
+              >
+                <Crown size={12} className="text-cyan-400" />
+                <span>Me ({currentUser.username || currentUser.email?.split('@')[0] || 'Admin'})</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => loadUserLicenses({ id: 'guest', username: 'Local Guest Player', email: 'guest@device' })}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 transition-all border flex items-center gap-1.5 ${
+                selectedUser?.id === 'guest'
+                  ? 'border-purple-400 bg-purple-500/20 text-purple-300 shadow-[0_0_10px_rgba(168,85,247,0.3)]'
+                  : 'border-white/15 bg-black/50 text-gray-300 hover:text-white'
+              }`}
+            >
+              <span>🎮 Local Guest Player</span>
+            </button>
+
             {filteredUsers.slice(0, 15).map(u => {
+              if (currentUser && u.id === currentUser.id) return null;
               const isSel = selectedUser?.id === u.id;
               return (
                 <button
@@ -293,22 +413,70 @@ export default function AdminCharacterManager({ currentUser, usersList = [] }) {
           {selectedUser ? (
             <div className="flex flex-col gap-3">
               
-              {/* Header card for selected user */}
-              <div className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
-                <div>
-                  <div className="text-xs text-gray-400">Inspecting Player:</div>
-                  <div className="text-sm font-black text-white flex items-center gap-2">
-                    <span>{selectedUser.username || selectedUser.email || selectedUser.id}</span>
-                    <span className="text-[10px] text-gray-500 font-mono">({selectedUser.id.substring(0, 8)}...)</span>
+              {/* Header card for selected user with multi-grant actions */}
+              <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 flex flex-col gap-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <div className="text-[10px] text-gray-400 uppercase tracking-wider">Active Admin Target:</div>
+                    <div className="text-sm font-black text-white flex items-center gap-2">
+                      <span>{selectedUser.username || selectedUser.email || selectedUser.id}</span>
+                      <span className="text-[10px] text-gray-500 font-mono">({selectedUser.id})</span>
+                    </div>
                   </div>
+
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold">
+                    ADMIN TARGET READY
+                  </span>
                 </div>
 
+                {/* Bulk Action Buttons Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 border-t border-white/10">
+                  <button
+                    type="button"
+                    disabled={isPerformingBulkAction}
+                    onClick={handleGrantAll}
+                    className="py-1.5 px-2.5 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-extrabold text-[11px] flex items-center justify-center gap-1 shadow-sm transition-all disabled:opacity-50"
+                  >
+                    <Crown size={13} /> Grant All 7 Characters
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isPerformingBulkAction}
+                    onClick={() => handleGrantWallet(5000, 500)}
+                    className="py-1.5 px-2.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-extrabold text-[11px] flex items-center justify-center gap-1 shadow-sm transition-all disabled:opacity-50"
+                  >
+                    <Coins size={13} /> +5,000G & +500💎
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isPerformingBulkAction}
+                    onClick={handleGrantCosmetics}
+                    className="py-1.5 px-2.5 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-extrabold text-[11px] flex items-center justify-center gap-1 shadow-sm transition-all disabled:opacity-50"
+                  >
+                    <Palette size={13} /> Unlock All Cosmetics
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isPerformingBulkAction}
+                    onClick={handleResetAllQuotas}
+                    className="py-1.5 px-2.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-[11px] flex items-center justify-center gap-1 transition-all disabled:opacity-50"
+                  >
+                    <RefreshCw size={13} /> Refill All Quotas
+                  </button>
+                </div>
+
+                {/* Master VIP Pass Banner */}
                 <button
                   type="button"
-                  onClick={handleGrantAll}
-                  className="py-1.5 px-3 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-extrabold text-xs flex items-center gap-1.5 shadow-md"
+                  disabled={isPerformingBulkAction}
+                  onClick={handleGrantFullVIP}
+                  className="w-full py-2 px-3 rounded-lg bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:brightness-110 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg transition-all disabled:opacity-50 tracking-wider uppercase border border-white/20"
                 >
-                  <Crown size={14} /> Grant All Characters (VIP)
+                  <Sparkles size={14} className="text-amber-300" />
+                  <span>⚡ 1-Click Master VIP Bundle (All 7 Warriors + 10k Gold + 1k Gems + All Cosmetics)</span>
                 </button>
               </div>
 

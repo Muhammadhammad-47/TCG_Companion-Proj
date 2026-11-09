@@ -31,6 +31,11 @@ class CharacterLicenseService {
     this._listeners.forEach(fn => {
       try { fn(); } catch (err) { console.error('License listener error:', err); }
     });
+    if (typeof window !== 'undefined') {
+      try {
+        window.dispatchEvent(new CustomEvent('character_license_updated'));
+      } catch (e) {}
+    }
   }
 
   // Retrieve raw local storage cache
@@ -49,7 +54,11 @@ class CharacterLicenseService {
     const key = `${STORAGE_KEY}_${userId || 'guest'}`;
     try {
       localStorage.setItem(key, JSON.stringify(data));
-      this._notify();
+      if (typeof window !== 'undefined') {
+      try { window.dispatchEvent(new CustomEvent('tcg_wallet_updated')); } catch (e) {}
+    }
+
+    this._notify();
     } catch (e) {
       console.warn('Failed to save character licenses locally', e);
     }
@@ -437,6 +446,135 @@ class CharacterLicenseService {
     return {
       success: true,
       message: `Admin successfully updated ${CHARACTERS[charKey]?.name || charKey} for user.`
+    };
+  }
+
+  // Admin: Grant ALL characters to a user with 1 click
+  async adminGrantAllCharacters(targetUserId, isUnlocked = true) {
+    const localData = this._getLocalData(targetUserId);
+    const now = new Date().toISOString();
+
+    for (const charKey of Object.keys(CHARACTERS)) {
+      const existing = localData[charKey] || { usageCount: 0, isUnlocked: false };
+      localData[charKey] = {
+        ...existing,
+        isUnlocked: Boolean(isUnlocked),
+        unlockedVia: isUnlocked ? 'admin_grant_all' : existing.unlockedVia,
+        unlockedAt: isUnlocked ? now : existing.unlockedAt
+      };
+
+      if (targetUserId && supabase) {
+        try {
+          await supabase
+            .from('character_licenses')
+            .upsert({
+              user_id: targetUserId,
+              character_id: charKey,
+              is_unlocked: Boolean(isUnlocked),
+              unlocked_via: isUnlocked ? 'admin_grant_all' : (existing.unlockedVia || null),
+              unlocked_at: isUnlocked ? now : (existing.unlockedAt || null),
+              updated_at: now
+            }, { onConflict: 'user_id,character_id' });
+        } catch (e) {
+          console.warn(`Database sync failed for ${charKey}:`, e);
+        }
+      }
+    }
+
+    this._saveLocalData(targetUserId, localData);
+    return {
+      success: true,
+      message: `Successfully granted ALL ${Object.keys(CHARACTERS).length} playable characters to user!`
+    };
+  }
+
+  // Admin: Reset/refill all character match quotas back to 10
+  async adminResetAllQuotas(targetUserId) {
+    const localData = this._getLocalData(targetUserId);
+    const now = new Date().toISOString();
+
+    for (const charKey of Object.keys(CHARACTERS)) {
+      const existing = localData[charKey] || { usageCount: 0, isUnlocked: false };
+      localData[charKey] = {
+        ...existing,
+        usageCount: 0
+      };
+
+      if (targetUserId && supabase) {
+        try {
+          await supabase
+            .from('character_licenses')
+            .upsert({
+              user_id: targetUserId,
+              character_id: charKey,
+              usage_count: 0,
+              updated_at: now
+            }, { onConflict: 'user_id,character_id' });
+        } catch (e) {}
+      }
+    }
+
+    this._saveLocalData(targetUserId, localData);
+    return {
+      success: true,
+      message: 'Successfully refilled all character match quotas to 10 free matches!'
+    };
+  }
+
+  // Admin: Grant Gold and Gems to user wallet (both Supabase and local guest wallet)
+  async adminGrantWallet(targetUserId, goldAmount = 5000, gemsAmount = 500) {
+    // 1. Local wallet update
+    let localGold = 500;
+    let localGems = 50;
+    try {
+      const raw = localStorage.getItem('tcg_local_wallet');
+      if (raw) {
+        const p = JSON.parse(raw);
+        localGold = p.gold ?? 500;
+        localGems = p.gems ?? 50;
+      }
+      const newGold = localGold + goldAmount;
+      const newGems = localGems + gemsAmount;
+      localStorage.setItem('tcg_local_wallet', JSON.stringify({ gold: newGold, gems: newGems }));
+    } catch {}
+
+    // 2. Supabase wallet update if user exists
+    if (targetUserId && targetUserId !== 'guest' && targetUserId !== 'admin_self') {
+      try {
+        await economyService.modifyWallet(targetUserId, 'gold', goldAmount, 'admin_grant', 'Admin Credit');
+        await economyService.modifyWallet(targetUserId, 'gems', gemsAmount, 'admin_grant', 'Admin Credit');
+      } catch (err) {
+        console.warn('Failed to update remote wallet:', err);
+      }
+    }
+
+    if (typeof window !== 'undefined') {
+      try { window.dispatchEvent(new CustomEvent('tcg_wallet_updated')); } catch (e) {}
+    }
+
+    this._notify();
+    return {
+      success: true,
+      message: `Granted +${goldAmount.toLocaleString()} Gold & +${gemsAmount.toLocaleString()} Gems!`
+    };
+  }
+
+  // Admin: Grant Master VIP Pass (All Characters + 10k Gold + 1k Gems + All Cosmetics)
+  async adminGrantFullVIP(targetUserId, cosmeticsService = null) {
+    await this.adminGrantAllCharacters(targetUserId, true);
+    await this.adminResetAllQuotas(targetUserId);
+    await this.adminGrantWallet(targetUserId, 10000, 1000);
+    if (cosmeticsService && cosmeticsService.unlockAllCosmetics) {
+      cosmeticsService.unlockAllCosmetics(targetUserId);
+    }
+    if (typeof window !== 'undefined') {
+      try { window.dispatchEvent(new CustomEvent('tcg_wallet_updated')); } catch (e) {}
+    }
+
+    this._notify();
+    return {
+      success: true,
+      message: '🌟 MASTER VIP GRANTED! All 7 Characters Unlocked + 10,000 Gold + 1,000 Gems + All Cosmetics!'
     };
   }
 

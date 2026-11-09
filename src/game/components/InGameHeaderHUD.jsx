@@ -103,8 +103,19 @@ export default function InGameHeaderHUD({
       <div className="hud-right-tools">
         <button
           className={`hud-btn ${bgmActive ? 'active-hud' : ''}`}
+          onClick={handleToggleBgm}
+          title={bgmActive ? "Mute BGM" : "Play BGM"}
+        >
+          <Music size={16} />
+        </button>
 
-
+        <button
+          className={`hud-btn ${isMuted ? 'active-hud' : ''}`}
+          onClick={handleToggleMute}
+          title={isMuted ? "Unmute Sound" : "Mute Sound"}
+        >
+          {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+        </button>
 
         <button
           className={`hud-btn ${tvMode ? 'active-hud' : ''}`}
@@ -117,7 +128,13 @@ export default function InGameHeaderHUD({
           <Tv size={16} />
         </button>
 
-
+        <button
+          className={`hud-btn ${isFullscreen ? 'active-hud' : ''}`}
+          onClick={handleToggleFullscreen}
+          title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+        >
+          {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+        </button>
 
         {gameActive && (
           <button

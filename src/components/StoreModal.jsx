@@ -16,11 +16,20 @@ import {
   DAILY_LOGIN_SCHEDULE,
   SEASON_CONFIG
 } from '../services/cosmeticsService';
+import { CHARACTERS, getAssetUrl } from '../game/data/characters';
+import { characterLicenseService, CHARACTER_PRICES, FREE_USAGE_LIMIT } from '../services/characterLicenseService';
 import PlayerAvatar from './PlayerAvatar';
 
-export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete }) => {
-  const [activeTab, setActiveTab] = useState('featured'); // 'featured' | 'gems' | 'gold_items' | 'gem_items' | 'daily' | 'promo'
+export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete, initialTab = 'featured' }) => {
+  const [activeTab, setActiveTab] = useState(initialTab); // 'featured' | 'characters' | 'season_pass' | 'gems' | 'gold_items' | 'gem_items' | 'daily' | 'promo'
+
+  useEffect(() => {
+    if (isOpen && initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [isOpen, initialTab]);
   const [wallet, setWallet] = useState({ gold: 500, gems: 50, tournament_credits: 0, crystals: 0 });
+  const [characterLicenses, setCharacterLicenses] = useState({});
   const [ownedCosmetics, setOwnedCosmetics] = useState([]);
   const [equippedCosmetics, setEquippedCosmetics] = useState({});
   const [dailyStatus, setDailyStatus] = useState(null);
@@ -40,6 +49,11 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete })
   const [loadingBundles, setLoadingBundles] = useState(false);
 
   const userId = userProfile?.id || null;
+  const isAdmin = Boolean(
+    userProfile?.is_admin ||
+    userProfile?.role === 'admin' ||
+    (typeof window !== 'undefined' && localStorage.getItem('tcg_admin_mode') === 'true')
+  );
 
   // Refresh wallet and inventory
   const refreshData = async () => {
@@ -47,13 +61,28 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete })
       const balances = await economyService.getWalletBalances(userId);
       setWallet(balances);
     } else {
+      let gGold = 500;
+      let gGems = 50;
+      try {
+        const raw = localStorage.getItem('tcg_local_wallet');
+        if (raw) {
+          const p = JSON.parse(raw);
+          gGold = p.gold ?? 500;
+          gGems = p.gems ?? 50;
+        }
+      } catch {}
       setWallet({
-        gold: userProfile?.gold ?? 500,
-        gems: userProfile?.gems ?? 50,
+        gold: userProfile?.gold ?? gGold,
+        gems: userProfile?.gems ?? gGems,
         tournament_credits: userProfile?.tournament_credits ?? 0,
         crystals: userProfile?.crystals_collected ?? userProfile?.crystals ?? 0
       });
     }
+
+    try {
+      const lics = await characterLicenseService.getAllCharacterLicenses(userId);
+      setCharacterLicenses(lics);
+    } catch {}
 
     const owned = cosmeticsService.getOwnedCosmetics(userId);
     setOwnedCosmetics(owned);
@@ -69,6 +98,38 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete })
 
     const spState = cosmeticsService.getSeasonPassState(userId);
     setSeasonPassState(spState);
+  };
+
+  const handlePurchaseCharacter = async (charId, currency = 'gold') => {
+    setIsProcessing(true);
+    try {
+      const res = await characterLicenseService.purchaseCharacter(userId, charId, currency);
+      if (res.success) {
+        showToast(res.message, 'success');
+        await refreshData();
+        if (onPurchaseComplete) onPurchaseComplete();
+      } else {
+        showToast(res.error || 'Failed to unlock character.', 'error');
+      }
+    } catch (e) {
+      showToast(e.message || 'Purchase error.', 'error');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleAdminGrantAllCharacters = async () => {
+    setIsProcessing(true);
+    try {
+      const res = await characterLicenseService.adminGrantAllCharacters(userId || 'guest', true);
+      showToast(res.message, 'success');
+      await refreshData();
+      if (onPurchaseComplete) onPurchaseComplete();
+    } catch (e) {
+      showToast('Admin grant failed.', 'error');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleUpgradeSeasonPass = async () => {
@@ -473,6 +534,7 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete })
         <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px', marginBottom: '16px', overflowX: 'auto' }}>
           {[
             { id: 'featured', label: '⭐ FEATURED & BUNDLES' },
+            { id: 'characters', label: '🛡️ PLAYABLE WARRIORS' },
             { id: 'season_pass', label: '⚡ SEASON PASS' },
             { id: 'gems', label: '💎 BUY GEMS (IAP)' },
             { id: 'gold_items', label: '🪙 GOLD ITEMS' },
@@ -599,6 +661,238 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete })
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: PLAYABLE WARRIORS (MATCH CHARACTERS & 10-MATCH QUOTA) */}
+        {activeTab === 'characters' && (
+          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', paddingRight: '4px' }}>
+            
+            {/* Explanatory Banner */}
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(251,200,13,0.15) 0%, rgba(157,78,221,0.15) 100%)',
+              border: '1.5px solid rgba(251, 200, 13, 0.4)',
+              borderRadius: '14px',
+              padding: '16px 20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyBetween: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '1.4rem' }}>🛡️</span>
+                  <div>
+                    <h3 style={{ margin: 0, fontFamily: 'Bebas Neue, sans-serif', fontSize: '1.4rem', color: 'var(--neon-gold, #FBC80D)', letterSpacing: '1px' }}>
+                      PLAYABLE DUEL WARRIORS
+                    </h3>
+                    <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)' }}>
+                      Fighters chosen for match duels with specific HP, elements, and moves. 10 free trial matches per warrior.
+                    </div>
+                  </div>
+                </div>
+
+                {isAdmin && (
+                  <button
+                    onClick={handleAdminGrantAllCharacters}
+                    disabled={isProcessing}
+                    style={{
+                      background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '8px 14px',
+                      color: '#000',
+                      fontFamily: 'Bebas Neue, sans-serif',
+                      fontSize: '0.95rem',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      letterSpacing: '1px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    👑 ADMIN: UNLOCK ALL 7 WARRIORS (VIP)
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Warriors Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
+              {Object.values(CHARACTERS).map(char => {
+                const lic = characterLicenses[char.id] || characterLicenseService.getLicenseSync(userId, char.id);
+                const prices = CHARACTER_PRICES[char.id] || { gold: 1500, gems: 150 };
+                const isExhausted = !lic.isUnlocked && (lic.usageCount || 0) >= FREE_USAGE_LIMIT;
+                const left = Math.max(0, FREE_USAGE_LIMIT - (lic.usageCount || 0));
+
+                return (
+                  <div
+                    key={char.id}
+                    style={{
+                      background: lic.isUnlocked
+                        ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(10, 25, 20, 0.95) 100%)'
+                        : isExhausted
+                        ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(25, 10, 15, 0.95) 100%)'
+                        : 'linear-gradient(135deg, rgba(20, 25, 40, 0.8) 0%, rgba(10, 15, 25, 0.95) 100%)',
+                      border: lic.isUnlocked
+                        ? '2px solid rgba(16, 185, 129, 0.6)'
+                        : isExhausted
+                        ? '2px solid rgba(239, 68, 68, 0.6)'
+                        : `1.5px solid ${char.themeColor || 'rgba(255,255,255,0.2)'}`,
+                      borderRadius: '16px',
+                      padding: '18px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '12px',
+                      boxShadow: lic.isUnlocked ? '0 0 20px rgba(16, 185, 129, 0.15)' : 'none'
+                    }}
+                  >
+                    <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+                      <div style={{
+                        position: 'relative',
+                        width: '70px',
+                        height: '85px',
+                        borderRadius: '10px',
+                        overflow: 'hidden',
+                        border: '1.5px solid rgba(255,255,255,0.3)',
+                        flexShrink: 0,
+                        background: '#000'
+                      }}>
+                        <img
+                          src={getAssetUrl(char.image)}
+                          alt={char.name}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }}
+                        />
+                        {lic.isUnlocked && (
+                          <div style={{ position: 'absolute', top: '4px', right: '4px', background: '#10b981', color: '#000', borderRadius: '4px', padding: '1px 4px', fontSize: '0.65rem', fontWeight: 'bold' }}>
+                            👑
+                          </div>
+                        )}
+                      </div>
+
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{
+                            fontSize: '0.7rem',
+                            fontWeight: 'bold',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            background: 'rgba(255,255,255,0.1)',
+                            color: char.themeColor || '#fff'
+                          }}>
+                            {char.element || 'Elemental'}
+                          </span>
+                          <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>HP: {char.baseHP || 100}</span>
+                        </div>
+                        <h4 style={{ margin: '4px 0 2px 0', fontFamily: 'Bebas Neue, sans-serif', fontSize: '1.4rem', color: '#fff', letterSpacing: '1px' }}>
+                          {char.name}
+                        </h4>
+                        <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.6)' }}>
+                          {char.title || 'Duel Champion'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quota Status Pill */}
+                    <div style={{
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      background: 'rgba(0,0,0,0.4)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      fontSize: '0.8rem'
+                    }}>
+                      <span style={{ color: 'rgba(255,255,255,0.6)' }}>Access Status:</span>
+                      {lic.isUnlocked ? (
+                        <span style={{ color: '#10b981', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          👑 UNLIMITED LIFETIME ACCESS
+                        </span>
+                      ) : isExhausted ? (
+                        <span style={{ color: '#ef4444', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          🔒 10/10 FREE MATCHES USED
+                        </span>
+                      ) : (
+                        <span style={{ color: '#00f0ff', fontWeight: 'bold' }}>
+                          ⚡ {left} of 10 Free Matches Remaining
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div style={{ marginTop: 'auto', display: 'flex', gap: '8px' }}>
+                      {lic.isUnlocked ? (
+                        <button
+                          disabled
+                          style={{
+                            width: '100%',
+                            background: 'rgba(16, 185, 129, 0.2)',
+                            border: '1.5px solid rgba(16, 185, 129, 0.5)',
+                            color: '#10b981',
+                            borderRadius: '8px',
+                            padding: '10px',
+                            fontFamily: 'Bebas Neue, sans-serif',
+                            fontSize: '1.05rem',
+                            fontWeight: 'bold',
+                            letterSpacing: '1px',
+                            cursor: 'default'
+                          }}
+                        >
+                          ✓ PERMANENTLY UNLOCKED & READY
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => handlePurchaseCharacter(char.id, 'gold')}
+                            disabled={isProcessing || wallet.gold < prices.gold}
+                            style={{
+                              flex: 1,
+                              background: wallet.gold >= prices.gold
+                                ? 'linear-gradient(90deg, #FBC80D 0%, #ff9900 100%)'
+                                : 'rgba(255,255,255,0.08)',
+                              border: 'none',
+                              color: wallet.gold >= prices.gold ? '#000' : 'rgba(255,255,255,0.4)',
+                              borderRadius: '8px',
+                              padding: '10px',
+                              fontFamily: 'Bebas Neue, sans-serif',
+                              fontSize: '1.05rem',
+                              fontWeight: 'bold',
+                              letterSpacing: '1px',
+                              cursor: wallet.gold >= prices.gold ? 'pointer' : 'not-allowed'
+                            }}
+                          >
+                            🪙 {prices.gold.toLocaleString()} GOLD
+                          </button>
+
+                          <button
+                            onClick={() => handlePurchaseCharacter(char.id, 'gems')}
+                            disabled={isProcessing || wallet.gems < prices.gems}
+                            style={{
+                              flex: 1,
+                              background: wallet.gems >= prices.gems
+                                ? 'linear-gradient(90deg, #00f0ff 0%, #0088ff 100%)'
+                                : 'rgba(255,255,255,0.08)',
+                              border: 'none',
+                              color: wallet.gems >= prices.gems ? '#000' : 'rgba(255,255,255,0.4)',
+                              borderRadius: '8px',
+                              padding: '10px',
+                              fontFamily: 'Bebas Neue, sans-serif',
+                              fontSize: '1.05rem',
+                              fontWeight: 'bold',
+                              letterSpacing: '1px',
+                              cursor: wallet.gems >= prices.gems ? 'pointer' : 'not-allowed'
+                            }}
+                          >
+                            💎 {prices.gems.toLocaleString()} GEMS
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}

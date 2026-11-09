@@ -300,6 +300,27 @@ export const cosmeticsService = {
     return owned;
   },
 
+  // Admin: Unlock ALL cosmetic items (Frames, Card Backs, Emotes, Titles)
+  unlockAllCosmetics(userId = null) {
+    const allIds = [
+      ...COSMETIC_FRAMES.map(f => f.id),
+      ...COSMETIC_CARDBACKS.map(cb => cb.id),
+      ...COSMETIC_EMOTES.map(e => e.id),
+      ...COSMETIC_TITLES.map(t => t.id)
+    ];
+    try {
+      localStorage.setItem(`${LS_OWNED_COSMETICS}_${userId || 'guest'}`, JSON.stringify(allIds));
+    } catch {}
+    if (userId && supabase) {
+      try {
+        allIds.forEach(async (id) => {
+          await supabase.from('user_cosmetics').upsert({ user_id: userId, cosmetic_id: id }, { onConflict: 'user_id,cosmetic_id' });
+        });
+      } catch {}
+    }
+    return allIds;
+  },
+
   // 3. Get currently equipped cosmetics
   getEquippedCosmetics(userId = null) {
     const fallback = {
