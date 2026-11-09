@@ -4493,6 +4493,7 @@ export default function KontrolaArena() {
                         userProfile={userProfile}
                         adminSettings={appSettings}
                         onSelectTournament={(tId) => setActiveTournamentId(tId)}
+                        onOpenUnlockModal={(charId) => setQuotaUnlockChar(charId)}
                       />
                     )}
                   </div>

@@ -4,13 +4,15 @@ import {
   CheckCircle2, AlertCircle, ArrowRight, Eye, Swords, Trash2, Clock
 } from 'lucide-react';
 import { tournamentService } from '../../services/tournamentService';
+import { characterLicenseService } from '../../services/characterLicenseService';
 import CreateTournamentModal from './CreateTournamentModal';
 
 export default function KontrolaTournamentHub({
   currentUser,
   userProfile,
   onSelectTournament,
-  adminSettings
+  adminSettings,
+  onOpenUnlockModal
 }) {
   const [filterTab, setFilterTab] = useState('all'); // 'all' | 'public' | 'private'
   const [tournaments, setTournaments] = useState([]);
@@ -80,11 +82,22 @@ export default function KontrolaTournamentHub({
       return;
     }
 
+    const regCharId = userProfile?.avatar_id || 'chynaman';
+    const regLic = characterLicenseService.getLicenseSync(currentUser.id, regCharId);
+    if (!regLic.canPlay) {
+      const altPlayable = characterLicenseService.getFirstPlayableCharacter(currentUser.id);
+      if (!altPlayable) {
+        showToast('All your character cards have exhausted their free 10-match quota! Please unlock a character to register for tournaments.', 'error');
+        if (onOpenUnlockModal) onOpenUnlockModal(regCharId);
+        return;
+      }
+    }
+
     const res = await tournamentService.joinTournament({
       tournamentId: tourney.id,
       userId: currentUser.id,
       playerName: userProfile?.username || 'Player',
-      characterId: userProfile?.avatar_id || 'chynaman'
+      characterId: regCharId
     });
 
     if (res.error) {
