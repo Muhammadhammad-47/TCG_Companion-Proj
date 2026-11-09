@@ -229,6 +229,29 @@ class CharacterLicenseService {
       if (!res.success && !res.localOnly) {
         return { success: false, error: res.error || `Insufficient ${currency} balance.` };
       }
+    } else {
+      // Guest wallet deduction in localStorage to prevent unauthorized free unlocks
+      let localGold = 500;
+      let localGems = 50;
+      try {
+        const raw = localStorage.getItem('tcg_local_wallet');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          localGold = parsed.gold ?? 500;
+          localGems = parsed.gems ?? 50;
+        }
+      } catch {}
+
+      const currentBalance = currency === 'gems' ? localGems : localGold;
+      if (currentBalance < cost) {
+        return { success: false, error: `Insufficient ${currency.toUpperCase()} balance (${currentBalance}/${cost}). Please earn more or sign in.` };
+      }
+
+      try {
+        const newGold = currency === 'gold' ? localGold - cost : localGold;
+        const newGems = currency === 'gems' ? localGems - cost : localGems;
+        localStorage.setItem('tcg_local_wallet', JSON.stringify({ gold: newGold, gems: newGems }));
+      } catch {}
     }
 
     // Mark as permanently unlocked

@@ -41,9 +41,19 @@ export default function CharacterUnlockModal({
       const balances = await economyService.getWalletBalances(userId);
       setWallet(balances);
     } else {
+      let gGold = 500;
+      let gGems = 50;
+      try {
+        const raw = localStorage.getItem('tcg_local_wallet');
+        if (raw) {
+          const p = JSON.parse(raw);
+          gGold = p.gold ?? 500;
+          gGems = p.gems ?? 50;
+        }
+      } catch {}
       setWallet({
-        gold: userProfile?.gold ?? 500,
-        gems: userProfile?.gems ?? 50
+        gold: userProfile?.gold ?? gGold,
+        gems: userProfile?.gems ?? gGems
       });
     }
   };
