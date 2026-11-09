@@ -38,6 +38,8 @@ import { tournamentService } from '../../services/tournamentService';
 import KontrolaTournamentHub from './KontrolaTournamentHub';
 import KontrolaBracketView from './KontrolaBracketView';
 import { cosmeticsService } from '../../services/cosmeticsService';
+import { characterLicenseService, FREE_USAGE_LIMIT } from '../../services/characterLicenseService';
+import CharacterUnlockModal from '../../components/CharacterUnlockModal';
 
 import '../../pages/GamePage.css';
 
@@ -195,8 +197,18 @@ export default function KontrolaArena() {
   const [joinCodeInput, setJoinCodeInput] = useState(''); // separate from matchId to avoid pre-filling from localStorage
 
   const [selectedCharacter, setSelectedCharacter] = useState('chynaman');
+  const [quotaUnlockChar, setQuotaUnlockChar] = useState(null);
   const [isPremium, setIsPremium] = useState(false);
   const [appSettings, setAppSettings] = useState({ match_cost: 1, premium_modules: ['kontrola'], module_costs: {} });
+
+  // Ensure default selected character is a playable character (not exhausted)
+  useEffect(() => {
+    const lic = characterLicenseService.getLicenseSync(currentUser?.id, selectedCharacter);
+    if (!lic.canPlay) {
+      const firstPlayable = characterLicenseService.getFirstPlayableCharacter(currentUser?.id);
+      if (firstPlayable) setSelectedCharacter(firstPlayable);
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     economyService.getAppSettings().then(settings => {
@@ -2707,6 +2719,14 @@ export default function KontrolaArena() {
       return;
     }
 
+    // Quota validation for tournament players
+    const tournLic = characterLicenseService.getLicenseSync(currentUser?.id, selectedCharacter);
+    if (!tournLic.canPlay) {
+      setError(`Cannot enter tournament match: ${tournLic.characterName} has exhausted the 10-match free quota!`);
+      setQuotaUnlockChar(selectedCharacter);
+      return;
+    }
+
     if (isMatchHost) {
       try {
         const initialState = await createMatch(roomCode, playerId, selectedCharacter);
@@ -2754,6 +2774,21 @@ export default function KontrolaArena() {
   // ==========================================
   const handleCreateMatch = async () => {
     playClick();
+
+    // 1. Quota Validation: Check if selected character is locked
+    const charLic = characterLicenseService.getLicenseSync(currentUser?.id, selectedCharacter);
+    if (!charLic.canPlay) {
+      setError(`Cannot create match: ${charLic.characterName} has exhausted the 10-match free quota!`);
+      setQuotaUnlockChar(selectedCharacter);
+      return;
+    }
+    // 2. Quota Validation: Check if user has ANY playable character available
+    if (!characterLicenseService.hasAnyPlayableCharacterSync(currentUser?.id)) {
+      setError('All your characters have exhausted their free 10-match quota. Please unlock a character to create matches.');
+      setQuotaUnlockChar(selectedCharacter);
+      return;
+    }
+
     const finalName = (playerName || userProfile?.username || currentUser?.user_metadata?.username || 'Player').trim();
     if (playerName !== finalName) setPlayerName(finalName);
 
@@ -2803,6 +2838,21 @@ export default function KontrolaArena() {
 
   const handleJoinByCode = async (codeToJoin = matchId) => {
     playClick();
+
+    // 1. Quota Validation: Check if selected character is locked
+    const charLic = characterLicenseService.getLicenseSync(currentUser?.id, selectedCharacter);
+    if (!charLic.canPlay) {
+      setError(`Cannot join match: ${charLic.characterName} has exhausted the 10-match free quota!`);
+      setQuotaUnlockChar(selectedCharacter);
+      return;
+    }
+    // 2. Quota Validation: Check if user has ANY playable character available
+    if (!characterLicenseService.hasAnyPlayableCharacterSync(currentUser?.id)) {
+      setError('All your characters have exhausted their free 10-match quota. Please unlock a character to join matches.');
+      setQuotaUnlockChar(selectedCharacter);
+      return;
+    }
+
     const finalName = (playerName || userProfile?.username || currentUser?.user_metadata?.username || 'Player').trim();
     if (playerName !== finalName) setPlayerName(finalName);
 
@@ -2861,6 +2911,17 @@ export default function KontrolaArena() {
   const handleStartGame = () => {
     playClick();
     if (!gameState || !isHost) return;
+
+    // Quota validation before launching multiplayer match
+    const hostLic = characterLicenseService.getLicenseSync(currentUser?.id, selectedCharacter);
+    if (!hostLic.canPlay) {
+      setError(`Cannot start match: Your character (${hostLic.characterName}) is locked (10/10 used).`);
+      setQuotaUnlockChar(selectedCharacter);
+      return;
+    }
+
+    // Record match usage for host
+    characterLicenseService.recordMatchUse(currentUser?.id, selectedCharacter);
 
     // Remove room from global lobby broadcast
     closeRoom(matchId);
@@ -3246,6 +3307,16 @@ export default function KontrolaArena() {
 
   const handleCharacterSelect = (charId) => {
     if (isProcessingAction) return;
+
+    // Quota validation
+    const lic = characterLicenseService.getLicenseSync(currentUser?.id, charId);
+    if (!lic.canPlay) {
+      playClick();
+      showNotice(`${lic.characterName} has exhausted the 10-match free quota!`, 'warning');
+      setQuotaUnlockChar(charId);
+      return;
+    }
+
     setIsProcessingAction(true);
     playClick();
     const payload = { actionType: 'CHARACTER_SELECT', actorId: playerId, characterId: charId };
@@ -6516,10 +6587,20 @@ export default function KontrolaArena() {
                          const ownerId = Object.keys(gameState.characterSelections).find(id => gameState.characterSelections[id] === char.id);
                          ownerName = gameState.playerNames?.[ownerId] || 'Taken';
                       }
+
+                      const lic = characterLicenseService.getLicenseSync(currentUser?.id, char.id);
+                      const isLockedByQuota = !lic.canPlay;
+
                       return (
                         <div
                           key={char.id}
                           onClick={() => {
+                            if (isLockedByQuota) {
+                              playClick();
+                              showNotice(`${char.name} has exhausted the 10-match free quota!`, 'warning');
+                              setQuotaUnlockChar(char.id);
+                              return;
+                            }
                             if (gameState.turn !== playerId) return;
                             if (isTaken) {
                               showNotice(`${char.name} has already been chosen!`, 'warning');
@@ -6528,13 +6609,13 @@ export default function KontrolaArena() {
                             handleCharacterSelect(char.id);
                           }}
                           style={{
-                            background: isTaken ? 'rgba(30, 10, 20, 0.55)' : 'rgba(0, 0, 0, 0.45)',
-                            border: isTaken ? '1px dashed rgba(255, 42, 85, 0.5)' : `2px solid ${char.themeColor || 'var(--neon-cyan)'}`,
+                            background: isLockedByQuota ? 'rgba(30, 5, 10, 0.65)' : isTaken ? 'rgba(30, 10, 20, 0.55)' : 'rgba(0, 0, 0, 0.45)',
+                            border: isLockedByQuota ? '1.5px solid rgba(239, 68, 68, 0.6)' : isTaken ? '1px dashed rgba(255, 42, 85, 0.5)' : `2px solid ${char.themeColor || 'var(--neon-cyan)'}`,
                             borderRadius: '12px',
                             padding: '15px',
                             textAlign: 'center',
-                            cursor: gameState.turn === playerId && !isTaken ? 'pointer' : 'not-allowed',
-                            opacity: isTaken ? 0.45 : 1,
+                            cursor: isLockedByQuota ? 'pointer' : (gameState.turn === playerId && !isTaken ? 'pointer' : 'not-allowed'),
+                            opacity: isTaken ? 0.45 : (isLockedByQuota ? 0.8 : 1),
                             width: '140px',
                             transition: 'transform 0.2s',
                             position: 'relative'
@@ -6545,8 +6626,13 @@ export default function KontrolaArena() {
                               {ownerName}
                             </div>
                           )}
+                          {isLockedByQuota && (
+                            <div style={{ position: 'absolute', top: -10, left: -10, background: '#ef4444', color: '#fff', padding: '3px 7px', borderRadius: '8px', fontSize: '0.65rem', fontWeight: 'bold', zIndex: 10, display: 'flex', alignItems: 'center', gap: '3px', boxShadow: '0 0 10px rgba(239,68,68,0.5)' }}>
+                              <Lock size={10} /> 10/10
+                            </div>
+                          )}
                           <div style={{ position: 'relative', display: 'inline-block' }}>
-                            <img src={getAssetUrl(char.image)} alt={char.name} style={{ width: '85px', height: '85px', borderRadius: '50%', border: `2px solid ${char.themeColor}` }} />
+                            <img src={getAssetUrl(char.image)} alt={char.name} style={{ width: '85px', height: '85px', borderRadius: '50%', border: `2px solid ${char.themeColor}`, filter: isLockedByQuota ? 'grayscale(0.5)' : 'none' }} />
                             {/* Level Badge */}
                             <div style={{
                               position: 'absolute',
@@ -6571,6 +6657,15 @@ export default function KontrolaArena() {
                           </div>
                           <div style={{ fontWeight: 'bold', marginTop: '10px' }}>{char.name}</div>
                           <div style={{ fontSize: '0.8rem', color: char.themeColor }}>{char.element}</div>
+                          <div style={{ fontSize: '0.65rem', marginTop: '4px', fontWeight: 'bold' }}>
+                            {lic.isUnlocked ? (
+                              <span style={{ color: '#10b981' }}>👑 UNLIMITED</span>
+                            ) : isLockedByQuota ? (
+                              <span style={{ color: '#ef4444' }}>🔒 LOCKED</span>
+                            ) : (
+                              <span style={{ color: '#00f0ff' }}>⚡ {lic.usesRemaining}/10 Left</span>
+                            )}
+                          </div>
                         </div>
                       )
                     })}
@@ -6967,6 +7062,18 @@ export default function KontrolaArena() {
           />
         </div>
       )}
+
+      {/* Character Unlock Modal (Store buy, QR scan, Admin grant) */}
+      <CharacterUnlockModal
+        isOpen={Boolean(quotaUnlockChar)}
+        onClose={() => setQuotaUnlockChar(null)}
+        characterId={quotaUnlockChar}
+        userId={currentUser?.id}
+        userProfile={userProfile || currentUser}
+        onUnlockSuccess={() => {
+          setQuotaUnlockChar(null);
+        }}
+      />
     </div>
   );
 }

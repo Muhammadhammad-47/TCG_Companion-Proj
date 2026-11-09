@@ -284,3 +284,4 @@ export default function QRScannerModal({ isOpen, onClose, userId, onUnlockSucces
     </div>
   );
 }
+

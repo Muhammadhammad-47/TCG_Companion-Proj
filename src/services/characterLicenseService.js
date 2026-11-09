@@ -147,6 +147,33 @@ class CharacterLicenseService {
     };
   }
 
+  // Check if player has at least one playable character available (async)
+  async hasAnyPlayableCharacter(userId) {
+    for (const charKey of Object.keys(CHARACTERS)) {
+      const lic = await this.getCharacterLicense(userId, charKey);
+      if (lic.canPlay) return true;
+    }
+    return false;
+  }
+
+  // Check if player has at least one playable character available (sync)
+  hasAnyPlayableCharacterSync(userId) {
+    for (const charKey of Object.keys(CHARACTERS)) {
+      const lic = this.getLicenseSync(userId, charKey);
+      if (lic.canPlay) return true;
+    }
+    return false;
+  }
+
+  // Get the first playable character ID for a user, or null if all are locked
+  getFirstPlayableCharacter(userId) {
+    for (const charKey of Object.keys(CHARACTERS)) {
+      const lic = this.getLicenseSync(userId, charKey);
+      if (lic.canPlay) return charKey;
+    }
+    return null;
+  }
+
   // Record a match usage when game starts
   async recordMatchUse(userId, characterId) {
     const charKey = (characterId || 'chynaman').toLowerCase();
@@ -399,3 +426,4 @@ class CharacterLicenseService {
 }
 
 export const characterLicenseService = new CharacterLicenseService();
+

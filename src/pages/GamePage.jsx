@@ -133,7 +133,14 @@ export default function GamePage() {
   };
 
   const handleStartGame = ({ players, direction, turnTimerDuration = 60 }) => {
-    // Validate character quota before match begins
+    // 1. Check if user has at least one playable character available
+    if (!characterLicenseService.hasAnyPlayableCharacterSync(currentUser?.id)) {
+      soundFX.playMenuHover();
+      setLockedCharacterForModal(players[0]?.characterId || 'chynaman');
+      return;
+    }
+
+    // 2. Validate character quota before match begins
     for (const p of players) {
       const lic = characterLicenseService.getLicenseSync(currentUser?.id, p.characterId);
       if (!lic.isUnlocked && lic.usageCount >= FREE_USAGE_LIMIT) {
@@ -143,7 +150,7 @@ export default function GamePage() {
       }
     }
 
-    // Record match usage for each participating character
+    // 3. Record match usage for each participating character
     players.forEach(p => {
       characterLicenseService.recordMatchUse(currentUser?.id, p.characterId);
     });
@@ -164,8 +171,22 @@ export default function GamePage() {
       ? (currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'Player 1')
       : (() => { try { return localStorage.getItem('tcg_warrior_username') || 'Player 1'; } catch { return 'Player 1'; } })();
 
+    // Check if player has any playable character available
+    if (!characterLicenseService.hasAnyPlayableCharacterSync(currentUser?.id)) {
+      soundFX.playMenuHover();
+      setLockedCharacterForModal('chynaman');
+      return;
+    }
+
+    // Prefer chynaman if playable, else fallback to first available character
+    let p1Char = 'chynaman';
+    const chynaLic = characterLicenseService.getLicenseSync(currentUser?.id, 'chynaman');
+    if (!chynaLic.canPlay) {
+      p1Char = characterLicenseService.getFirstPlayableCharacter(currentUser?.id) || 'chynaman';
+    }
+
     const duelPlayers = [
-      { name: playerName, characterId: 'chynaman', startingHP: CHARACTERS['chynaman']?.baseHP || 100, startingET: 5, startingCrystals: 2 },
+      { name: playerName, characterId: p1Char, startingHP: CHARACTERS[p1Char]?.baseHP || 100, startingET: 5, startingCrystals: 2 },
       { name: 'Player 2', characterId: 'bee', startingHP: CHARACTERS['bee']?.baseHP || 100, startingET: 5, startingCrystals: 2 }
     ];
     handleStartGame({ players: duelPlayers, direction: 'clockwise', turnTimerDuration: 60 });

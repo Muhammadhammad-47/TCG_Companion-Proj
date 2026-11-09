@@ -227,6 +227,11 @@ export default function GameSetup({ onStartGame, onBack }) {
   };
 
   const primaryProfileChar = CHARACTERS[players[0]?.characterId] || CHARACTERS.chynaman;
+  const hasPlayable = characterLicenseService.hasAnyPlayableCharacterSync(currentUser?.id);
+  const isPrimaryLocked = (() => {
+    const lic = licenses[primaryProfileChar.id] || characterLicenseService.getLicenseSync(currentUser?.id, primaryProfileChar.id);
+    return !lic.canPlay;
+  })();
 
   return (
     <div style={{ width: '100%', height: '100%' }}>
@@ -804,10 +809,19 @@ export default function GameSetup({ onStartGame, onBack }) {
             <span>BACK</span>
           </button>
 
-          <button className="btn-setup-start-cta" onClick={handleStart}>
-            <Swords size={26} />
-            <span className="start-cta-text">START MATCH</span>
-            <Swords size={26} />
+          <button
+            className="btn-setup-start-cta"
+            onClick={handleStart}
+            style={{
+              opacity: (!hasPlayable || isPrimaryLocked) ? 0.7 : 1,
+              filter: (!hasPlayable || isPrimaryLocked) ? 'grayscale(0.35)' : 'none'
+            }}
+          >
+            {(!hasPlayable || isPrimaryLocked) ? <Lock size={22} color="#f87171" /> : <Swords size={26} />}
+            <span className="start-cta-text">
+              {!hasPlayable ? 'QUOTA EXHAUSTED - UNLOCK TO PLAY' : isPrimaryLocked ? 'CHARACTER LOCKED - UNLOCK' : 'START MATCH'}
+            </span>
+            {(!hasPlayable || isPrimaryLocked) ? <Lock size={22} color="#f87171" /> : <Swords size={26} />}
           </button>
 
           <div className="setup-version-label">{APP_CONFIG.version}</div>
