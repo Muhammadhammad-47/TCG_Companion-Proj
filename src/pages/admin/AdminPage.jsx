@@ -8,7 +8,7 @@ import {
   Crown, Lock, Ban, Sparkles, Gem, Clock, Zap, LogOut, ChevronRight,
   Server, Globe, LayoutGrid, List, FileCode, Cpu, FileText, Download,
   PlusCircle, FilePlus, Code, AlertCircle, Coins, ShoppingCart, Music, Play, Pause,
-  Bug, MonitorX, ZapOff, MessageSquare, Trophy
+  Bug, MonitorX, ZapOff, MessageSquare, Trophy, QrCode
 } from 'lucide-react';
 import { authService } from '../../services/authService';
 import { knowledgeService, calculateGroqMetrics, GROQ_LIMITS } from '../../services/knowledgeService';
@@ -18,6 +18,7 @@ import { bugReportService } from '../../services/bugReportService';
 import { supportService } from '../../services/supportService';
 import AdminSupportPanel from '../../components/AdminSupportPanel';
 import AdminTournamentManager from '../../components/AdminTournamentManager';
+import AdminCharacterManager from '../../components/AdminCharacterManager';
 import MusicPlayer from '../../components/MusicPlayer';
 import MusicUploadProgress from '../../components/MusicUploadProgress';
 
@@ -907,6 +908,7 @@ export default function AdminPage() {
   // Sidebar Navigation Items
   const navItems = [
     { id: 'users', label: 'Users Directory', icon: Users, badge: usersList.length },
+    { id: 'character_licenses', label: 'Character Quotas & QR', icon: QrCode, badge: '10-Cap' },
     { id: 'matches', label: 'Match History', icon: Swords, badge: matchHistory.length },
     { id: 'tournaments', label: 'Tournaments', icon: Trophy, badge: 'Live' },
     { id: 'rules', label: 'Knowledge Base', icon: BookOpen, badge: `${documents.length || 1} Doc` },
@@ -3370,6 +3372,16 @@ export default function AdminPage() {
                     userProfile={userProfile}
                   />
                 </div>
+              )}
+
+              {/* =========================================================================
+                  TAB: CHARACTER QUOTAS & QR ACCESS PASSES
+              ========================================================================= */}
+              {activeTab === 'character_licenses' && (
+                <AdminCharacterManager
+                  currentUser={currentUser}
+                  usersList={usersList}
+                />
               )}
             </main>
           </div>

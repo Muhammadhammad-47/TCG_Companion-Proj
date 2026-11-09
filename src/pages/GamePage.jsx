@@ -12,6 +12,8 @@ import { soundFX } from '../game/utils/audio';
 import { useNavigate } from 'react-router-dom';
 import { ScaleWrapper } from '../components/ScaleWrapper';
 import { authService } from '../services/authService.js';
+import { characterLicenseService, FREE_USAGE_LIMIT } from '../services/characterLicenseService.js';
+import CharacterUnlockModal from '../components/CharacterUnlockModal.jsx';
 
 export default function GamePage() {
   const navigate = useNavigate();
@@ -26,6 +28,7 @@ export default function GamePage() {
   const [showNewMatchModal, setShowNewMatchModal] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [showReconnectModal, setShowReconnectModal] = useState(false); // Only show for multiplayer modes
+  const [lockedCharacterForModal, setLockedCharacterForModal] = useState(null);
   const hasLoggedWinnerRef = useRef(false);
 
   React.useEffect(() => {
@@ -130,6 +133,21 @@ export default function GamePage() {
   };
 
   const handleStartGame = ({ players, direction, turnTimerDuration = 60 }) => {
+    // Validate character quota before match begins
+    for (const p of players) {
+      const lic = characterLicenseService.getLicenseSync(currentUser?.id, p.characterId);
+      if (!lic.isUnlocked && lic.usageCount >= FREE_USAGE_LIMIT) {
+        soundFX.playMenuHover();
+        setLockedCharacterForModal(p.characterId);
+        return;
+      }
+    }
+
+    // Record match usage for each participating character
+    players.forEach(p => {
+      characterLicenseService.recordMatchUse(currentUser?.id, p.characterId);
+    });
+
     hasLoggedWinnerRef.current = false;
     const initialState = createInitialGameState(players);
     initialState.direction = direction;
@@ -365,6 +383,18 @@ export default function GamePage() {
           </div>
         </div>
       )}
+
+      {/* Character Unlock Modal (Store buy, QR scan, Admin grant) */}
+      <CharacterUnlockModal
+        isOpen={Boolean(lockedCharacterForModal)}
+        onClose={() => setLockedCharacterForModal(null)}
+        characterId={lockedCharacterForModal}
+        userId={currentUser?.id}
+        userProfile={currentUser}
+        onUnlockSuccess={() => {
+          setLockedCharacterForModal(null);
+        }}
+      />
     </div>
       </ScaleWrapper>
     </div>
