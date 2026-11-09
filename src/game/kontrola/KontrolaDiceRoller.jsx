@@ -3,6 +3,7 @@ import { soundFX } from '../utils/audio';
 import { Dices, Shield, Swords, Check, Zap, X, Sparkles, AlertCircle, Clock, Eye, RotateCcw } from 'lucide-react';
 import { getCardGraphicUrl, getCharacterAttackGraphicUrl } from './kontrolaAssets';
 import { KONTROLA_CHARACTERS } from './KontrolaEngine';
+import CardVFXWrapper from './vfx/CardVFXWrapper';
 
 // Helper to draw authentic dice face texture matching ThreeDiceArena.jsx exactly
 function drawDiceFaceToCanvas(canvas, value, theme) {
@@ -788,13 +789,14 @@ export default function KontrolaDiceRoller({
           >
             ⚔️ {attackSelectionName || resolvedCardName || 'ATTACK CLASH'}
           </div>
-          <div
+          <CardVFXWrapper
+            cardName={resolvedCardName || attackSelectionName}
+            isOvercharged={isRollingAttacker || isRollingDefender}
             style={{
               width: '200px',
               height: '280px',
               borderRadius: '14px',
               overflow: 'hidden',
-              border: '2px solid rgba(251, 200, 13, 0.4)',
               boxShadow: '0 0 25px rgba(251, 200, 13, 0.25)',
               background: '#0a0f1d'
             }}
@@ -802,9 +804,9 @@ export default function KontrolaDiceRoller({
             <img
               src={cardImg}
               alt={resolvedCardName || 'Combat Action'}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }}
             />
-          </div>
+          </CardVFXWrapper>
           <div
             style={{
               marginTop: '10px',

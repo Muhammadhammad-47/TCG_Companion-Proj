@@ -40,6 +40,7 @@ import KontrolaBracketView from './KontrolaBracketView';
 import { cosmeticsService } from '../../services/cosmeticsService';
 import { characterLicenseService, FREE_USAGE_LIMIT } from '../../services/characterLicenseService';
 import CharacterUnlockModal from '../../components/CharacterUnlockModal';
+import CardVFXWrapper from './vfx/CardVFXWrapper';
 
 import '../../pages/GamePage.css';
 
@@ -5382,16 +5383,18 @@ export default function KontrolaArena() {
                             <span style={{ fontSize: '10px', color: '#FF7777', fontWeight: 'bold' }}>{isReviveLocked ? '0 HP ONLY' : (is3PlayerLocked ? ('3+ PLY') : `LVL ${reqLvl}`)}</span>
                           </div>
                         )}
-                        <div className="uno-card-art">
-                          <img src={cardArt} alt={cName} loading="eager" decoding="async" />
-                        </div>
-                        <div className="uno-card-info">
-                          <div className="uno-card-title">{cName}</div>
-                          <div className="uno-card-meta">
-                            <span>{cType}</span>
-                            <span>⚡ {cCost}</span>
+                        <CardVFXWrapper cardName={cName} isSelected={isSelected}>
+                          <div className="uno-card-art">
+                            <img src={cardArt} alt={cName} loading="eager" decoding="async" />
                           </div>
-                        </div>
+                          <div className="uno-card-info">
+                            <div className="uno-card-title">{cName}</div>
+                            <div className="uno-card-meta">
+                              <span>{cType}</span>
+                              <span>⚡ {cCost}</span>
+                            </div>
+                          </div>
+                        </CardVFXWrapper>
                       </div>
                     );
                   })}

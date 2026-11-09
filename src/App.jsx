@@ -5,6 +5,7 @@ import axios from 'axios';
 import { Groq } from 'groq-sdk';
 import './App.css';
 import './pages/GamePage.css';
+import './styles/card-effects.css';
 import { presetQuestions } from './questions.js';
 import GamePage from './pages/GamePage.jsx';
 import { ScaleWrapper } from './components/ScaleWrapper.jsx';

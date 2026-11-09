@@ -1,7 +1,10 @@
 $files = @(
+  "src/App.jsx",
   "src/game/kontrola/KontrolaArena.jsx",
   "src/game/kontrola/KontrolaEngine.js",
-  "src/game/kontrola/MultiplayerClient.js",
+  "src/game/kontrola/KontrolaDiceRoller.jsx",
+  "src/game/kontrola/vfx/cardVFXRegistry.js",
+  "src/game/kontrola/vfx/CardVFXWrapper.jsx",
   "src/services/characterLicenseService.js",
   "src/components/QRScannerModal.jsx",
   "src/components/CharacterUnlockModal.jsx",
