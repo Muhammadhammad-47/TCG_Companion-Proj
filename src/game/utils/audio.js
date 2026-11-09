@@ -6,6 +6,57 @@ class SoundEffects {
     this.bgmPlaying = false;
     this.bgmTimer = null;
     this.bgmGain = null;
+    this.pools = new Map();
+  }
+
+  // Safe asset path resolver respecting base URL in dev and production
+  _getAssetPath(subpath) {
+    if (!subpath) return '';
+    const clean = subpath.startsWith('/') ? subpath.slice(1) : subpath;
+    const base = (typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL) || '/';
+    return base.endsWith('/') ? `${base}${clean}` : `${base}/${clean}`;
+  }
+
+  // Preloaded audio element pool to prevent memory leaks and garbage-collection stutters
+  _getPool(path, poolSize = 3) {
+    if (!this.pools) this.pools = new Map();
+    if (this.pools.has(path)) return this.pools.get(path);
+    const pool = [];
+    if (typeof window !== 'undefined' && typeof Audio !== 'undefined') {
+      try {
+        for (let i = 0; i < poolSize; i++) {
+          const a = new Audio(path);
+          a.preload = 'auto';
+          pool.push(a);
+        }
+      } catch (e) {
+        // Safe fallback if audio construction fails
+      }
+    }
+    const poolObj = { pool, index: 0 };
+    this.pools.set(path, poolObj);
+    return poolObj;
+  }
+
+  // Play audio from pool with automatic round-robin channel allocation and fallback
+  _playFromPool(path, volume = 0.55, fallbackFn = null) {
+    if (this.muted) return;
+    try {
+      const poolObj = this._getPool(path);
+      if (!poolObj || !poolObj.pool || poolObj.pool.length === 0) {
+        if (fallbackFn) fallbackFn();
+        return;
+      }
+      const audio = poolObj.pool[poolObj.index];
+      poolObj.index = (poolObj.index + 1) % poolObj.pool.length;
+      audio.currentTime = 0;
+      audio.volume = Math.max(0, Math.min(1, volume));
+      audio.play().catch(() => {
+        if (fallbackFn) fallbackFn();
+      });
+    } catch {
+      if (fallbackFn) fallbackFn();
+    }
   }
 
   init() {
@@ -224,43 +275,79 @@ class SoundEffects {
     }
   }
 
-  // Punch SFX (randomized 1..19) from public/SFX/
-  playPunch() {
+  // Punch SFX (Tiers: 'light' | 'medium' | 'heavy' | 'critical')
+  playPunch(tier = 'medium') {
     if (this.muted) return;
-    try {
-      const idx = Math.floor(Math.random() * 19) + 1;
-      const base = (typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL) || '/';
-      const cleanBase = base.endsWith('/') ? base : `${base}/`;
-      const audio = new Audio(`${cleanBase}SFX/PUNCH ${idx} SFX.mp3`);
-      audio.volume = 0.55;
-      audio.play().catch(() => this.playHit());
-    } catch {
-      this.playHit();
+    const tierMap = {
+      light: [1, 2, 3, 4, 5],
+      medium: [6, 7, 8, 13, 14, 15],
+      heavy: [16, 17, 18, 19],
+      critical: [9, 10, 11, 12],
+      ko: [9, 10, 11, 12]
+    };
+    const list = tierMap[tier] || tierMap.medium;
+    const idx = list[Math.floor(Math.random() * list.length)];
+    const path = this._getAssetPath(`SFX/PUNCH ${idx} SFX.mp3`);
+    this._playFromPool(path, 0.55, () => this.playHit());
+  }
+
+  // Multi-punch flurry for dice-scaled moves (e.g. Fire of Fury, Savage Paws)
+  playMultiPunch(hits = 2, tier = 'light') {
+    if (this.muted) return;
+    const count = Math.min(6, Math.max(1, hits || 2));
+    for (let i = 0; i < count; i++) {
+      setTimeout(() => {
+        if (!this.muted) this.playPunch(tier);
+      }, i * 110);
     }
   }
 
-  // Whip SFX from public/SFX/
+  // Whip SFX (sharp crack for Queeny Hair Whip & Kiko Tail Whip)
   playWhip() {
     if (this.muted) return;
-    try {
-      const base = (typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL) || '/';
-      const cleanBase = base.endsWith('/') ? base : `${base}/`;
-      const audio = new Audio(`${cleanBase}SFX/Whip SFX.mp3`);
-      audio.volume = 0.6;
-      audio.play().catch(() => this.playHit());
-    } catch {
-      this.playHit();
+    const path = this._getAssetPath('SFX/Whip SFX.mp3');
+    this._playFromPool(path, 0.6, () => this.playHit());
+  }
+
+  // Hee Hee Vocal Taunt & Mockery
+  playHeeHee() {
+    if (this.muted) return;
+    const path = this._getAssetPath('SFX/HEE HEE SFX.mp3');
+    this._playFromPool(path, 0.65, () => this.playTaunt());
+  }
+
+  // Dynamic Combat Damage SFX: automatically scales punch weight to damage amount
+  playDamage(damageOrOptions = 10, isFatal = false) {
+    if (this.muted) return;
+    let amount = 10;
+    let fatal = isFatal;
+    if (typeof damageOrOptions === 'object' && damageOrOptions !== null) {
+      amount = Number(damageOrOptions.damage ?? damageOrOptions.hp ?? 10);
+      fatal = Boolean(damageOrOptions.isFatal ?? isFatal);
+    } else if (typeof damageOrOptions === 'number') {
+      amount = damageOrOptions;
+    }
+
+    if (fatal || amount >= 50) {
+      this.playPunch('critical');
+    } else if (amount >= 30) {
+      this.playPunch('heavy');
+    } else if (amount >= 15) {
+      this.playPunch('medium');
+    } else {
+      this.playPunch('light');
     }
   }
 
-  // Aliases used by the arena UI — kept as thin wrappers so a missing
-  // sound can never break the action that triggered it.
-  playDamage() {
-    this.playPunch();
-  }
-
-  playAttack() {
-    this.playPunch();
+  // Attack declaration / execution
+  playAttack(attackName = '', damage = 10) {
+    if (this.muted) return;
+    const upper = String(attackName || '').toUpperCase();
+    if (upper.includes('WHIP')) {
+      this.playWhip();
+    } else {
+      this.playDamage(damage);
+    }
   }
 
   playDefeat() {
@@ -381,8 +468,12 @@ class SoundEffects {
     }
   }
 
-  playTaunt() {
+  playTaunt(withVocal = false) {
     if (this.muted) return;
+    if (withVocal) {
+      this.playHeeHee();
+      return;
+    }
     this.init();
     if (!this.ctx) return;
     try {

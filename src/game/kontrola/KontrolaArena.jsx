@@ -1186,6 +1186,7 @@ export default function KontrolaArena() {
           setActiveTauntBubble(event.payload);
           setChatMessages((prev) => [...prev, { ...event.payload, text: `??? [TAUNT]: "${event.payload.text}"` }]);
           setTimeout(() => setActiveTauntBubble(null), 4500);
+          try { if (soundFX?.playTaunt) soundFX.playTaunt(true); } catch {}
           
           if (!showChatRef.current) {
              const toastId = 'toast_' + Date.now() + Math.random();
@@ -3417,6 +3418,7 @@ export default function KontrolaArena() {
     setActiveTauntBubble(msg);
     setChatMessages((prev) => [...prev, { ...msg, text: `??? [TAUNT]: "${msg.text}"` }]);
     setTimeout(() => setActiveTauntBubble(null), 4500);
+    try { if (soundFX?.playTaunt) soundFX.playTaunt(true); } catch {}
     broadcastUIEvent(matchIdRef.current, 'player_taunt', msg);
     
     if (!showChatRef.current) {

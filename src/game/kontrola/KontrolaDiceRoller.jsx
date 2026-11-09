@@ -606,10 +606,28 @@ export default function KontrolaDiceRoller({
     if (hasAttackerRolled && hasDefenderRolled && phase === 'clash') {
       const timer = setTimeout(() => {
         setPhase('clash_summary');
+        try {
+          const atkNameUpper = String(attackSelectionName || resolvedCardName || '').toUpperCase();
+          const isWhip = atkNameUpper.includes('WHIP');
+          const defCardStr = String(typeof activeDefenseCard === 'string' ? activeDefenseCard : (activeDefenseCard?.name || '')).toUpperCase();
+          const isBoomerangReflect = defCardStr.includes('BOOMERANG') && (defSum >= 6 || defSum > atkSum);
+
+          if (isBoomerangReflect) {
+            soundFX.playHeeHee();
+          } else if (isWhip) {
+            soundFX.playWhip();
+          } else if (atkSum > defSum) {
+            soundFX.playDamage(30);
+          } else {
+            soundFX.playPunch('light');
+          }
+        } catch {
+          // Audio errors never throw
+        }
       }, 700);
       return () => clearTimeout(timer);
     }
-  }, [hasAttackerRolled, hasDefenderRolled, phase]);
+  }, [hasAttackerRolled, hasDefenderRolled, phase, attackSelectionName, resolvedCardName, activeDefenseCard, defSum, atkSum]);
 
   const cardImg = attackSelectionName
     ? getCharacterAttackGraphicUrl(attackSelectionName)
