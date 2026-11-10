@@ -893,3 +893,95 @@
   transition: transform 0.65s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.65s ease;
 }
 
+/* ==========================================================================
+   SECTION H: DISCORD-STYLE AVATAR DECORATION ANIMATIONS
+   ========================================================================== */
+
+/* Star Sparkles Twinkle */
+.discord-sparkle-anim {
+  transform-origin: center;
+  animation: fx-discord-sparkle 1.8s ease-in-out infinite alternate;
+}
+
+.discord-sparkle-anim-delayed {
+  transform-origin: center;
+  animation: fx-discord-sparkle 1.8s ease-in-out infinite alternate 0.9s;
+}
+
+@keyframes fx-discord-sparkle {
+  0%   { opacity: 0.3; transform: scale(0.7); }
+  50%  { opacity: 1;   transform: scale(1.2); }
+  100% { opacity: 0.4; transform: scale(0.8); }
+}
+
+/* Dragon Flame Licking Animations */
+.discord-flame-anim-left {
+  transform-origin: 21px 72px;
+  animation: fx-discord-flame-flicker 1.4s ease-in-out infinite alternate;
+}
+
+.discord-flame-anim-right {
+  transform-origin: 79px 72px;
+  animation: fx-discord-flame-flicker 1.4s ease-in-out infinite alternate 0.7s;
+}
+
+.discord-flame-anim-center {
+  transform-origin: 50px 85px;
+  animation: fx-discord-flame-flicker 1.1s ease-in-out infinite alternate 0.3s;
+}
+
+@keyframes fx-discord-flame-flicker {
+  0%   { transform: scale(0.92) rotate(-3deg); filter: brightness(0.9); }
+  50%  { transform: scale(1.08) rotate(2deg);  filter: brightness(1.25); }
+  100% { transform: scale(0.96) rotate(-1deg); filter: brightness(1.0); }
+}
+
+/* Void Shadow Tendril Wave */
+.discord-tendril-anim-1 {
+  transform-origin: 13px 55px;
+  animation: fx-discord-tendril 2.5s ease-in-out infinite alternate;
+}
+
+.discord-tendril-anim-2 {
+  transform-origin: 87px 55px;
+  animation: fx-discord-tendril 2.5s ease-in-out infinite alternate 1.25s;
+}
+
+@keyframes fx-discord-tendril {
+  0%   { transform: scale(0.95) rotate(-2deg); }
+  100% { transform: scale(1.06) rotate(3deg); }
+}
+
+/* Cyber Pioneer Radar Sweep */
+.discord-radar-sweep {
+  transform-origin: 50px 50px;
+  animation: fx-discord-radar-spin 3.5s linear infinite;
+}
+
+@keyframes fx-discord-radar-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Apex Champion Angel Wings Flutter */
+.discord-wing-left {
+  transform-origin: 24px 50px;
+  animation: fx-discord-wing-flutter-l 2.4s ease-in-out infinite alternate;
+}
+
+.discord-wing-right {
+  transform-origin: 76px 50px;
+  animation: fx-discord-wing-flutter-r 2.4s ease-in-out infinite alternate;
+}
+
+@keyframes fx-discord-wing-flutter-l {
+  0%   { transform: rotate(0deg) scale(0.96); }
+  100% { transform: rotate(-5deg) scale(1.04); }
+}
+
+@keyframes fx-discord-wing-flutter-r {
+  0%   { transform: rotate(0deg) scale(0.96); }
+  100% { transform: rotate(5deg) scale(1.04); }
+}
+
+

@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { getAvatarUrl, DEFAULT_AVATAR } from '../utils/avatarUtils';
-import { COSMETIC_FRAMES } from '../services/cosmeticsService';
+import { COSMETIC_FRAMES, cosmeticsService } from '../services/cosmeticsService';
+import DiscordAvatarDecoration from './DiscordAvatarDecoration';
 
 /**
  * Universal PlayerAvatar Component
  * Displays user's chosen PFP avatar from public/PFP Avatars/
- * Enhanced with Tiered Halos, VIP Wings, In-Match Combat Beacons & Voice Ripples.
+ * Enhanced with Discord-style Foreground Avatar Decorations,
+ * Tiered Halos, VIP Wings, In-Match Combat Beacons & Voice Ripples.
  */
 export default function PlayerAvatar({
   avatarId,
@@ -31,11 +33,29 @@ export default function PlayerAvatar({
     setImgError(false);
   }, [avatarId]);
 
+  const [activeEquippedFrame, setActiveEquippedFrame] = useState(() => {
+    return typeof window !== 'undefined' ? cosmeticsService.getEquippedCosmetics()?.frame : 'frame_standard';
+  });
+
+  useEffect(() => {
+    if (frameId) return;
+    const handleUpdate = () => {
+      setActiveEquippedFrame(cosmeticsService.getEquippedCosmetics()?.frame || 'frame_standard');
+    };
+    window.addEventListener('cosmetics_updated', handleUpdate);
+    return () => window.removeEventListener('cosmetics_updated', handleUpdate);
+  }, [frameId]);
+
   const avatarUrl = getAvatarUrl(avatarId);
   const initial = (username || 'P').charAt(0).toUpperCase();
 
-  // Resolve frame styling from cosmetic catalog if frameId provided
-  const frameData = frameId ? COSMETIC_FRAMES.find(f => f.id === frameId) : null;
+  // Resolve frame styling: fallback to equipped frame from cosmeticsService if not explicitly specified
+  const isNoFrame = frameId === false || frameId === 'none';
+  const resolvedFrameId = isNoFrame
+    ? null
+    : (frameId || activeEquippedFrame);
+
+  const frameData = resolvedFrameId ? COSMETIC_FRAMES.find(f => f.id === resolvedFrameId) : null;
   const finalBorderColor = frameData?.borderColor || borderColor;
   const finalGlowColor = frameData?.glowColor || finalBorderColor;
   const hasGlow = showGlow || Boolean(frameData?.glowColor);
@@ -76,7 +96,7 @@ export default function PlayerAvatar({
         alignItems: 'center',
         justifyContent: 'center',
         background: 'linear-gradient(135deg, rgba(10, 20, 40, 0.95), rgba(2, 6, 18, 0.98))',
-        border: `${borderWidth}px solid ${finalBorderColor}`,
+        border: resolvedFrameId ? 'none' : `${borderWidth}px solid ${finalBorderColor}`,
         boxShadow: hasGlow ? `0 0 14px ${finalGlowColor}` : 'none',
         overflow: 'visible',
         cursor: onClick ? 'pointer' : 'default',
@@ -85,13 +105,15 @@ export default function PlayerAvatar({
         ...style
       }}
     >
-      {/* Container for image with hidden overflow to keep portrait circular */}
+      {/* 1. Background: Circular avatar portrait masked with hidden overflow */}
       <div style={{
         width: '100%',
         height: '100%',
         borderRadius: '50%',
         overflow: 'hidden',
-        position: 'relative'
+        position: 'relative',
+        boxSizing: 'border-box',
+        border: resolvedFrameId ? '1.5px solid rgba(255,255,255,0.15)' : 'none'
       }}>
         {!imgError ? (
           <img
@@ -124,6 +146,9 @@ export default function PlayerAvatar({
           </div>
         )}
       </div>
+
+      {/* 2. Discord-Style Avatar Decoration (FOREGROUND on top of avatar circle) */}
+      <DiscordAvatarDecoration frameId={resolvedFrameId} size={size} />
 
       {/* Voice-reactive acoustic ripples for speech */}
       {isSpeaking && (

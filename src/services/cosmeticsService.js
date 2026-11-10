@@ -365,6 +365,11 @@ export const cosmeticsService = {
     }
 
     this.trackEvent('cosmetic_equipped', { userId, slot, cosmeticId });
+    if (typeof window !== 'undefined') {
+      try {
+        window.dispatchEvent(new CustomEvent('cosmetics_updated', { detail: { slot, cosmeticId } }));
+      } catch (e) {}
+    }
     return equipped;
   },
 

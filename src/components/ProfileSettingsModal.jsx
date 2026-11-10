@@ -944,18 +944,20 @@ export default function ProfileSettingsModal({
                       style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '6px',
+                        gap: '8px',
                         background: isEquipped ? 'rgba(0, 240, 255, 0.2)' : isOwned ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.4)',
                         border: isEquipped ? '1.5px solid #00f0ff' : isOwned ? '1px solid rgba(255, 255, 255, 0.15)' : '1px dashed rgba(255, 255, 255, 0.1)',
                         borderRadius: '8px',
-                        padding: '6px 10px',
+                        padding: '6px 12px',
                         color: isEquipped ? '#00f0ff' : isOwned ? '#fff' : 'rgba(255, 255, 255, 0.3)',
                         fontSize: '0.78rem',
                         cursor: isOwned ? 'pointer' : 'not-allowed',
                         transition: 'all 0.15s ease'
                       }}
                     >
-                      <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: `2px solid ${f.borderColor || '#fff'}` }} />
+                      <div style={{ width: '22px', height: '22px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <PlayerAvatar avatarId={selectedAvatar} frameId={f.id} size={20} />
+                      </div>
                       <span>{f.name}</span>
                       {isEquipped && <Check size={12} />}
                       {!isOwned && <Lock size={12} />}
