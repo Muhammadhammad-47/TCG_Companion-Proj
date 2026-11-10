@@ -432,6 +432,7 @@ export default function CardActionModal({
                         key={card.instanceId}
                         cardName={card.name}
                         isSelected={isSelected}
+                        enable3DTilt={true}
                         onClick={() => !disabledForZombie && handleActionClick(card)}
                         style={{
                           background: isSelected ? 'rgba(251, 200, 13, 0.18)' : 'rgba(255, 255, 255, 0.04)',

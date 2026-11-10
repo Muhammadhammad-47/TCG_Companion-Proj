@@ -2828,6 +2828,11 @@ export default function KontrolaArena() {
       setQuotaUnlockChar(selectedCharacter);
       return;
     }
+    if (!characterLicenseService.hasAnyPlayableCharacterSync(currentUser?.id)) {
+      setError('All your characters have exhausted their free 10-match quota. Please unlock a warrior to enter tournament matches.');
+      setQuotaUnlockChar(selectedCharacter);
+      return;
+    }
 
     if (isMatchHost) {
       try {
@@ -4774,21 +4779,30 @@ export default function KontrolaArena() {
                       <span>Include 157-Card Premium Deck (with Kontrol Cards & Blitz Attacks)</span>
                     </label>
 
-                    <button
-                      onClick={handleCreateMatch}
-                      className="btn-enter-game-cta"
-                      style={{
-                        width: '100%',
-                        padding: '14px',
-                        borderRadius: '12px',
-                        fontSize: '1.15rem',
-                        justifyContent: 'center',
-                        letterSpacing: '1px'
-                      }}
-                    >
-                      <Swords size={20} />
-                      <span>CREATE ROOM AS HOST</span>
-                    </button>
+                    {(() => {
+                      const hostLic = characterLicenseService.getLicenseSync(currentUser?.id, selectedCharacter);
+                      const isLocked = !hostLic.canPlay;
+                      return (
+                        <button
+                          onClick={isLocked ? () => { playClick(); setQuotaUnlockChar(selectedCharacter); } : handleCreateMatch}
+                          className="btn-enter-game-cta"
+                          style={{
+                            width: '100%',
+                            padding: '14px',
+                            borderRadius: '12px',
+                            fontSize: '1.15rem',
+                            justifyContent: 'center',
+                            letterSpacing: '1px',
+                            background: isLocked ? 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)' : undefined,
+                            boxShadow: isLocked ? '0 0 20px rgba(239, 68, 68, 0.6)' : undefined,
+                            border: isLocked ? '1.5px solid #f87171' : undefined
+                          }}
+                        >
+                          {isLocked ? <Lock size={20} /> : <Swords size={20} />}
+                          <span>{isLocked ? `WARRIOR LOCKED (${hostLic.characterName.toUpperCase()}) - UNLOCK TO HOST` : 'CREATE ROOM AS HOST'}</span>
+                        </button>
+                      );
+                    })()}
                   </div>
                 )}
 
@@ -4889,31 +4903,39 @@ export default function KontrolaArena() {
                       }}
                     />
 
-                    <button
-                      onClick={() => handleJoinByCode(joinCodeInput)}
-                      disabled={!joinCodeInput || joinCodeInput.length < 4}
-                      style={{
-                        width: '100%',
-                        padding: '14px',
-                        borderRadius: '12px',
-                        fontSize: '1.1rem',
-                        fontWeight: 'bold',
-                        cursor: joinCodeInput && joinCodeInput.length >= 4 ? 'pointer' : 'not-allowed',
-                        background:
-                          joinCodeInput && joinCodeInput.length >= 4
-                            ? 'linear-gradient(90deg, #FBC80D 0%, #ff9900 100%)'
-                            : 'rgba(255,255,255,0.1)',
-                        border: 'none',
-                        color: joinCodeInput && joinCodeInput.length >= 4 ? '#000' : 'rgba(255,255,255,0.4)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '10px'
-                      }}
-                    >
-                      <Wifi size={20} />
-                      <span>JOIN ROOM</span>
-                    </button>
+                    {(() => {
+                      const joinLic = characterLicenseService.getLicenseSync(currentUser?.id, selectedCharacter);
+                      const isLocked = !joinLic.canPlay;
+                      return (
+                        <button
+                          onClick={isLocked ? () => { playClick(); setQuotaUnlockChar(selectedCharacter); } : () => handleJoinByCode(joinCodeInput)}
+                          disabled={!isLocked && (!joinCodeInput || joinCodeInput.length < 4)}
+                          style={{
+                            width: '100%',
+                            padding: '14px',
+                            borderRadius: '12px',
+                            fontSize: '1.1rem',
+                            fontWeight: 'bold',
+                            cursor: (isLocked || (joinCodeInput && joinCodeInput.length >= 4)) ? 'pointer' : 'not-allowed',
+                            background: isLocked
+                              ? 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)'
+                              : (joinCodeInput && joinCodeInput.length >= 4
+                                ? 'linear-gradient(90deg, #FBC80D 0%, #ff9900 100%)'
+                                : 'rgba(255,255,255,0.1)'),
+                            border: isLocked ? '1.5px solid #f87171' : 'none',
+                            boxShadow: isLocked ? '0 0 20px rgba(239, 68, 68, 0.6)' : undefined,
+                            color: isLocked ? '#fff' : (joinCodeInput && joinCodeInput.length >= 4 ? '#000' : 'rgba(255,255,255,0.4)'),
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '10px'
+                          }}
+                        >
+                          {isLocked ? <Lock size={20} /> : <Wifi size={20} />}
+                          <span>{isLocked ? `WARRIOR LOCKED (${joinLic.characterName.toUpperCase()}) - UNLOCK TO JOIN` : 'JOIN ROOM'}</span>
+                        </button>
+                      );
+                    })()}
                   </div>
                 )}
 
@@ -7199,6 +7221,14 @@ export default function KontrolaArena() {
                   {isHost && (
                     <button
                       onClick={() => {
+                        const hostChar = gameState.characterSelections?.[playerId] || selectedCharacter;
+                        const hostLic = characterLicenseService.getLicenseSync(currentUser?.id, hostChar);
+                        if (!hostLic.canPlay) {
+                          playClick();
+                          showNotice(`Cannot start match: ${hostLic.characterName} has exhausted the 10-match quota!`, 'warning');
+                          setQuotaUnlockChar(hostChar);
+                          return;
+                        }
                         playClick();
                         enqueueHostAction({ actionType: 'START_MATCH' });
                       }}

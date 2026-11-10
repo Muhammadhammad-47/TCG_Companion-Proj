@@ -160,6 +160,23 @@ export default function CharacterUnlockModal({
     }
   };
 
+  // Handle Admin Grant Master VIP (All Characters + 10k Gold + 1k Gems + All Cosmetics)
+  const handleGrantMasterVIP = async () => {
+    setIsAdminActionLoading(true);
+    setFeedback({ text: '', type: '' });
+    try {
+      const res = await characterLicenseService.adminGrantFullVIP(userId || 'admin_self', cosmeticsService);
+      try { soundFX.playLevelUp(); } catch {}
+      setFeedback({ text: res.message, type: 'success' });
+      await loadStatus();
+      if (onUnlockSuccess) onUnlockSuccess(charKey);
+    } catch (e) {
+      setFeedback({ text: 'Error granting Master VIP.', type: 'error' });
+    } finally {
+      setIsAdminActionLoading(false);
+    }
+  };
+
   // Handle Admin Grant Gold & Gems
   const handleGrantWalletFunds = async (gold = 5000, gems = 500) => {
     setIsAdminActionLoading(true);
@@ -471,14 +488,25 @@ export default function CharacterUnlockModal({
                       Bulk Master Grants:
                     </div>
                     
-                    <button
-                      type="button"
-                      disabled={isAdminActionLoading}
-                      onClick={handleGrantAllCharacters}
-                      className="w-full py-2 px-3 rounded-lg bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:brightness-110 text-black font-black text-xs flex items-center justify-center gap-1.5 shadow-md transition-all tracking-wide"
-                    >
-                      <Crown size={14} /> 👑 GRANT ALL 7 PLAYABLE WARRIORS (VIP)
-                    </button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        disabled={isAdminActionLoading}
+                        onClick={handleGrantAllCharacters}
+                        className="py-2 px-2.5 rounded-lg bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:brightness-110 text-black font-black text-[11px] flex items-center justify-center gap-1 shadow-md transition-all tracking-wide"
+                      >
+                        <Crown size={13} /> GRANT ALL 7 WARRIORS
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={isAdminActionLoading}
+                        onClick={handleGrantMasterVIP}
+                        className="py-2 px-2.5 rounded-lg bg-gradient-to-r from-fuchsia-500 via-purple-500 to-indigo-600 hover:brightness-110 text-white font-black text-[11px] flex items-center justify-center gap-1 shadow-md transition-all tracking-wide"
+                      >
+                        <Sparkles size={13} /> 🌟 FULL MASTER VIP
+                      </button>
+                    </div>
 
                     <div className="grid grid-cols-3 gap-1.5 mt-0.5">
                       <button

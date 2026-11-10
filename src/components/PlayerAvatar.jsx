@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getAvatarUrl, DEFAULT_AVATAR } from '../utils/avatarUtils';
 import { COSMETIC_FRAMES } from '../services/cosmeticsService';
 
@@ -27,6 +27,10 @@ export default function PlayerAvatar({
   isVip = false
 }) {
   const [imgError, setImgError] = useState(false);
+  useEffect(() => {
+    setImgError(false);
+  }, [avatarId]);
+
   const avatarUrl = getAvatarUrl(avatarId);
   const initial = (username || 'P').charAt(0).toUpperCase();
 

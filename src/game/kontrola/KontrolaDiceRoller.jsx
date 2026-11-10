@@ -127,17 +127,26 @@ function drawDiceFaceToCanvas(canvas, value, theme) {
 export function CanvasPipDie({ value = 1, theme = 'red', isRolling = false, size = 68 }) {
   const canvasRef = useRef(null);
   const [displayVal, setDisplayVal] = useState(value);
+  const [justLanded, setJustLanded] = useState(false);
+  const wasRollingRef = useRef(false);
 
   // During roll animation, rapidly cycle values
   useEffect(() => {
     let interval = null;
     if (isRolling) {
+      wasRollingRef.current = true;
       interval = setInterval(() => {
         const rand = Math.floor(Math.random() * 6) + 1;
         setDisplayVal(rand);
       }, 60);
     } else {
       setDisplayVal(value);
+      if (wasRollingRef.current) {
+        wasRollingRef.current = false;
+        setJustLanded(true);
+        const timer = setTimeout(() => setJustLanded(false), 850);
+        return () => clearTimeout(timer);
+      }
     }
     return () => {
       if (interval) clearInterval(interval);
@@ -157,8 +166,8 @@ export function CanvasPipDie({ value = 1, theme = 'red', isRolling = false, size
         height: `${size}px`,
         position: 'relative',
         display: 'inline-block',
-        transform: isRolling ? 'rotate(8deg) scale(1.05)' : 'none',
-        transition: 'transform 0.15s ease',
+        transform: isRolling ? 'rotate(8deg) scale(1.05)' : (justLanded ? 'scale(1.08)' : 'none'),
+        transition: 'transform 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
         filter: isRed
           ? 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5))'
           : 'drop-shadow(0 6px 14px rgba(255, 224, 102, 0.35))'
@@ -179,6 +188,13 @@ export function CanvasPipDie({ value = 1, theme = 'red', isRolling = false, size
           animation: isRolling ? 'diceWobble 0.2s infinite ease-in-out' : 'none'
         }}
       />
+      {/* Micro-VFX: Landing Shockwave / Starburst on 6 / Smoke puff on 1 */}
+      {justLanded && displayVal === 6 && (
+        <div className="dice-landing-starburst" />
+      )}
+      {justLanded && displayVal === 1 && (
+        <div className="dice-landing-smoke" />
+      )}
     </div>
   );
 }

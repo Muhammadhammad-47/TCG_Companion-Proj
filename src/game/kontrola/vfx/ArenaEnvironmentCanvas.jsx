@@ -21,14 +21,16 @@ export default function ArenaEnvironmentCanvas({
     const ctx = canvas.getContext('2d');
     let animationFrameId;
 
-    let width = (canvas.width = window.innerWidth);
-    let height = (canvas.height = window.innerHeight);
+    let width = 800;
+    let height = 600;
 
     const handleResize = () => {
       if (!canvas) return;
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
+      const rect = canvas.getBoundingClientRect();
+      width = canvas.width = Math.round(rect.width) || window.innerWidth || 800;
+      height = canvas.height = Math.round(rect.height) || window.innerHeight || 600;
     };
+    handleResize();
     window.addEventListener('resize', handleResize);
 
     // Particle pool setup based on scenario
@@ -106,3 +108,4 @@ export default function ArenaEnvironmentCanvas({
     </div>
   );
 }
+

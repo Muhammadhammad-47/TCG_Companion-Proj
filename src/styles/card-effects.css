@@ -790,3 +790,106 @@
   50%  { transform: scale(1.3); opacity: 0.8; filter: blur(4px); }
   100% { transform: scale(2.0); opacity: 0; filter: blur(10px); }
 }
+
+/* ==========================================================================
+   SECTION G: MICRO-VFX (DICE LANDING, CRYSTAL SHARDS, ET ORBS)
+   ========================================================================== */
+
+/* Dice Landing Starburst Flare (Natural 6) */
+.dice-landing-starburst {
+  position: absolute;
+  inset: -8px;
+  border-radius: 18px;
+  pointer-events: none;
+  border: 2px solid rgba(251, 200, 13, 0.95);
+  box-shadow: 0 0 15px rgba(251, 200, 13, 0.8), inset 0 0 12px rgba(255, 215, 0, 0.6);
+  animation: fx-dice-starburst 0.75s cubic-bezier(0.1, 0.8, 0.25, 1) forwards;
+  z-index: 20;
+}
+
+@keyframes fx-dice-starburst {
+  0% {
+    transform: scale(0.7) rotate(0deg);
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(251, 200, 13, 0.9), 0 0 20px rgba(255, 215, 0, 0.8);
+  }
+  50% {
+    opacity: 0.85;
+    box-shadow: 0 0 0 16px rgba(251, 200, 13, 0.35), 0 0 35px rgba(255, 215, 0, 0.7);
+  }
+  100% {
+    transform: scale(1.45) rotate(45deg);
+    opacity: 0;
+    box-shadow: 0 0 0 30px rgba(251, 200, 13, 0), 0 0 50px rgba(255, 215, 0, 0);
+  }
+}
+
+/* Dice Landing Smoke Puff (Natural 1 / Snake Eyes) */
+.dice-landing-smoke {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(160, 160, 175, 0.8) 0%, rgba(90, 90, 105, 0.3) 60%, transparent 100%);
+  animation: fx-dice-smoke-puff 0.8s ease-out forwards;
+  z-index: 20;
+}
+
+@keyframes fx-dice-smoke-puff {
+  0% {
+    transform: scale(0.65) translateY(0);
+    opacity: 0.85;
+    filter: blur(0px);
+  }
+  50% {
+    transform: scale(1.15) translateY(-10px);
+    opacity: 0.5;
+    filter: blur(2px);
+  }
+  100% {
+    transform: scale(1.45) translateY(-20px);
+    opacity: 0;
+    filter: blur(5px);
+  }
+}
+
+/* Crystal Break / Shard Burst Explosion */
+.crystal-shard-burst {
+  position: absolute;
+  inset: -10px;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(0, 240, 255, 0.8) 0%, rgba(0, 150, 255, 0.3) 50%, transparent 80%);
+  animation: fx-crystal-shatter 0.65s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+  z-index: 30;
+}
+
+@keyframes fx-crystal-shatter {
+  0% {
+    transform: scale(0.5);
+    opacity: 1;
+    filter: brightness(2.5);
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+    filter: brightness(1);
+  }
+}
+
+/* Energy Token Travel Orb */
+.et-travel-orb {
+  position: fixed;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 10%, #FBC80D 60%, rgba(251, 200, 13, 0) 100%);
+  box-shadow: 0 0 15px #FBC80D, 0 0 30px rgba(251, 200, 13, 0.6);
+  pointer-events: none;
+  z-index: 9999;
+  transition: transform 0.65s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.65s ease;
+}
+
