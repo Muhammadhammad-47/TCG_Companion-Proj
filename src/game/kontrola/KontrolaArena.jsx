@@ -42,6 +42,8 @@ import { characterLicenseService, FREE_USAGE_LIMIT } from '../../services/charac
 import CharacterUnlockModal from '../../components/CharacterUnlockModal';
 import { StoreModal } from '../../components/StoreModal';
 import CardVFXWrapper from './vfx/CardVFXWrapper';
+import ArenaEnvironmentCanvas from './vfx/ArenaEnvironmentCanvas';
+import FullScreenCinematics from './vfx/FullScreenCinematics';
 
 import '../../pages/GamePage.css';
 
@@ -247,6 +249,28 @@ export default function KontrolaArena() {
   const [dissolvingCardId, setDissolvingCardId] = useState(null);
   const [selectedCharacterAttack, setSelectedCharacterAttack] = useState(null);
   const [selectedTargetId, setSelectedTargetId] = useState(null);
+
+  // Full-Screen Cinematic & Scenario VFX States
+  const [turnBanner, setTurnBanner] = useState(null);
+  const [isScreenDimmed, setIsScreenDimmed] = useState(false);
+  const [isScreenShattered, setIsScreenShattered] = useState(false);
+  const [isPsychicWarp, setIsPsychicWarp] = useState(false);
+  const lastTurnAnnouncedRef = useRef(null);
+
+  // Announce Turn Changes with Fullscreen Letterbox Slash
+  useEffect(() => {
+    if (gameState?.status === 'active' && gameState?.turn && gameState.turn !== lastTurnAnnouncedRef.current) {
+      lastTurnAnnouncedRef.current = gameState.turn;
+      const isMyTurn = gameState.turn === playerId;
+      const actorName = gameState.playerNames?.[gameState.turn] || 'Opponent';
+      setTurnBanner({
+        text: isMyTurn ? 'YOUR TURN' : `${actorName.toUpperCase()}'S TURN`,
+        sub: isMyTurn ? 'Select an Action Card or Technique' : 'Opponent is choosing strategy...',
+        isMe: isMyTurn
+      });
+      try { soundFX.playCard(); } catch {}
+    }
+  }, [gameState?.turn, gameState?.status, playerId]);
 
   const [chatMessages, setChatMessages] = useState([]);
   const [showChat, setShowChat] = useState(false);
@@ -1250,6 +1274,19 @@ export default function KontrolaArena() {
             setTimeout(() => setIsShaking(false), 800);
             soundFX.init();
             
+            // Cinematic super move triggers
+            const actionUpper = String(actionName || '').toUpperCase();
+            if (actionUpper.includes('BLITZ')) {
+              setIsScreenShattered(true);
+              setTimeout(() => setIsScreenShattered(false), 1700);
+            } else if (actionUpper.includes('KONTROL')) {
+              setIsPsychicWarp(true);
+              setTimeout(() => setIsPsychicWarp(false), 1500);
+            } else if (dmgDealt >= 40) {
+              setIsScreenDimmed(true);
+              setTimeout(() => setIsScreenDimmed(false), 1200);
+            }
+
             if (dmgDealt > 0) spawnDamagePopup(`-${dmgDealt}`, false);
             if (atkDmgDealt > 0) spawnDamagePopup(`-${atkDmgDealt}`, false);
             
@@ -5143,6 +5180,31 @@ export default function KontrolaArena() {
           className={`webgl-screen arena-screen ${isShaking ? 'shake-animation damage-flash-overlay' : ''} ${turnFlash ? 'turn-flash-pulse' : ''}`}
           style={{ width: '100%', height: '100%' }}
         >
+          {/* Dynamic Scenario Environmental Background */}
+          {gameState && (
+            <ArenaEnvironmentCanvas
+              scenario={(() => {
+                const myChar = gameState.characterStates?.[playerId];
+                const elem = myChar?.element?.toLowerCase();
+                if (elem === 'fire') return 'volcano';
+                if (elem === 'lightning') return 'storm';
+                if (elem === 'magic/poison' || elem === 'poison') return 'poison';
+                return 'cyber';
+              })()}
+              livingPlayerCount={gameState.players?.filter(p => !gameState.characterStates?.[p]?.isDefeated)?.length || 4}
+            />
+          )}
+
+          {/* Full-Screen Cinematics (Turn Slashes, Super Move Dims, Screen Shatter) */}
+          <FullScreenCinematics
+            turnBanner={turnBanner}
+            isDimmed={isScreenDimmed}
+            isShattered={isScreenShattered}
+            isPsychicWarp={isPsychicWarp}
+            winnerData={winner ? { isWinner: winner.playerId === playerId, name: winner.name } : null}
+            onClearTurnBanner={() => setTurnBanner(null)}
+          />
+
           {/* Floating Damage / Heal Number Popups */}
           {damagePopups.map((popup) => (
             <div
@@ -5642,7 +5704,7 @@ export default function KontrolaArena() {
                         <div className={`arena-num-pill pill-${idx + 1}`}>{idx + 1}</div>
 
                         <div
-                          className="arena-score-avatar"
+                          className={`arena-score-avatar ${isActiveTurn ? 'avatar-active-turn-beacon' : ''} ${pChar.hp < 30 ? 'avatar-low-hp-distress' : ''} ${pChar.shield > 0 ? 'avatar-shield-hex' : ''} ${pChar.isZombie ? 'avatar-zombie-infected' : ''}`}
                           style={{
                             borderColor: pChar.themeColor || 'var(--neon-cyan)',
                             overflow: 'visible',

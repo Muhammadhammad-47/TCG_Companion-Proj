@@ -1,5 +1,5 @@
 import React from 'react';
-import { CHARACTERS, ZOMBIE_PROFILE } from '../data/characters';
+import { CHARACTERS, ZOMBIE_PROFILE, getAssetUrl } from '../data/characters';
 import { Shield, Skull, Zap, Gem, Plus, Minus, Flame, Sparkles } from 'lucide-react';
 import { soundFX } from '../utils/audio';
 import CardVFXWrapper from '../kontrola/vfx/CardVFXWrapper';
@@ -40,27 +40,41 @@ export default function PlayerCard({
           cardName={char.name}
           isSelected={isActive}
           isOvercharged={isActive}
+          fighterStance={char.element ? char.element.toLowerCase() : 'fire'}
+          enable3DTilt={true}
           style={{ borderRadius: '12px', display: 'inline-block' }}
         >
-          <div className="player-avatar-box" style={{ position: 'relative' }}>
-            <span className="avatar-emoji">{isZombie ? '🧟‍♂️' : char.avatar}</span>
+          <div className="player-avatar-box" style={{
+            position: 'relative',
+            width: '48px',
+            height: '48px',
+            borderRadius: '10px',
+            overflow: 'hidden',
+            border: `2px solid ${isZombie ? '#52c41a' : (char.themeColor || '#00f0ff')}`,
+            boxShadow: isActive ? '0 0 12px var(--player-accent)' : 'none'
+          }}>
+            <img
+              src={getAssetUrl(isZombie ? (ZOMBIE_PROFILE.image || char.image) : char.image)}
+              alt={char.name}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
             {isZombie && <span className="zombie-tag-overlay">ZOMBIE</span>}
             {/* Level Badge */}
             <div style={{
               position: 'absolute',
-              top: '-6px',
-              right: '-6px',
+              top: '-4px',
+              right: '-4px',
               background: 'linear-gradient(135deg, #FBC80D 0%, #FF7700 100%)',
-              width: '24px',
-              height: '24px',
+              width: '20px',
+              height: '20px',
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '0.7rem',
+              fontSize: '0.65rem',
               fontWeight: 'bold',
               color: '#000',
-              border: '2px solid rgba(0,0,0,0.8)',
+              border: '1.5px solid rgba(0,0,0,0.8)',
               boxShadow: '0 0 10px rgba(255, 215, 0, 0.7)',
               zIndex: 10
             }}>

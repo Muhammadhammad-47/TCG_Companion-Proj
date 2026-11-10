@@ -811,6 +811,9 @@ export default function KontrolaDiceRoller({
             cardName={resolvedCardName || attackSelectionName}
             isOvercharged={isRollingAttacker || isRollingDefender}
             isFlashing={phase === 'resolved'}
+            isClashing={isRollingAttacker || isRollingDefender}
+            enable3DTilt={true}
+            showSigil={true}
             hasFlare={true}
             style={{
               width: '200px',
@@ -976,6 +979,8 @@ export default function KontrolaDiceRoller({
                     cardName={typeof activeDefenseCard === 'string' ? activeDefenseCard : activeDefenseCard.name}
                     isOvercharged={isAttackerRolling || isDefenderRolling}
                     isFlashing={phase === 'resolved'}
+                    isClashing={isAttackerRolling || isDefenderRolling}
+                    enable3DTilt={true}
                     style={{
                       width: '110px',
                       height: '154px',

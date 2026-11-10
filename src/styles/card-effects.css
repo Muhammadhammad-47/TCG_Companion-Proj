@@ -337,3 +337,456 @@
   100% { background-position: -200% 0; }
 }
 
+
+
+/* ==========================================================================
+   SECTION B: AVATAR VFX ENGINE (3 Avatar Types: PFP, In-Match HUD, Companion)
+   ========================================================================== */
+
+/* 1. Profile PFP Tiered Halos */
+.avatar-halo-rare {
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.6), inset 0 0 10px rgba(0, 240, 255, 0.4) !important;
+  animation: fx-halo-breathe 2.4s ease-in-out infinite alternate;
+}
+
+.avatar-halo-epic {
+  box-shadow: 0 0 20px rgba(192, 132, 252, 0.7), inset 0 0 12px rgba(192, 132, 252, 0.5) !important;
+  animation: fx-halo-pulse-epic 1.8s ease-in-out infinite alternate;
+}
+
+.avatar-halo-legendary {
+  box-shadow: 0 0 24px rgba(251, 200, 13, 0.8), 0 0 40px rgba(255, 120, 0, 0.4), inset 0 0 14px rgba(251, 200, 13, 0.6) !important;
+  animation: fx-halo-legendary-spin 4s linear infinite;
+}
+
+.avatar-halo-cosmic {
+  box-shadow: 0 0 25px rgba(255, 0, 128, 0.8), 0 0 50px rgba(0, 240, 255, 0.6), inset 0 0 16px rgba(255, 0, 128, 0.5) !important;
+  animation: fx-halo-cosmic 3s ease-in-out infinite alternate;
+}
+
+@keyframes fx-halo-breathe {
+  0%   { filter: drop-shadow(0 0 4px rgba(0, 240, 255, 0.4)); }
+  100% { filter: drop-shadow(0 0 14px rgba(0, 240, 255, 0.9)); }
+}
+
+@keyframes fx-halo-pulse-epic {
+  0%   { transform: scale(1); filter: drop-shadow(0 0 6px rgba(192, 132, 252, 0.5)); }
+  100% { transform: scale(1.03); filter: drop-shadow(0 0 18px rgba(192, 132, 252, 0.95)); }
+}
+
+@keyframes fx-halo-legendary-spin {
+  0%   { filter: drop-shadow(0 0 8px #FBC80D) hue-rotate(0deg); }
+  50%  { filter: drop-shadow(0 0 18px #ff7700) hue-rotate(25deg); }
+  100% { filter: drop-shadow(0 0 8px #FBC80D) hue-rotate(0deg); }
+}
+
+@keyframes fx-halo-cosmic {
+  0%   { filter: drop-shadow(0 0 10px #ff0080) hue-rotate(0deg); }
+  50%  { filter: drop-shadow(0 0 22px #00f0ff) hue-rotate(180deg); }
+  100% { filter: drop-shadow(0 0 10px #ff0080) hue-rotate(360deg); }
+}
+
+/* Master VIP Golden Laurel Wings */
+.avatar-wings-vip::before,
+.avatar-wings-vip::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 22px;
+  height: 38px;
+  background: radial-gradient(ellipse at center, rgba(251, 200, 13, 0.9) 0%, rgba(255, 170, 0, 0.4) 60%, transparent 100%);
+  filter: drop-shadow(0 0 8px #FBC80D);
+  pointer-events: none;
+  z-index: -1;
+  animation: fx-wings-flap 2.2s ease-in-out infinite alternate;
+}
+
+.avatar-wings-vip::before {
+  left: -18px;
+  transform-origin: right center;
+  border-radius: 50% 0 0 50%;
+}
+
+.avatar-wings-vip::after {
+  right: -18px;
+  transform-origin: left center;
+  border-radius: 0 50% 50% 0;
+}
+
+@keyframes fx-wings-flap {
+  0%   { transform: translateY(-50%) rotate(0deg) scale(0.9); opacity: 0.7; }
+  100% { transform: translateY(-50%) rotate(12deg) scale(1.15); opacity: 1; }
+}
+
+/* 2. In-Match HUD Avatar States */
+/* Active Turn Radar Beacon */
+.avatar-active-turn-beacon {
+  position: relative;
+}
+
+.avatar-active-turn-beacon::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 2px solid var(--neon-cyan, #00f0ff);
+  animation: fx-beacon-radar 1.5s cubic-bezier(0.1, 0.7, 0.1, 1) infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes fx-beacon-radar {
+  0%   { transform: scale(0.85); opacity: 1; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* Low-HP Distress Pulse */
+.avatar-low-hp-distress {
+  animation: fx-distress-shake 0.8s ease-in-out infinite alternate !important;
+  border-color: #ff2a55 !important;
+  box-shadow: 0 0 20px rgba(255, 42, 85, 0.9), inset 0 0 12px rgba(255, 42, 85, 0.6) !important;
+}
+
+@keyframes fx-distress-shake {
+  0%   { transform: scale(0.96) translate(0, 0); filter: drop-shadow(0 0 6px #ff2a55); }
+  50%  { transform: scale(1.02) translate(1px, -1px); filter: drop-shadow(0 0 16px #ff2a55); }
+  100% { transform: scale(0.98) translate(-1px, 1px); filter: drop-shadow(0 0 8px #ff0033); }
+}
+
+/* Shield / Innate DP Hex-Barrier */
+.avatar-shield-hex::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid #00f0ff;
+  background: radial-gradient(circle, rgba(0, 240, 255, 0.15) 0%, transparent 80%);
+  clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.8);
+  animation: fx-hex-rotate 6s linear infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+@keyframes fx-hex-rotate {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Zombie Transformation Necrotic Glitch */
+.avatar-zombie-infected {
+  filter: contrast(130%) hue-rotate(85deg) drop-shadow(0 0 14px #39ff14) !important;
+  animation: fx-zombie-flicker 1.4s steps(4) infinite alternate;
+}
+
+@keyframes fx-zombie-flicker {
+  0%   { opacity: 1; transform: scale(1); }
+  50%  { opacity: 0.85; transform: scale(0.98) skewX(2deg); }
+  100% { opacity: 1; transform: scale(1.02) skewX(-2deg); }
+}
+
+/* 3. Voice-Reactive Chatbot Avatar Acoustic Waves */
+.avatar-speech-wave {
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  border: 2px solid var(--neon-cyan, #00f0ff);
+  opacity: 0;
+  pointer-events: none;
+  animation: fx-speech-ripple 1.2s cubic-bezier(0, 0.6, 0.4, 1) infinite;
+}
+
+.avatar-speech-wave-delayed {
+  animation-delay: 0.4s;
+}
+
+@keyframes fx-speech-ripple {
+  0%   { transform: scale(0.9); opacity: 0.8; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+
+
+/* ==========================================================================
+   SECTION C: FIGHTER MODEL & ELEMENTAL COMBAT STANCES
+   ========================================================================== */
+
+/* Fire Stance: Chynaman (Rising Flame Distortion) */
+.fighter-stance-fire {
+  position: relative;
+  box-shadow: 0 0 24px rgba(237, 30, 36, 0.6), inset 0 0 16px rgba(255, 100, 0, 0.4);
+}
+.fighter-stance-fire::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: inherit;
+  background: radial-gradient(ellipse at bottom, rgba(255, 60, 0, 0.35) 0%, transparent 70%);
+  animation: fx-fire-aura 1.6s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes fx-fire-aura {
+  0%   { transform: scaleY(0.92); filter: blur(3px) brightness(1); }
+  100% { transform: scaleY(1.08); filter: blur(6px) brightness(1.5); }
+}
+
+/* Lightning Stance: Bee (High-Frequency Electric Discharges) */
+.fighter-stance-lightning {
+  box-shadow: 0 0 24px rgba(251, 200, 13, 0.7), inset 0 0 16px rgba(255, 240, 100, 0.4);
+  animation: fx-lightning-jitter 0.18s infinite alternate;
+}
+
+@keyframes fx-lightning-jitter {
+  0%   { filter: drop-shadow(0 0 8px #FBC80D) drop-shadow(0 0 18px rgba(251, 200, 13, 0.5)); }
+  100% { filter: drop-shadow(0 0 16px #ffffff) drop-shadow(0 0 26px #FBC80D); }
+}
+
+/* Poison Stance: Katsumi (Toxic Acid Mist) */
+.fighter-stance-poison {
+  box-shadow: 0 0 24px rgba(57, 255, 20, 0.6), inset 0 0 16px rgba(20, 180, 50, 0.4);
+  animation: fx-poison-swirl 3s ease-in-out infinite alternate;
+}
+
+@keyframes fx-poison-swirl {
+  0%   { filter: hue-rotate(0deg) drop-shadow(0 0 8px #39ff14); }
+  100% { filter: hue-rotate(30deg) drop-shadow(0 0 20px #00ff88); }
+}
+
+/* Shadow Stance: Kiko (Void Acoustic Ripples) */
+.fighter-stance-shadow {
+  box-shadow: 0 0 24px rgba(192, 132, 252, 0.6), inset 0 0 16px rgba(100, 30, 200, 0.4);
+  animation: fx-void-pulse 2.2s ease-in-out infinite alternate;
+}
+
+@keyframes fx-void-pulse {
+  0%   { filter: drop-shadow(0 0 8px #c084fc); transform: scale(1); }
+  100% { filter: drop-shadow(0 0 20px #7928ca); transform: scale(1.02); }
+}
+
+/* Combat Surge (Attacker lunges forward with motion trail) */
+.fighter-attack-surge {
+  animation: fx-attack-lunge 0.55s cubic-bezier(0.1, 0.9, 0.2, 1);
+  z-index: 50 !important;
+}
+
+@keyframes fx-attack-lunge {
+  0%   { transform: scale(1) translateY(0); filter: brightness(1); }
+  35%  { transform: scale(1.2) translateY(-28px); filter: brightness(2) drop-shadow(0 0 25px #fff); }
+  70%  { transform: scale(1.1) translateY(-14px); filter: brightness(1.5); }
+  100% { transform: scale(1) translateY(0); filter: brightness(1); }
+}
+
+/* Damage Recoil (Defender shakes & flashes crimson on hit) */
+.fighter-hit-recoil {
+  animation: fx-defender-recoil 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+@keyframes fx-defender-recoil {
+  0%   { transform: translate(0, 0); filter: brightness(3) contrast(200%); }
+  20%  { transform: translate(-8px, 6px) rotate(-3deg); filter: drop-shadow(0 0 20px #ff0055); }
+  40%  { transform: translate(6px, -4px) rotate(2deg); }
+  60%  { transform: translate(-4px, 3px); }
+  80%  { transform: translate(2px, -1px); }
+  100% { transform: translate(0, 0); filter: brightness(1); }
+}
+
+
+/* ==========================================================================
+   SECTION D: 3D CARD PARALLAX TILT & SUMMONING SIGILS
+   ========================================================================== */
+
+.card-3d-perspective-container {
+  perspective: 1200px;
+  display: inline-block;
+}
+
+.card-3d-tilt {
+  transition: transform 0.15s ease-out, box-shadow 0.2s ease;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+/* Floor Summoning Sigil Eruption */
+.summoning-sigil-stamp {
+  position: absolute;
+  width: 140px;
+  height: 140px;
+  left: 50%;
+  bottom: -40px;
+  transform: translateX(-50%) rotateX(65deg);
+  border-radius: 50%;
+  border: 3px dashed var(--fx-color, #00f0ff);
+  background: radial-gradient(circle, var(--fx-glow-soft, rgba(0, 240, 255, 0.4)) 0%, transparent 75%);
+  box-shadow: 0 0 25px var(--fx-color, #00f0ff);
+  animation: fx-sigil-spin 8s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes fx-sigil-spin {
+  0%   { transform: translateX(-50%) rotateX(65deg) rotate(0deg); opacity: 0.8; }
+  50%  { opacity: 1; }
+  100% { transform: translateX(-50%) rotateX(65deg) rotate(360deg); opacity: 0.8; }
+}
+
+/* Combat Dice Clash Beam Struggle */
+.clash-beam-struggle {
+  position: relative;
+  animation: fx-beam-struggle-shake 0.12s infinite alternate;
+}
+
+.clash-beam-struggle::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 100vw;
+  height: 6px;
+  background: linear-gradient(90deg, #ff0055 0%, #ffffff 50%, #00f0ff 100%);
+  filter: drop-shadow(0 0 14px #ffffff) drop-shadow(0 0 25px #00f0ff);
+  transform: translateY(-50%);
+  pointer-events: none;
+  z-index: 99;
+}
+
+@keyframes fx-beam-struggle-shake {
+  0%   { transform: translate(-2px, 1px); }
+  100% { transform: translate(2px, -1px); }
+}
+
+
+/* ==========================================================================
+   SECTION E: DYNAMIC ARENA SCENARIO BACKGROUNDS
+   ========================================================================== */
+
+.arena-scenario-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+  transition: opacity 1s ease;
+}
+
+/* 1. Cyber Grid Scenario */
+.scenario-cyber {
+  background: 
+    linear-gradient(rgba(0, 240, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+  animation: fx-cyber-scroll 20s linear infinite;
+}
+
+@keyframes fx-cyber-scroll {
+  0%   { background-position: 0 0; }
+  100% { background-position: 40px 40px; }
+}
+
+/* 2. Volcanic Inferno Scenario */
+.scenario-volcano {
+  background: radial-gradient(circle at bottom center, rgba(255, 60, 0, 0.22) 0%, rgba(20, 5, 0, 0.85) 70%);
+}
+.scenario-volcano::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, rgba(255, 80, 0, 0.04) 0px, transparent 3px, transparent 8px);
+  animation: fx-volcano-heat 4s ease-in-out infinite alternate;
+}
+
+@keyframes fx-volcano-heat {
+  0%   { transform: scaleY(1); opacity: 0.7; }
+  100% { transform: scaleY(1.05); opacity: 1; }
+}
+
+/* 3. Thunderstorm Tempest Scenario */
+.scenario-storm {
+  background: radial-gradient(circle at top center, rgba(30, 40, 80, 0.3) 0%, rgba(5, 8, 20, 0.95) 75%);
+}
+
+/* 4. Sudden Death Crimson Vortex */
+.scenario-sudden-death {
+  box-shadow: inset 0 0 100px 30px rgba(255, 0, 60, 0.45);
+  animation: fx-crimson-vortex 2.5s ease-in-out infinite alternate;
+}
+
+@keyframes fx-crimson-vortex {
+  0%   { box-shadow: inset 0 0 80px 20px rgba(255, 0, 60, 0.35); }
+  100% { box-shadow: inset 0 0 140px 50px rgba(255, 0, 60, 0.65); }
+}
+
+
+/* ==========================================================================
+   SECTION F: FULL-SCREEN CINEMATIC VFX
+   ========================================================================== */
+
+/* Fullscreen Darkening Dim */
+.fullscreen-vfx-dim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(4px);
+  z-index: 9998;
+  animation: fx-fade-in 0.3s ease forwards;
+  pointer-events: none;
+}
+
+/* Turn Start Banner Slash */
+.fullscreen-turn-banner {
+  position: fixed;
+  top: 50%;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
+  background: linear-gradient(90deg, transparent 0%, rgba(6, 14, 32, 0.96) 20%, rgba(6, 14, 32, 0.96) 80%, transparent 100%);
+  border-top: 2px solid var(--neon-gold, #FBC80D);
+  border-bottom: 2px solid var(--neon-gold, #FBC80D);
+  padding: 24px 0;
+  text-align: center;
+  z-index: 9999;
+  box-shadow: 0 0 40px rgba(251, 200, 13, 0.5);
+  animation: fx-banner-slash 1.8s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+  pointer-events: none;
+}
+
+@keyframes fx-banner-slash {
+  0%   { transform: translateY(-50%) scaleX(0.2); opacity: 0; }
+  15%  { transform: translateY(-50%) scaleX(1); opacity: 1; }
+  85%  { transform: translateY(-50%) scaleX(1); opacity: 1; }
+  100% { transform: translateY(-50%) scaleX(1.1); opacity: 0; }
+}
+
+/* Saigo No Blitz (200 AP) Blinding Screen Shatter */
+.fullscreen-shatter-flash {
+  position: fixed;
+  inset: 0;
+  background: #ffffff;
+  z-index: 10000;
+  animation: fx-shatter-burst 1.6s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
+  pointer-events: none;
+}
+
+@keyframes fx-shatter-burst {
+  0%   { opacity: 1; filter: brightness(4); }
+  25%  { opacity: 0.9; background: radial-gradient(circle, #ff0055 0%, #000 90%); }
+  60%  { opacity: 0.6; }
+  100% { opacity: 0; }
+}
+
+/* Kontrol Mind-Break Psychic Distortion */
+.fullscreen-psychic-warp {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle, rgba(192, 132, 252, 0.25) 0%, transparent 70%);
+  animation: fx-psychic-ripple 1.4s ease-out forwards;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+@keyframes fx-psychic-ripple {
+  0%   { transform: scale(0.6); opacity: 1; filter: blur(0px); }
+  50%  { transform: scale(1.3); opacity: 0.8; filter: blur(4px); }
+  100% { transform: scale(2.0); opacity: 0; filter: blur(10px); }
+}

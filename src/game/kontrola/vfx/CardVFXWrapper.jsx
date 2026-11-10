@@ -1,19 +1,10 @@
-import React from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { getCardVFXConfig } from './cardVFXRegistry';
 
 /**
  * CardVFXWrapper
- * Wraps any card image or container with authentic Unity Asset 355942 CSS/SVG effects.
- *
- * @param {string} cardName - Used to resolve elemental theme & effect layers
- * @param {string} themeOverride - 'green' | 'blue' | 'gold' | 'purple' | 'crimson'
- * @param {boolean} isSelected - Triggers active laser rim & holographic foil sheen
- * @param {boolean} isOvercharged - Accelerates rim spin for dice rolls and clash buildup
- * @param {boolean} isDissolving - Plays burning disintegration animation
- * @param {boolean} showSunlight - Forces radiant celestial god rays
- * @param {boolean} showShock - Forces crackling electric lightning border
- * @param {boolean} showEmbers - Forces rising flame embers
- * @param {boolean} showStars - Forces corner star flares
+ * Wraps any card image or container with authentic Unity Asset 355942 CSS/SVG effects,
+ * 3D gyroscope/mouse parallax tilt, summoning floor runes, and combat clash beam struggles.
  */
 export default function CardVFXWrapper({
   cardName = '',
@@ -28,6 +19,12 @@ export default function CardVFXWrapper({
   showShock = false,
   showEmbers = false,
   showStars = false,
+  showSigil = false,
+  isClashing = false,
+  enable3DTilt = false,
+  fighterStance = null, // 'fire' | 'lightning' | 'poison' | 'shadow' | 'earth' | 'nature' | 'divine'
+  isSurging = false,
+  isHit = false,
   className = '',
   style = {},
   onClick,
@@ -36,11 +33,45 @@ export default function CardVFXWrapper({
   const config = getCardVFXConfig(cardName);
   const theme = themeOverride || config.theme || 'blue';
 
+  const [tiltStyle, setTiltStyle] = useState({});
+  const cardRef = useRef(null);
+
   const hasRim = config.rim !== false;
   const hasSunlight = showSunlight || config.sunlight;
   const hasShock = showShock || config.shock;
   const hasEmbers = showEmbers || config.embers;
   const hasStars = showStars || config.stars;
+
+  // 3D Mouse Parallax Tilt Handler
+  const handleMouseMove = useCallback((e) => {
+    if (!enable3DTilt || !cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+
+    const rotateX = ((y - centerY) / centerY) * -12; // max ±12deg
+    const rotateY = ((x - centerX) / centerX) * 12;
+
+    setTiltStyle({
+      transform: `perspective(800px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) scale3d(1.04, 1.04, 1.04)`
+    });
+  }, [enable3DTilt]);
+
+  const handleMouseLeave = useCallback(() => {
+    if (!enable3DTilt) return;
+    setTiltStyle({
+      transform: 'perspective(800px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)'
+    });
+  }, [enable3DTilt]);
+
+  // Resolve fighter stance class if provided
+  let stanceClass = '';
+  if (fighterStance === 'fire') stanceClass = 'fighter-stance-fire';
+  else if (fighterStance === 'lightning') stanceClass = 'fighter-stance-lightning';
+  else if (fighterStance === 'poison') stanceClass = 'fighter-stance-poison';
+  else if (fighterStance === 'shadow') stanceClass = 'fighter-stance-shadow';
 
   const containerClasses = [
     'card-fx-container',
@@ -53,15 +84,28 @@ export default function CardVFXWrapper({
     isOvercharged ? 'fx-overcharge' : '',
     isSelected ? 'selected active' : '',
     isDissolving ? 'fx-dissolve-active' : '',
+    isClashing ? 'clash-beam-struggle' : '',
+    enable3DTilt ? 'card-3d-tilt' : '',
+    stanceClass,
+    isSurging ? 'fighter-attack-surge' : '',
+    isHit ? 'fighter-hit-recoil' : '',
     className
   ].filter(Boolean).join(' ');
 
   return (
     <div
+      ref={cardRef}
       className={containerClasses}
-      style={style}
+      style={{ ...style, ...tiltStyle }}
       onClick={onClick}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
     >
+      {/* Floor Summoning Sigil Stamp */}
+      {showSigil && (
+        <span className="summoning-sigil-stamp" />
+      )}
+
       {/* Layer 1: Corner Star Flares (All 4 Corners) */}
       {hasStars && (
         <>
@@ -95,4 +139,3 @@ export default function CardVFXWrapper({
     </div>
   );
 }
-
