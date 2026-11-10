@@ -825,9 +825,9 @@ export default function KontrolaDiceRoller({
           </div>
           <CardVFXWrapper
             cardName={resolvedCardName || attackSelectionName}
-            isOvercharged={isRollingAttacker || isRollingDefender}
+            isOvercharged={isAttackerRolling || isDefenderRolling}
             isFlashing={phase === 'resolved'}
-            isClashing={isRollingAttacker || isRollingDefender}
+            isClashing={isAttackerRolling || isDefenderRolling}
             enable3DTilt={true}
             showSigil={true}
             hasFlare={true}
