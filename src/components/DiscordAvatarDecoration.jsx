@@ -645,3 +645,4 @@ export default function DiscordAvatarDecoration({ frameId, size = 40 }) {
     </div>
   );
 }
+
