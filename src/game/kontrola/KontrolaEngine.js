@@ -8,6 +8,8 @@ export const KONTROLA_CHARACTERS = {
     title: 'The Blazing Duelist',
     hp: 100,
     maxHp: 100,
+    baseReserveHP: 0,
+    reserveUnlocked: false,
     mind: 4,
     element: 'Fire',
     weakness: 'Magic/Poison',
@@ -30,6 +32,8 @@ export const KONTROLA_CHARACTERS = {
     title: 'Queen of the Hive',
     hp: 70,
     maxHp: 70,
+    baseReserveHP: 30,
+    reserveUnlocked: true,
     mind: 5,
     element: 'Lightning',
     weakness: 'Magic/Poison',
@@ -52,6 +56,8 @@ export const KONTROLA_CHARACTERS = {
     title: 'The Agile Prankster',
     hp: 100,
     maxHp: 100,
+    baseReserveHP: 0,
+    reserveUnlocked: false,
     mind: 3,
     element: 'Sonic',
     weakness: 'Fire/Poison',
@@ -74,6 +80,8 @@ export const KONTROLA_CHARACTERS = {
     title: 'The Shadow Stalker',
     hp: 100,
     maxHp: 100,
+    baseReserveHP: 0,
+    reserveUnlocked: false,
     mind: 3,
     element: 'Shadow',
     weakness: 'Poison',
@@ -96,6 +104,8 @@ export const KONTROLA_CHARACTERS = {
     title: 'The Celestial Canine',
     hp: 70,
     maxHp: 70,
+    baseReserveHP: 30,
+    reserveUnlocked: true,
     mind: 2,
     element: 'Magic',
     weakness: 'Magic/Poison',
@@ -118,6 +128,8 @@ export const KONTROLA_CHARACTERS = {
     title: 'The Siren Empress',
     hp: 100,
     maxHp: 100,
+    baseReserveHP: 0,
+    reserveUnlocked: false,
     mind: 2,
     element: 'Psychic',
     weakness: 'Fire/Poison',
@@ -140,6 +152,8 @@ export const KONTROLA_CHARACTERS = {
     title: 'The Spore Alchemist',
     hp: 65,
     maxHp: 65,
+    baseReserveHP: 35,
+    reserveUnlocked: true,
     mind: 2,
     element: 'Nature',
     weakness: 'Fire/Poison',
@@ -175,6 +189,62 @@ export const getCanonicalLevelCap = (charId, level = 1) => {
   const caps = LEVEL_HP_TABLE[key] || LEVEL_HP_TABLE.chynaman;
   const lvl = Math.max(1, Math.min(4, Number(level) || 1));
   return caps[lvl] || caps[1];
+};
+
+// Canonical Character Reserve Energy Recovery Matrix
+// Verbatim from Kontrolla_Data/Docs/TCG Character Reserve Energy Recovery System.txt
+export const RESERVE_HP_TABLE = {
+  shroomy:  { baseReserveHP: 35, reserveUnlocked: true },
+  bee:      { baseReserveHP: 30, reserveUnlocked: true },
+  poochi:   { baseReserveHP: 30, reserveUnlocked: true },
+  chynaman: { baseReserveHP: 0,  reserveUnlocked: false },
+  kiko:     { baseReserveHP: 0,  reserveUnlocked: false },
+  katsumi:  { baseReserveHP: 0,  reserveUnlocked: false },
+  queeny:   { baseReserveHP: 0,  reserveUnlocked: false }
+};
+
+/**
+ * Execute Character Reserve Energy Recovery
+ * Rulebook Specifications:
+ * - Cost: Exactly 2 Energy Tokens (ET)
+ * - Timing: Any time during active turn
+ * - Character must have reserveUnlocked === true
+ * - Reserve HP must be > 0
+ * - Current HP must be < maxHp
+ * - Recovery cannot exceed missing HP or remaining Reserve HP
+ * @param {Object} charState - Current character state { hp, maxHp, energyTokens, reserveHp, reserveUnlocked, ... }
+ * @param {number} [requestedAmount] - Optional custom amount to heal (defaults to missing HP)
+ * @returns {{ success: boolean, healAmount: number, costET: number, error?: string }}
+ */
+export const executeReserveRecovery = (charState, requestedAmount = null) => {
+  if (!charState) return { success: false, healAmount: 0, costET: 0, error: 'Character state is missing.' };
+  if (!charState.reserveUnlocked) {
+    return { success: false, healAmount: 0, costET: 0, error: 'Reserve Energy is dormant. Unlock via Level 2+ card or Add-On Card.' };
+  }
+  if ((charState.reserveHp || 0) <= 0) {
+    return { success: false, healAmount: 0, costET: 0, error: 'Reserve Energy pool is depleted (0 HP remaining).' };
+  }
+  if ((charState.energyTokens || 0) < 2) {
+    return { success: false, healAmount: 0, costET: 0, error: 'Insufficient Energy Tokens. Reserve Recovery requires 2 ET.' };
+  }
+  const missingHp = (charState.maxHp || 100) - (charState.hp || 0);
+  if (missingHp <= 0) {
+    return { success: false, healAmount: 0, costET: 0, error: 'Character is already at full HP.' };
+  }
+  const maxPossible = Math.min(charState.reserveHp, missingHp);
+  const healAmount = (requestedAmount && requestedAmount > 0)
+    ? Math.min(requestedAmount, maxPossible)
+    : maxPossible;
+
+  if (healAmount <= 0) {
+    return { success: false, healAmount: 0, costET: 0, error: 'No HP to recover.' };
+  }
+
+  return {
+    success: true,
+    healAmount,
+    costET: 2
+  };
 };
 
 // 100-Card Basic Blueprint from Action Cards % - Sheet1.csv

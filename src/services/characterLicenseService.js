@@ -578,6 +578,88 @@ class CharacterLicenseService {
     };
   }
 
+  // Reserve Energy & Evolution Management
+  async getCharacterEvolution(userId = 'guest', characterId) {
+    const charKey = (characterId || 'chynaman').toLowerCase();
+    const local = this._getLocalData(userId)[charKey] || {};
+    return {
+      cardLevel: local.cardLevel || 1,
+      reserveUnlocked: local.reserveUnlocked || false,
+      reserveCapacityBonus: local.reserveCapacityBonus || 0,
+      attachedAddonId: local.attachedAddonId || null
+    };
+  }
+
+  // Admin/Booster Pack: Upgrade character card evolution tier
+  async upgradeCharacterLevel(userId = 'guest', characterId, newLevel = 2) {
+    const charKey = (characterId || 'chynaman').toLowerCase();
+    const localData = this._getLocalData(userId);
+    localData[charKey] = {
+      ...(localData[charKey] || {}),
+      cardLevel: newLevel,
+      // Level 2+ automatically unlocks reserve recovery for 100 HP characters
+      reserveUnlocked: newLevel >= 2 ? true : (localData[charKey]?.reserveUnlocked || false),
+      reserveCapacityBonus: newLevel >= 3 ? 20 : (localData[charKey]?.reserveCapacityBonus || 0)
+    };
+    this._saveLocalData(userId, localData);
+
+    if (userId && userId !== 'guest' && supabase) {
+      try {
+        await supabase
+          .from('character_licenses')
+          .upsert({
+            user_id: userId,
+            character_id: charKey,
+            card_level: newLevel,
+            reserve_energy_unlocked: localData[charKey].reserveUnlocked,
+            reserve_capacity_bonus: localData[charKey].reserveCapacityBonus,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'user_id,character_id' });
+      } catch (e) {}
+    }
+
+    this._notify();
+    return {
+      success: true,
+      cardLevel: newLevel,
+      message: `${charKey.toUpperCase()} upgraded to Level ${newLevel}! Reserve Energy is now active.`
+    };
+  }
+
+  // Attach Character Add-On Card from booster pack
+  async attachAddonCard(userId = 'guest', characterId, addonId, bonusReserve = 20) {
+    const charKey = (characterId || 'chynaman').toLowerCase();
+    const localData = this._getLocalData(userId);
+    localData[charKey] = {
+      ...(localData[charKey] || {}),
+      attachedAddonId: addonId,
+      reserveUnlocked: true,
+      reserveCapacityBonus: (localData[charKey]?.reserveCapacityBonus || 0) + bonusReserve
+    };
+    this._saveLocalData(userId, localData);
+
+    if (userId && userId !== 'guest' && supabase) {
+      try {
+        await supabase
+          .from('character_licenses')
+          .upsert({
+            user_id: userId,
+            character_id: charKey,
+            attached_addon_id: addonId,
+            reserve_energy_unlocked: true,
+            reserve_capacity_bonus: localData[charKey].reserveCapacityBonus,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'user_id,character_id' });
+      } catch (e) {}
+    }
+
+    this._notify();
+    return {
+      success: true,
+      message: `Attached ${addonId} to ${charKey.toUpperCase()}! (+${bonusReserve} Reserve HP)`
+    };
+  }
+
   // Admin: Generate a printable / displayable QR Code string
   generateQRPayload(characterId) {
     const charKey = (characterId || 'chynaman').toUpperCase();

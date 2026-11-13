@@ -24,6 +24,10 @@ export function createInitialGameState(playerConfigs) {
       name: cfg.name || `Player ${idx + 1}`,
       characterId: characterId,
       level: 1, // NEW: Character level starts at 1
+      reserveHp: charData?.baseReserveHP !== undefined ? charData.baseReserveHP : (CHARACTERS[characterId]?.baseReserveHP || 0),
+      maxReserveHp: charData?.baseReserveHP !== undefined ? charData.baseReserveHP : (CHARACTERS[characterId]?.baseReserveHP || 0),
+      reserveUnlocked: charData?.reserveUnlocked !== undefined ? charData.reserveUnlocked : Boolean(CHARACTERS[characterId]?.reserveUnlocked),
+      reserveActivations: 0,
       hp: cfg.startingHP || characterHP,
       maxHp: characterHP,
       preZombieHP: cfg.startingHP || characterHP,

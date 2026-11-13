@@ -1496,6 +1496,11 @@ export default function BattleArena({
                         <div style={{ display: 'flex', gap: '6px', fontSize: '0.7rem', color: 'rgba(255,255,255,0.7)' }}>
                           <span>⚡ {p.energyTokens} ET</span>
                           <span>💎 {p.crystals}/3</span>
+                          {p.reserveUnlocked && (
+                            <span style={{ color: '#10b981' }} title={`Reserve Energy: ${p.reserveHp || 0}/${p.maxReserveHp || 0} HP`}>
+                              🔋 {p.reserveHp || 0}
+                            </span>
+                          )}
                           {p.poisonCards > 0 && <span style={{ color: '#39ff14' }}>☠️ {p.poisonCards}</span>}
                         </div>
                       </div>
@@ -2014,6 +2019,58 @@ export default function BattleArena({
                   >
                     <Zap size={16} />
                     <span>CLAIM 1 ET</span>
+                  </button>
+                )}
+
+                {activePlayer.reserveUnlocked && (activePlayer.reserveHp || 0) > 0 && activePlayer.hp < (activePlayer.maxHp || 100) && (
+                  <button
+                    className="btn-play-card-cta"
+                    onClick={() => {
+                      if ((activePlayer.energyTokens || 0) < 2) {
+                        alert("Reserve Energy Recovery requires 2 Energy Tokens (ET).");
+                        return;
+                      }
+                      pushStateSnapshot();
+                      const missingHp = (activePlayer.maxHp || 100) - activePlayer.hp;
+                      const healAmount = Math.min(activePlayer.reserveHp, missingHp);
+                      const updated = players.map(p => {
+                        if (p.id === activePlayer.id) {
+                          return {
+                            ...p,
+                            hp: p.hp + healAmount,
+                            reserveHp: p.reserveHp - healAmount,
+                            energyTokens: p.energyTokens - 2,
+                            reserveActivations: (p.reserveActivations || 0) + 1
+                          };
+                        }
+                        return p;
+                      });
+                      setGameState({
+                        ...gameState,
+                        players: updated,
+                        lastActionLog: `💚 ${activePlayer.name} activated Reserve Energy! Restored +${healAmount} HP (spent 2 ET). Remaining Reserve: ${activePlayer.reserveHp - healAmount} HP.`
+                      });
+                      if (soundFX && soundFX.playReserveEnergy) soundFX.playReserveEnergy();
+                      else if (soundFX && soundFX.playHeal) soundFX.playHeal();
+                    }}
+                    style={{
+                      padding: '12px 10px',
+                      fontSize: '0.82rem',
+                      background: 'linear-gradient(90deg, #10b981, #059669)',
+                      color: '#fff',
+                      fontWeight: 'bold',
+                      borderRadius: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      whiteSpace: 'nowrap',
+                      boxShadow: '0 0 10px rgba(16, 185, 129, 0.4)'
+                    }}
+                    title={`Recover up to ${Math.min(activePlayer.reserveHp, (activePlayer.maxHp || 100) - activePlayer.hp)} HP from Reserve pool (Costs 2 ET)`}
+                  >
+                    <Sparkles size={16} fill="#fff" />
+                    <span>RECOVER RESERVE ({activePlayer.reserveHp} HP)</span>
                   </button>
                 )}
 

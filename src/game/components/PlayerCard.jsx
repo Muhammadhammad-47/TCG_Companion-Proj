@@ -135,6 +135,32 @@ export default function PlayerCard({
         </div>
       </div>
 
+      {/* Reserve Energy Section */}
+      <div className="reserve-section" style={{ margin: '8px 0', padding: '6px 8px', background: 'rgba(16, 185, 129, 0.08)', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', marginBottom: '4px' }}>
+          <span style={{ color: '#10b981', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Zap size={12} fill="#10b981" /> RESERVE ENERGY
+          </span>
+          <span style={{ color: (player.reserveUnlocked || char.reserveUnlocked) ? '#34d399' : 'rgba(255,255,255,0.5)', fontWeight: 'bold' }}>
+            {(player.reserveUnlocked || char.reserveUnlocked)
+              ? `${player.reserveHp !== undefined ? player.reserveHp : (char.baseReserveHP || 0)} / ${player.maxReserveHp || char.baseReserveHP || 0} HP`
+              : '🔒 DORMANT (Lvl 2+)'}
+          </span>
+        </div>
+        {(player.reserveUnlocked || char.reserveUnlocked) && (player.maxReserveHp || char.baseReserveHP || 0) > 0 && (
+          <div style={{ width: '100%', height: '5px', background: 'rgba(0,0,0,0.5)', borderRadius: '3px', overflow: 'hidden' }}>
+            <div
+              style={{
+                width: `${Math.min(100, Math.max(0, (((player.reserveHp !== undefined ? player.reserveHp : char.baseReserveHP) || 0) / (player.maxReserveHp || char.baseReserveHP || 1)) * 100))}%`,
+                height: '100%',
+                background: 'linear-gradient(90deg, #10b981, #34d399)',
+                transition: 'width 0.3s ease'
+              }}
+            />
+          </div>
+        )}
+      </div>
+
       {/* Energy & Status Grid */}
       <div className="stats-badges-grid">
         {/* Energy Tokens */}

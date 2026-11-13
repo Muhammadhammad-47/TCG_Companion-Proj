@@ -616,6 +616,52 @@ create policy "Admins can delete music files"
     )
   );
 
+-- ====================================================================
+-- CHARACTER LICENSES & RESERVE ENERGY RECOVERY EVOLUTION TABLE
+-- ====================================================================
+create table if not exists public.character_licenses (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users on delete cascade not null,
+  character_id text not null,
+  is_unlocked boolean default false,
+  usage_count integer default 0,
+  card_level integer default 1,
+  reserve_energy_unlocked boolean default false,
+  reserve_capacity_bonus integer default 0,
+  attached_addon_id text default null,
+  unlocked_at timestamp with time zone default timezone('utc'::text, now()),
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  constraint unique_user_character unique (user_id, character_id)
+);
+
+-- Comments on Reserve Energy Recovery System progression columns
+comment on column public.character_licenses.card_level is 'Character Evolution Tier: 1=Common, 2=Rare, 3=Legendary';
+comment on column public.character_licenses.reserve_energy_unlocked is 'Explicit reserve unlock for 100 HP characters';
+comment on column public.character_licenses.reserve_capacity_bonus is 'Bonus reserve capacity from expansion cards';
+comment on column public.character_licenses.attached_addon_id is 'ID of attached booster pack Add-On card';
+
+-- Enable RLS
+alter table public.character_licenses enable row level security;
+
+-- Policies
+create policy "Users can view own licenses"
+  on public.character_licenses for select using (auth.uid() = user_id);
+
+create policy "Admins can view all licenses"
+  on public.character_licenses for select using (
+    exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
+  );
+
+create policy "Users can update own licenses"
+  on public.character_licenses for update using (auth.uid() = user_id);
+
+create policy "Admins can manage all licenses"
+  on public.character_licenses for all using (
+    exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
+  );
+
+
 
 -- ====================================================================
 -- UPDATE BUG_REPORTS TABLE: Add more error types
@@ -662,3 +708,49 @@ create policy "Admins can delete music files"
       select 1 from public.profiles where id = auth.uid() and is_admin = true
     )
   );
+
+-- ====================================================================
+-- CHARACTER LICENSES & RESERVE ENERGY RECOVERY EVOLUTION TABLE
+-- ====================================================================
+create table if not exists public.character_licenses (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users on delete cascade not null,
+  character_id text not null,
+  is_unlocked boolean default false,
+  usage_count integer default 0,
+  card_level integer default 1,
+  reserve_energy_unlocked boolean default false,
+  reserve_capacity_bonus integer default 0,
+  attached_addon_id text default null,
+  unlocked_at timestamp with time zone default timezone('utc'::text, now()),
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  constraint unique_user_character unique (user_id, character_id)
+);
+
+-- Comments on Reserve Energy Recovery System progression columns
+comment on column public.character_licenses.card_level is 'Character Evolution Tier: 1=Common, 2=Rare, 3=Legendary';
+comment on column public.character_licenses.reserve_energy_unlocked is 'Explicit reserve unlock for 100 HP characters';
+comment on column public.character_licenses.reserve_capacity_bonus is 'Bonus reserve capacity from expansion cards';
+comment on column public.character_licenses.attached_addon_id is 'ID of attached booster pack Add-On card';
+
+-- Enable RLS
+alter table public.character_licenses enable row level security;
+
+-- Policies
+create policy "Users can view own licenses"
+  on public.character_licenses for select using (auth.uid() = user_id);
+
+create policy "Admins can view all licenses"
+  on public.character_licenses for select using (
+    exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
+  );
+
+create policy "Users can update own licenses"
+  on public.character_licenses for update using (auth.uid() = user_id);
+
+create policy "Admins can manage all licenses"
+  on public.character_licenses for all using (
+    exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
+  );
+

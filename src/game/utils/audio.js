@@ -413,6 +413,32 @@ class SoundEffects {
     }
   }
 
+  // Reserve Energy Recovery: harmonic crystalline vitality chime (E5 -> G#5 -> B5 -> E6)
+  playReserveEnergy() {
+    if (this.muted) return;
+    this.init();
+    if (!this.ctx) return;
+    try {
+      const now = this.ctx.currentTime;
+      const freqs = [659.25, 830.61, 987.77, 1318.51];
+      freqs.forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.07);
+        gain.gain.setValueAtTime(0, now + idx * 0.07);
+        gain.gain.linearRampToValueAtTime(0.18, now + idx * 0.07 + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.42);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now + idx * 0.07);
+        osc.stop(now + idx * 0.07 + 0.45);
+      });
+    } catch (e) {
+      console.warn(e);
+    }
+  }
+
   // Zombie Transformation / Groan
   playZombie() {
     if (this.muted) return;

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ChevronLeft, ChevronRight, Swords, Shield, Heart } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Swords, Shield, Heart, Zap } from 'lucide-react';
 import { CHARACTERS, getAssetUrl } from '../data/characters';
 import { soundFX } from '../utils/audio';
 
@@ -79,6 +79,7 @@ export default function CharacterCardModal({ characterId, onClose }) {
             <div style={{ animation: 'fadeIn 0.3s ease' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', background: 'rgba(0,0,0,0.4)', padding: '12px', borderRadius: '8px' }}>
                 <div style={{ textAlign: 'center' }}><Heart size={16} color="#ED1E24" style={{marginBottom:'4px'}}/><div style={{fontSize:'0.75rem', color:'#a1a1aa'}}>HP</div><div style={{fontWeight:'bold'}}>{charData.maxHP}</div></div>
+                <div style={{ textAlign: 'center' }}><Zap size={16} color="#10b981" style={{marginBottom:'4px'}}/><div style={{fontSize:'0.75rem', color:'#a1a1aa'}}>RESERVE</div><div style={{fontWeight:'bold', color: charData.reserveUnlocked ? '#10b981' : '#71717a'}}>{charData.reserveUnlocked ? `${charData.baseReserveHP} HP` : '0 (Lvl 2+)'}</div></div>
                 <div style={{ textAlign: 'center' }}><Shield size={16} color="#FBC80D" style={{marginBottom:'4px'}}/><div style={{fontSize:'0.75rem', color:'#a1a1aa'}}>DEF DP</div><div style={{fontWeight:'bold'}}>{charData.defaultDP}</div></div>
                 <div style={{ textAlign: 'center' }}><Swords size={16} color="#FBC80D" style={{marginBottom:'4px'}}/><div style={{fontSize:'0.75rem', color:'#a1a1aa'}}>MIND</div><div style={{fontWeight:'bold'}}>{charData.mindStrength}</div></div>
               </div>

@@ -19,6 +19,8 @@ export const CHARACTERS = {
     bgGradient: 'linear-gradient(135deg, #431418 0%, #1f080a 100%)',
     baseHP: 100,
     maxHP: 200,
+    baseReserveHP: 0,
+    reserveUnlocked: false,
     mindStrength: 4,
     defaultDP: 15, // Innate defense reduction if roll >= 6
     retreatTarget: 4,
@@ -104,6 +106,8 @@ export const CHARACTERS = {
     bgGradient: 'linear-gradient(135deg, #093436 0%, #031517 100%)',
     baseHP: 70,
     maxHP: 200,
+    baseReserveHP: 30,
+    reserveUnlocked: true,
     mindStrength: 5, // Highest mind resistance
     defaultDP: 10,
     retreatTarget: 3,
@@ -170,6 +174,8 @@ export const CHARACTERS = {
     bgGradient: 'linear-gradient(135deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.95) 100%)',
     baseHP: 100,
     maxHP: 200,
+    baseReserveHP: 0,
+    reserveUnlocked: false,
     mindStrength: 3,
     defaultDP: 15,
     retreatTarget: 1, // Ultra fast retreat (roll 1+)
@@ -257,6 +263,8 @@ export const CHARACTERS = {
     bgGradient: 'linear-gradient(135deg, #173d09 0%, #061403 100%)',
     baseHP: 100,
     maxHP: 200,
+    baseReserveHP: 0,
+    reserveUnlocked: false,
     mindStrength: 3,
     mindDefBonus: 1, // Magical creature +1 to mind defense
     defaultDP: 10,
@@ -343,6 +351,8 @@ export const CHARACTERS = {
     bgGradient: 'linear-gradient(135deg, #173d09 0%, #061402 100%)',
     baseHP: 65,
     maxHP: 200,
+    baseReserveHP: 35,
+    reserveUnlocked: true,
     mindStrength: 2,
     mindDefBonus: 1, // Magical creature +1
     defaultDP: 10,
@@ -401,6 +411,8 @@ export const CHARACTERS = {
     bgGradient: 'linear-gradient(135deg, #4a0d2e 0%, #17040e 100%)',
     baseHP: 70,
     maxHP: 200,
+    baseReserveHP: 30,
+    reserveUnlocked: true,
     mindStrength: 2,
     mindDefBonus: 1, // Magical creature +1
     defaultDP: 10,
@@ -460,6 +472,8 @@ export const CHARACTERS = {
     bgGradient: 'linear-gradient(135deg, #452107 0%, #170a02 100%)',
     baseHP: 100,
     maxHP: 200,
+    baseReserveHP: 0,
+    reserveUnlocked: false,
     mindStrength: 2,
     mindAtkBonus: 2, // Psychic master: +2 to Kontrol attack roll!
     defaultDP: 10,

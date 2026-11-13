@@ -20,6 +20,9 @@ $files = @(
   "src/game/components/GameSetup.jsx",
   "src/game/components/CardActionModal.jsx",
   "src/game/components/PlayerCard.jsx",
+  "src/game/components/BattleArena.jsx",
+  "src/game/components/CharacterCardModal.jsx",
+  "src/game/utils/gameEngine.js",
   "src/game/utils/audio.js",
   "src/pages/GamePage.jsx",
   "src/pages/admin/AdminPage.jsx"

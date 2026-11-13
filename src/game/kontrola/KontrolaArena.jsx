@@ -1716,6 +1716,10 @@ export default function KontrolaArena() {
                 hp: template.hp || template.baseHP || 100,
                 maxHp: template.maxHp || 100,
                 level: 1,
+                reserveHp: template.baseReserveHP !== undefined ? template.baseReserveHP : 0,
+                maxReserveHp: template.baseReserveHP !== undefined ? template.baseReserveHP : 0,
+                reserveUnlocked: Boolean(template.reserveUnlocked),
+                reserveActivations: 0,
                 shield: 0,
                 energyTokens: 5,
                 crystals: startingCrystals,
@@ -1781,6 +1785,10 @@ export default function KontrolaArena() {
               hp: template.hp || template.baseHP || 100,
               maxHp: template.maxHp || 100,
               level: 1,
+              reserveHp: template.baseReserveHP !== undefined ? template.baseReserveHP : 0,
+              maxReserveHp: template.baseReserveHP !== undefined ? template.baseReserveHP : 0,
+              reserveUnlocked: Boolean(template.reserveUnlocked),
+              reserveActivations: 0,
               shield: 0,
               energyTokens: 5,
               crystals: startingCrystals,
@@ -2160,6 +2168,60 @@ export default function KontrolaArena() {
             [payload.actorId]: updatedChar
           },
           logs: [`${char.name} claimed +1 Energy Token.`, ...(currentState.logs || [])]
+        };
+        broadcastState(matchIdRef.current, nextState);
+        return nextState;
+      }
+
+      if (payload.actionType === 'EXECUTE_RESERVE_RECOVERY') {
+        const { actorId, requestedAmount } = payload;
+        const char = currentState.characterStates[actorId];
+        if (!char || char.isDefeated) return currentState;
+
+        // Validation against official rules: 2 ET cost, reserveUnlocked, reserveHp > 0, hp < maxHp
+        if (!char.reserveUnlocked) {
+          console.warn('[RESERVE_RECOVERY] Character reserve energy is dormant');
+          return currentState;
+        }
+        if ((char.reserveHp || 0) <= 0) {
+          console.warn('[RESERVE_RECOVERY] Character reserve HP is 0');
+          return currentState;
+        }
+        if ((char.energyTokens || 0) < 2) {
+          console.warn('[RESERVE_RECOVERY] Not enough Energy Tokens (requires 2 ET)');
+          return currentState;
+        }
+        const missingHp = (char.maxHp || 100) - (char.hp || 0);
+        if (missingHp <= 0) {
+          console.warn('[RESERVE_RECOVERY] Already at max HP');
+          return currentState;
+        }
+
+        const maxHeal = Math.min(char.reserveHp, missingHp);
+        const healAmount = (requestedAmount && requestedAmount > 0)
+          ? Math.min(requestedAmount, maxHeal)
+          : maxHeal;
+
+        if (healAmount <= 0) return currentState;
+
+        const updatedChar = {
+          ...char,
+          hp: char.hp + healAmount,
+          reserveHp: char.reserveHp - healAmount,
+          energyTokens: char.energyTokens - 2,
+          reserveActivations: (char.reserveActivations || 0) + 1
+        };
+
+        const nextState = {
+          ...currentState,
+          characterStates: {
+            ...currentState.characterStates,
+            [actorId]: updatedChar
+          },
+          logs: [
+            `💚 ${char.name} activated Reserve Energy! Restored +${healAmount} HP (spent 2 ET). Remaining Reserve: ${updatedChar.reserveHp}/${updatedChar.maxReserveHp || updatedChar.baseReserveHP || 0} HP.`,
+            ...(currentState.logs || [])
+          ]
         };
         broadcastState(matchIdRef.current, nextState);
         return nextState;
@@ -3074,6 +3136,56 @@ export default function KontrolaArena() {
     else takeTurn(matchId, { type: 'PLAYER_ACTION', payload });
     
     // Locally clear lock quickly since this doesn't pop up a modal
+    setTimeout(() => setIsProcessingAction(false), 500);
+  };
+
+  // Recover Reserve Energy (2 ET cost, heals up to missing HP from Reserve HP pool)
+  const handleRecoverReserveEnergy = () => {
+    if (isProcessingAction) return;
+    playClick();
+    if (isSpectator) {
+      showNotice('Spectators cannot activate Reserve Energy.', 'info');
+      return;
+    }
+    if (!isMyTurn) {
+      showNotice('Wait for your turn to activate Reserve Energy Recovery.', 'warning');
+      return;
+    }
+    if (!myCharacter?.reserveUnlocked) {
+      showNotice('Reserve Energy is dormant. Unlock via Level 2+ card or Add-On Card.', 'warning');
+      return;
+    }
+    if ((myCharacter?.reserveHp || 0) <= 0) {
+      showNotice('Your Reserve Energy pool is depleted (0 HP remaining).', 'info');
+      return;
+    }
+    if ((myCharacter?.energyTokens || 0) < 2) {
+      showNotice(`Reserve Energy Recovery requires 2 Energy Tokens! You currently have ${myCharacter?.energyTokens || 0} ET.`, 'warning');
+      return;
+    }
+    const missingHp = (myCharacter?.maxHp || 100) - (myCharacter?.hp || 0);
+    if (missingHp <= 0) {
+      showNotice('Your character is already at maximum HP!', 'info');
+      return;
+    }
+
+    const healAmount = Math.min(myCharacter.reserveHp, missingHp);
+    setIsProcessingAction(true);
+    const payload = {
+      actionType: 'EXECUTE_RESERVE_RECOVERY',
+      actorId: playerId,
+      requestedAmount: healAmount
+    };
+
+    if (soundFX && soundFX.playReserveEnergy) {
+      soundFX.playReserveEnergy();
+    } else if (soundFX && soundFX.playHeal) {
+      soundFX.playHeal();
+    }
+
+    if (isHost) enqueueHostAction(payload);
+    else takeTurn(matchId, { type: 'PLAYER_ACTION', payload });
+
     setTimeout(() => setIsProcessingAction(false), 500);
   };
 
@@ -5608,6 +5720,30 @@ export default function KontrolaArena() {
                   <Zap size={13} fill="#000" /> CLAIM +1 ET
                 </button>
               )}
+
+              {/* Reserve Energy Recovery Button */}
+              {isMyTurn && !isSpectator && myCharacter?.reserveUnlocked && (myCharacter.reserveHp || 0) > 0 && myCharacter.hp < myCharacter.maxHp && (
+                <button
+                  onClick={handleRecoverReserveEnergy}
+                  style={{
+                    background: 'linear-gradient(90deg, #10b981, #059669)',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '4px 10px',
+                    color: '#fff',
+                    fontWeight: 'bold',
+                    fontSize: '0.78rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    boxShadow: '0 0 10px rgba(16, 185, 129, 0.4)'
+                  }}
+                  title={`Recover up to ${Math.min(myCharacter.reserveHp, myCharacter.maxHp - myCharacter.hp)} HP from Reserve (Cost: 2 ET)`}
+                >
+                  <Sparkles size={13} fill="#fff" /> RECOVER RESERVE ({myCharacter.reserveHp} HP · 2 ET)
+                </button>
+              )}
             </div>
 
             <div className="hud-actions-group">
@@ -5773,10 +5909,15 @@ export default function KontrolaArena() {
                             {pChar.name} {isMe ? '(You)' : ''}
                           </strong>
                           <div style={{ display: 'flex', gap: '6px', fontSize: '0.7rem', color: 'rgba(255,255,255,0.7)' }}>
-                            <span>? {pChar.energyTokens || 0} ET</span>
-                            <span>?? {pChar.crystals || 0}/3</span>
-                            {pChar.poisonCount > 0 && <span style={{ color: 'var(--neon-green)' }}>?? {pChar.poisonCount}</span>}
-                            {typeof pChar.burnCount === 'number' && pChar.burnCount > 0 && <span style={{ color: '#ff4d00' }}>?? {pChar.burnCount}</span>}
+                            <span>⚡ {pChar.energyTokens || 0} ET</span>
+                            <span>💎 {pChar.crystals || 0}/3</span>
+                            {pChar.reserveUnlocked && (
+                              <span style={{ color: '#10b981' }} title={`Reserve Energy: ${pChar.reserveHp || 0}/${pChar.maxReserveHp || pChar.baseReserveHP || 0} HP`}>
+                                🔋 {pChar.reserveHp || 0}
+                              </span>
+                            )}
+                            {pChar.poisonCount > 0 && <span style={{ color: 'var(--neon-green)' }}>☠️ {pChar.poisonCount}</span>}
+                            {typeof pChar.burnCount === 'number' && pChar.burnCount > 0 && <span style={{ color: '#ff4d00' }}>🔥 {pChar.burnCount}</span>}
                             {typeof pChar.vampireStealTurnsLeft === 'number' && pChar.vampireStealTurnsLeft > 0 && <span style={{ color: '#ff2a6d' }}>🦹 {pChar.vampireStealTurnsLeft}t</span>}
                           </div>
                         </div>
@@ -6074,9 +6215,12 @@ export default function KontrolaArena() {
                   <div className="phase2-profile-stats">
                     <div className="phase2-profile-name">{myCharacter.name} (You)</div>
                     <div className="phase2-profile-metrics">
-                      <span style={{ color: 'var(--neon-crimson)' }}>?? {myCharacter.hp}</span>
-                      <span style={{ color: 'var(--neon-gold)' }}>? {myCharacter.energyTokens || 0}</span>
-                      <span style={{ color: 'var(--neon-cyan)' }}>??? {myCharacter.shield || 0}</span>
+                      <span style={{ color: 'var(--neon-crimson)' }}>❤️ {myCharacter.hp}</span>
+                      <span style={{ color: 'var(--neon-gold)' }}>⚡ {myCharacter.energyTokens || 0}</span>
+                      <span style={{ color: 'var(--neon-cyan)' }}>🛡️ {myCharacter.shield || 0}</span>
+                      <span style={{ color: myCharacter.reserveUnlocked ? '#10b981' : 'rgba(255,255,255,0.4)', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '2px' }} title={myCharacter.reserveUnlocked ? `Reserve Energy: ${myCharacter.reserveHp || 0}/${myCharacter.maxReserveHp || myCharacter.baseReserveHP || 0} HP` : 'Reserve Energy Dormant (Unlock at Level 2+ / Add-On Card)'}>
+                        🔋 {myCharacter.reserveUnlocked ? `${myCharacter.reserveHp || 0}/${myCharacter.maxReserveHp || myCharacter.baseReserveHP || 0}` : 'DORMANT'}
+                      </span>
                     </div>
                   </div>
                 </div>

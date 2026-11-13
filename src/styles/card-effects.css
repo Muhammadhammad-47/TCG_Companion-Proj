@@ -984,4 +984,39 @@
   100% { transform: rotate(5deg) scale(1.04); }
 }
 
+/* ====================================================================
+   RESERVE ENERGY RECOVERY VITALITY VFX
+   ==================================================================== */
+.fx-reserve-surge {
+  position: relative;
+  overflow: visible;
+}
+
+.fx-reserve-surge::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: inherit;
+  border: 2px solid #10b981;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, transparent 75%);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.8), inset 0 0 15px rgba(52, 211, 153, 0.5);
+  animation: fx-reserve-pulse 1.2s cubic-bezier(0.16, 1, 0.3, 1) infinite alternate;
+  pointer-events: none;
+  z-index: 5;
+}
+
+@keyframes fx-reserve-pulse {
+  0% {
+    transform: scale(0.97);
+    filter: drop-shadow(0 0 6px #10b981);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.04);
+    filter: drop-shadow(0 0 22px #34d399);
+    opacity: 1;
+  }
+}
+
+
 
