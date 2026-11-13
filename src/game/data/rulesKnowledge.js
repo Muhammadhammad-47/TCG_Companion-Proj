@@ -152,10 +152,10 @@ export const RULES_KNOWLEDGE = [
     details: 'Official BOOMERANG FULL Rules (Nov 8 Update):\n- Setting Trap: Played as a defense card during combat preparation.\n- Successful Defense: When the defender wins the clash (rolls equal to or higher than the attacker), 100% of the attack damage is reflected directly back to the attacking player!\n- Turn Loss: The attacker also loses their next turn.\n- Failed Defense: If the attacker wins the clash, the Boomerang trap breaks and the defender takes the incoming attack damage (reduced by innate 6+ defense if defender rolled 6+).'
   },
   {
-    topic: 'REVIVE Card & Quit or Be Revived Modal',
-    keywords: ['revive', 'revive card', 'quit or be revived', 'defeated', '0 hp', 'resurrection', 'be revived'],
-    shortAnswer: 'When a player holding the REVIVE card in hand reaches 0 HP, a prompt appears asking "Quit or Be Revived". Choosing "Be Revived" restores the player to 50% max HP and keeps them in the match!',
-    details: 'Official REVIVE Card Rules (Nov 8 Update):\n- Hand Requirement: The REVIVE card must be in the player\'s hand when their HP reaches 0.\n- Modal Prompt: An interactive prompt appears: "QUIT OR BE REVIVED?".\n- Be Revived (50% HP): Restores the character with 50% of their maximum HP, consumes the REVIVE card, and continues the match.\n- Quit (Accept Defeat): Allows the player to accept defeat and exit the match.'
+    topic: 'REVIVE Card & Quit or Continue Note Modal',
+    keywords: ['revive', 'revive card', 'quit or continue', 'quit or be revived', 'defeated', '0 hp', 'resurrection', 'be revived', 're-appear', 'action card re-appear'],
+    shortAnswer: 'The REVIVE Card is ONLY used when the card holder is defeated or dies. A note pops up asking whether the player wishes to quit or continue using the Revive card. If the player continues, the REVIVE card is discarded, the original Action card re-appears (replacement drawn into hand), and the character is brought back to life with 50% of their original HP.',
+    details: 'Official REVIVE Card Mechanics (Nov 8 Notes):\n- Trigger Condition: This card is ONLY used when the card holder is defeated or dies (reaches 0 HP). It cannot be played proactively while alive.\n- Note Popup: When defeated, a note pops up asking whether the player wishes to quit or continue using the Revive card.\n- Card Discard & Replenishment: If the player continues, the REVIVE card is discarded and the original Action card re-appears (a replacement Action card is dealt to their hand from the deck to maintain their action card hand).\n- HP Restoration: Brings the character back to life and gives the player only 50% of their original HP (e.g. 50 HP for 100 HP characters, 35 HP for Bee/Poochi, 32 HP for Shroomy).\n- Quit Choice: If the player chooses to quit, they accept defeat and are eliminated from the match.'
   },
   {
     topic: 'LIGHTNING X1 & X2 & Turn Loss Mechanics',

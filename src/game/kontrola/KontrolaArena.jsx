@@ -1889,16 +1889,20 @@ export default function KontrolaArena() {
         const reviveIdx = findSafeCardIndex(victimHand, 'REVIVE') !== -1
           ? findSafeCardIndex(victimHand, 'REVIVE')
           : victimHand.findIndex(c => getSafeCardName(c).includes('REVIVE'));
+        let nextDeck = currentState.deck ? [...currentState.deck] : [];
         if (reviveIdx !== -1) {
           victimHand.splice(reviveIdx, 1);
-          // Draw replacement from deck if available
-          let deck = [...(currentState.deck || [])];
-          if (deck.length > 0) {
-            victimHand.push(deck.shift());
+          // Nov 8 Notes: "the card will be discarded and the original Action card will re-appear"
+          if (nextDeck.length === 0) {
+            nextDeck = generateDeck(currentState.isPremium, currentState.players?.length || 2);
+          }
+          if (nextDeck.length > 0) {
+            victimHand.push(nextDeck.shift());
           }
         }
 
-        const restoredHp = Math.max(1, Math.floor((victimChar.maxHp || 100) * 0.5));
+        const baseOriginalHP = victimChar.baseHP || victimChar.maxHp || 100;
+        const restoredHp = Math.max(1, Math.floor(baseOriginalHP * 0.5));
         const updatedVictim = {
           ...victimChar,
           hp: restoredHp,
@@ -1908,7 +1912,7 @@ export default function KontrolaArena() {
 
         const nextState = {
           ...currentState,
-          deck: currentState.deck ? [...(currentState.deck || [])] : currentState.deck,
+          deck: nextDeck,
           hands: {
             ...(currentState.hands || {}),
             [victimId]: victimHand
@@ -1918,7 +1922,7 @@ export default function KontrolaArena() {
             [victimId]: updatedVictim
           },
           logs: [
-            `✨ REVIVE USED! ${victimChar.name} consumed their REVIVE card and re-entered the arena with ${restoredHp} HP (50%)!`,
+            `✨ REVIVE USED! ${victimChar.name} continued using REVIVE: restored to ${restoredHp} HP (50% HP). REVIVE was discarded and a replacement Action card re-appeared in hand!`,
             ...(currentState.logs || [])
           ]
         };
@@ -2013,11 +2017,22 @@ export default function KontrolaArena() {
           }
           nextTurn = pList[nextIdx] || livingPlayers[0];
         }
+
+        const updatedCharStates = { ...currentState.characterStates };
+        if (updatedCharStates[victimId]) {
+          updatedCharStates[victimId] = {
+            ...updatedCharStates[victimId],
+            isDefeated: true,
+            hp: 0
+          };
+        }
+
         const nextState = {
           ...currentState,
+          characterStates: updatedCharStates,
           turn: nextTurn,
           winner: matchWinner,
-          logs: [`💀 ${currentState.characterStates?.[victimId]?.name || 'Player'} opted out of reviving and was eliminated!`, ...(currentState.logs || [])]
+          logs: [`💀 ${currentState.characterStates?.[victimId]?.name || 'Player'} opted to quit and was eliminated!`, ...(currentState.logs || [])]
         };
         broadcastState(matchIdRef.current, nextState);
         return nextState;
@@ -3788,7 +3803,7 @@ export default function KontrolaArena() {
   };
 
   const handleDeclineRevive = () => {
-    if (pendingRevivePrompt && gameState?.turn === pendingRevivePrompt.victimId) {
+    if (pendingRevivePrompt) {
       const payload = { actionType: 'DECLINE_REVIVE', victimId: pendingRevivePrompt.victimId };
       if (isHostRef.current) enqueueHostAction(payload);
       else takeTurn(matchIdRef.current, { type: 'PLAYER_ACTION', payload });
@@ -6766,10 +6781,14 @@ export default function KontrolaArena() {
                   margin: '0 0 8px 0',
                   textShadow: '0 0 20px rgba(57, 255, 20, 0.6)'
                 }}>
-                  QUIT OR BE REVIVED?
+                  QUIT OR CONTINUE WITH REVIVE?
                 </h2>
-                <p style={{ color: '#fff', fontSize: '1.1rem', margin: '0 0 16px 0', lineHeight: 1.5 }}>
-                  You have fallen in battle! Would you like to consume your <strong>REVIVE</strong> card to re-enter the game at <strong>50% HP ({Math.floor((pendingRevivePrompt.maxHp || 100) * 0.5)} HP)</strong>?
+                <p style={{ color: '#fff', fontSize: '1.05rem', margin: '0 0 16px 0', lineHeight: 1.5 }}>
+                  You have fallen in battle! Do you wish to quit or continue using your <strong>REVIVE</strong> card?
+                  <br />
+                  <span style={{ fontSize: '0.88rem', color: 'rgba(255, 255, 255, 0.75)', display: 'block', marginTop: '6px' }}>
+                    If you continue, the REVIVE card will be discarded, a replacement Action card will re-appear in your hand, and you will be brought back to life at <strong>50% HP ({Math.floor((pendingRevivePrompt.maxHp || 100) * 0.5)} HP)</strong>.
+                  </span>
                 </p>
                 <div style={{ display: 'flex', gap: '14px', justifyContent: 'center' }}>
                   <button
@@ -6805,7 +6824,7 @@ export default function KontrolaArena() {
                       boxShadow: '0 0 25px rgba(57, 255, 20, 0.6)'
                     }}
                   >
-                    BE REVIVED (50% HP)
+                    CONTINUE (USE REVIVE CARD)
                   </button>
                 </div>
               </div>

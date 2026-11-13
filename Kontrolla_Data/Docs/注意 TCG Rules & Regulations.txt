@@ -129,6 +129,14 @@ Some players with the Kontrol Card may also have an additional card with a QR Co
 Only two Kontrol Cards may be used per match or Cooldown period of 5 turns to be able to use again.
 
 
+REVIVE Card:
+Here is the function or mechanics of this card:
+This card is only used when the card holder is defeated or dies.
+A note will pop up asking whether the player wishes to quit or continue using the Revive card.
+If the player continues, the card will be discarded and the original Action card will re-appear.
+This card brings the character back to life and gives the player only 50% of their original HP.
+
+
 BLITZ Card (Only if it’s available):
 USE ONLY WHEN YOUR HP IS <50. Lose 50% of your remaining HP. Destroy 1 enemy or ally our enemies. Discard after use. AP = 200 if the attack is successful.
 

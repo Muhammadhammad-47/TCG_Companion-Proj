@@ -151,24 +151,30 @@ export default function BattleArena({
   const [lastSnapshotTime, setLastSnapshotTime] = useState(null);
   const [warnIdleCleanup, setWarnIdleCleanup] = useState(false);
 
-  // EFFECT: Monitor for defeated players and show REVIVE modal
+  // EFFECT: Monitor for defeated players and show REVIVE modal (Nov 8 Notes: Pop up asking whether player wishes to quit or continue)
   useEffect(() => {
-    if (!gameState?.characterStates) return;
+    if (!gameState?.players) return;
     
-    const activePlayerId = gameState.players?.[gameState.activePlayerIndex];
-    const charState = gameState.characterStates?.[activePlayerId];
+    // Check if any player has fallen (hp <= 0 or isDefeated), holds a REVIVE card, and hasn't yet handled revive
+    const victim = gameState.players.find(p =>
+      (p.hp <= 0 || p.isDefeated) &&
+      !p.reviveHandled &&
+      (p.actionCardsHand || []).some(c => (c.name || '').toUpperCase().includes('REVIVE'))
+    );
     
-    if (charState?.hp <= 0 && charState?.isDefeated && !charState?.reviveUsed && !showReviveModal) {
-      const reviveHP = Math.floor((charState.maxHp || 100) * 0.5);
+    if (victim && !showReviveModal) {
+      const char = CHARACTERS[victim.characterId] || CHARACTERS.chynaman;
+      const baseOriginalHP = char.baseHP || victim.maxHp || 100;
+      const reviveHP = Math.max(1, Math.floor(baseOriginalHP * 0.5));
       setReviveModalData({
-        playerName: charState.name,
+        playerName: victim.name,
         reviveHP: reviveHP,
-        maxHP: charState.maxHp || 100,
-        playerId: activePlayerId
+        maxHP: baseOriginalHP,
+        playerId: victim.id
       });
       setShowReviveModal(true);
     }
-  }, [gameState?.characterStates, gameState?.activePlayerIndex]);
+  }, [gameState?.players, showReviveModal]);
 
   // EFFECT: Create game room on first load
   useEffect(() => {
@@ -274,34 +280,71 @@ export default function BattleArena({
     });
   };
 
-  // REVIVE MODAL: Handle accept revive
+  // REVIVE MODAL: Handle continue with revive (Nov 8 Notes: Discard REVIVE card, re-appear Action card, restore 50% HP)
   const handleReviveAccept = () => {
     if (!reviveModalData.playerId) return;
     
-    const updatedStates = { ...gameState.characterStates };
-    const charState = updatedStates[reviveModalData.playerId];
-    
-    if (charState) {
-      charState.isDefeated = false;
-      charState.reviveUsed = true;
-      charState.hp = reviveModalData.reviveHP;
-    }
-    
-    setGameState({ ...gameState, characterStates: updatedStates });
+    pushStateSnapshot();
+    const updatedPlayers = (gameState.players || []).map(p => {
+      if (p.id === reviveModalData.playerId) {
+        // Discard the REVIVE card
+        let newHand = (p.actionCardsHand || []).filter(c => !(c.name || '').toUpperCase().includes('REVIVE'));
+        // The original Action card will re-appear (draw replacement from deck)
+        newHand.push(...drawRandomCards(1));
+
+        return {
+          ...p,
+          isDefeated: false,
+          hp: reviveModalData.reviveHP,
+          actionCardsHand: newHand,
+          reviveHandled: true
+        };
+      }
+      return p;
+    });
+
+    setGameState({
+      ...gameState,
+      players: updatedPlayers,
+      lastActionLog: `✨ ${reviveModalData.playerName} used REVIVE! Restored to ${reviveModalData.reviveHP} HP (50%). REVIVE was discarded and a replacement Action card re-appeared!`
+    });
     setShowReviveModal(false);
+    if (soundFX && soundFX.playHeal) soundFX.playHeal();
     
     const log = `${reviveModalData.playerName} used REVIVE and re-entered the game!`;
     setLocalChatMessages(prev => [...prev, {
       id: `revive_${Date.now()}`,
       senderId: 'system',
       senderName: 'System',
-      text: `💀 ${log}`,
+      text: `✨ ${log}`,
       time: new Date().toLocaleTimeString()
     }]);
   };
 
-  // REVIVE MODAL: Handle reject revive
+  // REVIVE MODAL: Handle quit / reject revive
   const handleReviveReject = () => {
+    if (!reviveModalData.playerId) {
+      setShowReviveModal(false);
+      return;
+    }
+    pushStateSnapshot();
+    const updatedPlayers = (gameState.players || []).map(p => {
+      if (p.id === reviveModalData.playerId) {
+        return {
+          ...p,
+          isDefeated: true,
+          hp: 0,
+          reviveHandled: true
+        };
+      }
+      return p;
+    });
+
+    setGameState({
+      ...gameState,
+      players: updatedPlayers,
+      lastActionLog: `💀 ${reviveModalData.playerName} chose to quit and was eliminated!`
+    });
     setShowReviveModal(false);
     setLocalChatMessages(prev => [...prev, {
       id: `revive_reject_${Date.now()}`,

@@ -510,7 +510,11 @@ Abandon your ally on defense or attack and immediately turn your attack against 
 
 
 REVIVE - Basic
-This card brings the player back to life and receives only half of their original HP.
+Here is the function or mechanics of this card:
+This card is only used when the card holder is defeated or dies.
+A note will pop up asking whether the player wishes to quit or continue using the Revive card.
+If the player continues, the card will be discarded and the original Action card will re-appear.
+This card brings the character back to life and gives the player only 50% of their original HP.
 
 
 RETREAT - Basic

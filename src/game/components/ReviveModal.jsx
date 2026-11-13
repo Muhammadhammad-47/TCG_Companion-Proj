@@ -37,29 +37,29 @@ export default function ReviveModal({
         {/* Header with Icon */}
         <div className="revive-modal-header">
           <Heart size={40} className="revive-icon" />
-          <h2 className="revive-modal-title">⚔️ YOU HAVE BEEN DEFEATED!</h2>
+          <h2 className="revive-modal-title">⚔️ QUIT OR CONTINUE WITH REVIVE?</h2>
         </div>
 
         {/* Player Info */}
         <div className="revive-modal-info">
           <p className="revive-player-name">{playerName}</p>
-          <p className="revive-text">You have a REVIVE card available!</p>
-          <p className="revive-subtext">Would you like to use it to re-enter the game?</p>
+          <p className="revive-text">Your character has been defeated!</p>
+          <p className="revive-subtext">Do you wish to <strong>QUIT</strong> or <strong>CONTINUE</strong> using your Revive card?</p>
         </div>
 
         {/* Revive Details */}
         <div className="revive-details">
           <div className="detail-row">
-            <span className="detail-label">You will be restored to:</span>
-            <span className="detail-value">{reviveHP} HP (50% of {maxHP})</span>
+            <span className="detail-label">Health Restored:</span>
+            <span className="detail-value">{reviveHP} HP (50% of original {maxHP} HP)</span>
+          </div>
+          <div className="detail-row">
+            <span className="detail-label">Card Action:</span>
+            <span className="detail-value">REVIVE is discarded &amp; Action card re-appears</span>
           </div>
           <div className="detail-row">
             <span className="detail-label">Status:</span>
-            <span className="detail-value">✅ BACK IN GAME</span>
-          </div>
-          <div className="detail-row">
-            <span className="detail-label">Turn:</span>
-            <span className="detail-value">You may continue playing next turn</span>
+            <span className="detail-value">✅ Character brought back to life</span>
           </div>
         </div>
 
@@ -77,19 +77,19 @@ export default function ReviveModal({
             className="revive-btn reject-btn"
             onClick={onReject}
           >
-            <X size={20} /> Reject
+            <X size={20} /> QUIT (ACCEPT DEFEAT)
           </button>
           <button
             className="revive-btn accept-btn"
             onClick={onAccept}
           >
-            <Heart size={20} /> Accept Revive
+            <Heart size={20} /> CONTINUE (USE REVIVE)
           </button>
         </div>
 
         {/* Footer Note */}
         <div className="revive-footer">
-          <small>💡 Note: You can only use REVIVE once per match. Choose wisely!</small>
+          <small>💡 Note: If you continue, the Revive card will be discarded, a replacement Action card will re-appear in your hand, and you return with 50% HP.</small>
         </div>
       </div>
 

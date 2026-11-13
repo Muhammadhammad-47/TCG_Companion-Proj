@@ -139,7 +139,7 @@ export const ACTION_CARDS = [
     costET: 0,
     icon: '💀',
     color: '#2df6ff',
-    desc: 'If defeated, use to re-enter at 50% HP. (0 ET)'
+    desc: 'Used only when defeated or dies. Quit or continue note pops up: if continue, card is discarded, Action card re-appears, returns at 50% HP. (0 ET)'
   },
   {
     id: 'backstab',

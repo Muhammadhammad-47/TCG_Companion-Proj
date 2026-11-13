@@ -268,7 +268,7 @@ export const ACTION_CARDS_BASIC = [
   { name: 'LIGHTNING X2', type: 'ATTACK', count: 6, costET: 2, desc: 'Heavy lightning dealing -20 HP and -1 turn.' },
   { name: 'MISDIRECT', type: 'ATTACK', count: 6, costET: 1, desc: 'Redirect an opponent attack.' },
   { name: 'POISON X2', type: 'STATUS', count: 6, costET: 0, desc: 'Inflicts 2 Poison stacks (-20 HP/turn).' },
-  { name: 'REVIVE', type: 'HEAL', count: 6, costET: 0, desc: 'Brings player back to life with 50% HP.' },
+  { name: 'REVIVE', type: 'HEAL', count: 6, costET: 0, desc: 'Used only when defeated. Note asks to quit or continue. If continue, card is discarded, replacement Action card re-appears, and character returns with 50% original HP.' },
   { name: 'SLEEPY X1', type: 'OTHERS', count: 6, costET: 0, desc: 'Target falls asleep and skips 1 turn.' },
   { name: 'VISION X1', type: 'OTHERS', count: 6, costET: 0, desc: 'Target reveals Action Cards for 15s.' },
   { name: 'FREEZE X1', type: 'STATUS', count: 6, costET: 0, desc: 'Target loses 1 turn and -2 dice penalty.' },
@@ -1176,11 +1176,12 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       const charKey = (newAttackerState.characterId || newAttackerState.id || '').toLowerCase();
       const currentLevel = newAttackerState.level || 1;
       const lvlCap = getCanonicalLevelCap(charKey, currentLevel);
-      const reviveHP = Math.floor(lvlCap * 0.5);
-      newAttackerState.hp = Math.max(1, reviveHP);
+      const baseCap = KONTROLA_CHARACTERS[charKey]?.hp || lvlCap;
+      const reviveHP = Math.max(1, Math.floor(baseCap * 0.5));
+      newAttackerState.hp = reviveHP;
       newAttackerState.maxHp = lvlCap;
       newAttackerState.isDefeated = false;
-      log += ` 🌟 ${newAttackerState.name} was REVIVED! Restored to ${reviveHP} HP (50% of Level ${currentLevel} max).`;
+      log += ` 🌟 ${newAttackerState.name} was REVIVED! Restored to ${reviveHP} HP (50% of original HP).`;
     } else {
       log += ` REVIVE card failed! ${newAttackerState.name} is not defeated. Card wasted.`;
     }

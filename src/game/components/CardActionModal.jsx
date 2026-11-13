@@ -83,6 +83,14 @@ export default function CardActionModal({
       return;
     }
 
+    // REVIVE Card gate (Nov 8 Notes): This card is ONLY used when the card holder is defeated or dies
+    if (currentAction.name && currentAction.name.toUpperCase().includes('REVIVE')) {
+      if ((activePlayer.hp || 0) > 0 && !activePlayer.isDefeated) {
+        setErrorMsg('🔒 REVIVE card is ONLY used when your character is defeated or dies!');
+        return;
+      }
+    }
+
     const targetPlayer = selectableTargets.find(p => p.id === targetPlayerId)
       || selectableTargets.find(p => p.id !== activePlayer.id)
       || selectableTargets[0];
@@ -711,26 +719,40 @@ export default function CardActionModal({
                     </div>
                   </div>
 
-                  <button
-                    onClick={handleConfirmAction}
-                    style={{
-                      background: 'linear-gradient(90deg, #FBC80D 0%, #FFD700 100%)',
-                      color: '#000',
-                      border: '2px solid #FBC80D',
-                      borderRadius: '8px',
-                      padding: '12px 24px',
-                      fontWeight: 'bold',
-                      fontSize: '0.95rem',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      boxShadow: '0 0 20px rgba(251, 200, 13, 0.6)'
-                    }}
-                  >
-                    <Play size={16} fill="#000" />
-                    <span>CONFIRM &amp; GO</span>
-                  </button>
+                  {(() => {
+                    const isReviveBlocked = (currentAction?.name || '').toUpperCase().includes('REVIVE') && (activePlayer?.hp || 0) > 0 && !activePlayer?.isDefeated;
+                    return (
+                      <button
+                        onClick={handleConfirmAction}
+                        disabled={isReviveBlocked}
+                        style={{
+                          background: isReviveBlocked
+                            ? 'rgba(255, 255, 255, 0.1)'
+                            : 'linear-gradient(90deg, #FBC80D 0%, #FFD700 100%)',
+                          color: isReviveBlocked ? '#ff7777' : '#000',
+                          border: isReviveBlocked ? '2px solid rgba(255, 119, 119, 0.5)' : '2px solid #FBC80D',
+                          borderRadius: '8px',
+                          padding: '12px 24px',
+                          fontWeight: 'bold',
+                          fontSize: '0.95rem',
+                          cursor: isReviveBlocked ? 'not-allowed' : 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          boxShadow: isReviveBlocked ? 'none' : '0 0 20px rgba(251, 200, 13, 0.6)'
+                        }}
+                      >
+                        {isReviveBlocked ? (
+                          <span>🔒 REVIVE ONLY AT 0 HP</span>
+                        ) : (
+                          <>
+                            <Play size={16} fill="#000" />
+                            <span>CONFIRM &amp; GO</span>
+                          </>
+                        )}
+                      </button>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
