@@ -1104,3 +1104,62 @@ Players may have an unlimited amount of Poison Cards during each game, but is li
 
 Can I use a Poison Card on myself?
 Yes, a player may use a Poison Card on themselves to transform themselves into a Zombie.
+
+
+11. CHARACTER RESERVE ENERGY RECOVERY SYSTEM
+
+
+What is the Reserve Energy Recovery System?
+The Reserve Energy Recovery System is a core game-balancing and progression mechanic designed to balance characters with lower starting HP without changing their original HP values, while creating collectible expansion paths for all characters.
+
+
+What are the starting HP levels of all characters?
+- Kat (Katsumi): 100 HP
+- Shroomy: 65 HP (-35 difference from 100)
+- Chyna (Chynaman): 100 HP
+- Kiko (Kiko the Monkey): 100 HP
+- Poochi: 70 HP (-30 difference from 100)
+- Bee (Zabina Bee Solé): 70 HP (-30 difference from 100)
+- Queeny: 100 HP
+
+
+How does Reserve HP work?
+Characters with lower starting HP receive a reserve HP supply equal to their difference from 100:
+- Shroomy: 35 Reserve HP (65 Starting HP + 35 Reserve = 100 Effective HP)
+- Bee: 30 Reserve HP (70 Starting HP + 30 Reserve = 100 Effective HP)
+- Poochi: 30 Reserve HP (70 Starting HP + 30 Reserve = 100 Effective HP)
+- Chyna, Kiko, Kat, Queeny: 0 Reserve HP (Dormant at Level 1, can be unlocked via expansion cards)
+
+
+How much does it cost to activate Reserve Energy Recovery?
+Every activation costs 2 Energy Tokens (ET), regardless of how much reserve HP the player chooses to recover.
+
+
+When can a player activate Reserve Energy Recovery?
+A player can activate Reserve Energy Recovery on their turn whenever they choose, as long as they have at least 2 Energy Tokens and their current HP is below their maximum HP.
+
+
+Can a player choose how much Reserve HP to recover?
+Yes, the player chooses how much HP to recover from their available reserve supply, up to the character's current maximum HP.
+
+
+Can Reserve Energy Recovery exceed a character's maximum HP?
+No, recovery cannot exceed the character's current maximum HP.
+
+
+Can Reserve Energy be transferred to another character?
+No, Reserve Energy is bound to the character and cannot be transferred to another character or teammate.
+
+
+How do 100 HP characters unlock Reserve Energy Recovery?
+For characters with higher starting HP (100 HP), their Reserve Energy Recovery ability is dormant until they receive or equip a special rare Character Card or rare Add-On Card from an expansion booster pack.
+
+
+What are the Character Card progression levels?
+- Level 1 Character Card (Common): Original Starting HP, Basic Defense, Level 1 moves, base/dormant Reserve Energy Recovery.
+- Level 2 Character Card (Rare): Higher starting HP, Level 2 moves, character-specific moves, unlocked Reserve Energy Recovery.
+- Advanced Character Card (Legendary): Higher-level abilities, expanded Reserve Energy capacity, and special recovery abilities.
+
+
+What are Character Add-On Cards?
+Character Add-On Cards are expansion booster pack cards placed beside or attached to a character to unlock their Reserve Energy Recovery ability. If the character is defeated, the Add-On Card returns to the player's collection rather than being destroyed.

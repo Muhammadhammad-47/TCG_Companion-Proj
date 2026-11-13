@@ -598,3 +598,28 @@ SAIGO NO BLITZ
 
 SUE ELLEN’S V2
 Bonus Card: AMPLIFY. Boost your active card with 1 effect: +20 HP, +20 AP, or +DP. Execute. Discard after use. No dice roll is required. Must be paired up with an Attack Card if used as an Attack.
+
+
+================================================================================
+RESERVE ENERGY RECOVERY SYSTEM ARCHITECTURE (OCT/NOV 2026 GDD UPDATE)
+================================================================================
+
+Baseline Character HP & Reserve Matrix:
+- Kat (Katsumi): Starting HP 100 | Difference: 0  | Reserve: 0 HP (Dormant)
+- Shroomy:       Starting HP 65  | Difference: -35| Reserve: 35 HP (Active at Level 1)
+- Chyna:         Starting HP 100 | Difference: 0  | Reserve: 0 HP (Dormant)
+- Kiko:          Starting HP 100 | Difference: 0  | Reserve: 0 HP (Dormant)
+- Poochi:        Starting HP 70  | Difference: -30| Reserve: 30 HP (Active at Level 1)
+- Bee:           Starting HP 70  | Difference: -30| Reserve: 30 HP (Active at Level 1)
+- Queeny:        Starting HP 100 | Difference: 0  | Reserve: 0 HP (Dormant)
+
+Engine & State Requirements:
+1. Turn Action: Active player can trigger "RESERVE_RECOVERY" during their turn.
+2. Token Toll: Fixed cost of 2 Energy Tokens (ET) per activation.
+3. Recovery Pool: Player can select recovery amount or recover up to (maxHP - currentHP) from remaining reserveHp.
+4. Non-Transferable: Reserve HP cannot be transferred between characters.
+5. Collectible Progression (Levels & Add-Ons):
+   - Level 1 (Common): Default starting stats and reserve pools.
+   - Level 2 (Rare): Increased base stats and unlocks reserve recovery for 100 HP characters.
+   - Level 3 (Legendary/Advanced): Expanded reserve capacity and special vitality passives.
+   - Character Add-On Cards: Attachable equipment cards that unlock reserve recovery. If defeated, returns to collection.

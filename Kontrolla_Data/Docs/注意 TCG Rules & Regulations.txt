@@ -266,3 +266,28 @@ Bonus Card: AMPLIFY. Boost your active card with 1 effect: +20 HP, +20 AP, or +D
 
 ANIME EXPRESS TV (Flyer TCG Card)
 Bonus Card: No Weakness Shield for one turn.
+
+
+RESERVE ENERGY RECOVERY SYSTEM
+Official Character HP Levels:
+- Kat (Katsumi): 100 HP
+- Shroomy: 65 HP
+- Chyna (Chynaman): 100 HP
+- Kiko (Kiko the Monkey): 100 HP
+- Poochi: 70 HP
+- Bee (Zabina Bee Solé): 70 HP
+- Queeny: 100 HP
+
+Core Mechanic:
+Because some characters have lower starting HP than others, the Reserve Energy Recovery System provides an innate reserve HP pool to balance survivability without changing original character baseline HP:
+- Shroomy (65 HP): 35 Reserve HP (Difference from 100)
+- Bee (70 HP): 30 Reserve HP (Difference from 100)
+- Poochi (70 HP): 30 Reserve HP (Difference from 100)
+- Chyna, Kiko, Kat, Queeny (100 HP): 0 Reserve HP (Dormant at Level 1, unlocked via expansion cards)
+
+Recovery Activation Rules:
+1. Activation Cost: Every recovery activation costs exactly 2 Energy Tokens (ET), regardless of how much reserve HP is recovered.
+2. Player Choice: The player chooses how much reserve HP to recover from their available supply on their turn.
+3. Max HP Boundary: Recovery cannot exceed the character's current maximum HP.
+4. Non-Transferable: Reserve Energy belongs strictly to the character and cannot be traded, shared, or transferred.
+5. Card Collectibility & Add-Ons: Characters with higher starting HP (100 HP) have dormant Reserve Energy until unlocking it via rare Level 2/3 Character Cards or rare Add-On Cards from expansion booster packs. If defeated, an Add-On Card returns to the player's collection rather than being destroyed.

@@ -162,10 +162,26 @@ export const RULES_KNOWLEDGE = [
     keywords: ['lightning', 'lightning x1', 'lightning x2', 'miss turn', 'skip turn', 'extra turns', 'lightning poison', 'shock'],
     shortAnswer: 'Lightning X1 deals 10 AP and Lightning X2 deals 20 AP. The opponent loses 1 turn ONLY if the attack is successful! If the attack is unsuccessful, no turns are skipped. Lightning removes 1 Poison card ONLY from Zombies (5+ poison cards), not normal characters.',
     details: 'Official LIGHTNING Attack Rules (Nov 8 Update):\n- Initial Damage: Lightning X1 deals 10 AP; Lightning X2 deals 20 AP.\n- Skip Turn Rule: The defending opponent loses 1 turn ONLY on a successful hit. If the attack is unsuccessful (blocked/evaded), the opponent does NOT lose any turns, and no extra turns are awarded.\n- Poison Cleansing Rule: Lightning cleanses 1 Poison card ONLY if the defender is in Zombie Mode (5+ Poison cards). For normal characters with 1-4 poison cards, Lightning does NOT remove any poison cards.'
+  },
+  {
+    topic: 'Reserve Energy Recovery System & Starting HP Balance',
+    keywords: ['reserve energy', 'reserve hp', 'reserve recovery', 'reserve energy recovery', 'starting hp', 'hp balance', 'shroomy hp', 'bee hp', 'poochi hp', '2 energy tokens', 'recovery activation', 'dormant reserve'],
+    shortAnswer: 'Lower-HP characters receive a Reserve HP pool equal to their difference from 100 (Shroomy: 35 Reserve, Bee: 30 Reserve, Poochi: 30 Reserve). Recovering costs 2 Energy Tokens (ET) on your turn, regardless of the amount recovered. 100 HP characters have dormant Reserve until unlocked via rare expansion cards.',
+    details: 'Official Reserve Energy Recovery System Rules (Nov 2026):\n\n1. Baseline Character Starting HP:\n- Chynaman: 100 HP (0 Reserve - Dormant at Level 1)\n- Kiko the Monkey: 100 HP (0 Reserve - Dormant at Level 1)\n- Katsumi: 100 HP (0 Reserve - Dormant at Level 1)\n- Queeny: 100 HP (0 Reserve - Dormant at Level 1)\n- Poochi: 70 HP (30 Reserve HP - Active at Level 1)\n- Zabina Bee Solé: 70 HP (30 Reserve HP - Active at Level 1)\n- Shroomy: 65 HP (35 Reserve HP - Active at Level 1)\n\n2. Activation Cost & Rules:\n- Cost: Exactly 2 Energy Tokens (ET) per activation.\n- Timing: The active player can trigger recovery on their turn whenever they choose.\n- Recovery Amount: The player chooses how much reserve HP to recover from their available supply.\n- Max HP Boundary: Recovery cannot exceed the character\'s current maximum HP.\n- Non-Transferable: Reserve Energy cannot be traded, shared, or transferred to another character.'
+  },
+  {
+    topic: 'Character Card Levels, Expansion Add-Ons & Reserve Unlocks',
+    keywords: ['level 1', 'level 2', 'level 3', 'rare character card', 'add-on card', 'character add-on', 'expansion booster pack', 'expansion packs', 'unlock reserve', 'collectible progression', 'character evolution'],
+    shortAnswer: 'Character cards evolve from Level 1 (Common) to Level 2 (Rare) and Level 3 (Legendary). 100 HP characters unlock Reserve Energy through rare expansion Character Cards or Character Add-On Cards. If defeated, Add-On Cards return to the player\'s collection.',
+    details: 'Expansion Progression & Add-On Card Mechanics:\n\n1. Character Card Evolution Tiers:\n- Level 1 Character Card (Common): Starting HP, Basic Defense, Level 1 moves, base/dormant Reserve Energy Recovery.\n- Level 2 Character Card (Rare): Higher starting HP, Level 2 moves, character-specific moves, unlocked Reserve Energy Recovery.\n- Advanced Character Card (Legendary): Higher-level abilities, expanded Reserve Energy capacity, special recovery abilities.\n\n2. Character Add-On Cards:\n- Discovered in expansion booster packs.\n- Placed beside or attached to the character to unlock Reserve Energy Recovery.\n- If the character is defeated, the Add-On Card returns safely to the player\'s collection rather than being destroyed.'
   }
 ];
 
 export const SUGGESTED_QUERIES = [
+  "How does the Reserve Energy Recovery System work?",
+  "What are the starting HPs and Reserve HP for all characters?",
+  "How much does Reserve Energy Recovery cost and how do you activate it?",
+  "How do Character Card Levels and Add-On Cards unlock Reserve Energy?",
   "How does the BOOMERANG card work on successful defense?",
   "When can you use the REVIVE card and what is Quit or Be Revived?",
   "When does Lightning cause an opponent to miss a turn?",

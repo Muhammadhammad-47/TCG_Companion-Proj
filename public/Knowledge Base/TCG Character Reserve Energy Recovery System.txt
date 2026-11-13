@@ -1,0 +1,123 @@
+﻿TCG Character Reserve Energy Recovery System
+Original Character HP Level:
+KAT 100 HP
+SHROOMY 65 HP
+CHYNA 100 HP
+KIKO 100 HP
+POOCHI 70 HP
+BEE 70 HP
+QUEENY 100 HP
+***Slight Changes in the Mechanics of the beginning of the game. Because some characters are
+weaker than others. I have designed this new mechanic to help balance things out.***
+The system is called: RESERVE ENERGY RECOVERY
+How does it work?
+Characters with lower starting HP receive a reserve HP supply that they can activate whenever
+they choose.
+Every activation costs 2 Energy Tokens, regardless of how much reserve HP they choose to
+recover.
+For Characters with higher HP their Reserve Energy Recovery is dormant, until they receive a
+special rare Character Card which unlocks this ability.
+1. Your current character HP
+Character Starting
+HP
+Difference from
+100
+Chyna 100 0
+Kiko 100 0
+Kat 100 0 Poochi 70 -30
+Bee 70 -30
+Queeny 100 0
+Shroomy 65 -35
+Starting Defense Bonus.
+Why?
+1. Every character retains their original HP.
+2. Lower-HP characters get an opportunity to survive longer.
+3. You don't interfere with your extra-turn Action Cards.
+4. Characters retain their individual strengths and weaknesses.
+There is already set basic defense for all characters
+I think that's an excellent idea, especially for your expansion packs. You're creating a reason for
+players to collect new cards as the universe expands without having to redesign the original
+game.
+I'd actually turn this into a special card category.
+Reserve Energy Unlock Card
+Expansion Pack mechanic
+Purpose: Unlocks a character's hidden Reserve Energy Recovery ability.
+Proposed mechanics
+1. Only eligible characters can use the card.
+2. Playing the card unlocks their Reserve Energy.
+3. Each recovery activation costs 2 Energy Tokens.
+4. Players choose how much reserve HP to recover.
+5. Recovery cannot exceed the character's current maximum HP.
+6. Reserve Energy cannot be transferred to another character. You can introduce stronger characters with:
+● Higher starting HP.
+● Larger Reserve Energy capacity.
+● Unique recovery abilities.
+● Special Vitality Cards.
+● New character-specific moves.
+This also gives you opportunities to introduce rare or legendary Reserve Energy cards.
+One thing I would be careful about
+I wouldn't automatically give every powerful character a larger reserve. Their recovery ability
+should be balanced against their attack power, defense, and HP.
+My question: Do you envision the Reserve Energy Unlock Card as a permanent ability once
+played, or does the player need to keep the card active on the battlefield?
+I lean toward permanent activation. It makes finding and playing the card feel like a meaningful
+character evolution.
+This would be in their Character Cards, where they have to buy more cards and try to find that
+rare particular card
+Now I understand! You're talking about embedding the Reserve Energy Recovery ability into
+specific rare Character Cards found in expansion booster packs.
+I like this much better than having a separate Action Card unlock the ability.
+This creates a collectible progression system.
+How I would structure it
+Each character has different versions or evolutions of their Character Card.
+Level 1 Character Card
+Common
+● Starting HP
+● Basic Defense
+● Level 1 moves
+● No Reserve Energy Recovery
+Level 2 Character Card
+Rare ● Higher starting HP
+● Level 2 moves
+● Character-specific moves
+● Potential Reserve Energy Recovery unlock
+Advanced Character Card
+Legendary
+● Higher-level abilities
+● Expanded Reserve Energy capacity
+● Special recovery abilities
+Example:
+Imagine a player has Shroomy at Level 1 with 65 HP.
+They purchase an expansion booster pack and discover a rare Shroomy Character Card
+containing:
+Reserve Energy Recovery: Unlocked
+● Reserve capacity: 35 HP at Level 1.
+● Each activation costs 2 Energy Tokens.
+● The player chooses how much HP to recover.
+● Maximum HP remains subject to the character's current level.
+The rare card becomes something players actively hunt for.
+Character Add-On Cards
+Expansion pack feature
+The original Character Card remains unchanged. Players must discover a rare Add-On Card in
+an expansion booster pack to unlock that character's Reserve Energy Recovery ability.
+Example: Shroomy
+Original Character Card
+● Starting HP: 65
+● Reserve HP: 35
+● Reserve recovery: Locked
+Rare Add-On Card
+● Unlocks Reserve Energy Recovery. ● Each activation costs 2 Energy Tokens.
+● The player chooses the recovery amount.
+● Reserve capacity: 35 HP at Level 1.
+Combined Character Abilities
+Original character + Rare Add-On = Reserve Energy Recovery unlocked.
+Why this is a smart business decision
+1. You don't need to reprint existing Character Cards.
+2. Expansion packs introduce new collectible values.
+3. Players have incentives to purchase additional booster packs.
+4. You can introduce different Add-On abilities in future expansions.
+5. Your original game remains compatible with future releases.
+One rule I'd establish: The Add-On Card should remain attached to the character or placed
+beside it while active. If that character is defeated, the Add-On returns to the player's collection
+rather than being destroyed.
+I think you've found a great way to make your TCG expandable without constantly redesigning

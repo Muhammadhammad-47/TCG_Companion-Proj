@@ -8,6 +8,8 @@ $files = @(
   "src/game/kontrola/vfx/CardVFXWrapper.jsx",
   "src/game/kontrola/vfx/ArenaEnvironmentCanvas.jsx",
   "src/game/kontrola/vfx/FullScreenCinematics.jsx",
+  "src/game/data/rulesKnowledge.js",
+  "src/game/data/characters.js",
   "src/components/DiscordAvatarDecoration.jsx",
   "src/components/PlayerAvatar.jsx",
   "src/components/ProfileSettingsModal.jsx",
