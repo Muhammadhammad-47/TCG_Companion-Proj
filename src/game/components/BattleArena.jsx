@@ -6,6 +6,7 @@ import { tradeWithAlly } from '../kontrola/KontrolaEngine';
 import { soundFX } from '../utils/audio';
 import { createGameRoom, updateGameRoom } from '../../services/roomService';
 import WinnerModal from './WinnerModal';
+import AdModal from '../../components/AdModal';
 import DiceRollerModal from './DiceRollerModal';
 import CardActionModal from './CardActionModal';
 import KontrolModal from './KontrolModal';
@@ -102,6 +103,22 @@ export default function BattleArena({
   const [isExtinguishRolling, setIsExtinguishRolling] = useState(false);
   const [extinguishDice, setExtinguishDice] = useState(null);
   const [extinguishResult, setExtinguishResult] = useState(null);
+
+  // Ad System State (Game End Placeholder Ad)
+  const [showEndGameAd, setShowEndGameAd] = useState(false);
+  const hasTriggeredEndGameAdRef = useRef(false);
+
+  useEffect(() => {
+    if (gameState?.winner && !hasTriggeredEndGameAdRef.current) {
+      hasTriggeredEndGameAdRef.current = true;
+      const timer = setTimeout(() => {
+        setShowEndGameAd(true);
+      }, 1500);
+      return () => clearTimeout(timer);
+    } else if (!gameState?.winner) {
+      hasTriggeredEndGameAdRef.current = false;
+    }
+  }, [gameState?.winner]);
 
   // Reset Burn Extinguish attempt on turn change
   useEffect(() => {
@@ -2873,6 +2890,13 @@ export default function BattleArena({
             onContinue={() => setGameState({ ...gameState, winner: null })}
           />
         )}
+
+        {/* End-Game Ad System Modal */}
+        <AdModal
+          isOpen={showEndGameAd}
+          userId={activePlayer?.id}
+          onClose={() => setShowEndGameAd(false)}
+        />
 
         {/* BURN EXTINGUISH PROMPT MODAL (Official FIRE FLAME X1 & X2 rule) */}
         {activePlayer && activePlayer.burnCount > 0 && !activePlayer.isDefeated && !hasAttemptedExtinguishThisTurn && !gameState?.winner && (

@@ -41,6 +41,7 @@ import { cosmeticsService } from '../../services/cosmeticsService';
 import { characterLicenseService, FREE_USAGE_LIMIT } from '../../services/characterLicenseService';
 import CharacterUnlockModal from '../../components/CharacterUnlockModal';
 import { StoreModal } from '../../components/StoreModal';
+import AdModal from '../../components/AdModal';
 import CardVFXWrapper from './vfx/CardVFXWrapper';
 import ArenaEnvironmentCanvas from './vfx/ArenaEnvironmentCanvas';
 import FullScreenCinematics from './vfx/FullScreenCinematics';
@@ -400,6 +401,22 @@ export default function KontrolaArena() {
   const [isShaking, setIsShaking] = useState(false);
   const [turnFlash, setTurnFlash] = useState(false);
   const [winner, setWinner] = useState(null);
+
+  // Ad System State (Game End Placeholder Ad)
+  const [showEndGameAd, setShowEndGameAd] = useState(false);
+  const hasTriggeredEndGameAdRef = useRef(false);
+
+  useEffect(() => {
+    if (winner && !hasTriggeredEndGameAdRef.current) {
+      hasTriggeredEndGameAdRef.current = true;
+      const timer = setTimeout(() => {
+        setShowEndGameAd(true);
+      }, 1500);
+      return () => clearTimeout(timer);
+    } else if (!winner) {
+      hasTriggeredEndGameAdRef.current = false;
+    }
+  }, [winner]);
 
   // Automatically log match results to DB when a winner is declared (Host only)
   useEffect(() => {
@@ -5619,6 +5636,13 @@ export default function KontrolaArena() {
               </div>
             </div>
           )}
+
+          {/* End-Game Ad System Modal */}
+          <AdModal
+            isOpen={showEndGameAd}
+            userId={currentUser?.id || playerId}
+            onClose={() => setShowEndGameAd(false)}
+          />
 
           {/* TOP HUD BAR WITH PROMINENT TURN STATUS */}
           <header className="arena-top-hud">
