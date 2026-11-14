@@ -91,7 +91,7 @@ export const ACTION_CARDS = [
     costET: 1,
     icon: '⚡',
     color: '#ffe93d',
-    desc: 'Lightning strike dealing damage and -1 turn penalty (1 ET).'
+    desc: 'On a successful attack, the defendant will receive -10 HP and the attacker receives another turn. If not successful, nothing happens (1 ET).'
   },
   {
     id: 'lightning_x2',
@@ -100,7 +100,7 @@ export const ACTION_CARDS = [
     costET: 2,
     icon: '⚡⚡',
     color: '#ffe93d',
-    desc: 'Heavy lightning strike dealing damage, removes 1 Poison card, and -2 turn penalty (2 ET).'
+    desc: 'On a successful attack, the defendant will receive -20 HP and the attacker receives 2 extra turns. Cleanses 1 Poison card ONLY from Zombies. If not successful, nothing happens (2 ET).'
   },
   {
     id: 'defence_d10',

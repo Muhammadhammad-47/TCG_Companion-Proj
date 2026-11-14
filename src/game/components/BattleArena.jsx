@@ -706,11 +706,17 @@ export default function BattleArena({
           newHand.push(...drawRandomCards(1));
         }
 
+        let extraTurns = p.extraTurns || 0;
+        if (result.extraTurnsGranted > 0) {
+          extraTurns += result.extraTurnsGranted;
+        }
+
         return {
           ...p,
           energyTokens: Math.max(0, p.energyTokens - totalET) + stolenET,
           hp: Math.min(p.maxHp || 100, p.hp + stolenHP + (result.isMiss ? 0 : (result.healsAttacker || 0))),
-          turnActionCompleted: (characterMove?.name?.includes('LIGHTNING') || !result.extraTurnGranted) ? true : false,
+          extraTurns,
+          turnActionCompleted: (result.extraTurnsGranted > 0 || result.extraTurnGranted) ? false : true,
           actionCardsHand: newHand,
           stats: {
             ...p.stats,
@@ -724,16 +730,8 @@ export default function BattleArena({
         const nextRawHP = Math.max(0, p.hp - damage);
         let nextPoison = Math.max(0, (p.poisonCards || 0) + targetPoisonChange);
         let nextBurn = Math.max(0, (p.burnCount || 0) + targetBurnChange);
-        // FIX 1: Lightning X2 → sleepTurns:2, Lightning X1 → sleepTurns:1 (replaces, not stacks).
-        // If sleepTurns > 0, do NOT also set isStunned to prevent double-consuming.
-        const moveName = characterMove?.name || '';
-        const cardName = actionCard?.name || '';
-        const isLightningX2 = cardName.includes('LIGHTNING X2') || moveName.includes('LIGHTNING X2');
-        const isLightningX1 = cardName.includes('LIGHTNING X1') || moveName.includes('LIGHTNING X1');
-        const hasLightningSleep = result.sleepTurns > 0;
-
-        // FIX 1: Replace sleepTurns (don't accumulate) — a new Lightning hit resets the counter
-        const newSleepTurns = hasLightningSleep ? result.sleepTurns : (p.sleepTurns || 0);
+        const hasSleep = result.sleepTurns > 0;
+        const newSleepTurns = hasSleep ? result.sleepTurns : (p.sleepTurns || 0);
 
         let nextPlayerObj = {
           ...p,
@@ -742,8 +740,7 @@ export default function BattleArena({
           shield: result.newShield,
           poisonCards: nextPoison,
           burnCount: nextBurn,
-          // Only set isStunned when sleepTurns is NOT handling it (avoids double-skip)
-          isStunned: hasLightningSleep ? false : (result.appliesStun ? true : p.isStunned),
+          isStunned: hasSleep ? false : (result.appliesStun ? true : p.isStunned),
           sleepTurns: newSleepTurns,
           stats: {
             ...p.stats,
@@ -845,6 +842,25 @@ export default function BattleArena({
         action: `${defender.name} was put to sleep by ${characterMove?.name}!`,
         type: 'stun',
         amount: 'Loses 1 turn'
+      });
+    }
+
+    // Log extra turns granted (Lightning X1/X2, Time Machine)
+    if (result.extraTurnsGranted > 0) {
+      newLogs.push({
+        turn: turnNum,
+        actor: attacker.name,
+        action: `⚡ Lightning strike successful! ${defender.name} took -${damage} HP and ${attacker.name} receives ${result.extraTurnsGranted === 1 ? 'another turn' : '2 extra turns'}!`,
+        type: 'extra_turn',
+        amount: `+${result.extraTurnsGranted} Turn(s)`
+      });
+    } else if (result.isMiss && (actionCard?.name?.includes('LIGHTNING') || characterMove?.element === 'Lightning')) {
+      newLogs.push({
+        turn: turnNum,
+        actor: attacker.name,
+        action: `⚡ Lightning attack was not successful. Nothing happens and game continues (no extra turn awarded).`,
+        type: 'attack',
+        amount: '0 HP'
       });
     }
 

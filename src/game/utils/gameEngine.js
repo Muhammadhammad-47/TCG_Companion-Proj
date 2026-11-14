@@ -247,7 +247,9 @@ export function resolveDiceCombat({
       rawAP = characterMove.baseAP || 25;
     }
   } else if (actionCard) {
-    if (actionCard.id === 'atk_x2') rawAP = 40;
+    if (actionCard.id === 'lightning_x2' || actionCard.name === 'LIGHTNING X2') rawAP = 20;
+    else if (actionCard.id === 'lightning_x1' || actionCard.name === 'LIGHTNING X1') rawAP = 10;
+    else if (actionCard.id === 'atk_x2') rawAP = 40;
     else if (actionCard.id === 'atk_x1') rawAP = 25;
     else rawAP = 20;
   } else {
@@ -259,7 +261,10 @@ export function resolveDiceCombat({
   // 2. Check Elemental Weakness
   let weaknessTriggered = false;
   let weaknessBonus = 0;
-  const moveElement = characterMove?.element || (actionCard?.id === 'poison_x1' || actionCard?.id === 'poison_x2' ? 'Poison' : 'Physical');
+  const moveElement = characterMove?.element || (
+    actionCard?.id?.includes('lightning') || actionCard?.name?.includes('LIGHTNING') ? 'Lightning' :
+    (actionCard?.id === 'poison_x1' || actionCard?.id === 'poison_x2' ? 'Poison' : 'Physical')
+  );
 
   // Check if defender has FLYER card immunity (ANIME EXPRESS TV)
   const hasflyerImmunity = defender?.flyerNoWeakness || false;
@@ -354,22 +359,30 @@ export function resolveDiceCombat({
   }
 
   const revealCards = characterMove?.revealCards || false;
-  const extraTurnGranted = actionCard?.name === 'TIME MACHINE';
 
-  // BUG 5 FIX: Lightning X1 causes defender to lose 1 turn; Lightning X2 causes 2 turns lost.
-  // This is only applied on a successful hit (clashWon is true at this point).
+  // Official LIGHTNING Functionality:
+  // LIGHTNING X1: On successful attack, defendant receives -10 HP and attacker receives another turn (1 extra turn).
+  // LIGHTNING X2: On successful attack, defendant receives -20 HP and attacker receives 2 extra turns.
+  // If attack is not successful, nothing happens and game continues (no extra turn awarded).
+  let extraTurnsGranted = 0;
   let sleepTurns = 0;
+
   if (clashWon) {
     const cardName = actionCard?.name || '';
     if (cardName.includes('LIGHTNING X2')) {
-      sleepTurns = 2;
+      extraTurnsGranted = 2;
     } else if (cardName.includes('LIGHTNING X1')) {
-      sleepTurns = 1;
-    } else if (characterMove?.name?.includes('Golden Mic Lightning') || characterMove?.name?.includes('LIGHTNING X2') || characterMove?.name?.includes('LIGHTNING X1') || characterMove?.element === 'Lightning') {
-      // Character lightning moves apply 1 sleep turn on success
+      extraTurnsGranted = 1;
+    } else if (actionCard?.name === 'TIME MACHINE') {
+      extraTurnsGranted = 1;
+    } else if (cardName.includes('SLEEPY X2')) {
+      sleepTurns = 2;
+    } else if (cardName.includes('SLEEPY X1')) {
       sleepTurns = 1;
     }
   }
+
+  const extraTurnGranted = extraTurnsGranted > 0;
 
   // When sleepTurns handles skip duration, disable appliesStun to prevent double-skip via isStunned
   const effectiveAppliesStun = sleepTurns > 0 ? false : appliesStun;
@@ -397,6 +410,7 @@ export function resolveDiceCombat({
     burnStacks,
     revealCards,
     extraTurnGranted,
+    extraTurnsGranted,
     sleepTurns,
     isDrain,
     isVampire,
@@ -412,6 +426,34 @@ export function resolveDiceCombat({
  * Advance turn logic with poison tick, zombie regen, and stun handling
  */
 export function advanceTurn(state) {
+  const currentActive = state.players[state.activePlayerIndex];
+  if (currentActive && currentActive.extraTurns > 0 && !currentActive.isDefeated) {
+    const nextIndex = state.activePlayerIndex;
+    const newTurnNumber = state.turnNumber + 1;
+
+    const updatedPlayers = state.players.map((p, idx) => {
+      let updated = { ...p };
+      if (idx === nextIndex) {
+        updated.extraTurns -= 1;
+        updated.claimedTurnET = false;
+        updated.turnActionCompleted = false;
+        updated.retreatedThisTurn = false;
+        updated.flyerNoWeakness = false;
+        updated.buffAP = 0;
+        updated.buffDP = 0;
+      }
+      return updated;
+    });
+
+    return {
+      ...state,
+      players: updatedPlayers,
+      activePlayerIndex: nextIndex,
+      turnNumber: newTurnNumber,
+      turnLogs: [`⚡ Extra turn activated for ${currentActive.name}! (${currentActive.extraTurns - 1} extra turn(s) remaining)`]
+    };
+  }
+
   const playerCount = state.players.length;
   const step = state.direction === 'clockwise' ? 1 : -1;
   let nextIndex = state.activePlayerIndex;

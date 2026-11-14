@@ -1,4 +1,4 @@
-﻿1. GENERAL
+1. GENERAL
 
 
 What is the story of this game?
@@ -426,11 +426,11 @@ Extra Notes: No dice rolling is required to activate this card. Not immune to Po
 
 
 LIGHTNING X1 - Basic
-REMOVES 1 POISON CARDS -10 HP AND -1 turn
+On a successful attack, the defendant will receive -10 HP from a Lightning X1 and the attacker receives another turn. If the attack is not successful nothing happens and the game continues (the attacker does not receive another extra turn). Cleanses 1 Poison card ONLY from Zombies.
 
 
 LIGHTNING X2 - Prem
-REMOVES 1 POISON CARDS -20 HP AND -2 turns
+On a successful attack, the defendant will receive -20 HP from a Lightning X2 and the attacker receives 2 extra turns. If the attack is not successful nothing happens and the game continues (the attacker does not receive another extra turn). Cleanses 1 Poison card ONLY from Zombies.
 
 
 FIREFLAME X1 - Basic

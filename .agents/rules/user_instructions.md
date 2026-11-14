@@ -29,3 +29,9 @@ When the user provides a new client comment or issue:
 1. **Validate against Docs**: Cross-reference the request with the official GDDs to ensure it aligns with the rules.
 2. **Deduplicate**: Check the active `implementation_plan.md` artifact to see if the issue is already in the queue. 
 3. **Categorize**: If it is already in the queue, determine if the new comment is an **addition**, **modification**, or **removal** of the existing plan. Do not add duplicates.
+
+# Git & Version Control Protocol
+
+1. **Explicit Permission Only**: NEVER run `git commit`, `git push`, `git reset`, `git revert`, or `git checkout` on working tree files unless the user explicitly asks you to do so in their message.
+2. **One-Time Execution**: When the user explicitly asks to commit or push (e.g. "push the code"), execute it exactly once for that specific instruction. Never run git commits or pushes proactively on subsequent turns.
+3. **Never Undo User Deletions**: Never resurrect, revert, restore, or bring back files that the user has deleted from the repository. Respect user file removals completely.

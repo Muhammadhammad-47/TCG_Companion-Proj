@@ -158,10 +158,10 @@ export const RULES_KNOWLEDGE = [
     details: 'Official REVIVE Card Mechanics (Nov 8 Notes):\n- Trigger Condition: This card is ONLY used when the card holder is defeated or dies (reaches 0 HP). It cannot be played proactively while alive.\n- Note Popup: When defeated, a note pops up asking whether the player wishes to quit or continue using the Revive card.\n- Card Discard & Replenishment: If the player continues, the REVIVE card is discarded and the original Action card re-appears (a replacement Action card is dealt to their hand from the deck to maintain their action card hand).\n- HP Restoration: Brings the character back to life and gives the player only 50% of their original HP (e.g. 50 HP for 100 HP characters, 35 HP for Bee/Poochi, 32 HP for Shroomy).\n- Quit Choice: If the player chooses to quit, they accept defeat and are eliminated from the match.'
   },
   {
-    topic: 'LIGHTNING X1 & X2 & Turn Loss Mechanics',
-    keywords: ['lightning', 'lightning x1', 'lightning x2', 'miss turn', 'skip turn', 'extra turns', 'lightning poison', 'shock'],
-    shortAnswer: 'Lightning X1 deals 10 AP and Lightning X2 deals 20 AP. The opponent loses 1 turn ONLY if the attack is successful! If the attack is unsuccessful, no turns are skipped. Lightning removes 1 Poison card ONLY from Zombies (5+ poison cards), not normal characters.',
-    details: 'Official LIGHTNING Attack Rules (Nov 8 Update):\n- Initial Damage: Lightning X1 deals 10 AP; Lightning X2 deals 20 AP.\n- Skip Turn Rule: The defending opponent loses 1 turn ONLY on a successful hit. If the attack is unsuccessful (blocked/evaded), the opponent does NOT lose any turns, and no extra turns are awarded.\n- Poison Cleansing Rule: Lightning cleanses 1 Poison card ONLY if the defender is in Zombie Mode (5+ Poison cards). For normal characters with 1-4 poison cards, Lightning does NOT remove any poison cards.'
+    topic: 'LIGHTNING X1 & X2 & Extra Turns Mechanics',
+    keywords: ['lightning', 'lightning x1', 'lightning x2', 'extra turn', 'another turn', 'extra turns', 'lightning poison', 'shock'],
+    shortAnswer: 'LIGHTNING X1: On a successful attack, the defendant receives -10 HP and the attacker receives another turn. If not successful, nothing happens and the game continues (no extra turn). LIGHTNING X2: On a successful attack, the defendant receives -20 HP and the attacker receives 2 extra turns. If not successful, nothing happens and the game continues (no extra turn). Cleanses 1 Poison card ONLY from Zombies.',
+    details: 'Official LIGHTNING Attack Rules:\n- LIGHTNING X1: On a successful attack, the defendant will receive -10 HP from a Lightning X1 and the attacker receives another turn. If the attack is not successful, nothing happens and the game continues (the attacker does not receive another extra turn).\n- LIGHTNING X2: On a successful attack, the defendant will receive -20 HP from a Lightning X2 and the attacker receives 2 extra turns. If the attack is not successful, nothing happens and the game continues (the attacker does not receive another extra turn).\n- Poison Cleansing Rule: Lightning cleanses 1 Poison card ONLY if the defender is in Zombie Mode (5+ Poison cards). For normal characters with 1-4 poison cards, Lightning does NOT remove any poison cards.'
   },
   {
     topic: 'Reserve Energy Recovery System & Starting HP Balance',
@@ -184,7 +184,7 @@ export const SUGGESTED_QUERIES = [
   "How do Character Card Levels and Add-On Cards unlock Reserve Energy?",
   "How does the BOOMERANG card work on successful defense?",
   "When can you use the REVIVE card and what is Quit or Be Revived?",
-  "When does Lightning cause an opponent to miss a turn?",
+  "How does LIGHTNING work and when does the attacker receive extra turns?",
   "How does FIRE FLAME work and how do you extinguish fire?",
   "How do Poison X1 and X2 work and what happens against Poison weakness?",
   "What does FREEZE X2 do to opponent dice rolls and turns?",

@@ -2680,7 +2680,19 @@ export default function KontrolaArena() {
         // STATUS/HEAL/OTHERS/TACTICAL/DEFENSE cards must ALWAYS advance the turn � never stay on same player
         const isAlreadySecondHit = currentState.pendingAttackX2For === actorId || (typeof actionCard === 'object' && actionCard?.id === 'attack_x2_2nd') || resolvedEndTurnCardName.includes('2ND HIT');
         const triggerSecondHit = !isAlreadySecondHit && Boolean(resolved.triggerAttackX2SecondHit);
-        const grantExtraTurn = !isStatusOrHealCard && (resolved.extraTurnGranted || triggerSecondHit);
+
+        let grantExtraTurn = false;
+        if (!isStatusOrHealCard) {
+          if (triggerSecondHit) {
+            grantExtraTurn = true;
+          } else if (newAttackerState?.extraTurns > 0) {
+            grantExtraTurn = true;
+            newAttackerState.extraTurns -= 1;
+            turnLogs.unshift(`⚡ Extra turn activated for ${newAttackerState.name}! (${newAttackerState.extraTurns} extra turn(s) remaining)`);
+          } else if (resolved.extraTurnGranted) {
+            grantExtraTurn = true;
+          }
+        }
 
         if (grantExtraTurn) {
           nextTurnPlayerId = actorId;

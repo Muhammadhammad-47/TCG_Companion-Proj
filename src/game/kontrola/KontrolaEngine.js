@@ -254,7 +254,7 @@ export const ACTION_CARDS_BASIC = [
   { name: 'DEFENCE - BASIC', type: 'DEFENSE', count: 7, costET: 0, desc: 'Reduces incoming damage by 25%.' },
   { name: 'ANTIDOTE X1', type: 'HEAL', count: 7, costET: 0, desc: 'Removes 1 Poison card.' },
   { name: 'HEAL H10', type: 'HEAL', count: 6, costET: 0, desc: 'Restores +10 HP.' },
-  { name: 'LIGHTNING X1', type: 'ATTACK', count: 6, costET: 1, desc: 'Lightning strike dealing -10 HP and -1 turn.' },
+  { name: 'LIGHTNING X1', type: 'ATTACK', count: 6, costET: 1, desc: 'On successful attack, defendant receives -10 HP and attacker receives another turn. If not successful, nothing happens.' },
   { name: 'RETREAT', type: 'TACTICAL', count: 6, costET: 0, desc: 'Escape combat without taking damage.' },
   { name: 'SHIELD BASIC +25 HP', type: 'DEFENSE', count: 6, costET: 0, desc: 'Grants +25 Shield barrier points.' },
   { name: 'SOUL ALLIANCE', type: 'OTHERS', count: 6, costET: 0, desc: 'Forge an alliance with another player.' },
@@ -265,7 +265,7 @@ export const ACTION_CARDS_BASIC = [
   { name: 'ATTACK X2', type: 'ATTACK', count: 6, costET: 2, desc: 'Double character attack unleash.' },
   { name: 'BOOMERANG FULL', type: 'DEFENSE', count: 6, costET: 0, desc: 'Defender reactive card: On successful defense or 6+ roll, reflects 100% attack damage back to attacker.' },
   { name: 'HEAL H20', type: 'HEAL', count: 6, costET: 0, desc: 'Restores +20 HP.' },
-  { name: 'LIGHTNING X2', type: 'ATTACK', count: 6, costET: 2, desc: 'Heavy lightning dealing -20 HP and -1 turn.' },
+  { name: 'LIGHTNING X2', type: 'ATTACK', count: 6, costET: 2, desc: 'On successful attack, defendant receives -20 HP and attacker receives 2 extra turns. Cleanses 1 Poison from Zombie. If not successful, nothing happens.' },
   { name: 'MISDIRECT', type: 'ATTACK', count: 6, costET: 1, desc: 'Redirect an opponent attack.' },
   { name: 'POISON X2', type: 'STATUS', count: 6, costET: 0, desc: 'Inflicts 2 Poison stacks (-20 HP/turn).' },
   { name: 'REVIVE', type: 'HEAL', count: 6, costET: 0, desc: 'Used only when defeated. Note asks to quit or continue. If continue, card is discarded, replacement Action card re-appears, and character returns with 50% original HP.' },
@@ -967,11 +967,14 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           log += ` 🔥 Applied ${burnStacks} Burn stack(s) to ${newDefenderState.name}!`;
         }
 
-        // Lightning effect: Client feedback Nov 8: Miss turn is ONLY when Lightning X1 & X2 is successful
+        // Lightning effect: Client feedback Nov 14 (Official LIGHTNING Functionality):
+        // LIGHTNING X1: On successful attack, defendant receives -10 HP and attacker receives another turn.
+        // LIGHTNING X2: On successful attack, defendant receives -20 HP and attacker receives 2 extra turns.
+        // If attack is not successful, nothing happens and game continues (no extra turn).
         if (cardName.includes('LIGHTNING')) {
-          const skipTurns = cardName.includes('X2') ? 2 : 1;
-          newDefenderState.sleepTurns = (newDefenderState.sleepTurns || 0) + skipTurns;
-          log += ` ⚡ Lightning shock! ${newDefenderState.name} loses ${skipTurns} turn(s)!`;
+          const extraTurnsAwarded = cardName.includes('X2') ? 2 : 1;
+          newAttackerState.extraTurns = (newAttackerState.extraTurns || 0) + extraTurnsAwarded;
+          log += ` ⚡ Lightning strike successful! ${newDefenderState.name} took -${baseAP} HP and ${newAttackerState.name} receives ${extraTurnsAwarded === 1 ? 'another turn' : '2 extra turns'}!`;
 
           // LIGHTNING removes 1 poison card ONLY if defender is in Zombie Mode (5+ poison cards) per client feedback Line 90
           if (newDefenderState.poisonCount >= 5) {
@@ -1018,7 +1021,11 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         }
         newDefenderState.hasDodge = false;
       } else if (!newDefenderState?.hasCounter && !boomerangReflected) {
-        log += ` Defender blocked or dodged the attack! 0 damage taken.`;
+        if (cardName.includes('LIGHTNING')) {
+          log += ` ⚡ Lightning attack was not successful. Nothing happens and game continues (no extra turn awarded). 0 damage taken.`;
+        } else {
+          log += ` Defender blocked or dodged the attack! 0 damage taken.`;
+        }
       }
     }
 
@@ -1380,7 +1387,8 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     newAttackerState,
     newDefenderState,
     log,
-    extraTurnGranted: cardName === 'TIME MACHINE',
+    extraTurnGranted: cardName === 'TIME MACHINE' || (cardName.includes('LIGHTNING') && isSuccessfulAttack && !boomerangReflected && ((newAttackerState?.hp || 0) > 0)),
+    extraTurnsGranted: (cardName.includes('LIGHTNING') && isSuccessfulAttack && !boomerangReflected && ((newAttackerState?.hp || 0) > 0)) ? (cardName.includes('X2') ? 2 : 1) : (cardName === 'TIME MACHINE' ? 1 : 0),
     triggerAttackX2SecondHit: cardName.includes('ATTACK X2') && isSuccessfulAttack && !boomerangReflected && ((newAttackerState?.hp || 0) > 0),
     triggerXChange: false, // Handled in Arena UI now
     stealActionCard: Boolean(stealActionCard),
