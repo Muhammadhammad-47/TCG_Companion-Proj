@@ -12,7 +12,7 @@ export const KONTROLA_CHARACTERS = {
     reserveUnlocked: false,
     mind: 4,
     element: 'Fire',
-    weakness: 'Magic/Poison',
+    weakness: 'Poison',
     weaknessBonus: 10,
     innateDP: 10,
     retreatSpeed: 3,
@@ -36,7 +36,7 @@ export const KONTROLA_CHARACTERS = {
     reserveUnlocked: true,
     mind: 5,
     element: 'Lightning',
-    weakness: 'Magic/Poison',
+    weakness: 'Poison',
     weaknessBonus: 10,
     innateDP: 10,
     retreatSpeed: 3,
@@ -60,7 +60,7 @@ export const KONTROLA_CHARACTERS = {
     reserveUnlocked: false,
     mind: 3,
     element: 'Sonic',
-    weakness: 'Fire/Poison',
+    weakness: 'Poison',
     weaknessBonus: 10,
     innateDP: 10,
     retreatSpeed: 1,
@@ -108,7 +108,7 @@ export const KONTROLA_CHARACTERS = {
     reserveUnlocked: true,
     mind: 2,
     element: 'Magic',
-    weakness: 'Magic/Poison',
+    weakness: 'Poison',
     weaknessBonus: 10,
     innateDP: 10,
     retreatSpeed: 1,
@@ -132,7 +132,7 @@ export const KONTROLA_CHARACTERS = {
     reserveUnlocked: false,
     mind: 2,
     element: 'Psychic',
-    weakness: 'Fire/Poison',
+    weakness: 'Fire',
     weaknessBonus: 10,
     innateDP: 10,
     retreatSpeed: 4,
@@ -156,7 +156,7 @@ export const KONTROLA_CHARACTERS = {
     reserveUnlocked: true,
     mind: 2,
     element: 'Nature',
-    weakness: 'Fire/Poison',
+    weakness: 'Fire',
     weaknessBonus: 10,
     innateDP: 10,
     retreatSpeed: 1,
@@ -904,14 +904,28 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         }
       }
 
-      // Weakness Bonus (+10 or +15 AP) - only applies if attack was not negated/reflected by defense
-      if (newDefenderState && attackElement && newDefenderState.weakness && finalDamage > 0 && !newDefenderState.flyerNoWeakness) {
-        const matchesWeakness = newDefenderState.weakness.toLowerCase().includes(attackElement.toLowerCase()) || (isAttackerZombie && newDefenderState.weakness.toLowerCase().includes('poison'));
+      // Weakness Bonus (+10 AP) - only applies if attack was not negated/reflected by defense
+      // Official Rule: When Zombie has a successful attack, an additional weakness penalty of -10 HP is placed on characters with weakness of Poison
+      if (newDefenderState && attackElement && finalDamage > 0 && !newDefenderState.flyerNoWeakness) {
+        const defCharKey = (newDefenderState.characterId || newDefenderState.id || newDefenderState.name || '').toLowerCase();
+        const defWeakness = (newDefenderState.weakness || '').toLowerCase();
+        const hasPoisonWeakness = defWeakness.includes('poison') || ['chynaman', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k));
+        const hasFireWeakness = defWeakness.includes('fire') || ['shroomy', 'queeny'].some(k => defCharKey.includes(k));
+
+        const matchesWeakness = (isAttackerZombie && hasPoisonWeakness) ||
+          (attackElement.toLowerCase() === 'poison' && hasPoisonWeakness) ||
+          (attackElement.toLowerCase() === 'fire' && hasFireWeakness) ||
+          (newDefenderState.weakness && newDefenderState.weakness.toLowerCase().includes(attackElement.toLowerCase()));
+
         if (matchesWeakness) {
           const bonus = newDefenderState.weaknessBonus || 10;
           finalDamage += bonus;
-          if (attackElement.toLowerCase() === 'fire') {
+          if (isAttackerZombie && hasPoisonWeakness) {
+            log += ` ☠️ [ZOMBIE POISON WEAKNESS] ${newDefenderState.name} has Poison weakness! Suffer -${bonus} HP additional weakness penalty from Zombie attack!`;
+          } else if (attackElement.toLowerCase() === 'fire') {
             log += ` 🔥 [FIRE WEAKNESS] ${newDefenderState.name} has Fire weakness! Additional -${bonus} HP weakness penalty applied!`;
+          } else if (attackElement.toLowerCase() === 'poison') {
+            log += ` ☠️ [POISON WEAKNESS] ${newDefenderState.name} has Poison weakness! Additional -${bonus} HP weakness penalty applied!`;
           } else {
             log += ` 🎯 [WEAKNESS TRIGGER] ${newDefenderState.name} has ${attackElement} weakness! +${bonus} AP bonus applied!`;
           }
@@ -1066,21 +1080,22 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       log += ` 😻 SHADOW PURR! ${newAttackerState.name} restored +15 HP and ${newDefenderState.name} falls asleep for 1 turn!`;
     }
   }
-  // 4. POISON CARDS (Per Nov 5 feedback: -10 HP for X1 / -20 HP for X2 initial damage, +10 HP weakness penalty, ongoing -10 HP/turn)
+  // 4. POISON CARDS (Official Rules: Initial -10 HP for X1 / -20 HP for X2, one-time -10 HP weakness penalty on Poison-weak targets, ongoing -10 HP/turn on X1 & -20 HP/turn on X2 until Antidote)
   else if (cardName.includes('POISON')) {
     const isX2 = cardName.includes('X2');
     const stacks = isX2 ? 2 : 1;
     const initialDamage = isX2 ? 20 : 10;
     if (newDefenderState) {
       newDefenderState.poisonCount = (newDefenderState.poisonCount || 0) + stacks;
+      const defCharKey = (newDefenderState.characterId || newDefenderState.id || newDefenderState.name || '').toLowerCase();
       const defWeakness = (newDefenderState.weakness || '').toLowerCase();
-      const hasPoisonWeakness = defWeakness.includes('poison');
+      const hasPoisonWeakness = defWeakness.includes('poison') || ['chynaman', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k));
       const weaknessPenalty = hasPoisonWeakness ? (newDefenderState.weaknessBonus || 10) : 0;
       const totalInitialDamage = initialDamage + weaknessPenalty;
       newDefenderState.hp = Math.max(0, newDefenderState.hp - totalInitialDamage);
       log += ` ☠️ ${cardName} hit ${newDefenderState.name}! Initial damage: -${initialDamage} HP` +
-        (weaknessPenalty > 0 ? ` (+${weaknessPenalty} HP Poison Weakness Penalty!)` : '') +
-        `, +${stacks} Poison stack(s) applied (-${stacks * 10} HP/turn ongoing).`;
+        (weaknessPenalty > 0 ? ` ☠️ [POISON WEAKNESS] ${newDefenderState.name} has Poison weakness! Suffer -${weaknessPenalty} HP additional weakness penalty!` : '') +
+        `, +${stacks} Poison stack(s) applied (-${stacks * 10} HP/turn ongoing until treated with an Antidote Card).`;
     } else {
       newAttackerState.poisonCount = (newAttackerState.poisonCount || 0) + stacks;
       log += ` Attached ${stacks} Poison card(s) to self.`;

@@ -97,13 +97,33 @@ Character Weakness is an elemental or character-type disadvantage that causes a 
 
 
 Characters:                Weakness:
-Katsumi                Poison Extra 15 AP damage if attack is successful
-Zabina “Bee” Sole         Magic/ Poison Extra 10 AP damage if attack is successful
-CHYNAMAN                Magic/ Poison Extra 10 AP damage if attack is successful
-Kiko the Monkey        Fire Extra 10 AP damage if attack is successful
-Poochi                        Magic/ Poison (Figure out the logic to this) 10 AP damage if attack is successful
-Queeny                        Fire 10 AP damage if attack is successful (Mis-print of Magic/Poison.. Use as glitch)
-Shroomy                Fire 10 AP damage if attack is successful
+Katsumi (Kat)              Poison Extra 10 AP damage if attack is successful
+Zabina “Bee” Solé          Poison Extra 10 AP damage if attack is successful
+CHYNAMAN                   Poison Extra 10 AP damage if attack is successful
+Kiko the Monkey            Poison Extra 10 AP damage if attack is successful
+Poochi                     Poison Extra 10 AP damage if attack is successful
+Queeny                     Fire 10 AP damage if attack is successful
+Shroomy                    Fire 10 AP damage if attack is successful
+
+
+POISON X1 & X2 Functionality:
+***Functionality of Characters with Poison Weakness:***
+
+Initial damage: -10 HP from the Poison X1 or -20 HP from the Poison X2
+Additional weakness penalty: -10 HP (one time)
+Ongoing damage: -10 HP per turn on Poison X1 and -20 HP per turn on Poison X2
+Continues until treated with an Antidote Card
+
+***IMPORTANT NOTES: Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card***
+
+Character with Poison Weakness:
+CHYNAMAN -10 HP
+Kiko -10 HP
+Poochi -10 HP
+Kat -10 HP
+Bee -10 HP
+
+***IMPORTANT: Remember when Zombie has a successful attack an additional weakness penalty of -10 HP will be placed on characters with weakness of Poison***
 
 
 Similar to Poison, here are the mechanics of Fire Attacks on Characters with Fire Weakness:
@@ -911,6 +931,7 @@ The Zombie's primary attack is Venom Strike.
 If Venom Strike successfully defeats or damages an opponent according to your game's attack rules:
 * The defending player immediately receives 1 Poison Card.
 * That Poison Card follows all normal Poison Card rules.
+* IMPORTANT: Remember when Zombie has a successful attack an additional weakness penalty of -10 HP will be placed on characters with weakness of Poison (CHYNAMAN, Kiko, Poochi, Kat, Bee).
 A player with Poison Cards continues to lose 10 HP or 20 HP each round, depending on the Poison Card's effect, until they use an Antidote Card.
 ________________
 
@@ -1124,6 +1145,26 @@ Players may have an unlimited amount of Poison Cards during each game, but is li
 
 Can I use a Poison Card on myself?
 Yes, a player may use a Poison Card on themselves to transform themselves into a Zombie.
+
+
+POISON X1 & X2 Functionality:
+***Functionality of Characters with Poison Weakness:***
+
+Initial damage: -10 HP from the Poison X1 or -20 HP from the Poison X2
+Additional weakness penalty: -10 HP (one time)
+Ongoing damage: -10 HP per turn on Poison X1 and -20 HP per turn on Poison X2
+Continues until treated with an Antidote Card
+
+***IMPORTANT NOTES: Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card***
+
+Character with Poison Weakness:
+CHYNAMAN -10 HP
+Kiko -10 HP
+Poochi -10 HP
+Kat -10 HP
+Bee -10 HP
+
+***IMPORTANT: Remember when Zombie has a successful attack an additional weakness penalty of -10 HP will be placed on characters with weakness of Poison***
 
 
 11. CHARACTER RESERVE ENERGY RECOVERY SYSTEM

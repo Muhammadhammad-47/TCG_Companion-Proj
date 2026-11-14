@@ -43,7 +43,7 @@ export default function CardActionModal({
 
   const selectableTargets = allPlayers.filter(p => {
     if (p.isDefeated) return false;
-    if (currentAction?.id === 'poison_card') return true;
+    if (currentAction?.id === 'poison_card' || currentAction?.id === 'poison_x1' || currentAction?.id === 'poison_x2' || currentAction?.name?.includes('POISON')) return true;
     return p.id !== activePlayer.id;
   });
 
@@ -140,17 +140,21 @@ export default function CardActionModal({
     }
 
     // Handle Poison
-    if (currentAction.id === 'poison_card') {
+    const isPoisonAction = currentAction.id === 'poison_card' || currentAction.id === 'poison_x1' || currentAction.id === 'poison_x2' || currentAction.name?.includes('POISON');
+    if (isPoisonAction) {
       if (!targetPlayer) {
         setErrorMsg('Please pick a target opponent.');
         return;
       }
+      const isX2 = currentAction.id === 'poison_x2' || currentAction.name?.includes('X2');
       onApplyInstantEffect({
         type: 'poison',
         sourcePlayerId: activePlayer.id,
         targetPlayerId: targetPlayer.id,
         costET: currentAction.costET,
-        amount: 1,
+        amount: isX2 ? 2 : 1,
+        cardName: currentAction.name,
+        actionCardId: currentAction.id,
         playedInstanceId: currentAction.instanceId
       });
       return;
@@ -643,7 +647,7 @@ export default function CardActionModal({
                 )}
 
                 {/* Target Opponent Selection */}
-                {(currentAction?.category === 'Attack' || currentAction?.id === 'poison_card' || isZombie) && currentAction?.type !== 'VITALITY' && (
+                {(currentAction?.category === 'Attack' || currentAction?.id === 'poison_card' || currentAction?.id === 'poison_x1' || currentAction?.id === 'poison_x2' || currentAction?.name?.includes('POISON') || isZombie) && currentAction?.type !== 'VITALITY' && (
                   <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px' }}>
                     <div style={{ fontSize: '0.82rem', color: 'var(--neon-gold)', fontWeight: 'bold', marginBottom: '8px' }}>
                       3. SELECT TARGET OPPONENT

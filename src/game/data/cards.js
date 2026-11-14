@@ -28,7 +28,7 @@ export const ACTION_CARDS = [
     costET: 0,
     icon: '☠️',
     color: '#39ff14',
-    desc: 'Inflicts 1 Poison stack (-10 HP/turn). 5 Poison turns target into a Zombie! (0 ET)'
+    desc: 'Deals -10 HP initial damage (-20 HP if target has Poison Weakness) and inflicts 1 Poison stack (-10 HP/turn ongoing until treated with an Antidote Card). (0 ET)'
   },
   {
     id: 'poison_x2',
@@ -37,7 +37,7 @@ export const ACTION_CARDS = [
     costET: 0,
     icon: '☠️☠️',
     color: '#39ff14',
-    desc: 'Inflicts 2 Poison stacks (-20 HP/turn). (0 ET)'
+    desc: 'Deals -20 HP initial damage (-30 HP if target has Poison Weakness) and inflicts 2 Poison stacks (-20 HP/turn ongoing until treated with an Antidote Card). (0 ET)'
   },
   {
     id: 'antidote_x1',

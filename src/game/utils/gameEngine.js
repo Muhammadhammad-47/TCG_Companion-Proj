@@ -247,8 +247,8 @@ export function resolveDiceCombat({
       rawAP = characterMove.baseAP || 25;
     }
   } else if (actionCard) {
-    if (actionCard.id === 'lightning_x2' || actionCard.name === 'LIGHTNING X2' || actionCard.id === 'fire_flame_x2' || actionCard.name === 'FIRE FLAME X2') rawAP = 20;
-    else if (actionCard.id === 'lightning_x1' || actionCard.name === 'LIGHTNING X1' || actionCard.id === 'fire_flame_x1' || actionCard.name === 'FIRE FLAME X1') rawAP = 10;
+    if (actionCard.id === 'lightning_x2' || actionCard.name === 'LIGHTNING X2' || actionCard.id === 'fire_flame_x2' || actionCard.name === 'FIRE FLAME X2' || actionCard.id === 'poison_x2' || actionCard.name === 'POISON X2') rawAP = 20;
+    else if (actionCard.id === 'lightning_x1' || actionCard.name === 'LIGHTNING X1' || actionCard.id === 'fire_flame_x1' || actionCard.name === 'FIRE FLAME X1' || actionCard.id === 'poison_x1' || actionCard.name === 'POISON X1') rawAP = 10;
     else if (actionCard.id === 'atk_x2') rawAP = 40;
     else if (actionCard.id === 'atk_x1') rawAP = 25;
     else rawAP = 20;
@@ -261,22 +261,36 @@ export function resolveDiceCombat({
   // 2. Check Elemental Weakness
   let weaknessTriggered = false;
   let weaknessBonus = 0;
-  const moveElement = characterMove?.element || (
+  const isAttackerZombie = attacker.isZombie || (attacker.poisonCards >= 5) || (attacker.poisonCount >= 5);
+  const moveElement = isAttackerZombie ? 'Poison' : (characterMove?.element || (
     actionCard?.id?.includes('lightning') || actionCard?.name?.includes('LIGHTNING') ? 'Lightning' :
     actionCard?.id?.includes('fire') || actionCard?.name?.includes('FIRE FLAME') ? 'Fire' :
-    (actionCard?.id === 'poison_x1' || actionCard?.id === 'poison_x2' ? 'Poison' : 'Physical')
-  );
+    (actionCard?.id === 'poison_x1' || actionCard?.id === 'poison_x2' || actionCard?.name?.includes('POISON') ? 'Poison' : 'Physical')
+  ));
 
   // Check if defender has FLYER card immunity (ANIME EXPRESS TV)
   const hasflyerImmunity = defender?.flyerNoWeakness || false;
 
-  if (defChar.weakness && moveElement && !hasflyerImmunity) {
-    const wType = defChar.weakness.type.toLowerCase();
-    const mElem = moveElement.toLowerCase();
+  const defCharKey = (defender.characterId || defender.id || defender.name || '').toLowerCase();
+  const defWeakness = (defChar.weakness?.type || defender.weakness?.type || defender.weakness || '').toLowerCase();
+  const hasPoisonWeakness = defWeakness.includes('poison') || ['chynaman', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k));
+  const hasFireWeakness = defWeakness.includes('fire') || ['shroomy', 'queeny'].some(k => defCharKey.includes(k));
 
-    if (wType.includes(mElem) || (mElem === 'fire' && wType.includes('fire')) || (mElem === 'lightning' && wType.includes('lightning')) || (mElem === 'poison' && wType.includes('poison'))) {
+  if (!hasflyerImmunity) {
+    if ((isAttackerZombie || moveElement === 'Poison') && hasPoisonWeakness) {
       weaknessTriggered = true;
-      weaknessBonus = defChar.weakness.bonusAP || 10;
+      weaknessBonus = 10;
+    } else if (moveElement === 'Fire' && hasFireWeakness) {
+      weaknessTriggered = true;
+      weaknessBonus = 10;
+    } else if (defChar.weakness && moveElement) {
+      const wType = defChar.weakness.type.toLowerCase();
+      const mElem = moveElement.toLowerCase();
+
+      if (wType.includes(mElem) || (mElem === 'fire' && wType.includes('fire')) || (mElem === 'lightning' && wType.includes('lightning')) || (mElem === 'poison' && wType.includes('poison'))) {
+        weaknessTriggered = true;
+        weaknessBonus = defChar.weakness.bonusAP || 10;
+      }
     }
   } else if (hasflyerImmunity && defChar.weakness && moveElement) {
     // Log that weakness was blocked by FLYER card
@@ -348,7 +362,10 @@ export function resolveDiceCombat({
   }
 
   // 7. Check special effects
-  const appliesPoison = characterMove?.appliesPoison || actionCard?.id === 'poison_x1' || actionCard?.id === 'poison_x2' || attacker.isZombie;
+  const isPoisonX2 = actionCard?.id === 'poison_x2' || actionCard?.name === 'POISON X2';
+  const isPoisonX1 = actionCard?.id === 'poison_x1' || actionCard?.name === 'POISON X1' || actionCard?.name?.includes('POISON');
+  const appliesPoison = characterMove?.appliesPoison || isPoisonX1 || isPoisonX2 || attacker.isZombie;
+  const poisonStacks = isPoisonX2 ? 2 : (appliesPoison ? 1 : 0);
   const appliesStun = characterMove?.appliesStun || characterMove?.stun || actionCard?.name?.includes('FREEZE') || false;
   const healsAttacker = clashWon ? (characterMove?.healsAttacker || 0) : 0;
   
@@ -408,6 +425,7 @@ export function resolveDiceCombat({
     damageDealt: netHPDamage,
     newShield: currentShield,
     appliesPoison,
+    poisonStacks,
     appliesStun: effectiveAppliesStun,
     healsAttacker,
     burnStacks,

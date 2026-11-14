@@ -24,7 +24,7 @@ export const CHARACTERS = {
     mindStrength: 4,
     defaultDP: 15, // Innate defense reduction if roll >= 6
     retreatTarget: 4,
-    weakness: { type: 'Magic / Poison', bonusAP: 10, icon: '??' },
+    weakness: { type: 'Poison', bonusAP: 10, icon: '☠️' },
     traits: ['High DP Defender (-15)', 'Fire Martial Arts'],
     signatureMove: 'Fire Tiger Soul Punch',
     signatureDesc: '25 AP Fire martial arts technique.',
@@ -111,7 +111,7 @@ export const CHARACTERS = {
     mindStrength: 5, // Highest mind resistance
     defaultDP: 10,
     retreatTarget: 3,
-    weakness: { type: 'Magic / Poison', bonusAP: 10, icon: '??' },
+    weakness: { type: 'Poison', bonusAP: 10, icon: '☠️' },
     traits: ['High Mind Strength (5)', 'Stun & Drone Specialist', 'Fast Retreat (3+)'],
     signatureMove: 'Paparazzi Stun',
     signatureDesc: '25 AP strike that forces target to skip their next turn.',
@@ -179,7 +179,7 @@ export const CHARACTERS = {
     mindStrength: 3,
     defaultDP: 15,
     retreatTarget: 1, // Ultra fast retreat (roll 1+)
-    weakness: { type: 'Poison', bonusAP: 15, icon: '??' },
+    weakness: { type: 'Poison', bonusAP: 10, icon: '☠️' },
     traits: ['Ultra Fast Retreat (1+)', 'High DP Defender (-15)', 'Lethal Criticals'],
     signatureMove: 'Claw of Fate',
     signatureDesc: '45 AP fatal precision slash.',
@@ -269,7 +269,7 @@ export const CHARACTERS = {
     mindDefBonus: 1, // Magical creature +1 to mind defense
     defaultDP: 10,
     retreatTarget: 4,
-    weakness: { type: 'Fire', bonusAP: 10, icon: '??' },
+    weakness: { type: 'Poison', bonusAP: 10, icon: '☠️' },
     traits: ['Magical Mind Shield (+1)', 'Multiplicity Clones', 'Sonic Beats'],
     signatureMove: 'Soul Blast 3000',
     signatureDesc: '40 AP mystical sonic blast.',
@@ -357,7 +357,7 @@ export const CHARACTERS = {
     mindDefBonus: 1, // Magical creature +1
     defaultDP: 10,
     retreatTarget: 1, // Ultra fast escape (roll 1+)
-    weakness: { type: 'Fire', bonusAP: 10, icon: '??' },
+    weakness: { type: 'Fire', bonusAP: 10, icon: '🔥' },
     traits: ['Ultra Fast Retreat (1+)', 'Magical Mind Shield (+1)', 'Explosive Spores'],
     signatureMove: 'Soul Snatcher',
     signatureDesc: '50 AP dense fungal extraction.',
@@ -417,7 +417,7 @@ export const CHARACTERS = {
     mindDefBonus: 1, // Magical creature +1
     defaultDP: 10,
     retreatTarget: 4,
-    weakness: { type: 'Magic / Poison', bonusAP: 10, icon: '??' },
+    weakness: { type: 'Poison', bonusAP: 10, icon: '☠️' },
     traits: ['Magical Mind Shield (+1)', 'Lasso of Truth Hand Reveal', 'Radiant Glitter'],
     signatureMove: 'Glitter Burst',
     signatureDesc: '35 AP blinding sparkle assault.',
@@ -478,7 +478,7 @@ export const CHARACTERS = {
     mindAtkBonus: 2, // Psychic master: +2 to Kontrol attack roll!
     defaultDP: 10,
     retreatTarget: 4,
-    weakness: { type: 'Fire / Glitch', bonusAP: 10, icon: '??' },
+    weakness: { type: 'Fire', bonusAP: 10, icon: '🔥' },
     traits: ['Psychic Kontrol Specialist (+2 Roll)', 'Siren Wave Attacks'],
     signatureMove: 'Rainbow Fan Blast',
     signatureDesc: '40 AP prism storm assault.',
