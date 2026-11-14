@@ -106,6 +106,21 @@ Queeny                        Fire 10 AP damage if attack is successful (Mis-pri
 Shroomy                Fire 10 AP damage if attack is successful
 
 
+Similar to Poison, here are the mechanics of Fire Attacks on Characters with Fire Weakness:
+
+Character with Fire Weakness:
+Initial damage: -10 HP from the Fire X1 or -20 HP from the Fire X2
+Additional weakness penalty: -10 HP (one time)
+Ongoing damage: -10 HP per turn on Fire X1 and -20 HP per turn on Fire X2
+Continues until the player rolls a double on their next turn after the first initial attack.
+
+***Additional -10 HP weakness penalty activates again if another player attacks with another Fire Card***
+
+Character with Fire Weakness:
+Shroomy -10 HP
+Queeny -10 HP
+
+
 Why are there some Character Cards with different weaknesses?
 The reason why some Characters have different weaknesses is because there are many glitches in the universe caused by the instability of all the worlds.
 More information: Every character may have a designated Weakness. When attacked with an attack type that matches the character’s Weakness, the attack deals the listed bonus damage.
@@ -434,15 +449,16 @@ On a successful attack, the defendant will receive -20 HP from a Lightning X2 an
 
 
 FIREFLAME X1 - Basic
-If the attack is successful, the opponent is burned. (Must roll doubles ) -10 HP if failed.
+If the attack is successful from FIRE FLAME X1, the opponent will receive -10 HP every turn until they roll a double. The first hit will count -10 HP and continues to -10 HP each turn until the affected player rolls a double.
+(Mechanics: Once a character has been hit with a successful Fire Flame X1, there is a note giving the player the option to put out the flames through rolling double numbers on the dice: “To extinguish the fire flame damages, a player must roll double digits on the dice.” Options: Continue or Ignore. If they continue then the dice pops up and they roll. If they do not roll a double on the dice, they continue to burn [-10 HP]. If they do get a double on the dice roll then the burn stops. This note will continue to pop up until the flame is extinguished).
 
-
-Extra Notes: ChatBOT: Player continues to burn until double has been roll
+Extra Notes: ChatBOT: Player continues to burn until a double has been rolled
 
 
 FIREFLAME X2 Roll - Prem
-If the attack is successful, the opponent is burned. (Must roll doubles ) -20 HP if failed
-ChatBOT: Player continues to burn until double has been roll
+If the attack is successful from FIRE FLAME X2, the opponent will receive -20 HP every turn until they roll a double. The first hit will count -20 HP and continues to -20 HP each turn until the affected player rolls a double.
+(Mechanics: Once a character has been hit with a successful Fire Flame X2, there is a note giving the player the option to put out the flames through rolling double numbers on the dice: “To extinguish the fire flame damages, a player must roll double digits on the dice.” Options: Continue or Ignore. If they continue then the dice pops up and they roll. If they do not roll a double on the dice, they continue to burn [-20 HP]. If they do get a double on the dice roll then the burn stops. This note will continue to pop up until the flame is extinguished).
+ChatBOT: Player continues to burn until they roll a double.
 
 
 FIRE INFERNO LOCK - Prem

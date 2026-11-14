@@ -103,6 +103,24 @@ export const ACTION_CARDS = [
     desc: 'On a successful attack, the defendant will receive -20 HP and the attacker receives 2 extra turns. Cleanses 1 Poison card ONLY from Zombies. If not successful, nothing happens (2 ET).'
   },
   {
+    id: 'fire_flame_x1',
+    name: 'FIRE FLAME X1',
+    type: 'ATTACK',
+    costET: 1,
+    icon: '🔥',
+    color: '#ff4d00',
+    desc: 'On a successful attack, deals -10 HP and burns opponent (-10 HP each turn until doubles are rolled). Prompt asks to roll to extinguish before each turn (1 ET).'
+  },
+  {
+    id: 'fire_flame_x2',
+    name: 'FIRE FLAME X2',
+    type: 'ATTACK',
+    costET: 1,
+    icon: '🔥🔥',
+    color: '#ff4d00',
+    desc: 'On a successful attack, deals -20 HP and burns opponent (-20 HP each turn until doubles are rolled). Prompt asks to roll to extinguish before each turn (1 ET).'
+  },
+  {
     id: 'defence_d10',
     name: '+DEFENCE D10',
     type: 'DEFENSE',

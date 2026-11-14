@@ -6877,19 +6877,33 @@ export default function KontrolaArena() {
                   margin: '0 0 8px 0',
                   textShadow: '0 0 20px rgba(255, 77, 0, 0.8)'
                 }}>
-                  WOULD YOU LIKE TO EXTINGUISH THE FLAME?
+                  EXTINGUISH FIRE FLAME
                 </h2>
+                <div style={{
+                  background: 'rgba(255, 77, 0, 0.14)',
+                  border: '1px solid rgba(255, 77, 0, 0.45)',
+                  borderRadius: '10px',
+                  padding: '14px 18px',
+                  margin: '0 0 16px 0',
+                  color: '#fff',
+                  fontSize: '1.15rem',
+                  fontWeight: '600',
+                  fontStyle: 'italic',
+                  lineHeight: '1.4'
+                }}>
+                  “To extinguish the fire flame damages, a player must roll double digits on the dice.”
+                </div>
                 <p style={{
-                  color: 'rgba(255, 255, 255, 0.9)',
-                  fontSize: '1.1rem',
+                  color: 'rgba(255, 255, 255, 0.85)',
+                  fontSize: '1rem',
                   margin: '0 0 20px 0',
                   lineHeight: '1.4'
                 }}>
-                  You have <strong style={{ color: '#ff4d00' }}>{myCharacter.burnCount} Burn stack{myCharacter.burnCount > 1 ? 's' : ''}</strong>!
+                  You are taking <strong style={{ color: '#ff4d00' }}>-{(myCharacter.burnCount || 1) * 10} HP</strong> Fire Flame damage each turn.
                   <br />
-                  Extinguish requires rolling doubles on 2 dice.
+                  Choose <strong>Continue</strong> to roll the dice, or <strong>Ignore</strong> to skip.
                   <br />
-                  <strong style={{ color: '#00f0ff' }}>Must roll doubles</strong> to extinguish. If you fail (or skip roll), you take <strong style={{ color: '#ff4d00' }}>-{(myCharacter.burnCount || 1) * 10} HP</strong> burn damage!
+                  <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>This note will continue to pop up until the flame is extinguished.</span>
                 </p>
 
                 {extinguishDice && (
@@ -6973,7 +6987,7 @@ export default function KontrolaArena() {
                         transition: 'all 0.2s ease'
                       }}
                     >
-                      {isExtinguishRolling ? '🎲 ROLLING DICE...' : '🎲 YES (ROLL DOUBLES)'}
+                      {isExtinguishRolling ? '🎲 ROLLING DICE...' : 'CONTINUE (ROLL DICE)'}
                     </button>
                     <button
                       onClick={handleDeclineExtinguishFire}
@@ -6992,7 +7006,7 @@ export default function KontrolaArena() {
                         cursor: isExtinguishRolling ? 'not-allowed' : 'pointer'
                       }}
                     >
-                      NO (TAKE -{(myCharacter.burnCount || 1) * 10} HP & CONTINUE BURNING)
+                      IGNORE (TAKE -{(myCharacter.burnCount || 1) * 10} HP & CONTINUE BURNING)
                     </button>
                   </div>
                 )}

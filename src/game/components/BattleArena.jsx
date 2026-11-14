@@ -97,6 +97,20 @@ export default function BattleArena({
     nextSteps: []
   });
 
+  // Burn Extinguish State (Official FIRE FLAME X1 & X2 rule)
+  const [hasAttemptedExtinguishThisTurn, setHasAttemptedExtinguishThisTurn] = useState(false);
+  const [isExtinguishRolling, setIsExtinguishRolling] = useState(false);
+  const [extinguishDice, setExtinguishDice] = useState(null);
+  const [extinguishResult, setExtinguishResult] = useState(null);
+
+  // Reset Burn Extinguish attempt on turn change
+  useEffect(() => {
+    setHasAttemptedExtinguishThisTurn(false);
+    setExtinguishDice(null);
+    setExtinguishResult(null);
+    setIsExtinguishRolling(false);
+  }, [gameState?.activePlayerIndex, gameState?.turnNumber]);
+
   // NEW: Secret Alliance Modals State
   const [showSecretAllianceInviteModal, setShowSecretAllianceInviteModal] = useState(false);
   const [showAllianceChatModal, setShowAllianceChatModal] = useState(false);
@@ -670,7 +684,7 @@ export default function BattleArena({
     const isTargetZombie = defender.isZombie;
 
     let targetPoisonChange = 0;
-    let targetBurnChange = result.burnStacks || 0;
+    let targetBurnChange = result.isMiss ? 0 : (result.burnStacks || 0);
     let stolenET = 0;
     let stolenHP = 0;
 
@@ -729,7 +743,7 @@ export default function BattleArena({
       if (p.id === defender.id) {
         const nextRawHP = Math.max(0, p.hp - damage);
         let nextPoison = Math.max(0, (p.poisonCards || 0) + targetPoisonChange);
-        let nextBurn = Math.max(0, (p.burnCount || 0) + targetBurnChange);
+        let nextBurn = targetBurnChange > 0 ? Math.max(p.burnCount || 0, targetBurnChange) : (p.burnCount || 0);
         const hasSleep = result.sleepTurns > 0;
         const newSleepTurns = hasSleep ? result.sleepTurns : (p.sleepTurns || 0);
 
@@ -861,6 +875,36 @@ export default function BattleArena({
         action: `⚡ Lightning attack was not successful. Nothing happens and game continues (no extra turn awarded).`,
         type: 'attack',
         amount: '0 HP'
+      });
+    }
+
+    // Log Fire Flame burn applied or failed
+    if (targetBurnChange > 0 && !result.isMiss) {
+      newLogs.push({
+        turn: turnNum,
+        actor: attacker.name,
+        action: `🔥 Applied Fire Flame Burn to ${defender.name}! (-${targetBurnChange * 10} HP each turn until doubles are rolled)`,
+        type: 'burn',
+        amount: `-${targetBurnChange * 10} HP/turn`
+      });
+    } else if (result.isMiss && (actionCard?.name?.includes('FIRE FLAME') || characterMove?.element === 'Fire')) {
+      newLogs.push({
+        turn: turnNum,
+        actor: attacker.name,
+        action: `🔥 Fire Flame attack was not successful. ${defender.name} is not burned.`,
+        type: 'attack',
+        amount: '0 HP'
+      });
+    }
+
+    // Log Elemental Weakness penalty trigger (e.g. Fire on Shroomy/Queeny)
+    if (result.weaknessTriggered && !result.isMiss) {
+      newLogs.push({
+        turn: turnNum,
+        actor: attacker.name,
+        action: `🎯 [WEAKNESS TRIGGER] ${defender.name} has ${result.moveElement} weakness! Suffer -${result.weaknessBonus} HP additional weakness penalty!`,
+        type: 'weakness',
+        amount: `-${result.weaknessBonus} HP`
       });
     }
 
@@ -1338,10 +1382,94 @@ export default function BattleArena({
     });
   };
 
+  // Roll to extinguish Burn (Official FIRE FLAME X1 & X2 rule: Must roll doubles to extinguish)
+  const handleRollExtinguishFire = () => {
+    if (isExtinguishRolling || hasAttemptedExtinguishThisTurn || !activePlayer) return;
+    setIsExtinguishRolling(true);
+    soundFX.playDiceRoll?.();
+
+    const d1 = Math.floor(Math.random() * 6) + 1;
+    const d2 = Math.floor(Math.random() * 6) + 1;
+    setExtinguishDice([d1, d2]);
+
+    setTimeout(() => {
+      const isDoubles = (d1 === d2);
+      const burnDmg = (activePlayer.burnCount || 1) * 10;
+      setIsExtinguishRolling(false);
+      setExtinguishResult({ success: isDoubles, d1, d2, damage: isDoubles ? 0 : burnDmg });
+
+      const updatedPlayers = players.map(p => {
+        if (p.id === activePlayer.id) {
+          if (isDoubles) {
+            return { ...p, burnCount: 0 };
+          } else {
+            const newHp = Math.max(0, p.hp - burnDmg);
+            return { ...p, hp: newHp, isDefeated: newHp <= 0 };
+          }
+        }
+        return p;
+      });
+
+      const newLog = {
+        turn: turnNum,
+        actor: activePlayer.name,
+        action: isDoubles
+          ? `💧 Rolled doubles [${d1}, ${d2}] and EXTINGUISHED the fire! 0 damage taken.`
+          : `🔥 Rolled [${d1}, ${d2}] (need doubles) - Extinguish failed! Took -${burnDmg} HP burn damage. Burn continues!`,
+        type: isDoubles ? 'heal' : 'burn',
+        amount: isDoubles ? '0 HP' : `-${burnDmg} HP`
+      };
+
+      setGameState({
+        ...gameState,
+        players: updatedPlayers,
+        history: [newLog, ...(gameState.history || [])]
+      });
+
+      setTimeout(() => {
+        setHasAttemptedExtinguishThisTurn(true);
+        setExtinguishResult(null);
+      }, 1800);
+    }, 800);
+  };
+
+  const handleSkipExtinguishFire = () => {
+    if (!activePlayer) return;
+    const burnDmg = (activePlayer.burnCount || 1) * 10;
+    const updatedPlayers = players.map(p => {
+      if (p.id === activePlayer.id) {
+        const newHp = Math.max(0, p.hp - burnDmg);
+        return { ...p, hp: newHp, isDefeated: newHp <= 0 };
+      }
+      return p;
+    });
+
+    const newLog = {
+      turn: turnNum,
+      actor: activePlayer.name,
+      action: `🔥 Skipped extinguish roll, took -${burnDmg} HP burn damage and continues burning!`,
+      type: 'burn',
+      amount: `-${burnDmg} HP`
+    };
+
+    setGameState({
+      ...gameState,
+      players: updatedPlayers,
+      history: [newLog, ...(gameState.history || [])]
+    });
+
+    setHasAttemptedExtinguishThisTurn(true);
+  };
+
   // End Turn
   const handleEndTurn = () => {
     soundFX.playMenuHover();
     pushStateSnapshot();
+
+    setHasAttemptedExtinguishThisTurn(false);
+    setExtinguishDice(null);
+    setExtinguishResult(null);
+    setIsExtinguishRolling(false);
 
     const nextState = advanceTurn(gameState);
     setGameState(nextState);
@@ -2617,6 +2745,174 @@ export default function BattleArena({
             onHome={onGoToMenu}
             onContinue={() => setGameState({ ...gameState, winner: null })}
           />
+        )}
+
+        {/* BURN EXTINGUISH PROMPT MODAL (Official FIRE FLAME X1 & X2 rule) */}
+        {activePlayer && activePlayer.burnCount > 0 && !activePlayer.isDefeated && !hasAttemptedExtinguishThisTurn && !gameState?.winner && (
+          <div style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 11000,
+            background: 'rgba(25, 5, 0, 0.92)',
+            backdropFilter: 'blur(12px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px'
+          }}>
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(50, 15, 5, 0.98) 0%, rgba(25, 5, 0, 0.99) 100%)',
+              border: '2px solid #ff4d00',
+              borderRadius: '16px',
+              padding: '32px 36px',
+              maxWidth: '460px',
+              width: '100%',
+              textAlign: 'center',
+              boxShadow: '0 0 50px rgba(255, 77, 0, 0.55)',
+              fontFamily: 'Barlow Condensed, sans-serif'
+            }}>
+              <div style={{ fontSize: '3.5rem', marginBottom: '8px' }}>🔥</div>
+              <h2 style={{
+                color: '#ff7700',
+                fontSize: '2.2rem',
+                fontFamily: 'Bebas Neue, sans-serif',
+                letterSpacing: '1.5px',
+                margin: '0 0 8px 0',
+                textShadow: '0 0 20px rgba(255, 77, 0, 0.8)'
+              }}>
+                EXTINGUISH FIRE FLAME
+              </h2>
+              <div style={{
+                background: 'rgba(255, 77, 0, 0.14)',
+                border: '1px solid rgba(255, 77, 0, 0.45)',
+                borderRadius: '10px',
+                padding: '14px 18px',
+                margin: '0 0 16px 0',
+                color: '#fff',
+                fontSize: '1.15rem',
+                fontWeight: '600',
+                fontStyle: 'italic',
+                lineHeight: '1.4'
+              }}>
+                “To extinguish the fire flame damages, a player must roll double digits on the dice.”
+              </div>
+              <p style={{
+                color: 'rgba(255, 255, 255, 0.85)',
+                fontSize: '1rem',
+                margin: '0 0 20px 0',
+                lineHeight: '1.4'
+              }}>
+                <strong>{activePlayer.name}</strong> is burning from Fire Flame (-{(activePlayer.burnCount || 1) * 10} HP/turn)!
+                <br />
+                Choose <strong>Continue</strong> to roll the dice, or <strong>Ignore</strong> to skip.
+                <br />
+                <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>This note will continue to pop up until the flame is extinguished.</span>
+              </p>
+
+              {extinguishDice && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '16px',
+                  margin: '16px 0',
+                  fontSize: '2rem',
+                  fontWeight: '900',
+                  color: '#fff'
+                }}>
+                  <div style={{
+                    width: '64px',
+                    height: '64px',
+                    background: '#1a1a2e',
+                    border: '2px solid #ff4d00',
+                    borderRadius: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '2rem',
+                    color: '#ff7700'
+                  }}>
+                    {extinguishDice[0]}
+                  </div>
+                  <span style={{ color: 'rgba(255,255,255,0.5)' }}>+</span>
+                  <div style={{
+                    width: '64px',
+                    height: '64px',
+                    background: '#1a1a2e',
+                    border: '2px solid #ff4d00',
+                    borderRadius: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '2rem',
+                    color: '#ff7700'
+                  }}>
+                    {extinguishDice[1]}
+                  </div>
+                </div>
+              )}
+
+              {extinguishResult && (
+                <div style={{
+                  padding: '12px 18px',
+                  borderRadius: '10px',
+                  margin: '16px 0',
+                  fontSize: '1.1rem',
+                  fontWeight: '900',
+                  letterSpacing: '1px',
+                  background: extinguishResult.success ? 'rgba(0, 255, 128, 0.15)' : 'rgba(255, 77, 0, 0.15)',
+                  border: extinguishResult.success ? '1px solid #00ff80' : '1px solid #ff4d00',
+                  color: extinguishResult.success ? '#00ff80' : '#ff4d00'
+                }}>
+                  {extinguishResult.success
+                    ? '💧 DOUBLES! FLAME EXTINGUISHED! (0 HP DAMAGE)'
+                    : `🔥 NO DOUBLES! SUFFERED -${extinguishResult.damage} HP BURN DAMAGE!`}
+                </div>
+              )}
+
+              {!extinguishResult && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <button
+                    onClick={handleRollExtinguishFire}
+                    disabled={isExtinguishRolling}
+                    style={{
+                      width: '100%',
+                      background: isExtinguishRolling ? '#666' : 'linear-gradient(90deg, #ff4d00 0%, #ff8800 100%)',
+                      border: 'none',
+                      color: '#fff',
+                      padding: '14px 20px',
+                      borderRadius: '12px',
+                      fontSize: '1.2rem',
+                      fontWeight: '900',
+                      fontFamily: 'Bebas Neue, sans-serif',
+                      letterSpacing: '1px',
+                      cursor: isExtinguishRolling ? 'wait' : 'pointer',
+                      boxShadow: '0 0 20px rgba(255, 77, 0, 0.6)'
+                    }}
+                  >
+                    {isExtinguishRolling ? '🎲 ROLLING DICE...' : 'CONTINUE (ROLL DICE)'}
+                  </button>
+                  <button
+                    onClick={handleSkipExtinguishFire}
+                    disabled={isExtinguishRolling}
+                    style={{
+                      width: '100%',
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      padding: '10px 16px',
+                      borderRadius: '10px',
+                      fontSize: '0.95rem',
+                      fontWeight: '700',
+                      cursor: isExtinguishRolling ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    IGNORE (TAKE -{(activePlayer.burnCount || 1) * 10} HP & CONTINUE BURNING)
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         )}
 
         {/* REVIVE Modal */}

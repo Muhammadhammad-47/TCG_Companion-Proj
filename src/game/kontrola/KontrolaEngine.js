@@ -275,7 +275,7 @@ export const ACTION_CARDS_BASIC = [
   { name: 'VITALITY GAIN V20', type: 'HEAL', count: 6, costET: 0, minLevel: 2, desc: '+20 HP or level up to Level 2 (Requires Level 2).' },
   { name: 'X-CHANGE X1', type: 'OTHERS', count: 6, costET: 0, desc: 'Exchange 1 Action Card with an opponent.' },
   { name: 'DEFENCE - COUNTER', type: 'DEFENSE', count: 1, costET: 0, desc: '0% damage taken, reflect 25% back.' },
-  { name: 'FIRE FLAME X1', type: 'ATTACK', count: 1, costET: 1, desc: 'Burns target on hit (-10 HP/turn).' },
+  { name: 'FIRE FLAME X1', type: 'ATTACK', count: 1, costET: 1, desc: 'On successful attack, deals -10 HP and burns opponent (-10 HP each turn until doubles are rolled) (1 ET).' },
   { name: 'HEAL CLEANSE+RESTORE', type: 'HEAL', count: 1, costET: 0, desc: 'Cleanses all poison and restores +20 HP.' },
   { name: 'TIME MACHINE', type: 'OTHERS', count: 1, costET: 0, desc: 'Receive another turn immediately.' },
   { name: 'ABANDON', type: 'OTHERS', count: 1, costET: 0, desc: 'Abandon your ally in combat.' },
@@ -291,7 +291,7 @@ export const ACTION_CARDS_PREMIUM = [
   { name: 'ANTIDOTE FULL', type: 'HEAL', count: 2, costET: 0, desc: 'Cures all poison cards.' },
   { name: 'DEFENCE FULL GUARD', type: 'DEFENSE', count: 4, costET: 0, desc: 'High defense barrier.' },
   { name: 'DODGE - COUNTER', type: 'DEFENSE', count: 3, costET: 0, desc: 'Dodge and immediately counter-attack.' },
-  { name: 'FIRE FLAME X2', type: 'ATTACK', count: 3, costET: 1, desc: 'Intense fire dealing -20 HP burn.' },
+  { name: 'FIRE FLAME X2', type: 'ATTACK', count: 3, costET: 1, desc: 'On successful attack, deals -20 HP and burns opponent (-20 HP each turn until doubles are rolled) (1 ET).' },
   { name: 'FREEZE X2', type: 'STATUS', count: 4, costET: 0, desc: 'Target loses 2 turns and receives -4 on dice roll.' },
   { name: 'VISION FULL', type: 'OTHERS', count: 3, costET: 0, desc: 'All players reveal Action Cards for 30s.' },
   { name: 'BACK STAB', type: 'ATTACK', count: 4, costET: 1, desc: 'Surprise rear assault.' },
@@ -910,7 +910,11 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         if (matchesWeakness) {
           const bonus = newDefenderState.weaknessBonus || 10;
           finalDamage += bonus;
-          log += ` WEAKNESS TRIGGER! +${bonus} AP bonus!`;
+          if (attackElement.toLowerCase() === 'fire') {
+            log += ` 🔥 [FIRE WEAKNESS] ${newDefenderState.name} has Fire weakness! Additional -${bonus} HP weakness penalty applied!`;
+          } else {
+            log += ` 🎯 [WEAKNESS TRIGGER] ${newDefenderState.name} has ${attackElement} weakness! +${bonus} AP bonus applied!`;
+          }
         }
       }
 
@@ -961,10 +965,12 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         }
 
         // Apply Burn Status if Fire Flame X1 or X2 (only if not immune to Fire)
+        // FIRE FLAME X1: Burns opponent (-10 HP each turn until doubles are rolled)
+        // FIRE FLAME X2: Burns opponent (-20 HP each turn until doubles are rolled)
         if ((cardName === 'FIRE FLAME X1' || cardName === 'FIRE FLAME X2') && !wasImmuneFire) {
-          const burnStacks = cardName === 'FIRE FLAME X2' ? 2 : 1;
-          newDefenderState.burnCount = (newDefenderState.burnCount || 0) + burnStacks;
-          log += ` 🔥 Applied ${burnStacks} Burn stack(s) to ${newDefenderState.name}!`;
+          const burnTier = cardName === 'FIRE FLAME X2' ? 2 : 1;
+          newDefenderState.burnCount = Math.max(newDefenderState.burnCount || 0, burnTier);
+          log += ` 🔥 Applied Fire Flame Burn (-${burnTier * 10} HP each turn until doubles are rolled) to ${newDefenderState.name}!`;
         }
 
         // Lightning effect: Client feedback Nov 14 (Official LIGHTNING Functionality):
@@ -1023,6 +1029,8 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       } else if (!newDefenderState?.hasCounter && !boomerangReflected) {
         if (cardName.includes('LIGHTNING')) {
           log += ` ⚡ Lightning attack was not successful. Nothing happens and game continues (no extra turn awarded). 0 damage taken.`;
+        } else if (cardName.includes('FIRE FLAME')) {
+          log += ` 🔥 Fire Flame attack was not successful. Opponent is not burned. 0 damage taken.`;
         } else {
           log += ` Defender blocked or dodged the attack! 0 damage taken.`;
         }

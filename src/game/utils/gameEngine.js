@@ -247,8 +247,8 @@ export function resolveDiceCombat({
       rawAP = characterMove.baseAP || 25;
     }
   } else if (actionCard) {
-    if (actionCard.id === 'lightning_x2' || actionCard.name === 'LIGHTNING X2') rawAP = 20;
-    else if (actionCard.id === 'lightning_x1' || actionCard.name === 'LIGHTNING X1') rawAP = 10;
+    if (actionCard.id === 'lightning_x2' || actionCard.name === 'LIGHTNING X2' || actionCard.id === 'fire_flame_x2' || actionCard.name === 'FIRE FLAME X2') rawAP = 20;
+    else if (actionCard.id === 'lightning_x1' || actionCard.name === 'LIGHTNING X1' || actionCard.id === 'fire_flame_x1' || actionCard.name === 'FIRE FLAME X1') rawAP = 10;
     else if (actionCard.id === 'atk_x2') rawAP = 40;
     else if (actionCard.id === 'atk_x1') rawAP = 25;
     else rawAP = 20;
@@ -263,6 +263,7 @@ export function resolveDiceCombat({
   let weaknessBonus = 0;
   const moveElement = characterMove?.element || (
     actionCard?.id?.includes('lightning') || actionCard?.name?.includes('LIGHTNING') ? 'Lightning' :
+    actionCard?.id?.includes('fire') || actionCard?.name?.includes('FIRE FLAME') ? 'Fire' :
     (actionCard?.id === 'poison_x1' || actionCard?.id === 'poison_x2' ? 'Poison' : 'Physical')
   );
 
@@ -352,10 +353,12 @@ export function resolveDiceCombat({
   const healsAttacker = clashWon ? (characterMove?.healsAttacker || 0) : 0;
   
   let burnStacks = 0;
-  if (actionCard?.name === 'FIRE FLAME X2') {
-    burnStacks = 2;
-  } else if (actionCard?.name === 'FIRE FLAME X1' || actionCard?.name?.includes('FIRE FLAME')) {
-    burnStacks = 1;
+  if (clashWon) {
+    if (actionCard?.name === 'FIRE FLAME X2' || actionCard?.id === 'fire_flame_x2') {
+      burnStacks = 2;
+    } else if (actionCard?.name === 'FIRE FLAME X1' || actionCard?.id === 'fire_flame_x1' || actionCard?.name?.includes('FIRE FLAME')) {
+      burnStacks = 1;
+    }
   }
 
   const revealCards = characterMove?.revealCards || false;
@@ -503,22 +506,6 @@ export function advanceTurn(state) {
         updated.vampireStealTurnsLeft -= 1;
       }
 
-      // FIRE FLAME Burn Extinguish Check: Roll to extinguish burn each turn
-      if (updated.burnCount > 0) {
-        const extinguishRoll = Math.floor(Math.random() * 6) + 1; // Roll 1d6
-        // Doubles = any even number OR player has multiple burn stacks
-        const isDoubles = extinguishRoll % 2 === 0; // 2,4,6 are "doubles" 
-        
-        if (isDoubles) {
-          updated.burnCount = 0;
-          updated.turnLogs = updated.turnLogs || [];
-          updated.turnLogs.unshift(`🔥 ${updated.name} rolled ${extinguishRoll} and extinguished all burn!`);
-        } else {
-          updated.turnLogs = updated.turnLogs || [];
-          updated.turnLogs.unshift(`🔥 ${updated.name} rolled ${extinguishRoll} (need even) - Burn continues!`);
-        }
-      }
-
       // Zombie Auto +10 HP regen at start of turn
       if (updated.isZombie && updated.hp > 0) {
         updated.hp = Math.min(updated.maxHp || updated.maxHP || 100, updated.hp + ZOMBIE_PROFILE.turnRegen);
@@ -530,13 +517,7 @@ export function advanceTurn(state) {
         updated.hp = Math.max(0, updated.hp - poisonDmg);
         updated.stats.damageTaken += poisonDmg;
       }
-
-      // Burn damage at start of turn (-10 HP per burn stack)
-      if (!updated.isZombie && updated.burnCount > 0) {
-        const burnDmg = updated.burnCount * 10;
-        updated.hp = Math.max(0, updated.hp - burnDmg);
-        updated.stats.damageTaken += burnDmg;
-      }
+      // Note: Active player's Fire Flame Burn is resolved interactively via the pre-turn Extinguish Modal
     }
 
     if (stunnedSkips.includes(idx)) {
@@ -544,6 +525,14 @@ export function advanceTurn(state) {
       // Also decrement sleepTurns counter
       if (updated.sleepTurns && updated.sleepTurns > 0) {
         updated.sleepTurns -= 1;
+      }
+      // Sleeping / stunned players suffer burn tick during skipped turn
+      if (!updated.isZombie && updated.burnCount > 0) {
+        const burnDmg = updated.burnCount * 10;
+        updated.hp = Math.max(0, updated.hp - burnDmg);
+        updated.stats.damageTaken += burnDmg;
+        updated.turnLogs = updated.turnLogs || [];
+        updated.turnLogs.unshift(`🔥 ${updated.name} suffered -${burnDmg} Burn damage while asleep/stunned! HP: ${updated.hp}`);
       }
     }
 
