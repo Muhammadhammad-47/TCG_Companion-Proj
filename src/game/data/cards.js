@@ -166,7 +166,25 @@ export const ACTION_CARDS = [
     costET: 1,
     icon: '🗡️',
     color: '#ff3b6b',
-    desc: 'Bypass defenses. Deals 25 AP. Only works in 3+ player matches. (1 ET)'
+    desc: 'Bypass defenses. Deals 25 AP. Only works in 3+ player matches. Allows a player to break their alliance without suffering the -40 HP penalty. (1 ET)'
+  },
+  {
+    id: 'soul_alliance',
+    name: 'SOUL ALLIANCE',
+    type: 'OTHERS',
+    costET: 0,
+    icon: '🤝',
+    color: '#00f0ff',
+    desc: 'Forge a Secret Soul Alliance with another player (3+ players only). Trade ET and REVIVE cards. (0 ET)'
+  },
+  {
+    id: 'abandon',
+    name: 'ABANDON',
+    type: 'OTHERS',
+    costET: 0,
+    icon: '💔',
+    color: '#ff2a6d',
+    desc: 'Abandon your ally in combat (3+ players only). If a player breaks their alliance without having a back stab card, the leaving player will suffer a -40 HP penalty. (0 ET)'
   },
   {
     id: 'vitality_v10',

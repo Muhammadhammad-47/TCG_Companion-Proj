@@ -539,10 +539,11 @@ Extra Notes: Must roll dice.
 
 ABANDON - Basic 
 Abandon your ally on defense or attack.
+Mechanic: If a player breaks their alliance without having a back stab card. The leaving player will suffer a -40 HP.
 
 
 BACK STAB - Basic
-Abandon your ally on defense or attack and immediately turn your attack against them..
+Abandon your ally on defense or attack and immediately turn your attack against them. A player who has a BACK STAB card can break their alliance without suffering the -40 HP penalty.
 
 
 REVIVE - Basic
@@ -599,7 +600,7 @@ No, you are not required to roll the dice to activate a Shield card.
 
 
 Can I use the Abandon card to avoid an attack or defense?
-No, the Abandon card is similar to the Retreat card, but does not work the same. An Abandon Card can only be used while the player is in a Soul Alliance.
+No, the Abandon card is similar to the Retreat card, but does not work the same. An Abandon Card can only be used while the player is in a Soul Alliance. If a player breaks their alliance without having a back stab card. The leaving player will suffer a -40 HP.
 
 
 5. CHARACTER CARDS

@@ -256,6 +256,20 @@ export default function CardActionModal({
       }
       return;
     }
+
+    // Handle ABANDON Card
+    if (currentAction.id === 'abandon' || currentAction.name?.includes('ABANDON')) {
+      onApplyInstantEffect({
+        type: 'abandon',
+        sourcePlayerId: activePlayer.id,
+        targetPlayerId: activePlayer.alliedWith || activePlayer.id,
+        costET: currentAction.costET,
+        cardName: currentAction.name,
+        cardId: currentAction.id,
+        playedInstanceId: currentAction.instanceId
+      });
+      return;
+    }
   };
 
   const handlePhysicalPlacementConfirmed = () => {

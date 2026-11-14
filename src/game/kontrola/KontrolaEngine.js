@@ -708,10 +708,37 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       attackElement = 'Shadow';
       if (newAttackerState.allianceId && newAttackerState.allianceId === newDefenderState?.id) {
         newAttackerState.allianceId = null;
-        if (newDefenderState) newDefenderState.allianceId = null;
-        log += ` 🗡️ BACK STAB BETRAYAL! ${newAttackerState.name} betrayed their Soul Alliance with ${newDefenderState?.name || 'their ally'} and ambushed them!`;
+        newAttackerState.canTradeWithAlliance = false;
+        if (newDefenderState) {
+          newDefenderState.allianceId = null;
+          newDefenderState.canTradeWithAlliance = false;
+        }
+        log += ` 🗡️ BACK STAB BETRAYAL! ${newAttackerState.name} betrayed their Soul Alliance with ${newDefenderState?.name || 'their ally'} and ambushed them! (Evaded -40 HP penalty with BACK STAB)`;
       } else {
         log += ` 🗡️ [BACK STAB: Shadow ambush dealing ${baseAP} AP]`;
+      }
+    } else if (newAttackerState.allianceId && newDefenderState && newAttackerState.allianceId === newDefenderState.id) {
+      // Breaking alliance by attacking ally without a BACK STAB card
+      const playerHand = newAttackerState.actionCardsHand || gameState?.hands?.[newAttackerState.id] || [];
+      const hasBackStabCard = playerHand.some(c => {
+        const cName = (typeof c === 'string' ? c : (c?.name || c?.id || '')).toUpperCase();
+        return cName.includes('BACK STAB') || cName.includes('BACKSTAB');
+      });
+
+      newAttackerState.allianceId = null;
+      newAttackerState.canTradeWithAlliance = false;
+      newDefenderState.allianceId = null;
+      newDefenderState.canTradeWithAlliance = false;
+
+      if (!hasBackStabCard) {
+        newAttackerState.hp = Math.max(0, newAttackerState.hp - 40);
+        log += ` 💔 ALLIANCE BROKEN! ${newAttackerState.name} broke their alliance without a BACK STAB card and suffered a -40 HP penalty! (HP: ${newAttackerState.hp})`;
+        if (newAttackerState.hp <= 0) {
+          newAttackerState.isDefeated = true;
+          log += ` 💀 ${newAttackerState.name} succumbed to the alliance betrayal penalty and was eliminated!`;
+        }
+      } else {
+        log += ` 🗡️ ${newAttackerState.name} broke their alliance with a BACK STAB card in hand, evading the -40 HP penalty!`;
       }
     } else if (cardName.includes('FIRE FLAME')) {
       const isX2 = cardName.includes('X2');
@@ -1378,9 +1405,37 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       log += ` 🤝 Soul Alliance formed between ${newAttackerState.name} and ${newDefenderState.name}! Energy Tokens and REVIVE cards can now be traded.`;
     }
   } else if (cardName === 'ABANDON') {
+    // Official Rule: If a player breaks their alliance without having a back stab card, the leaving player will suffer a -40 HP penalty.
+    const playerHand = newAttackerState.actionCardsHand || gameState?.hands?.[newAttackerState.id] || [];
+    const hasBackStabCard = playerHand.some(c => {
+      const cName = (typeof c === 'string' ? c : (c?.name || c?.id || '')).toUpperCase();
+      return cName.includes('BACK STAB') || cName.includes('BACKSTAB');
+    });
+
+    const allyId = newAttackerState.allianceId;
     newAttackerState.allianceId = null;
     newAttackerState.canTradeWithAlliance = false;  // Disable trading
-    log += ` 💔 ${newAttackerState.name} abandoned all alliances!`;
+
+    if (newDefenderState && (newDefenderState.id === allyId || newDefenderState.allianceId === newAttackerState.id)) {
+      newDefenderState.allianceId = null;
+      newDefenderState.canTradeWithAlliance = false;
+    }
+    if (allyId && gameState?.characterStates?.[allyId]) {
+      gameState.characterStates[allyId].allianceId = null;
+      gameState.characterStates[allyId].canTradeWithAlliance = false;
+    }
+
+    if (!hasBackStabCard) {
+      const penalty = 40;
+      newAttackerState.hp = Math.max(0, newAttackerState.hp - penalty);
+      log += ` 💔 ${newAttackerState.name} abandoned their alliance without a BACK STAB card and suffered a -${penalty} HP penalty! (HP: ${newAttackerState.hp})`;
+      if (newAttackerState.hp <= 0) {
+        newAttackerState.isDefeated = true;
+        log += ` 💀 ${newAttackerState.name} succumbed to the alliance abandonment penalty and was eliminated!`;
+      }
+    } else {
+      log += ` 🗡️ ${newAttackerState.name} abandoned their alliance with a BACK STAB card in hand, evading the -40 HP penalty!`;
+    }
   }
 
   // Zombie State Transition Check

@@ -727,10 +727,26 @@ export default function BattleArena({
           extraTurns += result.extraTurnsGranted;
         }
 
+        let attackerHP = Math.min(p.maxHp || 100, p.hp + stolenHP + (result.isMiss ? 0 : (result.healsAttacker || 0)));
+        let attackerAllianceId = p.allianceId;
+        let attackerAlliedWith = p.alliedWith;
+
+        // If player breaks alliance with defender without having a BACK STAB card, suffer -40 HP
+        if (p.alliedWith && p.alliedWith === defender.id) {
+          const hasBackStab = (actionCard?.name || '').toUpperCase().includes('BACK STAB') || (actionCard?.id === 'backstab') || (p.actionCardsHand || []).some(c => (c.name || c.id || '').toUpperCase().includes('BACK STAB'));
+          attackerAllianceId = null;
+          attackerAlliedWith = null;
+          if (!hasBackStab) {
+            attackerHP = Math.max(0, attackerHP - 40);
+          }
+        }
+
         return {
           ...p,
+          hp: attackerHP,
+          allianceId: attackerAllianceId,
+          alliedWith: attackerAlliedWith,
           energyTokens: Math.max(0, p.energyTokens - totalET) + stolenET,
-          hp: Math.min(p.maxHp || 100, p.hp + stolenHP + (result.isMiss ? 0 : (result.healsAttacker || 0))),
           extraTurns,
           turnActionCompleted: (result.extraTurnsGranted > 0 || result.extraTurnGranted) ? false : true,
           actionCardsHand: newHand,
@@ -749,6 +765,13 @@ export default function BattleArena({
         const hasSleep = result.sleepTurns > 0;
         const newSleepTurns = hasSleep ? result.sleepTurns : (p.sleepTurns || 0);
 
+        let defAllianceId = p.allianceId;
+        let defAlliedWith = p.alliedWith;
+        if (p.alliedWith && p.alliedWith === attacker.id) {
+          defAllianceId = null;
+          defAlliedWith = null;
+        }
+
         let nextPlayerObj = {
           ...p,
           hp: Math.max(0, nextRawHP - stolenHP),
@@ -756,6 +779,8 @@ export default function BattleArena({
           shield: result.newShield,
           poisonCards: nextPoison,
           burnCount: nextBurn,
+          allianceId: defAllianceId,
+          alliedWith: defAlliedWith,
           isStunned: hasSleep ? false : (result.appliesStun ? true : p.isStunned),
           sleepTurns: newSleepTurns,
           stats: {
@@ -915,6 +940,28 @@ export default function BattleArena({
       });
     }
 
+    // Check if alliance was broken in combat
+    if (attacker.alliedWith && attacker.alliedWith === defender.id) {
+      const hasBackStab = (actionCard?.name || '').toUpperCase().includes('BACK STAB') || (actionCard?.id === 'backstab') || (attacker.actionCardsHand || []).some(c => (c.name || c.id || '').toUpperCase().includes('BACK STAB'));
+      if (!hasBackStab) {
+        newLogs.push({
+          turn: turnNum,
+          actor: attacker.name,
+          action: `💔 ${attacker.name} broke their alliance with ${defender.name} without a BACK STAB card and suffered -40 HP penalty!`,
+          type: 'damage',
+          amount: `-40 HP`
+        });
+      } else {
+        newLogs.push({
+          turn: turnNum,
+          actor: attacker.name,
+          action: `🗡️ ${attacker.name} broke their alliance with ${defender.name} with a BACK STAB card, evading the -40 HP penalty!`,
+          type: 'attack',
+          amount: `Betrayal`
+        });
+      }
+    }
+
     if (didTransferCrystal) {
       newLogs.push({
         turn: turnNum,
@@ -1030,7 +1077,33 @@ export default function BattleArena({
           soundFX.playHeal();
           logText = `${updated.name} used ${cardName}!`;
           logAmount = `+${vitAmount} Max HP, Lv.${updated.level}`;
+        } else if (type === 'abandon') {
+          const playerHand = sourcePlayer.actionCardsHand || [];
+          const hasBackStab = playerHand.some(c => (c.name || c.id || '').toUpperCase().includes('BACK STAB') || (c.name || c.id || '').toUpperCase().includes('BACKSTAB'));
+
+          updated.allianceId = null;
+          updated.alliedWith = null;
+
+          if (!hasBackStab) {
+            updated.hp = Math.max(0, updated.hp - 40);
+            soundFX.playDamage();
+            logText = `💔 ${updated.name} broke their alliance without a BACK STAB card and suffered -40 HP penalty!`;
+            logAmount = `-40 HP`;
+            if (updated.hp === 0) {
+              updated.isDefeated = true;
+            }
+          } else {
+            soundFX.playCard();
+            logText = `🗡️ ${updated.name} broke their alliance with a BACK STAB card in hand, evading the -40 HP penalty!`;
+            logAmount = `Alliance Broken`;
+          }
         }
+      }
+
+      // If abandon card was played, also clear ally's alliance state
+      if (type === 'abandon' && (p.id === sourcePlayer.alliedWith || p.alliedWith === sourcePlayerId)) {
+        updated.allianceId = null;
+        updated.alliedWith = null;
       }
 
       return checkZombieStatus(updated);
