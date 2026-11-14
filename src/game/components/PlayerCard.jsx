@@ -40,6 +40,11 @@ export default function PlayerCard({
           cardName={char.name}
           isSelected={isActive}
           isOvercharged={isActive}
+          showFire={player.burnCount > 0}
+          showPoison={player.poisonCards > 0 || isZombie}
+          showLightning={player.isStunned}
+          showShield={player.shield > 0}
+          showIce={player.isFrozen}
           fighterStance={char.element ? char.element.toLowerCase() : 'fire'}
           enable3DTilt={true}
           style={{ borderRadius: '12px', display: 'inline-block' }}
@@ -221,9 +226,21 @@ export default function PlayerCard({
           </div>
         )}
 
+        {typeof player.burnCount === 'number' && player.burnCount > 0 && (
+          <div className="status-tag burn-active" style={{ background: 'rgba(255, 77, 0, 0.2)', border: '1px solid #ff4d00', color: '#ff4d00', animation: 'fx-burning-flicker 0.6s infinite alternate' }} title={`Burning: -${(player.burnCount || 1) * 10} HP each turn until doubles`}>
+            🔥 BURN -{(player.burnCount || 1) * 10}HP
+          </div>
+        )}
+
         {player.isStunned && (
           <div className="status-tag stun-active" title="Skips next turn">
             ⚡ STUNNED
+          </div>
+        )}
+
+        {player.isFrozen && (
+          <div className="status-tag freeze-active" style={{ background: 'rgba(165, 243, 252, 0.2)', border: '1px solid #a5f3fc', color: '#a5f3fc', animation: 'fx-frozen-shiver 0.4s infinite alternate' }} title="Frozen: Incapacitated by Frost">
+            ❄️ FROZEN
           </div>
         )}
       </div>

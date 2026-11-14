@@ -5889,7 +5889,7 @@ export default function KontrolaArena() {
                         <div className={`arena-num-pill pill-${idx + 1}`}>{idx + 1}</div>
 
                         <div
-                          className={`arena-score-avatar ${isActiveTurn ? 'avatar-active-turn-beacon' : ''} ${pChar.hp < 30 ? 'avatar-low-hp-distress' : ''} ${pChar.shield > 0 ? 'avatar-shield-hex' : ''} ${pChar.isZombie ? 'avatar-zombie-infected' : ''}`}
+                          className={`arena-score-avatar ${isActiveTurn ? 'avatar-active-turn-beacon' : ''} ${pChar.hp < 30 ? 'avatar-low-hp-distress' : ''} ${pChar.shield > 0 ? 'avatar-shield-hex fx-shield-status' : ''} ${pChar.isZombie ? 'avatar-zombie-infected' : ''} ${pChar.burnCount > 0 ? 'fx-burning-status' : ''} ${pChar.poisonCount > 0 ? 'fx-poison-status' : ''} ${pChar.sleepTurns > 0 ? 'fx-lightning-status' : ''} ${pChar.isFrozen ? 'fx-frozen-status' : ''}`}
                           style={{
                             borderColor: pChar.themeColor || 'var(--neon-cyan)',
                             overflow: 'visible',
@@ -5979,15 +5979,29 @@ export default function KontrolaArena() {
                   {myCharacter?.poisonCount > 0 && (
                     <div className="effect-chip effect-poison">
                       <Skull size={15} color="var(--neon-green)" />
-                      <span className="effect-name">Poison</span>
+                      <span className="effect-name">Poison Smoke</span>
                       <span className="effect-count">{myCharacter.poisonCount}</span>
                     </div>
                   )}
                   {typeof myCharacter?.burnCount === 'number' && myCharacter.burnCount > 0 && (
-                    <div className="effect-chip effect-poison" style={{ borderColor: 'rgba(255, 77, 0, 0.4)', background: 'rgba(255, 77, 0, 0.08)' }}>
-                      <span style={{ fontSize: '15px' }}>??</span>
-                      <span className="effect-name" style={{ color: '#ff4d00' }}>Burn</span>
+                    <div className="effect-chip effect-burn">
+                      <span style={{ fontSize: '15px' }}>🔥</span>
+                      <span className="effect-name" style={{ color: '#ff4d00' }}>Burning Fire</span>
                       <span className="effect-count" style={{ color: '#ff4d00' }}>{myCharacter.burnCount}</span>
+                    </div>
+                  )}
+                  {(myCharacter?.sleepTurns > 0 || myCharacter?.isStunned) && (
+                    <div className="effect-chip effect-lightning">
+                      <Zap size={15} color="#ffe600" />
+                      <span className="effect-name" style={{ color: '#ffe600' }}>Lightning Stun</span>
+                      <span className="effect-count" style={{ color: '#ffe600' }}>{myCharacter?.sleepTurns || 1}t</span>
+                    </div>
+                  )}
+                  {myCharacter?.isFrozen && (
+                    <div className="effect-chip effect-freeze">
+                      <span style={{ fontSize: '15px' }}>❄️</span>
+                      <span className="effect-name" style={{ color: '#a5f3fc' }}>Freeze</span>
+                      <span className="effect-count" style={{ color: '#a5f3fc' }}>1t</span>
                     </div>
                   )}
                   {typeof myCharacter?.vampireStealTurnsLeft === 'number' && myCharacter.vampireStealTurnsLeft > 0 && (

@@ -1745,7 +1745,7 @@ export default function BattleArena({
                         {idx + 1}
                       </div>
 
-                      <div className="arena-score-avatar" style={{ borderColor: c.themeColor, overflow: 'visible', width: '38px', height: '38px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', position: 'relative' }}>
+                      <div className={`arena-score-avatar ${p.shield > 0 ? 'fx-shield-status' : ''} ${p.burnCount > 0 ? 'fx-burning-status' : ''} ${p.poisonCards > 0 ? 'fx-poison-status' : ''} ${p.isStunned ? 'fx-lightning-status' : ''} ${p.isFrozen ? 'fx-frozen-status' : ''}`} style={{ borderColor: c.themeColor, overflow: 'visible', width: '38px', height: '38px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', position: 'relative' }}>
                         <img
                           src={getAssetUrl(c.image || 'characters/chynaman.png')}
                           alt={c.name}
@@ -1785,6 +1785,7 @@ export default function BattleArena({
                             </span>
                           )}
                           {p.poisonCards > 0 && <span style={{ color: '#39ff14' }}>☠️ {p.poisonCards}</span>}
+                          {typeof p.burnCount === 'number' && p.burnCount > 0 && <span style={{ color: '#ff4d00' }}>🔥 {p.burnCount}</span>}
                         </div>
                       </div>
 
@@ -1824,8 +1825,38 @@ export default function BattleArena({
                     style={{ cursor: 'default' }}
                   >
                     <Skull size={15} color="#39ff14" />
-                    <span className="effect-name">Poison</span>
+                    <span className="effect-name">Poison Smoke</span>
                     <span className="effect-count">{activePlayer.poisonCards}</span>
+                  </div>
+                )}
+                {typeof activePlayer.burnCount === 'number' && activePlayer.burnCount > 0 && (
+                  <div
+                    className="effect-chip effect-burn"
+                    style={{ cursor: 'default' }}
+                  >
+                    <span style={{ fontSize: '15px' }}>🔥</span>
+                    <span className="effect-name" style={{ color: '#ff4d00' }}>Burning Fire</span>
+                    <span className="effect-count" style={{ color: '#ff4d00' }}>{activePlayer.burnCount}</span>
+                  </div>
+                )}
+                {(activePlayer.isStunned || activePlayer.sleepTurns > 0) && (
+                  <div
+                    className="effect-chip effect-lightning"
+                    style={{ cursor: 'default' }}
+                  >
+                    <Zap size={15} color="#ffe600" />
+                    <span className="effect-name" style={{ color: '#ffe600' }}>Lightning Stun</span>
+                    <span className="effect-count" style={{ color: '#ffe600' }}>{activePlayer.sleepTurns || 1}t</span>
+                  </div>
+                )}
+                {activePlayer.isFrozen && (
+                  <div
+                    className="effect-chip effect-freeze"
+                    style={{ cursor: 'default' }}
+                  >
+                    <span style={{ fontSize: '15px' }}>❄️</span>
+                    <span className="effect-name" style={{ color: '#a5f3fc' }}>Freeze</span>
+                    <span className="effect-count" style={{ color: '#a5f3fc' }}>1t</span>
                   </div>
                 )}
                 <button
