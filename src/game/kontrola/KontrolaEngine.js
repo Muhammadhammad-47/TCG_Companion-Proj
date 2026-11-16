@@ -945,7 +945,8 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           (newDefenderState.weakness && newDefenderState.weakness.toLowerCase().includes(attackElement.toLowerCase()));
 
         if (matchesWeakness) {
-          const bonus = newDefenderState.weaknessBonus || 10;
+          const isKat = ['kat', 'katsumi'].some(k => defCharKey.includes(k));
+          const bonus = (isKat && (isAttackerZombie || attackElement.toLowerCase() === 'poison')) ? 15 : (newDefenderState.weaknessBonus || 10);
           finalDamage += bonus;
           if (isAttackerZombie && hasPoisonWeakness) {
             log += ` ☠️ [ZOMBIE POISON WEAKNESS] ${newDefenderState.name} has Poison weakness! Suffer -${bonus} HP additional weakness penalty from Zombie attack!`;
@@ -959,28 +960,30 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         }
       }
 
-      // Shield Absorption: Absorbs damage before HP is reduced
+      // 1. Innate Basic Defense (Priority over Shield): Activates when defender rolls 6+ on two dice during clash phase without a defense card
+      // Per official rules: "Individual Defense w/o Defense Card 10 HP less on the AP.
+      // This is only activated when the player rolls a total of six or higher from two dices, even if the player loses the battle"
+      const defenderRolled6Plus = (defenderRoll?.total || 0) >= 6;
+      let innateAbsorb = 0;
+      if (defenderRolled6Plus && !defCard && finalDamage > 0) {
+        innateAbsorb = Math.min(10, finalDamage);
+        finalDamage = Math.max(0, finalDamage - innateAbsorb);
+        log += ` 🛡️ Innate Basic Defense: Defender rolled ${defenderRoll?.total || 0} (≥6), reducing incoming attack power by ${innateAbsorb} AP!`;
+      }
+
+      // 2. Shield Absorption: Absorbs penetrating damage before HP is reduced
       // Official Rule: "SHIELD BASIC + 25HP - Prevents all damage except poison and fire"
+      let shieldAbsorbed = 0;
       const isFireAttack = (attackElement === 'Fire') || cardName.includes('FIRE');
       if (newDefenderState?.shield > 0 && finalDamage > 0) {
         if (newDefenderState.hasBasicShield && isFireAttack) {
           log += ` 🔥 SHIELD BASIC cannot block Fire damage! Fire bypasses basic shield!`;
         } else {
-          const absorbed = Math.min(newDefenderState.shield, finalDamage);
-          newDefenderState.shield -= absorbed;
-          finalDamage -= absorbed;
-          log += ` 🛡️ Shield absorbed ${absorbed} damage.`;
+          shieldAbsorbed = Math.min(newDefenderState.shield, finalDamage);
+          newDefenderState.shield -= shieldAbsorbed;
+          finalDamage -= shieldAbsorbed;
+          log += ` 🛡️ Shield absorbed ${shieldAbsorbed} damage.`;
         }
-      }
-
-      // Innate Basic Defense: Activates when defender rolls 6+ on two dice during clash phase without a defense card
-      // Per official rules: "Individual Defense w/o Defense Card 10 HP less on the AP.
-      // This is only activated when the player rolls a total of six or higher from two dices, even if the player loses the battle"
-      const defenderRolled6Plus = (defenderRoll?.total || 0) >= 6;
-      if (defenderRolled6Plus && !defCard && finalDamage > 0) {
-        const innateAbsorb = Math.min(10, finalDamage);
-        finalDamage = Math.max(0, finalDamage - innateAbsorb);
-        log += ` 🛡️ Innate Basic Defense: Defender rolled ${defenderRoll?.total || 0} (≥6), reducing incoming damage by ${innateAbsorb} AP!`;
       }
 
       // Apply damage to defender

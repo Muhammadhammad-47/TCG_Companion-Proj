@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { resolveDiceCombat } from '../utils/gameEngine';
 import { CHARACTERS, ZOMBIE_PROFILE, getAssetUrl } from '../data/characters';
 import { soundFX } from '../utils/audio';
-import { Dices, Shield, Swords, Check, Zap, Flame, Skull, X } from 'lucide-react';
+import { Dices, Shield, Swords, Check, Zap, Flame, Skull, X, RotateCcw } from 'lucide-react';
 import ThreeDiceArena from './ThreeDiceArena';
 
 export default function DiceRollerModal({ combatData, onCombatComplete, onClose }) {
@@ -242,40 +242,58 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
               </div>
             )}
 
-            <button
-              onClick={() => {
-                setDoublesAlert(false);
-                const atkSum = clashAtkDice[0] + clashAtkDice[1];
-                const defSum = clashDefDice[0] + clashDefDice[1];
-                
-                if (atkSum > defSum) {
-                   if (isMultiplier) {
-                     setPhase('multiplier');
-                   } else {
+            {clashAtkDice[0] + clashAtkDice[1] === clashDefDice[0] + clashDefDice[1] ? (
+              <div style={{ textAlign: 'center', width: '100%' }}>
+                <div style={{ color: 'var(--neon-gold)', fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '10px' }}>
+                  ⚔️ CLASH TIED ({clashAtkDice[0] + clashAtkDice[1]} vs {clashDefDice[0] + clashDefDice[1]})! RE-ROLL REQUIRED!
+                </div>
+                <button
+                  onClick={handleRollClash}
+                  style={{
+                    width: '100%', padding: '14px', background: 'linear-gradient(90deg, #FBC80D, #ff8800)',
+                    color: '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer'
+                  }}
+                >
+                  <RotateCcw size={20} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+                  RE-ROLL CLASH DICE
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => {
+                  setDoublesAlert(false);
+                  const atkSum = clashAtkDice[0] + clashAtkDice[1];
+                  const defSum = clashDefDice[0] + clashDefDice[1];
+                  
+                  if (atkSum > defSum) {
+                     if (isMultiplier) {
+                       setPhase('multiplier');
+                     } else {
+                       const combatResult = resolveDiceCombat({
+                         attacker, defender, actionCard, characterMove,
+                         attackerRoll: [0, 0], clashWon: true, clashDefSum: defSum,
+                         amplifyBonus, isSingleDieMultiplier: false, playerCount, isBackStab
+                       });
+                       setResult(combatResult);
+                       setPhase('result');
+                       if (combatResult.damageDealt > 0) soundFX.playDamage();
+                     }
+                  } else {
                      const combatResult = resolveDiceCombat({
-                       attacker, defender, actionCard, characterMove,
-                       attackerRoll: [0, 0], clashWon: true, clashDefSum: defSum,
-                       amplifyBonus, isSingleDieMultiplier: false, playerCount, isBackStab
+                       attacker, defender, actionCard, characterMove, clashWon: false, clashDefSum: defSum, playerCount, isBackStab
                      });
                      setResult(combatResult);
                      setPhase('result');
-                     if (combatResult.damageDealt > 0) soundFX.playDamage();
-                   }
-                } else {
-                   const combatResult = resolveDiceCombat({
-                     attacker, defender, actionCard, characterMove, clashWon: false, playerCount, isBackStab
-                   });
-                   setResult(combatResult);
-                   setPhase('result');
-                }
-              }}
-              style={{
-                width: '100%', padding: '14px', background: 'linear-gradient(90deg, #FBC80D, #0077ff)',
-                color: '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer'
-              }}
-            >
-              PROCEED TO RESOLUTION
-            </button>
+                  }
+                }}
+                style={{
+                  width: '100%', padding: '14px', background: 'linear-gradient(90deg, #FBC80D, #0077ff)',
+                  color: '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer'
+                }}
+              >
+                PROCEED TO RESOLUTION
+              </button>
+            )}
           </div>
         )}
 
@@ -299,42 +317,75 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
         )}
 
         {phase === 'result' && result && (
-          <div className="combat-result-breakdown" style={{ background: 'rgba(0, 0, 0, 0.6)', border: '1px solid rgba(251, 200, 13, 0.3)', borderRadius: '10px', padding: '14px', marginTop: '10px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <strong style={{ fontSize: '1.1rem', color: result.isMiss ? '#888' : (result.defenseActivated ? 'var(--neon-gold)' : '#ED1E24') }}>
-                {result.isMiss ? '? ATTACK MISSED (CLASH LOST)' : (result.defenseActivated ? '??? DEFENSE 6+ ACHIEVED' : '?? FULL DAMAGE PENETRATION')}
+          <div className="combat-result-breakdown" style={{ background: 'rgba(0, 0, 0, 0.75)', border: '1px solid rgba(251, 200, 13, 0.4)', borderRadius: '12px', padding: '16px', marginTop: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <strong style={{ fontSize: '1.15rem', color: result.isMiss ? '#888' : (result.defenseActivated ? 'var(--neon-gold)' : '#39ff14') }}>
+                {result.isMiss ? '❌ ATTACK MISSED (CLASH DEFLECTED)' : (result.defenseActivated ? '🛡️ INNATE DEFENSE 6+ ACHIEVED' : '💥 FULL DAMAGE PENETRATION')}
               </strong>
+              {result.weaknessTriggered && (
+                <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#ff4d00', background: 'rgba(255, 77, 0, 0.2)', border: '1px solid #ff4d00', padding: '2px 8px', borderRadius: '6px' }}>
+                  🎯 WEAKNESS HIT (+{result.weaknessBonus} AP)
+                </span>
+              )}
             </div>
 
             {!result.isMiss && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '8px', margin: '10px 0' }}>
-                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px', borderRadius: '6px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.6)' }}>BASE AP</div>
-                  <strong style={{ fontSize: '1rem', color: '#ED1E24' }}>{result.rawAP} AP</strong>
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(95px, 1fr))', gap: '8px', margin: '10px 0' }}>
+                  <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px', borderRadius: '6px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.6)' }}>BASE AP</div>
+                    <strong style={{ fontSize: '1rem', color: '#ED1E24' }}>{result.rawAP} AP</strong>
+                  </div>
+
+                  {result.weaknessTriggered && (
+                    <div style={{ background: 'rgba(255, 77, 0, 0.15)', border: '1px solid rgba(255, 77, 0, 0.4)', padding: '8px', borderRadius: '6px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '0.68rem', color: '#ff7733' }}>WEAKNESS</div>
+                      <strong style={{ fontSize: '1rem', color: '#ff4d00' }}>+{result.weaknessBonus} AP</strong>
+                    </div>
+                  )}
+
+                  <div style={{ background: result.defenseActivated ? 'rgba(251, 200, 13, 0.15)' : 'rgba(255,255,255,0.05)', border: result.defenseActivated ? '1px solid var(--neon-gold)' : 'none', padding: '8px', borderRadius: '6px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.68rem', color: result.defenseActivated ? 'var(--neon-gold)' : 'rgba(255,255,255,0.6)' }}>🛡️ DP (6+ ROLL)</div>
+                    <strong style={{ fontSize: '1rem', color: result.defenseActivated ? 'var(--neon-gold)' : '#888' }}>
+                      {result.defenseActivated ? `-${result.innateDP} AP` : '0 (Failed)'}
+                    </strong>
+                  </div>
+
+                  {result.absorbedByShield > 0 && (
+                    <div style={{ background: 'rgba(0, 240, 255, 0.15)', border: '1px solid #00f0ff', padding: '8px', borderRadius: '6px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '0.68rem', color: '#00f0ff' }}>SHIELD BLOCKED</div>
+                      <strong style={{ fontSize: '1rem', color: '#00f0ff' }}>-{result.absorbedByShield} AP</strong>
+                    </div>
+                  )}
+
+                  <div style={{ background: 'rgba(237, 30, 36, 0.25)', border: '1px solid #ED1E24', padding: '8px', borderRadius: '6px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.68rem', color: '#ED1E24' }}>NET HP DAMAGE</div>
+                    <strong style={{ fontSize: '1.1rem', color: '#ff3344' }}>-{result.damageDealt} HP</strong>
+                  </div>
                 </div>
 
-                <div style={{ background: result.defenseActivated ? 'rgba(251, 200, 13, 0.15)' : 'rgba(255,255,255,0.05)', border: result.defenseActivated ? '1px solid var(--neon-gold)' : 'none', padding: '8px', borderRadius: '6px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.7rem', color: result.defenseActivated ? 'var(--neon-gold)' : 'rgba(255,255,255,0.6)' }}>??? DP REDUCTION</div>
-                  <strong style={{ fontSize: '1rem', color: result.defenseActivated ? 'var(--neon-gold)' : '#888' }}>
-                    {result.defenseActivated ? `-${result.innateDP} AP` : '0 (Failed)'}
-                  </strong>
+                {/* HP State Preview */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '8px 12px', marginTop: '6px', fontSize: '0.85rem' }}>
+                  <span style={{ color: 'rgba(255,255,255,0.7)' }}>{defender.name || 'Defender'} Health:</span>
+                  <span style={{ fontWeight: 'bold' }}>
+                    <span style={{ color: '#fff' }}>{defender.hp} HP</span>
+                    <span style={{ color: '#ED1E24', margin: '0 6px' }}>➔</span>
+                    <span style={{ color: Math.max(0, defender.hp - result.damageDealt) < 30 ? '#ED1E24' : '#39ff14' }}>
+                      {Math.max(0, defender.hp - result.damageDealt)} HP
+                    </span>
+                  </span>
                 </div>
-
-                <div style={{ background: 'rgba(237, 30, 36, 0.2)', border: '1px solid #ED1E24', padding: '8px', borderRadius: '6px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.7rem', color: '#ED1E24' }}>NET HP DAMAGE</div>
-                  <strong style={{ fontSize: '1.1rem', color: '#ED1E24' }}>-{result.damageDealt} HP</strong>
-                </div>
-              </div>
+              </>
             )}
 
             <button
               onClick={handleApplyDamage}
               style={{
-                width: '100%', padding: '12px', background: 'linear-gradient(90deg, #FBC80D, #FBC80D)',
-                color: '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', marginTop: '10px'
+                width: '100%', padding: '14px', background: 'linear-gradient(90deg, #FBC80D, #39ff14)',
+                color: '#000', border: 'none', borderRadius: '8px', fontWeight: '900', fontSize: '1.05rem', cursor: 'pointer', marginTop: '12px'
               }}
             >
-              <Check size={20} style={{marginRight: '8px'}} />
+              <Check size={20} style={{marginRight: '8px', verticalAlign: 'middle'}} />
               APPLY COMBAT RESOLUTION
             </button>
           </div>

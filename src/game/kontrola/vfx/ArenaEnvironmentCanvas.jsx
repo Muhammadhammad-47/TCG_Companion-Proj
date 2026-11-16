@@ -117,14 +117,12 @@ export default function ArenaEnvironmentCanvas({
         if (lightningBolt.life <= 0) lightningBolt = null;
       }
 
-      // Draw and update particles
+      // Draw and update particles (High-performance GPU-friendly rendering without CPU shadowBlur bottlenecks)
       particles.forEach(p => {
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fillStyle = p.color;
         ctx.globalAlpha = p.alpha;
-        ctx.shadowColor = p.color;
-        ctx.shadowBlur = activeScenario === 'poison' ? 14 : 8;
         ctx.fill();
 
         if (activeScenario === 'poison') {
@@ -142,7 +140,6 @@ export default function ArenaEnvironmentCanvas({
       });
 
       ctx.globalAlpha = 1.0;
-      ctx.shadowBlur = 0;
       animationFrameId = requestAnimationFrame(render);
     };
 

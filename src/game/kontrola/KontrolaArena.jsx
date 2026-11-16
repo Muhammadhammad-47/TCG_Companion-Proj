@@ -2450,112 +2450,110 @@ export default function KontrolaArena() {
           log += ` 🧠 KONTROL: Stole "${stolenName}" from ${newDefenderState?.name || 'Defender'}!`;
         }
 
-        // Broadcast UI effects to all clients (Shake, Sound, Damage Popups, Vision Modals)
-        setTimeout(() => {
-          let visionData = null;
-          const playedCardName = getSafeCardName(actionCard);
-          const playedCardType = getSafeCardType(actionCard);
-          if (playedCardName.includes('VISION') || resolved?.revealTargetHand) {
-            if (playedCardName.includes('VISION FULL')) {
-              const allCards = [];
-              Object.keys(currentState.hands || {}).forEach(pid => {
-                if (pid !== actorId) {
-                  allCards.push(...(currentState.hands[pid] || []));
-                }
-              });
-              visionData = {
-                targetId: 'ALL',
-                targetName: 'All Opponents',
-                isFull: true,
-                expiresAt: Date.now() + 30000,
-                cards: allCards,
-                actorId
-              };
-            } else if (targetId && targetId !== 'ALL') {
-              visionData = {
-                targetId: (targetId && targetId !== 'ALL') ? targetId : (opponents[0] || Object.keys(currentState.hands || {}).find(p => p !== actorId)),
-                isFull: false,
-                isXChange: false,
-                targetName: defenderChar?.name || 'Opponent',
-                expiresAt: Date.now() + 15000,
-                cards: currentState.hands?.[targetId] || [],
-                actorId
-              };
-            }
-          }
-
-          if (visionData && visionData.actorId === playerIdRef.current) {
-            setRevealedVision(visionData);
-          }
-
-          let dmgDealt = 0;
-          let healDelta = 0;
-          let atkDmgDealt = 0;
-          if (playedCardType === 'ATTACK') {
-             const prevDefHP = (currentState.characterStates?.[targetId]?.hp) ?? 0;
-             const newDefHP = newDefenderState?.hp ?? 0;
-             dmgDealt = Math.max(0, prevDefHP - newDefHP);
-
-             const prevAtkHP = (currentState.characterStates?.[actorId]?.hp) ?? 0;
-             const newAtkHP = newAttackerState?.hp ?? 0;
-             atkDmgDealt = Math.max(0, prevAtkHP - newAtkHP);
-          } else if (playedCardType === 'HEAL') {
-             const prevAtkHP = (currentState.characterStates?.[actorId]?.hp) ?? 0;
-             const newAtkHP = newAttackerState?.hp ?? 0;
-             healDelta = Math.max(0, newAtkHP - prevAtkHP);
-          }
-
-          let triggerXChange = null;
-          if (playedCardName.includes('X-CHANGE')) {
-            // Filter out the played action card from the attacker's hand so they don't exchange the card they just spent
-            const availableAttackerHand = newHand.filter(c => {
-              const cName = getSafeCardName(c);
-              const cId = typeof c === 'object' ? c?.id : null;
-              if (actionCard?.id && cId) return cId !== actionCard.id;
-              return cName !== playedCardName;
+        // Broadcast UI effects to all clients synchronously (Shake, Sound, Damage Popups, Vision Modals)
+        let visionData = null;
+        const playedCardName = getSafeCardName(actionCard);
+        const playedCardType = getSafeCardType(actionCard);
+        if (playedCardName.includes('VISION') || resolved?.revealTargetHand) {
+          if (playedCardName.includes('VISION FULL')) {
+            const allCards = [];
+            Object.keys(currentState.hands || {}).forEach(pid => {
+              if (pid !== actorId) {
+                allCards.push(...(currentState.hands[pid] || []));
+              }
             });
-            triggerXChange = {
-              xChangeType: playedCardName.includes('FULL') ? 'FULL' : 'X1',
-              actorId,
+            visionData = {
+              targetId: 'ALL',
+              targetName: 'All Opponents',
+              isFull: true,
+              expiresAt: Date.now() + 30000,
+              cards: allCards,
+              actorId
+            };
+          } else if (targetId && targetId !== 'ALL') {
+            visionData = {
               targetId: (targetId && targetId !== 'ALL') ? targetId : (opponents[0] || Object.keys(currentState.hands || {}).find(p => p !== actorId)),
-              defenderName: defenderChar?.name || 'Opponent',
-              attackerHand: availableAttackerHand,
-              defenderHand: (targetId && targetId !== 'ALL') ? newDefenderHand : (currentState.hands?.[opponents[0]] || newDefenderHand || [])
+              isFull: false,
+              isXChange: false,
+              targetName: defenderChar?.name || 'Opponent',
+              expiresAt: Date.now() + 15000,
+              cards: currentState.hands?.[targetId] || [],
+              actorId
             };
           }
+        }
 
-          if (triggerXChange && triggerXChange.actorId === playerIdRef.current) {
-            setXChangeModalData(triggerXChange);
-          }
+        if (visionData && visionData.actorId === playerIdRef.current) {
+          setRevealedVision(visionData);
+        }
 
-          let triggerRevivePrompt = null;
-          if (newDefenderState && newDefenderState.hp <= 0) {
-            // Check if defender holds REVIVE card
-            const hasRevive = (newDefenderHand || []).some(c => getSafeCardName(c).includes('REVIVE'));
-            if (hasRevive) {
-              triggerRevivePrompt = {
-                victimId: targetId,
-                victimName: newDefenderState.name,
-                maxHp: newDefenderState.maxHp || 100
-              };
-            }
-          }
+        let dmgDealt = 0;
+        let healDelta = 0;
+        let atkDmgDealt = 0;
+        if (playedCardType === 'ATTACK') {
+           const prevDefHP = (currentState.characterStates?.[targetId]?.hp) ?? 0;
+           const newDefHP = newDefenderState?.hp ?? 0;
+           dmgDealt = Math.max(0, prevDefHP - newDefHP);
 
-          if (triggerRevivePrompt && triggerRevivePrompt.victimId === playerIdRef.current) {
-            setPendingRevivePrompt(triggerRevivePrompt);
-          }
+           const prevAtkHP = (currentState.characterStates?.[actorId]?.hp) ?? 0;
+           const newAtkHP = newAttackerState?.hp ?? 0;
+           atkDmgDealt = Math.max(0, prevAtkHP - newAtkHP);
+        } else if (playedCardType === 'HEAL') {
+           const prevAtkHP = (currentState.characterStates?.[actorId]?.hp) ?? 0;
+           const newAtkHP = newAttackerState?.hp ?? 0;
+           healDelta = Math.max(0, newAtkHP - prevAtkHP);
+        }
 
-          broadcastUIEvent(matchIdRef.current, 'action_effect', {
-            actionType: actionCard?.type,
-            actionName: actionCard?.name,
-            dmgDealt,
-            atkDmgDealt,
-            healDelta,
-            visionData,
-            triggerXChange,
-            triggerRevivePrompt
+        let triggerXChange = null;
+        if (playedCardName.includes('X-CHANGE')) {
+          // Filter out the played action card from the attacker's hand so they don't exchange the card they just spent
+          const availableAttackerHand = newHand.filter(c => {
+            const cName = getSafeCardName(c);
+            const cId = typeof c === 'object' ? c?.id : null;
+            if (actionCard?.id && cId) return cId !== actionCard.id;
+            return cName !== playedCardName;
           });
-        }, 100);
+          triggerXChange = {
+            xChangeType: playedCardName.includes('FULL') ? 'FULL' : 'X1',
+            actorId,
+            targetId: (targetId && targetId !== 'ALL') ? targetId : (opponents[0] || Object.keys(currentState.hands || {}).find(p => p !== actorId)),
+            defenderName: defenderChar?.name || 'Opponent',
+            attackerHand: availableAttackerHand,
+            defenderHand: (targetId && targetId !== 'ALL') ? newDefenderHand : (currentState.hands?.[opponents[0]] || newDefenderHand || [])
+          };
+        }
+
+        if (triggerXChange && triggerXChange.actorId === playerIdRef.current) {
+          setXChangeModalData(triggerXChange);
+        }
+
+        let triggerRevivePrompt = null;
+        if (newDefenderState && newDefenderState.hp <= 0) {
+          // Check if defender holds REVIVE card
+          const hasRevive = (newDefenderHand || []).some(c => getSafeCardName(c).includes('REVIVE'));
+          if (hasRevive) {
+            triggerRevivePrompt = {
+              victimId: targetId,
+              victimName: newDefenderState.name,
+              maxHp: newDefenderState.maxHp || 100
+            };
+          }
+        }
+
+        if (triggerRevivePrompt && triggerRevivePrompt.victimId === playerIdRef.current) {
+          setPendingRevivePrompt(triggerRevivePrompt);
+        }
+
+        broadcastUIEvent(matchIdRef.current, 'action_effect', {
+          actionType: actionCard?.type,
+          actionName: actionCard?.name,
+          dmgDealt,
+          atkDmgDealt,
+          healDelta,
+          visionData,
+          triggerXChange,
+          triggerRevivePrompt
+        });
 
         // Discard played card and replenish hand to exactly 10 cards
         const playedIdx = findSafeCardIndex(newHand, actionCard);

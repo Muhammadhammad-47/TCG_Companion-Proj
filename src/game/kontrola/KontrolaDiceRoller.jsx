@@ -313,6 +313,68 @@ export default function KontrolaDiceRoller({
 
   const [isApplyingResult, setIsApplyingResult] = useState(false);
 
+  // Real-time authoritative preview of combat math & score calculation
+  const previewMath = (() => {
+    if (!atkWon) return null;
+    let baseAP = 15;
+    const cardNameUpper = (resolvedCardName || '').toUpperCase();
+    if (cardNameUpper.includes('LIGHTNING')) {
+      baseAP = cardNameUpper.includes('X2') ? 20 : 10;
+    } else if (cardNameUpper.includes('FIRE FLAME')) {
+      baseAP = cardNameUpper.includes('X2') ? 20 : 10;
+    } else if (cardNameUpper.includes('BACK STAB')) {
+      baseAP = 35;
+    } else if (hasMultiplierDie) {
+      baseAP = (multiplierDie || 1) * (selectedAttackInfo?.ap || 5);
+    } else if (selectedAttackInfo?.ap) {
+      baseAP = selectedAttackInfo.ap;
+    }
+
+    const defCharKey = (defChar.id || defChar.name || '').toLowerCase();
+    const defWeakness = (defChar.weakness || '').toLowerCase();
+    const isPoisonWeakness = defWeakness.includes('poison') || ['chynaman', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k));
+    const isFireWeakness = defWeakness.includes('fire') || ['shroomy', 'queeny'].some(k => defCharKey.includes(k));
+    const attackElem = selectedAttackInfo?.element || (cardNameUpper.includes('FIRE') ? 'Fire' : cardNameUpper.includes('LIGHTNING') ? 'Lightning' : 'Physical');
+
+    let weaknessBonus = 0;
+    let weaknessTriggered = false;
+    let weaknessLabel = '';
+    if (!defChar.flyerNoWeakness) {
+      if (attackElem.toLowerCase() === 'fire' && isFireWeakness) {
+        weaknessTriggered = true;
+        weaknessBonus = 10;
+        weaknessLabel = 'FIRE WEAKNESS (+10 AP)';
+      } else if ((attackElem.toLowerCase() === 'poison' || (atkChar?.poisonCount >= 5) || (atkChar?.isZombie)) && isPoisonWeakness) {
+        weaknessTriggered = true;
+        const isKat = ['kat', 'katsumi'].some(k => defCharKey.includes(k));
+        weaknessBonus = isKat ? 15 : 10;
+        weaknessLabel = isKat ? 'KATSUMI POISON WEAKNESS (+15 AP)' : 'POISON WEAKNESS (+10 AP)';
+      }
+    }
+
+    const totalOffensiveAP = baseAP + weaknessBonus;
+    const defRolled6Plus = defSum >= 6;
+    const innateDP = (defRolled6Plus && !activeDefenseCard) ? 10 : 0;
+    const damageAfterDP = Math.max(0, totalOffensiveAP - innateDP);
+    const currentShield = defChar.shield || 0;
+    const shieldAbsorbed = Math.min(currentShield, damageAfterDP);
+    const netHPDamage = Math.max(0, damageAfterDP - shieldAbsorbed);
+    const newDefenderHP = Math.max(0, (defChar.hp || 100) - netHPDamage);
+
+    return {
+      baseAP,
+      weaknessTriggered,
+      weaknessBonus,
+      weaknessLabel,
+      totalOffensiveAP,
+      defRolled6Plus,
+      innateDP,
+      shieldAbsorbed,
+      netHPDamage,
+      newDefenderHP
+    };
+  })();
+
   const handleFinishCombat = () => {
     if (isApplyingResult) return;
     setIsApplyingResult(true);
@@ -1569,6 +1631,79 @@ export default function KontrolaDiceRoller({
                         <span>💨 PLAY RETREAT CARD ({isAttacker ? 'ATTACKER DISENGAGE' : 'DEFENDER ESCAPE -1 TURN'})</span>
                       </button>
                     )}
+
+                    {/* Authoritative Real-Time Combat Math & Score Calculation Breakdown */}
+                    {previewMath && (
+                      <div
+                        style={{
+                          width: '100%',
+                          maxWidth: '560px',
+                          background: 'rgba(0, 0, 0, 0.75)',
+                          border: '1.5px solid rgba(251, 200, 13, 0.4)',
+                          borderRadius: '12px',
+                          padding: '14px 18px',
+                          marginBottom: '8px',
+                          textAlign: 'left'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                          <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--neon-gold)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                            ⚡ Combat Math & Score Calculation
+                          </span>
+                          {previewMath.weaknessTriggered && (
+                            <span style={{ fontSize: '0.72rem', fontWeight: 'bold', color: '#ff4d00', background: 'rgba(255, 77, 0, 0.2)', border: '1px solid #ff4d00', padding: '2px 8px', borderRadius: '6px' }}>
+                              🎯 {previewMath.weaknessLabel}
+                            </span>
+                          )}
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(85px, 1fr))', gap: '8px', marginBottom: '10px' }}>
+                          <div style={{ background: 'rgba(255,255,255,0.05)', padding: '6px', borderRadius: '6px', textAlign: 'center' }}>
+                            <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.6)' }}>BASE AP</div>
+                            <strong style={{ fontSize: '0.95rem', color: '#ED1E24' }}>{previewMath.baseAP} AP</strong>
+                          </div>
+
+                          {previewMath.weaknessTriggered && (
+                            <div style={{ background: 'rgba(255, 77, 0, 0.15)', border: '1px solid rgba(255, 77, 0, 0.4)', padding: '6px', borderRadius: '6px', textAlign: 'center' }}>
+                              <div style={{ fontSize: '0.65rem', color: '#ff7733' }}>WEAKNESS</div>
+                              <strong style={{ fontSize: '0.95rem', color: '#ff4d00' }}>+{previewMath.weaknessBonus} AP</strong>
+                            </div>
+                          )}
+
+                          <div style={{ background: previewMath.innateDP > 0 ? 'rgba(251, 200, 13, 0.15)' : 'rgba(255,255,255,0.05)', border: previewMath.innateDP > 0 ? '1px solid var(--neon-gold)' : 'none', padding: '6px', borderRadius: '6px', textAlign: 'center' }}>
+                            <div style={{ fontSize: '0.65rem', color: previewMath.innateDP > 0 ? 'var(--neon-gold)' : 'rgba(255,255,255,0.6)' }}>🛡️ DP (6+ ROLL)</div>
+                            <strong style={{ fontSize: '0.95rem', color: previewMath.innateDP > 0 ? 'var(--neon-gold)' : '#888' }}>
+                              {previewMath.innateDP > 0 ? `-${previewMath.innateDP} AP` : '0 (Failed)'}
+                            </strong>
+                          </div>
+
+                          {previewMath.shieldAbsorbed > 0 && (
+                            <div style={{ background: 'rgba(0, 240, 255, 0.15)', border: '1px solid #00f0ff', padding: '6px', borderRadius: '6px', textAlign: 'center' }}>
+                              <div style={{ fontSize: '0.65rem', color: '#00f0ff' }}>SHIELD BLOCKED</div>
+                              <strong style={{ fontSize: '0.95rem', color: '#00f0ff' }}>-{previewMath.shieldAbsorbed} AP</strong>
+                            </div>
+                          )}
+
+                          <div style={{ background: 'rgba(237, 30, 36, 0.25)', border: '1px solid #ED1E24', padding: '6px', borderRadius: '6px', textAlign: 'center' }}>
+                            <div style={{ fontSize: '0.65rem', color: '#ED1E24' }}>NET HP DAMAGE</div>
+                            <strong style={{ fontSize: '1.05rem', color: '#ff3344' }}>-{previewMath.netHPDamage} HP</strong>
+                          </div>
+                        </div>
+
+                        {/* HP Transition Preview */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '6px 12px', fontSize: '0.82rem' }}>
+                          <span style={{ color: 'rgba(255,255,255,0.7)' }}>{defChar.name || 'Defender'} Health:</span>
+                          <span style={{ fontWeight: 'bold' }}>
+                            <span style={{ color: '#fff' }}>{defChar.hp} HP</span>
+                            <span style={{ color: '#ED1E24', margin: '0 6px' }}>➔</span>
+                            <span style={{ color: previewMath.newDefenderHP < 30 ? '#ED1E24' : '#39ff14' }}>
+                              {previewMath.newDefenderHP} HP
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
                     <button
                       onClick={handleFinishCombat}
                       disabled={isApplyingResult}

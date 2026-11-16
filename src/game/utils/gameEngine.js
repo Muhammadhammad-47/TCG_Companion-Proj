@@ -29,7 +29,7 @@ export function createInitialGameState(playerConfigs) {
       reserveUnlocked: charData?.reserveUnlocked !== undefined ? charData.reserveUnlocked : Boolean(CHARACTERS[characterId]?.reserveUnlocked),
       reserveActivations: 0,
       hp: cfg.startingHP || characterHP,
-      maxHp: characterHP,
+      maxHp: Math.max(characterHP, cfg.startingHP || characterHP),
       preZombieHP: cfg.startingHP || characterHP,
       energyTokens: cfg.startingET || GAME_LIMITS.STARTING_ET,
       crystals: cfg.startingCrystals || (playerConfigs.length === 2 ? 2 : 1),
@@ -279,7 +279,8 @@ export function resolveDiceCombat({
   if (!hasflyerImmunity) {
     if ((isAttackerZombie || moveElement === 'Poison') && hasPoisonWeakness) {
       weaknessTriggered = true;
-      weaknessBonus = 10;
+      const isKat = ['kat', 'katsumi'].some(k => defCharKey.includes(k));
+      weaknessBonus = isKat ? 15 : 10;
     } else if (moveElement === 'Fire' && hasFireWeakness) {
       weaknessTriggered = true;
       weaknessBonus = 10;
