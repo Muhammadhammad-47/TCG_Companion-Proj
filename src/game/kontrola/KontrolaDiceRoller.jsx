@@ -824,8 +824,13 @@ export default function KontrolaDiceRoller({
           {onClose && (
             <button
               onClick={() => {
-                if (onForceClose) onForceClose();
-                else onClose();
+                if (hasAttackerRolled && hasDefenderRolled && !isTie) {
+                  handleFinishCombat();
+                } else if (onForceClose) {
+                  onForceClose();
+                } else {
+                  onClose();
+                }
               }}
               title="Close/Cancel Clash Screen"
               style={{

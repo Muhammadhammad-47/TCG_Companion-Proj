@@ -722,12 +722,28 @@ export default function BattleArena({
 
     // Trigger visual feedback
     if (damage > 0) {
-      setFloatingDamage({ targetId: defender.id, text: `-${damage} HP`, type: 'damage' });
+      const damageText = result.weaknessTriggered ? `🎯 WEAKNESS! -${damage} HP` : `-${damage} HP`;
+      setFloatingDamage({ targetId: defender.id, text: damageText, type: 'damage' });
       setIsShaking(true);
       setTimeout(() => {
         setFloatingDamage(null);
         setIsShaking(false);
-      }, 1200);
+      }, 1400);
+    } else if (result.isMiss) {
+      setFloatingDamage({ targetId: defender.id, text: '🛡️ DEFLECTED (0 HP)', type: 'miss' });
+      setTimeout(() => {
+        setFloatingDamage(null);
+      }, 1400);
+    }
+
+    if (result.extraTurnsGranted > 0) {
+      setTurnAnnouncement({
+        turn: turnNum,
+        player: attacker.name,
+        isExtraTurn: true,
+        reason: `⚡ Lightning strike! ${attacker.name} awarded ${result.extraTurnsGranted === 1 ? '1 extra turn' : '2 extra turns'}!`
+      });
+      setTimeout(() => setTurnAnnouncement(null), 2500);
     }
 
     // Update player stats
@@ -765,7 +781,7 @@ export default function BattleArena({
           alliedWith: attackerAlliedWith,
           energyTokens: Math.max(0, p.energyTokens - totalET) + stolenET,
           extraTurns,
-          turnActionCompleted: (result.extraTurnsGranted > 0 || result.extraTurnGranted) ? false : true,
+          turnActionCompleted: true,
           actionCardsHand: newHand,
           stats: {
             ...p.stats,
@@ -1588,8 +1604,14 @@ export default function BattleArena({
     setGameState(nextState);
 
     const nextActivePlayer = nextState.players[nextState.activePlayerIndex];
-    setTurnAnnouncement({ turn: nextState.turnNumber, player: nextActivePlayer.name });
-    setTimeout(() => setTurnAnnouncement(null), 2000);
+    const isExtraTurn = Boolean(nextState.turnLogs?.[0]?.includes('Extra turn') || nextActivePlayer.extraTurns > 0);
+    setTurnAnnouncement({
+      turn: nextState.turnNumber,
+      player: nextActivePlayer.name,
+      isExtraTurn,
+      reason: nextState.turnLogs?.[0] || null
+    });
+    setTimeout(() => setTurnAnnouncement(null), 2500);
   };
 
   const handleTaunt = () => {
@@ -1627,8 +1649,15 @@ export default function BattleArena({
         {/* Turn Announcement Overlay */}
         {turnAnnouncement && (
           <div className="turn-announcement-overlay">
-            <h1 className="turn-announce-title">TURN {turnAnnouncement.turn}</h1>
+            <h1 className="turn-announce-title">
+              {turnAnnouncement.isExtraTurn ? '⚡ EXTRA TURN' : `TURN ${turnAnnouncement.turn}`}
+            </h1>
             <h2 className="turn-announce-player">{turnAnnouncement.player}'s Turn</h2>
+            {turnAnnouncement.reason && (
+              <p style={{ color: '#FBC80D', fontSize: '1.25rem', fontFamily: 'Orbitron, sans-serif', marginTop: '14px', background: 'rgba(0,0,0,0.65)', padding: '8px 22px', borderRadius: '10px', border: '1.5px solid rgba(251,200,13,0.5)', maxWidth: '80%' }}>
+                {turnAnnouncement.reason}
+              </p>
+            )}
           </div>
         )}
 
@@ -2381,6 +2410,15 @@ export default function BattleArena({
                         players: updated,
                         lastActionLog: `💚 ${activePlayer.name} activated Reserve Energy! Restored +${healAmount} HP (spent 2 ET). Remaining Reserve: ${activePlayer.reserveHp - healAmount} HP.`
                       });
+                      setFloatingDamage({ targetId: activePlayer.id, text: `+${healAmount} HP (Reserve)`, type: 'heal' });
+                      setTimeout(() => setFloatingDamage(null), 1500);
+                      setTurnAnnouncement({
+                        turn: gameState.turnNumber,
+                        player: activePlayer.name,
+                        isExtraTurn: false,
+                        reason: `💚 Reserve Energy Recovery: Restored +${healAmount} HP (spent 2 ET)`
+                      });
+                      setTimeout(() => setTurnAnnouncement(null), 2500);
                       if (soundFX && soundFX.playReserveEnergy) soundFX.playReserveEnergy();
                       else if (soundFX && soundFX.playHeal) soundFX.playHeal();
                     }}

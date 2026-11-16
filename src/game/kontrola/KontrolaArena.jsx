@@ -256,22 +256,88 @@ export default function KontrolaArena() {
   const [isScreenDimmed, setIsScreenDimmed] = useState(false);
   const [isScreenShattered, setIsScreenShattered] = useState(false);
   const [isPsychicWarp, setIsPsychicWarp] = useState(false);
-  const lastTurnAnnouncedRef = useRef(null);
+  const lastTurnAnnouncedRef = useRef({ turn: null, turnNumber: null, pendingAttackX2For: null });
 
-  // Announce Turn Changes with Fullscreen Letterbox Slash
+  // Announce Turn Changes, Extra Turns & Status Skips with Fullscreen Letterbox Slash
   useEffect(() => {
-    if (gameState?.status === 'active' && gameState?.turn && gameState.turn !== lastTurnAnnouncedRef.current) {
-      lastTurnAnnouncedRef.current = gameState.turn;
-      const isMyTurn = gameState.turn === playerId;
-      const actorName = gameState.playerNames?.[gameState.turn] || 'Opponent';
-      setTurnBanner({
-        text: isMyTurn ? 'YOUR TURN' : `${actorName.toUpperCase()}'S TURN`,
-        sub: isMyTurn ? 'Select an Action Card or Technique' : 'Opponent is choosing strategy...',
-        isMe: isMyTurn
-      });
-      try { soundFX.playCard(); } catch {}
+    if (gameState?.status !== 'active' || !gameState?.turn) return;
+
+    const prev = lastTurnAnnouncedRef.current;
+    const currentTurn = gameState.turn;
+    const currentTurnNum = gameState.turnNumber || 1;
+    const currentAttackX2 = gameState.pendingAttackX2For;
+    const isMyTurn = currentTurn === playerId;
+    const activeChar = gameState.characterStates?.[currentTurn];
+    const actorName = gameState.playerNames?.[currentTurn] || activeChar?.name || 'Opponent';
+    const latestLog = gameState.logs?.[0] || '';
+
+    const isNewTurnOrPhase = prev.turn === null || prev.turn !== currentTurn || prev.turnNumber !== currentTurnNum || prev.pendingAttackX2For !== currentAttackX2;
+
+    if (isNewTurnOrPhase) {
+      // 1. Sleep Skip Announcement
+      const isSleepSkip = latestLog.includes('is asleep and skips');
+
+      // 2. Attack X2 Second Strike Announcement
+      const isSecondStrike = Boolean(currentAttackX2 && currentAttackX2 === currentTurn);
+
+      // 3. Extra Turn Announcement (Turn stays on same player when turnNumber increments, or log explicitly says extra turn)
+      const isExtraTurn = (prev.turn !== null && prev.turn === currentTurn && currentTurnNum > (prev.turnNumber || 0)) ||
+        latestLog.includes('Extra turn activated') ||
+        latestLog.includes('receives another turn') ||
+        latestLog.includes('extra turn');
+
+      if (isSleepSkip) {
+        setTurnBanner({
+          badge: '💤 TURN SKIPPED',
+          text: `${actorName.toUpperCase()} IS ASLEEP!`,
+          sub: latestLog,
+          detail: 'Status affliction skipped turn',
+          isMe: isMyTurn,
+          isSleepSkip: true,
+          color: '#a855f7'
+        });
+        try { soundFX.playZombie(); } catch {}
+      } else if (isSecondStrike) {
+        setTurnBanner({
+          badge: '⚔️ ATTACK X2: SECOND HIT',
+          text: isMyTurn ? 'UNLEASH SECOND ATTACK!' : `${actorName.toUpperCase()} STRIKES AGAIN!`,
+          sub: isMyTurn ? 'Play your consecutive 2nd Attack Move!' : `${actorName} is striking twice!`,
+          detail: 'Attack X2 combo continuation',
+          isMe: isMyTurn,
+          isAttackX2: true,
+          color: '#ff0055'
+        });
+        try { soundFX.playPowerUp(); } catch {}
+      } else if (isExtraTurn) {
+        const extraTurnsLeft = activeChar?.extraTurns ?? 0;
+        setTurnBanner({
+          badge: '⚡ EXTRA TURN ACTIVATED',
+          text: isMyTurn ? 'YOU GET ANOTHER TURN!' : `${actorName.toUpperCase()} GETS ANOTHER TURN!`,
+          sub: latestLog.includes('Extra turn') ? latestLog : `${actorName} retains turn (${extraTurnsLeft} extra turn(s) remaining)`,
+          detail: 'Bonus turn awarded from Lightning / Time Machine',
+          isMe: isMyTurn,
+          isExtraTurn: true,
+          color: '#FBC80D'
+        });
+        try { soundFX.playPowerUp(); } catch {}
+      } else {
+        setTurnBanner({
+          badge: `TURN ${currentTurnNum}`,
+          text: isMyTurn ? 'YOUR TURN' : `${actorName.toUpperCase()}'S TURN`,
+          sub: isMyTurn ? 'Select an Action Card or Technique' : `${actorName} is choosing strategy...`,
+          isMe: isMyTurn,
+          color: isMyTurn ? '#00f0ff' : '#ff2a55'
+        });
+        try { soundFX.playCard(); } catch {}
+      }
+
+      lastTurnAnnouncedRef.current = {
+        turn: currentTurn,
+        turnNumber: currentTurnNum,
+        pendingAttackX2For: currentAttackX2
+      };
     }
-  }, [gameState?.turn, gameState?.status, playerId]);
+  }, [gameState?.turn, gameState?.turnNumber, gameState?.pendingAttackX2For, gameState?.status, gameState?.logs, playerId]);
 
   const [chatMessages, setChatMessages] = useState([]);
   const [showChat, setShowChat] = useState(false);
@@ -426,6 +492,8 @@ export default function KontrolaArena() {
 
   const [isProcessingAction, setIsProcessingAction] = useState(false);
   const [damagePopups, setDamagePopups] = useState([]); // [{id, value, isHeal, x, y}]
+  const [statPopups, setStatPopups] = useState([]); // [{id, text, type, x, y}]
+  const [centerAnnouncement, setCenterAnnouncement] = useState(null); // { type, badge, title, subtitle, detail }
 
   // Helper: spawn a floating damage/heal number at a random position
   const spawnDamagePopup = (value, isHeal = false) => {
@@ -436,6 +504,17 @@ export default function KontrolaArena() {
     setTimeout(() => {
       setDamagePopups((prev) => prev.filter((p) => p.id !== id));
     }, 1700);
+  };
+
+  // Helper: spawn an animated floating status/stat badge
+  const spawnStatPopup = (text, type = 'damage') => {
+    const id = Date.now() + Math.random();
+    const x = 32 + Math.random() * 36; // % from left (centered battle zone)
+    const y = 30 + Math.random() * 25; // % from top
+    setStatPopups((prev) => [...prev, { id, text, type, x, y }]);
+    setTimeout(() => {
+      setStatPopups((prev) => prev.filter((p) => p.id !== id));
+    }, 1900);
   };
 
   // Record match victory and award crystals � single guarded effect, DB only
@@ -526,7 +605,8 @@ export default function KontrolaArena() {
   // even when React batches multiple setGameState calls in the same render cycle.
   const pendingStateRef = useRef(null);
   const prevTurnRef = useRef(null);
-  const lastResolvedCombatIdRef = useRef(null);
+  const enqueuedCombatIdsRef = useRef(new Set());
+  const executedCombatIdsRef = useRef(new Set());
 
   // Persistent refs to prevent WebSocket reconnection loops on state changes
   const gameStateRef = useRef(gameState);
@@ -1209,14 +1289,14 @@ export default function KontrolaArena() {
           if (senderId && senderId === playerIdRef.current) {
             return;
           }
-          // If already resolved for this combatId, NEVER re-enqueue to prevent duplicate turn resolution
-          if (cId && lastResolvedCombatIdRef.current === cId) {
-            console.warn('[DICE_SCREEN_CLOSE] Combat already resolved for ID:', cId);
+          // If already enqueued for this combatId, NEVER re-enqueue to prevent duplicate turn resolution
+          if (cId && enqueuedCombatIdsRef.current.has(cId)) {
+            console.warn('[DICE_SCREEN_CLOSE] Combat already enqueued for ID:', cId);
             return;
           }
           // If a non-host client finished combat, the host must execute RESOLVE_COMBAT
           if (resolved && isHostRef.current && combatData) {
-            lastResolvedCombatIdRef.current = cId;
+            if (cId) enqueuedCombatIdsRef.current.add(cId);
             const mergedRolls = {
               ...(activeCombat?.precalculatedRolls || {}),
               ...(precalculatedRolls || {})
@@ -1268,7 +1348,14 @@ export default function KontrolaArena() {
         }
         // 11. Action Effects (Syncs Vision, Shakes, Sounds, Damage Popups)
         else if (event.type === 'ACTION_EFFECT') {
-          const { actionType, actionName, dmgDealt, atkDmgDealt, healDelta, visionData, triggerXChange, triggerRevivePrompt } = event.payload || {};
+          const {
+            actionType, actionName, actorName, targetName,
+            dmgDealt = 0, atkDmgDealt = 0, healDelta = 0,
+            shieldDelta = 0, atkShieldDelta = 0,
+            poisonDelta = 0, burnDelta = 0, sleepDelta = 0,
+            isMiss = false, logText,
+            visionData, triggerXChange, triggerRevivePrompt
+          } = event.payload || {};
 
           // Handle Vision Reveal for the player who played it (attacker only per Feedback Line 93)
           if (visionData && visionData.actorId === playerIdRef.current) {
@@ -1283,6 +1370,32 @@ export default function KontrolaArena() {
           // Handle Revive Prompt for the player who was defeated
           if (triggerRevivePrompt && triggerRevivePrompt.victimId === playerIdRef.current) {
             setPendingRevivePrompt(triggerRevivePrompt);
+          }
+
+          // Spawn floating stat badges for all users
+          if (dmgDealt > 0) {
+            spawnStatPopup(`💥 -${dmgDealt} HP`, 'damage');
+          }
+          if (atkDmgDealt > 0) {
+            spawnStatPopup(`💔 -${atkDmgDealt} HP`, 'damage');
+          }
+          if (isMiss && dmgDealt === 0) {
+            spawnStatPopup(`🛡️ DEFLECTED (0 HP)`, 'miss');
+          }
+          if (healDelta > 0) {
+            spawnStatPopup(`💚 +${healDelta} HP`, 'heal');
+          }
+          if (atkShieldDelta > 0 || shieldDelta > 0) {
+            spawnStatPopup(`🛡️ +${atkShieldDelta || shieldDelta} Shield`, 'shield');
+          }
+          if (poisonDelta > 0) {
+            spawnStatPopup(`☠️ +${poisonDelta} Poison Stack`, 'poison');
+          }
+          if (burnDelta > 0) {
+            spawnStatPopup(`🔥 Burn Inflicted`, 'burn');
+          }
+          if (sleepDelta > 0) {
+            spawnStatPopup(`💤 Put to Sleep`, 'sleep');
           }
 
           // Visual shake + contextual sound effects + damage number popup
@@ -1316,7 +1429,7 @@ export default function KontrolaArena() {
             } else {
               soundFX.playHit();
             }
-          } else if (actionType === 'HEAL') {
+          } else if (actionType === 'HEAL' || actionType === 'RESERVE_RECOVERY') {
             soundFX.init();
             soundFX.playHeal();
             if (healDelta > 0) spawnDamagePopup(`+${healDelta}`, true);
@@ -1604,11 +1717,11 @@ export default function KontrolaArena() {
       // IMPORTANT: do NOT add an early return inside this block or combat resolution will be skipped.
       if (payload.actionType === 'RESOLVE_COMBAT') {
         const combatId = payload.combatId || (payload.actorId + '_' + payload.targetId + '_' + (payload.actionCard?.id || payload.actionCard?.name || 'combat'));
-        if (combatId && lastResolvedCombatIdRef.current === combatId) {
+        if (combatId && executedCombatIdsRef.current.has(combatId)) {
           console.warn('[RESOLVE_COMBAT] Skipping duplicate combat resolution for ID:', combatId);
           return currentState;
         }
-        lastResolvedCombatIdRef.current = combatId;
+        if (combatId) executedCombatIdsRef.current.add(combatId);
         payload.combatId = combatId;
         payload = { ...payload }; // safe copy � avoid mutating the caller's object
       }
@@ -2255,6 +2368,13 @@ export default function KontrolaArena() {
             ...(currentState.logs || [])
           ]
         };
+        broadcastUIEvent(matchIdRef.current, 'action_effect', {
+          actionType: 'RESERVE_RECOVERY',
+          actionName: 'Reserve Energy Recovery',
+          actorName: char?.name,
+          healDelta: healAmount,
+          logText: `💚 ${char.name} activated Reserve Energy (+${healAmount} HP)`
+        });
         broadcastState(matchIdRef.current, nextState);
         return nextState;
       }
@@ -2504,6 +2624,28 @@ export default function KontrolaArena() {
            healDelta = Math.max(0, newAtkHP - prevAtkHP);
         }
 
+        const prevDefShield = currentState.characterStates?.[targetId]?.shield || 0;
+        const newDefShield = newDefenderState?.shield || 0;
+        const shieldDelta = newDefShield - prevDefShield;
+
+        const prevAtkShield = currentState.characterStates?.[actorId]?.shield || 0;
+        const newAtkShield = newAttackerState?.shield || 0;
+        const atkShieldDelta = newAtkShield - prevAtkShield;
+
+        const prevDefPoison = currentState.characterStates?.[targetId]?.poisonCount || 0;
+        const newDefPoison = newDefenderState?.poisonCount || 0;
+        const poisonDelta = newDefPoison - prevDefPoison;
+
+        const prevDefBurn = currentState.characterStates?.[targetId]?.burnCount || 0;
+        const newDefBurn = newDefenderState?.burnCount || 0;
+        const burnDelta = newDefBurn - prevDefBurn;
+
+        const prevDefSleep = currentState.characterStates?.[targetId]?.sleepTurns || 0;
+        const newDefSleep = newDefenderState?.sleepTurns || 0;
+        const sleepDelta = newDefSleep - prevDefSleep;
+
+        const isMiss = playedCardType === 'ATTACK' && Boolean(resolved.isMiss || (!resolved.isSuccessfulAttack && !resolved.atkWin));
+
         let triggerXChange = null;
         if (playedCardName.includes('X-CHANGE')) {
           // Filter out the played action card from the attacker's hand so they don't exchange the card they just spent
@@ -2547,9 +2689,18 @@ export default function KontrolaArena() {
         broadcastUIEvent(matchIdRef.current, 'action_effect', {
           actionType: actionCard?.type,
           actionName: actionCard?.name,
+          actorName: attackerChar?.name,
+          targetName: defenderChar?.name,
           dmgDealt,
           atkDmgDealt,
           healDelta,
+          shieldDelta,
+          atkShieldDelta,
+          poisonDelta,
+          burnDelta,
+          sleepDelta,
+          isMiss,
+          logText: resolved.log,
           visionData,
           triggerXChange,
           triggerRevivePrompt
@@ -3543,10 +3694,10 @@ export default function KontrolaArena() {
     setActiveCombat(null);
     setIsDiceRollingSync(false);
     if (resolved && isHost && activeCombat) {
-      if (cId && lastResolvedCombatIdRef.current === cId) {
-        console.warn('[handleCloseDiceScreen] Combat already resolved for ID:', cId);
+      if (cId && enqueuedCombatIdsRef.current.has(cId)) {
+        console.warn('[handleCloseDiceScreen] Combat already enqueued for ID:', cId);
       } else {
-        lastResolvedCombatIdRef.current = cId;
+        if (cId) enqueuedCombatIdsRef.current.add(cId);
         enqueueHostAction({ ...activeCombat, combatId: cId, actionType: 'RESOLVE_COMBAT' }, rollsToApply);
       }
     }
@@ -5389,6 +5540,20 @@ export default function KontrolaArena() {
               style={{ left: `${popup.x}%`, top: `${popup.y}%` }}
             >
               {popup.value}
+            </div>
+          ))}
+
+          {/* Floating Stat & Effect Badges (AP, DP, Shield, Poison, Burn, Sleep) */}
+          {statPopups.map((popup) => (
+            <div
+              key={popup.id}
+              className={`stat-badge-popup ${popup.type || 'damage'}`}
+              style={{
+                left: `${popup.x}%`,
+                top: `${popup.y}%`
+              }}
+            >
+              {popup.text}
             </div>
           ))}
 

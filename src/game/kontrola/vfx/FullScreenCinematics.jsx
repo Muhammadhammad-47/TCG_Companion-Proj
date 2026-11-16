@@ -56,30 +56,75 @@ export default function FullScreenCinematics({
 
       {/* 2. Turn Start Banner Slash */}
       {showBanner && turnBanner && (
-        <div className="fullscreen-turn-banner">
+        <div
+          className="fullscreen-turn-banner"
+          style={{
+            borderTopColor: turnBanner.color || (turnBanner.isMe ? 'var(--neon-cyan, #00f0ff)' : '#ff2a55'),
+            borderBottomColor: turnBanner.color || (turnBanner.isMe ? 'var(--neon-cyan, #00f0ff)' : '#ff2a55'),
+            boxShadow: `0 0 50px ${turnBanner.color ? `${turnBanner.color}88` : 'rgba(251, 200, 13, 0.5)'}`
+          }}
+        >
+          {turnBanner.badge && (
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px 16px',
+              borderRadius: '20px',
+              fontFamily: 'Bebas Neue, sans-serif',
+              fontSize: '1.1rem',
+              letterSpacing: '2px',
+              background: 'rgba(0, 0, 0, 0.65)',
+              border: `1.5px solid ${turnBanner.color || '#FBC80D'}`,
+              color: turnBanner.color || '#FBC80D',
+              marginBottom: '6px',
+              textShadow: `0 0 10px ${turnBanner.color || '#FBC80D'}`
+            }}>
+              {turnBanner.isExtraTurn && <Zap size={18} />}
+              <span>{turnBanner.badge}</span>
+            </div>
+          )}
           <div style={{
-            display: 'inline-flex',
+            display: 'flex',
             alignItems: 'center',
-            gap: '12px',
+            justifyContent: 'center',
+            gap: '14px',
             fontFamily: 'Bebas Neue, sans-serif',
-            fontSize: '3rem',
+            fontSize: '3.2rem',
             letterSpacing: '3px',
-            color: turnBanner.isMe ? 'var(--neon-cyan, #00f0ff)' : '#ff2a55',
-            textShadow: turnBanner.isMe ? '0 0 20px rgba(0, 240, 255, 0.8)' : '0 0 20px rgba(255, 42, 85, 0.8)'
+            color: turnBanner.color || (turnBanner.isMe ? 'var(--neon-cyan, #00f0ff)' : '#ff2a55'),
+            textShadow: `0 0 24px ${turnBanner.color || (turnBanner.isMe ? 'rgba(0, 240, 255, 0.9)' : 'rgba(255, 42, 85, 0.9)')}`,
+            lineHeight: 1.1
           }}>
-            <Swords size={36} color={turnBanner.isMe ? '#00f0ff' : '#ff2a55'} />
+            {turnBanner.isExtraTurn ? <Zap size={38} color={turnBanner.color || '#FBC80D'} /> : <Swords size={38} color={turnBanner.color || (turnBanner.isMe ? '#00f0ff' : '#ff2a55')} />}
             <span>{turnBanner.text}</span>
-            <Sparkles size={32} color="var(--neon-gold, #FBC80D)" />
+            <Sparkles size={34} color={turnBanner.color || 'var(--neon-gold, #FBC80D)'} />
           </div>
           {turnBanner.sub && (
             <div style={{
-              fontSize: '1rem',
-              color: 'rgba(255, 255, 255, 0.8)',
-              letterSpacing: '1.5px',
-              marginTop: '4px',
-              fontFamily: 'Bebas Neue, sans-serif'
+              fontSize: '1.15rem',
+              color: '#ffffff',
+              letterSpacing: '1px',
+              marginTop: '6px',
+              fontFamily: 'Orbitron, sans-serif',
+              fontWeight: 'bold',
+              textShadow: '0 0 10px rgba(0,0,0,0.8)'
             }}>
               {turnBanner.sub}
+            </div>
+          )}
+          {turnBanner.detail && (
+            <div style={{
+              display: 'inline-block',
+              fontSize: '0.9rem',
+              color: 'rgba(255, 255, 255, 0.85)',
+              background: 'rgba(0, 0, 0, 0.55)',
+              padding: '4px 14px',
+              borderRadius: '6px',
+              marginTop: '6px',
+              border: '1px dashed rgba(255, 255, 255, 0.3)'
+            }}>
+              {turnBanner.detail}
             </div>
           )}
         </div>
