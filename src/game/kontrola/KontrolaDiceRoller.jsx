@@ -214,13 +214,17 @@ export default function KontrolaDiceRoller({
   playerHand = [],
   onExecuteRetreat = null
 }) {
-  const hasRetreatCard = Array.isArray(playerHand) && playerHand.some(c => {
+  const checkCardHasRetreat = (c) => {
     if (!c) return false;
     if (typeof c === 'string') return c.toUpperCase().includes('RETREAT');
     const name = String(c.name || '').toUpperCase();
     const id = String(c.id || '').toUpperCase();
     return name.includes('RETREAT') || id.includes('RETREAT');
-  });
+  };
+
+  const hasRetreatCard = (Array.isArray(playerHand) && playerHand.some(checkCardHasRetreat)) ||
+    (isAttacker && Array.isArray(combatData?.attacker?.actionCardsHand) && combatData.attacker.actionCardsHand.some(checkCardHasRetreat)) ||
+    (isDefender && Array.isArray(combatData?.defender?.actionCardsHand) && combatData.defender.actionCardsHand.some(checkCardHasRetreat));
   // SAFETY: Ensure combatData and all required properties exist before using them
   // This prevents "Cannot access X before initialization" errors during build minification
   if (!combatData) {

@@ -10,25 +10,32 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose,
   const defChar = defender.isZombie ? ZOMBIE_PROFILE : (CHARACTERS[defender.characterId] || CHARACTERS.chynaman);
   const atkChar = attacker.isZombie ? ZOMBIE_PROFILE : (CHARACTERS[attacker.characterId] || CHARACTERS.chynaman);
 
-  const attackerHasRetreat = Array.isArray(attacker?.actionCardsHand) && attacker.actionCardsHand.some(c => {
-    if (!c) return false;
-    if (typeof c === 'string') return c.toUpperCase().includes('RETREAT');
-    const name = String(c.name || '').toUpperCase();
-    const id = String(c.id || '').toUpperCase();
-    return name.includes('RETREAT') || id.includes('RETREAT');
-  });
+  const checkPlayerHasRetreat = (player) => {
+    if (!player) return false;
+    const cards = [
+      ...(Array.isArray(player.actionCardsHand) ? player.actionCardsHand : []),
+      ...(Array.isArray(player.actionCardDeck) ? player.actionCardDeck : []),
+      ...(Array.isArray(player.hand) ? player.hand : []),
+      ...(Array.isArray(player.deck) ? player.deck : [])
+    ];
+    return cards.some(c => {
+      if (!c) return false;
+      if (typeof c === 'string') return c.toUpperCase().includes('RETREAT');
+      const name = String(c.name || '').toUpperCase();
+      const id = String(c.id || '').toUpperCase();
+      return name.includes('RETREAT') || id.includes('RETREAT');
+    });
+  };
 
-  const defenderHasRetreat = Array.isArray(defender?.actionCardsHand) && defender.actionCardsHand.some(c => {
-    if (!c) return false;
-    if (typeof c === 'string') return c.toUpperCase().includes('RETREAT');
-    const name = String(c.name || '').toUpperCase();
-    const id = String(c.id || '').toUpperCase();
-    return name.includes('RETREAT') || id.includes('RETREAT');
-  });
+  const attackerHasRetreat = checkPlayerHasRetreat(attacker);
+  const defenderHasRetreat = checkPlayerHasRetreat(defender);
 
   const isMultiplier = characterMove?.type === 'dice_mult';
 
-  const [phase, setPhase] = useState('clash'); // 'clash' | 'multiplier' | 'result'
+  const [phase, setPhase] = useState('clash'); // 'clash' | 'clash_summary' | 'multiplier' | 'result'
+  const [hasAttackerRolled, setHasAttackerRolled] = useState(false);
+  const [hasDefenderRolled, setHasDefenderRolled] = useState(false);
+  const [rollingSide, setRollingSide] = useState('both');
   const [isRolling, setIsRolling] = useState(false);
   const [clashAtkDice, setClashAtkDice] = useState([3, 4]);
   const [clashDefDice, setClashDefDice] = useState([3, 3]);
@@ -39,13 +46,25 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose,
   
   const [doublesAlert, setDoublesAlert] = useState(false);
 
-  const handleRollClash = () => {
-    if (isRolling) return;
+  const handleRollAttacker = () => {
+    if (isRolling || hasAttackerRolled) return;
     const finalAtk = [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
-    const finalDef = [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
-    
     setClashAtkDice(finalAtk);
+    setRollingSide('attacker');
+    setIsRolling(true);
+    soundFX.playDiceRoll();
+  };
+
+  const handleRollDefender = () => {
+    if (isRolling || hasDefenderRolled) return;
+    // User requirement:
+    // Once defender rolls the dice, the Retreat button and option will disappear on BOTH sides.
+    // "The Retreat button disappears on the Attacker’s side once the Defender has rolled."
+    // "The Retreat button disappears on the Defender’s side once the Defender has rolled the dice."
+    setHasDefenderRolled(true);
+    const finalDef = [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
     setClashDefDice(finalDef);
+    setRollingSide('defender');
     setIsRolling(true);
     soundFX.playDiceRoll();
   };
@@ -81,6 +100,11 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose,
     setIsRolling(false);
     
     if (phase === 'clash') {
+      if (!hasAttackerRolled) {
+        setHasAttackerRolled(true);
+        return;
+      }
+      
       const atkHasDoubles = clashAtkDice[0] === clashAtkDice[1];
       const defHasDoubles = clashDefDice[0] === clashDefDice[1];
       
@@ -197,6 +221,7 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose,
             defenderValues={clashDefDice}
             isRolling={isRolling}
             isMultiplier={phase === 'multiplier'}
+            rollingSide={phase === 'multiplier' ? 'attacker' : rollingSide}
             onRollComplete={handlePhysicsRollComplete}
           />
         </div>
@@ -204,58 +229,131 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose,
         {/* Action Buttons & Results */}
         {phase === 'clash' && (
           <div style={{ textAlign: 'center', margin: '15px 0 8px' }}>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button
-                onClick={onClose}
-                disabled={isRolling}
-                style={{
-                  width: '30%', padding: '14px', background: 'rgba(255, 255, 255, 0.1)',
-                  color: '#fff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer'
-                }}
-              >
-                CANCEL
-              </button>
-              <button
-                onClick={handleRollClash}
-                disabled={isRolling}
-                style={{
-                  flex: 1, padding: '14px', background: 'linear-gradient(90deg, #ff0055, #ff5500)',
-                  color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer'
-                }}
-              >
-                <Dices size={22} style={{marginRight: '8px'}} />
-                {isRolling ? 'CASTING CLASH...' : 'ROLL CLASH (2 RED vs 2 GOLD)'}
-              </button>
-            </div>
-            {(attackerHasRetreat || defenderHasRetreat) && onExecuteRetreat && (
-              <div style={{ display: 'flex', gap: '10px', marginTop: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                {attackerHasRetreat && (
+            {/* Step 1: Attacker has not rolled yet */}
+            {!hasAttackerRolled && (
+              <div>
+                <div style={{ display: 'flex', gap: '10px' }}>
                   <button
-                    onClick={() => onExecuteRetreat('attacker')}
+                    onClick={onClose}
                     disabled={isRolling}
                     style={{
-                      flex: 1, padding: '12px 18px', background: 'linear-gradient(135deg, #00d2ff, #0066ff)',
-                      color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer',
-                      boxShadow: '0 0 15px rgba(0, 210, 255, 0.4)'
+                      width: '30%', padding: '14px', background: 'rgba(255, 255, 255, 0.1)',
+                      color: '#fff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer'
                     }}
-                    title="Attacker forfeits the attack completely"
                   >
-                    💨 ATTACKER RETREAT (FORFEIT)
+                    CANCEL
                   </button>
+                  <button
+                    onClick={handleRollAttacker}
+                    disabled={isRolling}
+                    style={{
+                      flex: 1, padding: '14px', background: 'linear-gradient(90deg, #ff0055, #ff5500)',
+                      color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer',
+                      boxShadow: '0 0 20px rgba(255, 42, 85, 0.5)'
+                    }}
+                  >
+                    <Dices size={22} style={{marginRight: '8px'}} />
+                    {isRolling ? 'ROLLING ATTACK DICE...' : '🎲 ROLL ATTACK DICE (2 RED DICE)'}
+                  </button>
+                </div>
+                {/* Retreat buttons: visible before attacker rolls */}
+                {(attackerHasRetreat || defenderHasRetreat) && onExecuteRetreat && (
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                    {attackerHasRetreat && (
+                      <button
+                        onClick={() => onExecuteRetreat('attacker')}
+                        disabled={isRolling}
+                        style={{
+                          flex: 1, padding: '12px 18px', background: 'linear-gradient(135deg, #00d2ff, #0066ff)',
+                          color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer',
+                          boxShadow: '0 0 15px rgba(0, 210, 255, 0.4)'
+                        }}
+                        title="Attacker forfeits the attack completely"
+                      >
+                        💨 ATTACKER RETREAT (FORFEIT)
+                      </button>
+                    )}
+                    {defenderHasRetreat && (
+                      <button
+                        onClick={() => onExecuteRetreat('defender')}
+                        disabled={isRolling}
+                        style={{
+                          flex: 1, padding: '12px 18px', background: 'linear-gradient(135deg, #00d2ff, #0066ff)',
+                          color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer',
+                          boxShadow: '0 0 15px rgba(0, 210, 255, 0.4)'
+                        }}
+                        title="Defender escapes battle safely"
+                      >
+                        💨 DEFENDER RETREAT (ESCAPE)
+                      </button>
+                    )}
+                  </div>
                 )}
-                {defenderHasRetreat && (
+              </div>
+            )}
+
+            {/* Step 2: Attacker has rolled, Defender has not rolled yet */}
+            {hasAttackerRolled && !hasDefenderRolled && (
+              <div>
+                <div style={{ color: 'var(--neon-pink)', fontWeight: 'bold', fontSize: '1.15rem', marginBottom: '10px' }}>
+                  ⚔️ {attacker.name} rolled {clashAtkDice[0] + clashAtkDice[1]} ({clashAtkDice[0]} + {clashAtkDice[1]})! Waiting for {defender.name} to roll defense...
+                </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
                   <button
-                    onClick={() => onExecuteRetreat('defender')}
+                    onClick={onClose}
                     disabled={isRolling}
                     style={{
-                      flex: 1, padding: '12px 18px', background: 'linear-gradient(135deg, #00d2ff, #0066ff)',
-                      color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer',
-                      boxShadow: '0 0 15px rgba(0, 210, 255, 0.4)'
+                      width: '30%', padding: '14px', background: 'rgba(255, 255, 255, 0.1)',
+                      color: '#fff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer'
                     }}
-                    title="Defender escapes battle safely"
                   >
-                    💨 DEFENDER RETREAT (ESCAPE)
+                    CANCEL
                   </button>
+                  <button
+                    onClick={handleRollDefender}
+                    disabled={isRolling}
+                    style={{
+                      flex: 1, padding: '14px', background: 'linear-gradient(90deg, #FBC80D, #ff9900)',
+                      color: '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer',
+                      boxShadow: '0 0 20px rgba(251, 200, 13, 0.5)'
+                    }}
+                  >
+                    <Shield size={22} style={{marginRight: '8px'}} />
+                    {isRolling ? 'ROLLING DEFENSE DICE...' : '🎲 ROLL DEFENSE DICE (2 GOLD DICE)'}
+                  </button>
+                </div>
+                {/* Retreat buttons: Attacker can still retreat before defender rolls; Defender can retreat before rolling */}
+                {(attackerHasRetreat || defenderHasRetreat) && onExecuteRetreat && (
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                    {attackerHasRetreat && (
+                      <button
+                        onClick={() => onExecuteRetreat('attacker')}
+                        disabled={isRolling}
+                        style={{
+                          flex: 1, padding: '12px 18px', background: 'linear-gradient(135deg, #00d2ff, #0066ff)',
+                          color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer',
+                          boxShadow: '0 0 15px rgba(0, 210, 255, 0.4)'
+                        }}
+                        title="Attacker forfeits the attack completely before defender rolls"
+                      >
+                        💨 ATTACKER RETREAT (FORFEIT)
+                      </button>
+                    )}
+                    {defenderHasRetreat && (
+                      <button
+                        onClick={() => onExecuteRetreat('defender')}
+                        disabled={isRolling}
+                        style={{
+                          flex: 1, padding: '12px 18px', background: 'linear-gradient(135deg, #00d2ff, #0066ff)',
+                          color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer',
+                          boxShadow: '0 0 15px rgba(0, 210, 255, 0.4)'
+                        }}
+                        title="Defender escapes battle safely before rolling"
+                      >
+                        💨 DEFENDER RETREAT (ESCAPE)
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             )}
@@ -278,6 +376,8 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose,
                 <button
                   onClick={() => {
                     setDoublesAlert(false);
+                    setHasAttackerRolled(false);
+                    setHasDefenderRolled(false);
                     setPhase('clash');
                   }}
                   style={{
@@ -296,7 +396,11 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose,
                   ⚔️ CLASH TIED ({clashAtkDice[0] + clashAtkDice[1]} vs {clashDefDice[0] + clashDefDice[1]})! RE-ROLL REQUIRED!
                 </div>
                 <button
-                  onClick={handleRollClash}
+                  onClick={() => {
+                    setHasAttackerRolled(false);
+                    setHasDefenderRolled(false);
+                    setPhase('clash');
+                  }}
                   style={{
                     width: '100%', padding: '14px', background: 'linear-gradient(90deg, #FBC80D, #ff8800)',
                     color: '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer'

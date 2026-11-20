@@ -138,6 +138,7 @@ export default function ThreeDiceArena({
   defenderValues = [3, 3],
   isRolling = false,
   isMultiplier = false,
+  rollingSide = 'both',
   onRollComplete
 }) {
   const mountRef = useRef(null);
@@ -299,7 +300,12 @@ export default function ThreeDiceArena({
 
     // Generate physical launch configurations for each die
     const tossConfigs = diceMeshesRef.current.map((d, i) => {
-      const targetVal = d.type === 'red' ? (targets.attacker[d.idx] || 1) : (targets.defender[d.idx] || 1);
+      const isRed = d.type === 'red';
+      const isGold = d.type === 'gold';
+      if (rollingSide === 'attacker' && !isRed) return null;
+      if (rollingSide === 'defender' && !isGold) return null;
+
+      const targetVal = isRed ? (targets.attacker[d.idx] || 1) : (targets.defender[d.idx] || 1);
       d.targetVal = targetVal;
       const finalRot = FACE_EULER_ROTATIONS[targetVal] || FACE_EULER_ROTATIONS[1];
 
