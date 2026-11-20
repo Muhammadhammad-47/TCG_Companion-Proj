@@ -909,8 +909,6 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete, i
               {Object.values(CHARACTERS).map(char => {
                 const lic = characterLicenses[char.id] || characterLicenseService.getLicenseSync(userId, char.id);
                 const prices = CHARACTER_PRICES[char.id] || { gold: 1500, gems: 150 };
-                const isExhausted = !lic.isUnlocked && (lic.usageCount || 0) >= FREE_USAGE_LIMIT;
-                const left = Math.max(0, FREE_USAGE_LIMIT - (lic.usageCount || 0));
 
                 return (
                   <div
@@ -918,13 +916,9 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete, i
                     style={{
                       background: lic.isUnlocked
                         ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(10, 25, 20, 0.95) 100%)'
-                        : isExhausted
-                        ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(25, 10, 15, 0.95) 100%)'
                         : 'linear-gradient(135deg, rgba(20, 25, 40, 0.8) 0%, rgba(10, 15, 25, 0.95) 100%)',
                       border: lic.isUnlocked
                         ? '2px solid rgba(16, 185, 129, 0.6)'
-                        : isExhausted
-                        ? '2px solid rgba(239, 68, 68, 0.6)'
                         : `1.5px solid ${char.themeColor || 'rgba(255,255,255,0.2)'}`,
                       borderRadius: '16px',
                       padding: '18px',

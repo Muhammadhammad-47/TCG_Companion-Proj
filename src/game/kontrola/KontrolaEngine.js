@@ -300,14 +300,15 @@ export const executeReserveRecovery = (charState, requestedAmount = null) => {
 /**
  * Gift 10 free Character Card Moves to a player at game start.
  * Official Rules (Nov 2026 Update):
- * - Players are allowed to play characters as many times as they wish (no character match limits).
+ * - Players are allowed to play characters as many times as they wish (unlimited character match plays).
  * - Character Card Moves are restricted to 10 cards per match.
  * - At the beginning of the game, players are given 10 free Character Card Moves.
- * - Randomly given from standard moves, but will NOT give out special cards like No Saigo Blitz and Kontrol or too many Wild Cards (at most 1 Wild Card).
+ * - Strictly drawn ONLY from Common and Semi-Common moves.
+ * - Powerful cards like No Saigo Blitz and Kontrol, Wild Cards, and the character's most powerful move (Rare/Super) are STRICTLY RESTRICTED/EXCLUDED.
  * - After the 10 moves are used, players must have their own Character Cards purchased or scanned via QR Code.
  * @param {string} charKey - Character identifier (e.g., 'chynaman', 'bee', 'kiko', etc.)
  * @param {number} [totalCount=10] - Number of moves to gift (default: 10)
- * @returns {Array<{ id: string, name: string, ap: number, dice: number, element: string, desc: string, isWild?: boolean, isSuper?: boolean, costET: number }>}
+ * @returns {Array<{ id: string, name: string, ap: number, dice: number, element: string, desc: string, costET: number, rarity: string }>}
  */
 export const generateGiftedCharacterMoves = (charKey, totalCount = 10) => {
   const key = (charKey || 'chynaman').toLowerCase();
@@ -315,7 +316,6 @@ export const generateGiftedCharacterMoves = (charKey, totalCount = 10) => {
   const attacksObj = template?.attacks || {};
 
   const candidateMoves = [];
-  let wildMove = null;
 
   Object.entries(attacksObj).forEach(([atkName, atkData]) => {
     const upper = atkName.toUpperCase();
@@ -323,50 +323,35 @@ export const generateGiftedCharacterMoves = (charKey, totalCount = 10) => {
     const isKontrol = upper.includes('KONTROL') || Boolean(atkData.isKontrol);
     const isWild = upper.includes('WILD') || Boolean(atkData.isWild);
     const isSuper = Boolean(atkData.isSuper);
+    const rarity = (atkData.rarity || '').toUpperCase();
+    const isRareOrAbove = rarity === 'RARE' || rarity === 'SUPER RARE' || rarity === 'ULTRA RARE';
+    const isPurchaseOrQR = Boolean(atkData.requiresPurchaseOrQR);
 
-    // Completely restrict special cards like No Saigo Blitz and Kontrol
-    if (isBlitz || isKontrol) {
+    // Strictly restrict powerful cards: Blitz No Saigo, Kontrol, Wild Card, and the character's most powerful move (Rare/Super)
+    if (isBlitz || isKontrol || isWild || isSuper || isRareOrAbove || isPurchaseOrQR) {
       return;
     }
 
-    if (isWild) {
-      wildMove = {
-        name: atkName,
-        ...atkData,
-        isWild: true,
-        costET: 1
-      };
-      return;
-    }
-
+    // Only allow Common and Semi-Common moves in the 10 starting cards
     candidateMoves.push({
       name: atkName,
       ...atkData,
-      isSuper,
-      costET: isSuper ? 2 : 1
+      isSuper: false,
+      costET: atkData.costET || 1
     });
   });
 
-  const pool = candidateMoves.length > 0 ? candidateMoves : [{ name: 'Basic Strike', ap: 10, dice: 1, element: 'Physical', desc: 'Standard attack' }];
+  const pool = candidateMoves.length > 0
+    ? candidateMoves
+    : [{ name: 'Basic Strike', ap: 10, dice: 1, element: 'Physical', desc: 'Standard attack', rarity: 'Common', costET: 1 }];
 
   const gifted = [];
-  // Restrict Wild Cards: system will not give out too many Wild Cards (at most 1 Wild Card out of the 10 free gifted moves)
-  const includeWildCard = wildMove && Math.random() < 0.35; // 35% chance of rolling at most 1 Wild Card
-  const wildCardIndex = includeWildCard ? Math.floor(Math.random() * totalCount) : -1;
-
   for (let i = 0; i < totalCount; i++) {
-    if (i === wildCardIndex && wildMove) {
-      gifted.push({
-        ...wildMove,
-        id: `ccm_${Math.random().toString(36).substring(2, 9)}_${i}`
-      });
-    } else {
-      const picked = pool[Math.floor(Math.random() * pool.length)];
-      gifted.push({
-        ...picked,
-        id: `ccm_${Math.random().toString(36).substring(2, 9)}_${i}`
-      });
-    }
+    const picked = pool[Math.floor(Math.random() * pool.length)];
+    gifted.push({
+      ...picked,
+      id: `ccm_${Math.random().toString(36).substring(2, 9)}_${i}`
+    });
   }
 
   return gifted;

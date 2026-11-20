@@ -684,6 +684,16 @@ export default function BattleArena({
       return;
     }
 
+    // Character Card Moves Gate: Attack X1 and Attack X2 require character moves
+    const isAttackAction = (actionCard?.name || '').toUpperCase().includes('ATTACK X1') ||
+                           (actionCard?.name || '').toUpperCase().includes('ATTACK X2') ||
+                           actionCard?.id === 'atk_x1' ||
+                           actionCard?.id === 'atk_x2';
+    if (isAttackAction && (attacker.characterCardMoves || []).length === 0) {
+      setSystemError('⚠️ No Character Move Cards remaining! Please scan your physical Character Card QR Code or purchase digital cards to replenish moves.');
+      return;
+    }
+
     setActiveDiceCombatData({
       attacker,
       defender,

@@ -295,10 +295,6 @@ export default function CharacterUnlockModal({
                 <div className="absolute top-1 right-1 bg-emerald-500 text-black p-1 rounded-md shadow-md">
                   <Crown size={14} />
                 </div>
-              ) : (license?.usageCount || 0) >= FREE_USAGE_LIMIT ? (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                  <Lock size={22} className="text-rose-400 drop-shadow-[0_0_8px_#f43f5e]" />
-                </div>
               ) : null}
             </div>
 
@@ -320,7 +316,7 @@ export default function CharacterUnlockModal({
                   </span>
                 ) : (
                   <span className="text-cyan-300 font-semibold flex items-center gap-1">
-                    <Zap size={14} /> 🎴 10 Gifted Move Cards at Start · Purchase Digital or Physical Cards (with QR Code)
+                    <Zap size={14} /> 🎴 10 Gifted Move Cards at Start (Unlimited Match Plays) · Purchase Digital or Physical Cards (with QR Code)
                   </span>
                 )}
               </div>

@@ -1,7 +1,7 @@
 // TCG Card Game — Official Game Logic & State Management Engine
 import { CHARACTERS, ZOMBIE_PROFILE } from '../data/characters.js';
 import { GAME_LIMITS, ACTION_CARDS } from '../data/cards.js';
-import { KONTROLA_CHARACTERS, generateGiftedCharacterMoves } from '../kontrola/KontrolaEngine.js';
+import { KONTROLA_CHARACTERS, generateGiftedCharacterMoves, generatePurchasedCharacterMoves } from '../kontrola/KontrolaEngine.js';
 
 export function drawRandomCards(count) {
   const drawn = [];
@@ -28,7 +28,7 @@ export function createInitialGameState(playerConfigs) {
       maxReserveHp: charData?.baseReserveHP !== undefined ? charData.baseReserveHP : (CHARACTERS[characterId]?.baseReserveHP || 0),
       reserveUnlocked: charData?.reserveUnlocked !== undefined ? charData.reserveUnlocked : Boolean(CHARACTERS[characterId]?.reserveUnlocked),
       reserveActivations: 0,
-      characterCardMoves: generateGiftedCharacterMoves(characterId, 10),
+      characterCardMoves: cfg.isUnlocked ? generatePurchasedCharacterMoves(characterId, 15) : generateGiftedCharacterMoves(characterId, 10),
       hp: cfg.startingHP || characterHP,
       maxHp: Math.max(characterHP, cfg.startingHP || characterHP),
       preZombieHP: cfg.startingHP || characterHP,

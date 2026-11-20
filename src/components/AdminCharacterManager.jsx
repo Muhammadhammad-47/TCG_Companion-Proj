@@ -499,7 +499,6 @@ export default function AdminCharacterManager({ currentUser, usersList = [] }) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[420px] overflow-y-auto pr-1">
                   {Object.values(CHARACTERS).map(char => {
                     const lic = userLicenses[char.id] || { usageCount: 0, isUnlocked: false };
-                    const isExhausted = !lic.isUnlocked && lic.usageCount >= FREE_USAGE_LIMIT;
 
                     return (
                       <div
@@ -507,8 +506,6 @@ export default function AdminCharacterManager({ currentUser, usersList = [] }) {
                         className={`p-3 rounded-xl border flex flex-col justify-between transition-all ${
                           lic.isUnlocked
                             ? 'bg-emerald-950/20 border-emerald-500/40'
-                            : isExhausted
-                            ? 'bg-rose-950/20 border-rose-500/50'
                             : 'bg-black/50 border-white/10'
                         }`}
                       >
@@ -524,15 +521,11 @@ export default function AdminCharacterManager({ currentUser, usersList = [] }) {
                             <div className="mt-1">
                               {lic.isUnlocked ? (
                                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1 w-fit">
-                                  <CheckCircle2 size={10} /> UNLIMITED (OWNED)
-                                </span>
-                              ) : isExhausted ? (
-                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center gap-1 w-fit">
-                                  <Lock size={10} /> LOCKED ({lic.usageCount}/{FREE_USAGE_LIMIT})
+                                  <CheckCircle2 size={10} /> FULL DECK (OWNED)
                                 </span>
                               ) : (
                                 <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 w-fit">
-                                  {FREE_USAGE_LIMIT - (lic.usageCount || 0)}/10 Free Left
+                                  🎴 10 Moves / Match (Unlimited Play)
                                 </span>
                               )}
                             </div>
