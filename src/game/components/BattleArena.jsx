@@ -16,6 +16,7 @@ import TauntModal from './TauntModal';
 import CharacterCardModal from './CharacterCardModal';
 import ReserveEnergyModal from './ReserveEnergyModal';
 import QRScannerModal from '../../components/QRScannerModal';
+import { StoreModal } from '../../components/StoreModal';
 import CardZoneModal from './CardZoneModal';
 import ZombieBanner from './ZombieBanner';
 import LocalMatchChatModal from './LocalMatchChatModal';
@@ -36,7 +37,7 @@ import {
   Clock, Play, Heart, Trophy, Crown, Dices,
   MessageSquare, Eye, Layers, ScrollText, FlaskConical,
   Maximize2, Minimize2, Sparkles, ChevronRight, Activity,
-  X, Send, CheckCircle2, Flame, RefreshCw, AlertTriangle, HelpCircle, Trash2, Upload
+  X, Send, CheckCircle2, Flame, RefreshCw, AlertTriangle, HelpCircle, Trash2, Upload, ShoppingBag
 } from 'lucide-react';
 
 export default function BattleArena({
@@ -142,6 +143,7 @@ export default function BattleArena({
 
   const [activeTauntBubble, setActiveTauntBubble] = useState(null);
   const [systemError, setSystemError] = useState(null);
+  const [isStoreOpen, setIsStoreOpen] = useState(false);
   const [roomCode, setRoomCode] = useState(null); // Room code for persistence
   const [roomPersistenceError, setRoomPersistenceError] = useState(null);
   const inviteTimeoutRef = useRef(null); // FIX #1: Track alliance invite timeout
@@ -2004,6 +2006,16 @@ export default function BattleArena({
 
             <button
               className="btn-hud-undo"
+              onClick={() => setIsStoreOpen(true)}
+              style={{ borderColor: 'var(--neon-gold, #FBC80D)', color: 'var(--neon-gold, #FBC80D)' }}
+              title="TCG Store - Purchase Digital & Physical Character Cards"
+            >
+              <ShoppingBag size={15} />
+              <span>STORE</span>
+            </button>
+
+            <button
+              className="btn-hud-undo"
               onClick={() => setShowRulesChatOverlay(true)}
               style={{ borderColor: 'var(--neon-gold, #FBC80D)', color: 'var(--neon-gold, #FBC80D)' }}
               title="Open Rules AI Assistant"
@@ -2848,6 +2860,7 @@ export default function BattleArena({
             onDiscardCard={(card) => { handleDiscardActionCard(card); setShowCardActionModal(false); }}
             onOpenSecretAllianceInvite={handleOpenSecretAllianceInvite}
             onRequestScanQR={() => setIsCharCardsQRScannerOpen(true)}
+            onRequestOpenStore={() => setIsStoreOpen(true)}
           />
         )}
 
@@ -2980,6 +2993,17 @@ export default function BattleArena({
             const targetChar = redeemResult?.characterId || activePlayer.characterId;
             handleReplenishMovesForPlayer(activePlayer.id, targetChar);
           }}
+        />
+
+        {/* In-Game TCG Store Modal */}
+        <StoreModal
+          isOpen={isStoreOpen}
+          onClose={() => setIsStoreOpen(false)}
+          userProfile={currentUser}
+          onPurchaseComplete={() => {
+            handleReplenishMovesForPlayer(activePlayer.id, activePlayer.characterId);
+          }}
+          initialTab="characters"
         />
 
         {/* Rules Chatbot In-Game Overlay */}

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ACTION_CARDS } from '../data/cards';
 import { CHARACTERS, ZOMBIE_PROFILE, getAssetUrl } from '../data/characters';
 import { soundFX } from '../utils/audio';
-import { ArrowLeft, Zap, Shield, Sparkles, Flame, Brain, Skull, Heart, Swords, Target, Play, X, Trash2, QrCode } from 'lucide-react';
+import { ArrowLeft, Zap, Shield, Sparkles, Flame, Brain, Skull, Heart, Swords, Target, Play, X, Trash2, QrCode, ShoppingBag } from 'lucide-react';
 import CardVFXWrapper from '../kontrola/vfx/CardVFXWrapper';
 
 export default function CardActionModal({
@@ -14,6 +14,7 @@ export default function CardActionModal({
   onOpenKontrol,
   onOpenBlitz,
   onRequestScanQR,
+  onRequestOpenStore,
   onOpenRetreat,
   onShowLevelRequirement,
   onDiscardCard,
@@ -659,17 +660,43 @@ export default function CardActionModal({
                                 background: 'linear-gradient(90deg, #FBC80D, #ff9900)',
                                 border: 'none',
                                 borderRadius: '6px',
-                                padding: '6px 12px',
+                                padding: '6px 14px',
                                 color: '#000',
                                 fontWeight: 'bold',
-                                fontSize: '0.75rem',
+                                fontSize: '0.78rem',
                                 cursor: 'pointer',
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: '6px'
+                                gap: '6px',
+                                boxShadow: '0 0 10px rgba(251, 200, 13, 0.4)'
                               }}
                             >
                               <QrCode size={14} /> SCAN PHYSICAL CARD (QR CODE)
+                            </button>
+                          )}
+                          {onRequestOpenStore && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                onClose();
+                                onRequestOpenStore();
+                              }}
+                              style={{
+                                background: 'linear-gradient(90deg, #00f0ff, #0077ff)',
+                                border: 'none',
+                                borderRadius: '6px',
+                                padding: '6px 14px',
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontSize: '0.78rem',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                boxShadow: '0 0 10px rgba(0, 240, 255, 0.4)'
+                              }}
+                            >
+                              <ShoppingBag size={14} /> PURCHASE DIGITAL / PHYSICAL CARDS
                             </button>
                           )}
                         </div>

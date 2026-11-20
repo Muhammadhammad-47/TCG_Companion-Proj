@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   X, ShoppingCart, Sparkles, Trophy, Gift, Check, Shield, Flame,
-  Zap, Crown, Coins, Tag, ArrowRight, ArrowLeft, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle
+  Zap, Crown, Coins, Tag, ArrowRight, ArrowLeft, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, QrCode
 } from 'lucide-react';
+import QRScannerModal from './QRScannerModal';
 import { authService } from '../services/authService';
 import { economyService } from '../services/economyService';
 import {
@@ -22,6 +23,8 @@ import PlayerAvatar from './PlayerAvatar';
 
 export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete, initialTab = 'featured' }) => {
   const [activeTab, setActiveTab] = useState(initialTab); // 'featured' | 'characters' | 'season_pass' | 'gems' | 'gold_items' | 'gem_items' | 'daily' | 'promo'
+  const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
+  const [qrTargetChar, setQrTargetChar] = useState(null);
 
   const tabsContainerRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -1085,6 +1088,37 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete, i
                         </>
                       )}
                     </div>
+
+                    {!lic.isUnlocked && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQrTargetChar(char.id);
+                          setIsQRScannerOpen(true);
+                        }}
+                        style={{
+                          width: '100%',
+                          background: 'rgba(251, 200, 13, 0.1)',
+                          border: '1.5px solid rgba(251, 200, 13, 0.6)',
+                          color: '#FBC80D',
+                          borderRadius: '8px',
+                          padding: '9px 12px',
+                          fontFamily: 'Bebas Neue, sans-serif',
+                          fontSize: '0.9rem',
+                          fontWeight: 'bold',
+                          letterSpacing: '0.8px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          transition: 'all 0.15s ease'
+                        }}
+                        title="Scan the QR Code on your physical card to unlock digital cards"
+                      >
+                        <QrCode size={14} /> SCAN PHYSICAL CARD (QR CODE)
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -1932,6 +1966,40 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete, i
             </div>
           </div>
         )}
+
+        {/* Embedded QR Code Scanner for Physical Cards */}
+        <QRScannerModal
+          isOpen={isQRScannerOpen}
+          onClose={() => {
+            setIsQRScannerOpen(false);
+            setQrTargetChar(null);
+          }}
+          userId={userProfile?.id}
+          onUnlockSuccess={async (res) => {
+            setIsQRScannerOpen(false);
+            const targetChar = qrTargetChar || res?.characterId;
+            if (targetChar) {
+              await characterLicenseService.unlockCharacter(userProfile?.id, targetChar, 'qr_scan');
+              await loadLicenses();
+              if (onPurchaseComplete) {
+                onPurchaseComplete({ type: 'character', characterId: targetChar, mode: 'physical_qr' });
+              }
+            }
+            setQrTargetChar(null);
+          }}
+          onScanSuccess={async (scannedData) => {
+            setIsQRScannerOpen(false);
+            const targetChar = qrTargetChar || scannedData?.characterId;
+            if (targetChar) {
+              await characterLicenseService.unlockCharacter(userProfile?.id, targetChar, 'qr_scan');
+              await loadLicenses();
+              if (onPurchaseComplete) {
+                onPurchaseComplete({ type: 'character', characterId: targetChar, mode: 'physical_qr' });
+              }
+            }
+            setQrTargetChar(null);
+          }}
+        />
       </div>
     </div>
   );
