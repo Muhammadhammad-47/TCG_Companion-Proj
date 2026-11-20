@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { Send, X, Bot, Swords, ArrowLeft, ThumbsUp, ThumbsDown, User, Shield, LogOut, Check, Trophy, Settings, Music, Lock, MessageSquare, ShoppingBag } from 'lucide-react';
+import { Send, X, Bot, Swords, ArrowLeft, ThumbsUp, ThumbsDown, User, Shield, LogOut, Check, Trophy, Settings, Music, Lock, MessageSquare, ShoppingBag, Upload } from 'lucide-react';
 import axios from 'axios';
 import { Groq } from 'groq-sdk';
 import './App.css';
@@ -1557,6 +1557,58 @@ export function Hub() {
   const [isMusicProgressOpen, setIsMusicProgressOpen] = useState(false);
   const [showSupportInbox, setShowSupportInbox] = useState(false);
 
+  // Quick Avatar Character Upload
+  const handleQuickUploadAvatar = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Please select a valid image file (PNG, JPG, WEBP, GIF, SVG).');
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      alert('Image file size must be under 8MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const dim = 256;
+        canvas.width = dim;
+        canvas.height = dim;
+        const ctx = canvas.getContext('2d');
+        const minSide = Math.min(img.width, img.height);
+        const sx = (img.width - minSide) / 2;
+        const sy = (img.height - minSide) / 2;
+        ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, dim, dim);
+        const dataUrl = canvas.toDataURL('image/png', 0.92);
+
+        try {
+          localStorage.setItem('tcg_custom_avatar_character', dataUrl);
+          const customKey = `tcg_custom_avatars_${currentUser?.id || 'guest'}`;
+          const currentList = JSON.parse(localStorage.getItem(customKey) || '[]');
+          const updatedList = [dataUrl, ...currentList.filter(u => u !== dataUrl)].slice(0, 12);
+          localStorage.setItem(customKey, JSON.stringify(updatedList));
+          localStorage.setItem(`tcg_active_avatar_${currentUser?.id || 'guest'}`, dataUrl);
+          window.dispatchEvent(new CustomEvent('tcg_avatar_updated', { detail: { avatar: dataUrl } }));
+        } catch (err) {
+          console.warn('LocalStorage save failed for custom avatar:', err);
+        }
+
+        setUserProfile(prev => ({ ...(prev || {}), avatar_id: dataUrl }));
+
+        if (currentUser?.id) {
+          authService.updateProfile(currentUser.id, { avatar_id: dataUrl }).catch(() => {});
+        }
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
   React.useLayoutEffect(() => {
     try {
       if (screen.orientation && screen.orientation.lock) {
@@ -1913,6 +1965,40 @@ export function Hub() {
                           >
                             <User size={16} /><span>Profile & Settings</span>
                           </button>
+
+                          <label
+                            style={{
+                              width: '100%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '10px',
+                              background: 'transparent',
+                              border: 'none',
+                              color: 'var(--neon-gold, #FBC80D)',
+                              padding: '10px 12px',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              fontSize: '0.92rem',
+                              fontWeight: 'bold',
+                              fontFamily: 'Bebas Neue, sans-serif',
+                              letterSpacing: '0.5px',
+                              transition: 'background 0.15s'
+                            }}
+                            onMouseOver={e => e.currentTarget.style.background = 'rgba(251, 200, 13, 0.12)'}
+                            onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                            title="Upload your own avatar character image from your device"
+                          >
+                            <Upload size={16} /><span>Upload Own Avatar</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => {
+                                setIsProfileDropdownOpen(false);
+                                handleQuickUploadAvatar(e);
+                              }}
+                              style={{ display: 'none' }}
+                            />
+                          </label>
 
                           <button onClick={() => { setIsProfileDropdownOpen(false); handleLogout(); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', background: 'transparent', border: 'none', color: '#ff8080', padding: '10px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.88rem', fontWeight: 'bold', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.5px', transition: 'background 0.15s' }}
                             onMouseOver={e => e.currentTarget.style.background = 'rgba(255,60,60,0.12)'}

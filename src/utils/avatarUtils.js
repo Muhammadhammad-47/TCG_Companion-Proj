@@ -41,8 +41,8 @@ export function getAvatarUrl(avatarId) {
     return encodeURI(`${base}PFP Avatars/${DEFAULT_AVATAR}`);
   }
 
-  // Already a full path or data URI
-  if (avatarId.startsWith('http://') || avatarId.startsWith('https://') || avatarId.startsWith('data:')) {
+  // Already a full path, data URI, or blob URI
+  if (avatarId.startsWith('http://') || avatarId.startsWith('https://') || avatarId.startsWith('data:') || avatarId.startsWith('blob:')) {
     return avatarId;
   }
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Swords, Plus, Minus, ArrowLeft, RotateCw, RotateCcw,
   Crown, X, ChevronDown, ChevronUp, Users, Info, GripVertical, Edit2,
-  Shield, Dices, Lock, Unlock, QrCode
+  Shield, Dices, Lock, Unlock, QrCode, Upload, Sparkles, Image
 } from 'lucide-react';
 import { APP_CONFIG } from '../../config';
 import { CHARACTERS, getAssetUrl } from '../data/characters';
@@ -30,8 +30,13 @@ export default function GameSetup({ onStartGame, onBack }) {
     })
   );
 
-  // Load authenticated user and patch Player 1's name from DB profile
+  // Load authenticated user and patch Player 1's name and custom avatar from DB profile or localStorage
   useEffect(() => {
+    const savedCustomAvatar = localStorage.getItem('tcg_custom_avatar_character');
+    if (savedCustomAvatar) {
+      setPlayers(prev => prev.map((p, idx) => (idx === 0 ? { ...p, customAvatar: savedCustomAvatar } : p)));
+    }
+
     authService.getCurrentUser().then(async (user) => {
       if (!user) return;
       setCurrentUser(user);
@@ -42,13 +47,80 @@ export default function GameSetup({ onStartGame, onBack }) {
         user.user_metadata?.username ||
         user.email?.split('@')[0] ||
         null;
-      if (username) {
-        setPlayers(prev =>
-          prev.map((p, idx) => (idx === 0 ? { ...p, name: username } : p))
-        );
-      }
+      const avatarId = profile?.avatar_id || profile?.avatar_url;
+      const isCustomAvatar = avatarId && (avatarId.startsWith('data:') || avatarId.startsWith('http://') || avatarId.startsWith('https://') || avatarId.startsWith('blob:'));
+      
+      setPlayers(prev =>
+        prev.map((p, idx) => (idx === 0 ? {
+          ...p,
+          name: username || p.name,
+          customAvatar: savedCustomAvatar || (isCustomAvatar ? avatarId : p.customAvatar)
+        } : p))
+      );
     });
   }, []);
+
+  // Handle uploading user's own Avatar character
+  const handleUploadCustomAvatar = (e, playerIdx = 0) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select a valid image file (PNG, JPG, WEBP, GIF, SVG).');
+      return;
+    }
+
+    if (file.size > 8 * 1024 * 1024) {
+      alert('Image file size must be under 8MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const dim = 256;
+        canvas.width = dim;
+        canvas.height = dim;
+        const ctx = canvas.getContext('2d');
+        const minSide = Math.min(img.width, img.height);
+        const sx = (img.width - minSide) / 2;
+        const sy = (img.height - minSide) / 2;
+        ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, dim, dim);
+        const dataUrl = canvas.toDataURL('image/png', 0.92);
+
+        soundFX.playCard();
+        setPlayers(prev => {
+          const next = [...prev];
+          if (next[playerIdx]) {
+            next[playerIdx] = { ...next[playerIdx], customAvatar: dataUrl };
+          }
+          return next;
+        });
+
+        // Save into local storage
+        try {
+          localStorage.setItem('tcg_custom_avatar_character', dataUrl);
+          const customKey = `tcg_custom_avatars_${currentUser?.id || 'guest'}`;
+          const currentList = JSON.parse(localStorage.getItem(customKey) || '[]');
+          const updatedList = [dataUrl, ...currentList.filter(u => u !== dataUrl)].slice(0, 12);
+          localStorage.setItem(customKey, JSON.stringify(updatedList));
+          localStorage.setItem(`tcg_active_avatar_${currentUser?.id || 'guest'}`, dataUrl);
+          window.dispatchEvent(new CustomEvent('tcg_avatar_updated', { detail: { avatar: dataUrl } }));
+        } catch (err) {
+          console.warn('LocalStorage save failed for custom avatar:', err);
+        }
+
+        if (currentUser?.id) {
+          authService.updateProfile(currentUser.id, { avatar_id: dataUrl }).catch(() => {});
+        }
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
 
   // Character Quotas & Licenses State
   const [licenses, setLicenses] = useState({});
@@ -251,7 +323,39 @@ export default function GameSetup({ onStartGame, onBack }) {
           <div className="setup-col-left">
             {/* Game Profile Section */}
             <div className="setup-profile-box">
-              <span className="setup-section-label">GAME PROFILE</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span className="setup-section-label" style={{ margin: 0 }}>GAME PROFILE</span>
+                <label
+                  style={{
+                    background: 'linear-gradient(135deg, #FBC80D 0%, #ff8800 100%)',
+                    color: '#000',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '5px 12px',
+                    fontSize: '0.78rem',
+                    fontWeight: 'bold',
+                    fontFamily: 'Bebas Neue, sans-serif',
+                    letterSpacing: '0.6px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    cursor: 'pointer',
+                    boxShadow: '0 0 12px rgba(251, 200, 13, 0.4)',
+                    transition: 'all 0.2s ease'
+                  }}
+                  title="Upload your own avatar character image from your device"
+                >
+                  <Upload size={13} />
+                  <span>UPLOAD OWN AVATAR</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleUploadCustomAvatar(e, 0)}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+              </div>
+
               <div
                 className="profile-selector-card"
                 onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
@@ -261,7 +365,7 @@ export default function GameSetup({ onStartGame, onBack }) {
                     <Crown size={14} color="var(--neon-crimson)" fill="var(--neon-crimson)" />
                   </div>
                   <img
-                    src={getAssetUrl(primaryProfileChar.image)}
+                    src={players[0]?.customAvatar || getAssetUrl(primaryProfileChar.image)}
                     alt={primaryProfileChar.name}
                     className="profile-avatar-img"
                     onError={(e) => {
@@ -386,10 +490,14 @@ export default function GameSetup({ onStartGame, onBack }) {
                         {idx + 1}
                       </div>
 
-                      <div className="player-row-avatar" style={{ borderColor: c.themeColor, position: 'relative' }}>
+                      <label
+                        className="player-row-avatar"
+                        style={{ borderColor: c.themeColor, position: 'relative', cursor: 'pointer' }}
+                        title="Click to upload custom avatar character"
+                      >
                         <img
-                          src={getAssetUrl(c.image)}
-                          alt={c.name}
+                          src={p.customAvatar || getAssetUrl(c.image)}
+                          alt={p.name || c.name}
                           className="player-avatar-thumb"
                           onError={(e) => {
                             e.target.style.display = 'none';
@@ -417,7 +525,13 @@ export default function GameSetup({ onStartGame, onBack }) {
                         }}>
                           {p.level || 1}
                         </div>
-                      </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleUploadCustomAvatar(e, idx)}
+                          style={{ display: 'none' }}
+                        />
+                      </label>
 
                       <div className="player-name-display" style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, paddingRight: '12px' }}>
                         <Edit2 size={12} color="rgba(255,255,255,0.4)" style={{ flexShrink: 0 }} />
@@ -598,7 +712,7 @@ export default function GameSetup({ onStartGame, onBack }) {
                             <div className={`orbit-node-pill pill-${i + 1}`} style={{ position: 'absolute', top: '-6px', left: '-6px', zIndex: 10 }}>{i + 1}</div>
                             <div className="orbit-avatar-ring ring-blue" style={{ borderColor: c.themeColor, overflow: 'visible', width: '40px', height: '40px', borderRadius: '50%', background: '#071226', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                               <img
-                                src={getAssetUrl(c.image || 'characters/chynaman.png')}
+                                src={p.customAvatar || getAssetUrl(c.image || 'characters/chynaman.png')}
                                 alt={`P${i+1}`}
                                 className="orbit-img"
                                 style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}

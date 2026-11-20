@@ -36,7 +36,7 @@ import {
   Clock, Play, Heart, Trophy, Crown, Dices,
   MessageSquare, Eye, Layers, ScrollText, FlaskConical,
   Maximize2, Minimize2, Sparkles, ChevronRight, Activity,
-  X, Send, CheckCircle2, Flame, RefreshCw, AlertTriangle, HelpCircle, Trash2
+  X, Send, CheckCircle2, Flame, RefreshCw, AlertTriangle, HelpCircle, Trash2, Upload
 } from 'lucide-react';
 
 export default function BattleArena({
@@ -1551,6 +1551,65 @@ export default function BattleArena({
     });
   };
 
+  // Handle uploading user's own Avatar character in match
+  const handleInGameUploadAvatar = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setSystemError('Please select a valid image file (PNG, JPG, WEBP, GIF, SVG).');
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      setSystemError('Image file size must be under 8MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const dim = 256;
+        canvas.width = dim;
+        canvas.height = dim;
+        const ctx = canvas.getContext('2d');
+        const minSide = Math.min(img.width, img.height);
+        const sx = (img.width - minSide) / 2;
+        const sy = (img.height - minSide) / 2;
+        ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, dim, dim);
+        const dataUrl = canvas.toDataURL('image/png', 0.92);
+
+        soundFX.playCard();
+        setGameState(prev => ({
+          ...prev,
+          players: (prev.players || []).map(p =>
+            p.id === activePlayer.id ? { ...p, customAvatar: dataUrl } : p
+          )
+        }));
+
+        try {
+          localStorage.setItem('tcg_custom_avatar_character', dataUrl);
+          const customKey = `tcg_custom_avatars_${activePlayer.id || 'guest'}`;
+          const currentList = JSON.parse(localStorage.getItem(customKey) || '[]');
+          const updatedList = [dataUrl, ...currentList.filter(u => u !== dataUrl)].slice(0, 12);
+          localStorage.setItem(customKey, JSON.stringify(updatedList));
+          localStorage.setItem(`tcg_active_avatar_${activePlayer.id || 'guest'}`, dataUrl);
+          window.dispatchEvent(new CustomEvent('tcg_avatar_updated', { detail: { avatar: dataUrl } }));
+        } catch (err) {
+          console.warn('LocalStorage save failed for custom avatar:', err);
+        }
+
+        setTurnAnnouncement({
+          title: '🎨 AVATAR UPDATED!',
+          subtitle: `${activePlayer.name} uploaded a custom avatar character!`
+        });
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
   // Complete Crystal Split Negotiation
   const handleCrystalSplitComplete = (result) => {
     setShowCrystalSplitModal(false);
@@ -1921,6 +1980,28 @@ export default function BattleArena({
           </div>
 
           <div className="hud-actions-group">
+            <label
+              className="btn-hud-undo"
+              style={{
+                borderColor: 'var(--neon-cyan, #00f0ff)',
+                color: 'var(--neon-cyan, #00f0ff)',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+              title="Upload your own avatar character image from your device"
+            >
+              <Upload size={15} />
+              <span>AVATAR</span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleInGameUploadAvatar}
+                style={{ display: 'none' }}
+              />
+            </label>
+
             <button
               className="btn-hud-undo"
               onClick={() => setShowRulesChatOverlay(true)}
@@ -1977,7 +2058,7 @@ export default function BattleArena({
 
                       <div className={`arena-score-avatar ${p.shield > 0 ? 'fx-shield-status' : ''} ${p.burnCount > 0 ? 'fx-burning-status' : ''} ${p.poisonCards > 0 ? 'fx-poison-status' : ''} ${p.isStunned ? 'fx-lightning-status' : ''} ${p.isFrozen ? 'fx-frozen-status' : ''}`} style={{ borderColor: c.themeColor, overflow: 'visible', width: '38px', height: '38px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', position: 'relative' }}>
                         <img
-                          src={getAssetUrl(c.image || 'characters/chynaman.png')}
+                          src={p.customAvatar || getAssetUrl(c.image || 'characters/chynaman.png')}
                           alt={c.name}
                           style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
                         />
@@ -2240,7 +2321,7 @@ export default function BattleArena({
                         }}
                       >
                         <img
-                          src={getAssetUrl(realChar.image || 'characters/chynaman.png')}
+                          src={p.customAvatar || getAssetUrl(realChar.image || 'characters/chynaman.png')}
                           alt={p.name}
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         />

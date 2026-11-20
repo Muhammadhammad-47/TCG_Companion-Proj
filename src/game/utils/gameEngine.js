@@ -23,6 +23,7 @@ export function createInitialGameState(playerConfigs) {
       id: `player_${idx + 1}`,
       name: cfg.name || `Player ${idx + 1}`,
       characterId: characterId,
+      customAvatar: cfg.customAvatar || null,
       level: 1, // NEW: Character level starts at 1
       reserveHp: charData?.baseReserveHP !== undefined ? charData.baseReserveHP : (CHARACTERS[characterId]?.baseReserveHP || 0),
       maxReserveHp: charData?.baseReserveHP !== undefined ? charData.baseReserveHP : (CHARACTERS[characterId]?.baseReserveHP || 0),

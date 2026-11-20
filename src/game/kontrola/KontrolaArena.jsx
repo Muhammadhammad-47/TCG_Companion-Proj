@@ -4,7 +4,7 @@ import {
   ArrowLeft, Wifi, Swords, Shield, Skull, Zap, ScrollText, MessageSquare,
   Dices, Crown, Trophy, Layers, Clock, HelpCircle, X, Eye, Users, RefreshCw,
   Lock, Radio, AlertTriangle, Play, Sparkles, CheckCircle2, SkipForward, FastForward,
-  Music, Pause, Volume2, VolumeX, ChevronDown, ChevronUp, Trash2, ShoppingBag, QrCode
+  Music, Pause, Volume2, VolumeX, ChevronDown, ChevronUp, Trash2, ShoppingBag, QrCode, Upload
 } from 'lucide-react';
 import { DynamicScaleWrapper } from '../../components/DynamicScaleWrapper';
 import { soundFX } from '../utils/audio';
@@ -204,6 +204,9 @@ export default function KontrolaArena() {
   const [joinCodeInput, setJoinCodeInput] = useState(''); // separate from matchId to avoid pre-filling from localStorage
 
   const [selectedCharacter, setSelectedCharacter] = useState('chynaman');
+  const [localCustomAvatar, setLocalCustomAvatar] = useState(() => {
+    return typeof window !== 'undefined' ? localStorage.getItem('tcg_custom_avatar_character') : null;
+  });
   const [quotaUnlockChar, setQuotaUnlockChar] = useState(null);
   const [isStoreOpen, setIsStoreOpen] = useState(false);
   const [storeInitialTab, setStoreInitialTab] = useState('featured');
@@ -1807,6 +1810,21 @@ export default function KontrolaArena() {
         broadcastState(matchIdRef.current, nextState);
         return nextState;
       }
+      if (payload.actionType === 'UPDATE_PLAYER_CUSTOM_AVATAR') {
+        const nextState = { ...currentState };
+        const { playerId: targetPId, customAvatar } = payload;
+        nextState.customAvatars = { ...(nextState.customAvatars || {}), [targetPId]: customAvatar };
+        if (nextState.characterStates?.[targetPId]) {
+          nextState.characterStates[targetPId] = {
+            ...nextState.characterStates[targetPId],
+            customAvatar
+          };
+        }
+        pendingStateRef.current = nextState;
+        broadcastState(matchIdRef.current, nextState);
+        return nextState;
+      }
+
       if (payload.actionType === 'START_CHARACTER_SELECT') {
         let nextState = { ...state };
 
@@ -1851,6 +1869,7 @@ export default function KontrolaArena() {
             initialCharacterStates[pId] = {
               ...template,
               characterCardMoves: moves,
+              customAvatar: currentState.customAvatars?.[pId] || (pId === playerId ? localCustomAvatar : null) || null,
               name: customName || template.name,
               playerId: pId,
               hp: template.hp || template.baseHP || 100,
@@ -1925,6 +1944,7 @@ export default function KontrolaArena() {
             initialCharacterStates[pId] = {
               ...template,
               characterCardMoves: moves,
+              customAvatar: currentState.customAvatars?.[pId] || (pId === playerId ? localCustomAvatar : null) || null,
               name: customName || template.name,
               playerId: pId,
               hp: template.hp || template.baseHP || 100,
@@ -3895,6 +3915,64 @@ export default function KontrolaArena() {
     } else {
       takeTurn(matchId, { type: 'PLAYER_ACTION', payload });
     }
+  };
+
+  // Handle uploading user's own Avatar character
+  const handleUploadCustomAvatar = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      showNotice('Please select a valid image file (PNG, JPG, WEBP, GIF, SVG).', 'warning');
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      showNotice('Image file size must be under 8MB.', 'warning');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const dim = 256;
+        canvas.width = dim;
+        canvas.height = dim;
+        const ctx = canvas.getContext('2d');
+        const minSide = Math.min(img.width, img.height);
+        const sx = (img.width - minSide) / 2;
+        const sy = (img.height - minSide) / 2;
+        ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, dim, dim);
+        const dataUrl = canvas.toDataURL('image/png', 0.92);
+
+        playClick();
+        setLocalCustomAvatar(dataUrl);
+        showNotice('Custom Avatar Character uploaded successfully!', 'success');
+
+        try {
+          localStorage.setItem('tcg_custom_avatar_character', dataUrl);
+          const customKey = `tcg_custom_avatars_${currentUser?.id || playerId || 'guest'}`;
+          const currentList = JSON.parse(localStorage.getItem(customKey) || '[]');
+          const updatedList = [dataUrl, ...currentList.filter(u => u !== dataUrl)].slice(0, 12);
+          localStorage.setItem(customKey, JSON.stringify(updatedList));
+          localStorage.setItem(`tcg_active_avatar_${currentUser?.id || playerId || 'guest'}`, dataUrl);
+          window.dispatchEvent(new CustomEvent('tcg_avatar_updated', { detail: { avatar: dataUrl } }));
+        } catch (err) {
+          console.warn('LocalStorage save failed for custom avatar:', err);
+        }
+
+        if (currentUser?.id) {
+          authService.updateProfile(currentUser.id, { avatar_id: dataUrl }).catch(() => {});
+        }
+
+        const payload = { actionType: 'UPDATE_PLAYER_CUSTOM_AVATAR', playerId, customAvatar: dataUrl };
+        if (isHostRef.current) enqueueHostAction(payload);
+        else if (matchIdRef.current) takeTurn(matchIdRef.current, { type: 'PLAYER_ACTION', payload });
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   const handleCharacterSelect = (charId) => {
@@ -6286,7 +6364,7 @@ export default function KontrolaArena() {
                           }}
                         >
                           <img
-                            src={getAssetUrl(pChar.image)}
+                            src={getAssetUrl(pChar.customAvatar || pChar.image)}
                             alt={pChar.name}
                             style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
                           />
@@ -6450,7 +6528,7 @@ export default function KontrolaArena() {
                       }}
                     >
                       <img
-                        src={getAssetUrl(activeTurnChar.image)}
+                        src={getAssetUrl(activeTurnChar.customAvatar || activeTurnChar.image)}
                         alt={activeTurnChar.name}
                         style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
                       />
@@ -6616,7 +6694,7 @@ export default function KontrolaArena() {
               {myCharacter && !isSpectator && (
                 <div className="phase2-active-profile">
                   <div className="phase2-profile-avatar" style={{ borderColor: myCharacter.themeColor || 'var(--neon-cyan)', position: 'relative' }}>
-                    <img src={getAssetUrl(myCharacter.image)} alt={myCharacter.name} />
+                    <img src={getAssetUrl(myCharacter.customAvatar || myCharacter.image)} alt={myCharacter.name} />
                     {/* Level Badge */}
                     <div style={{
                       position: 'absolute',
@@ -7954,7 +8032,38 @@ export default function KontrolaArena() {
 
               {/* RIGHT SIDE - CHARACTER SELECTION GRID */}
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
-                <h2 style={{ color: 'var(--neon-cyan)', fontSize: '2.5rem', marginBottom: '20px', textShadow: '0 0 20px var(--neon-cyan)' }}>? CHARACTER SELECTION ?</h2>
+                <h2 style={{ color: 'var(--neon-cyan)', fontSize: '2.5rem', marginBottom: '20px', textShadow: '0 0 20px var(--neon-cyan)' }}>⭐ CHARACTER SELECTION ⭐</h2>
+
+                <label
+                  style={{
+                    background: 'linear-gradient(135deg, #FBC80D 0%, #ff8800 100%)',
+                    color: '#000',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px 20px',
+                    fontSize: '0.92rem',
+                    fontWeight: 'bold',
+                    fontFamily: 'Bebas Neue, sans-serif',
+                    letterSpacing: '0.8px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    cursor: 'pointer',
+                    boxShadow: '0 0 16px rgba(251, 200, 13, 0.45)',
+                    marginBottom: '18px',
+                    transition: 'all 0.2s ease'
+                  }}
+                  title="Upload your own avatar character image from your device"
+                >
+                  <Upload size={16} />
+                  <span>UPLOAD OWN AVATAR CHARACTER</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleUploadCustomAvatar}
+                    style={{ display: 'none' }}
+                  />
+                </label>
                 {isHost && (
                   <button
                     onClick={() => {
