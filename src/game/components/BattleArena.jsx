@@ -920,10 +920,11 @@ export default function BattleArena({
     }
 
     const newLogs = [];
+    const isZombieAttacker = attacker.isZombie || (attacker.poisonCards >= 5) || (attacker.poisonCount >= 5);
     newLogs.push({
       turn: turnNum,
       actor: attacker.name,
-      action: `Used ${characterMove?.name || 'Attack'} on ${defender.name}`,
+      action: isZombieAttacker ? `Used Zombie Venom Strike on ${defender.name}` : `Used ${characterMove?.name || 'Attack'} on ${defender.name}`,
       type: 'attack',
       amount: `-${damage} HP`
     });

@@ -209,8 +209,11 @@ export function resolveDiceCombat({
     };
   }
 
+  const isAttackerZombie = Boolean(attacker.isZombie || (attacker.poisonCards >= 5) || (attacker.poisonCount >= 5));
+  const isDefenderZombie = Boolean(defender.isZombie || (defender.poisonCards >= 5) || (defender.poisonCount >= 5));
+
   // 0.5. Zombie vs Zombie (No Effect)
-  if (attacker.isZombie && defender.isZombie) {
+  if (isAttackerZombie && isDefenderZombie) {
     return {
       rawAP: 0,
       weaknessTriggered: false,
@@ -232,7 +235,10 @@ export function resolveDiceCombat({
   let rawAP = 0;
   let multiplierRoll = attackerRoll[0];
 
-  if (characterMove) {
+  if (isAttackerZombie) {
+    // Official Zombie Mode rule: Mindless zombies can only use Venom Strike (15 AP base)
+    rawAP = 15;
+  } else if (characterMove) {
     if (characterMove.type === 'dice_mult') {
       // Base multiplier from character move (e.g., "Fire of Fury" = 5)
       let charMultiplier = characterMove.multiplier || 4;
@@ -262,7 +268,6 @@ export function resolveDiceCombat({
   // 2. Check Elemental Weakness
   let weaknessTriggered = false;
   let weaknessBonus = 0;
-  const isAttackerZombie = attacker.isZombie || (attacker.poisonCards >= 5) || (attacker.poisonCount >= 5);
   const moveElement = isAttackerZombie ? 'Poison' : (characterMove?.element || (
     actionCard?.id?.includes('lightning') || actionCard?.name?.includes('LIGHTNING') ? 'Lightning' :
     actionCard?.id?.includes('fire') || actionCard?.name?.includes('FIRE FLAME') ? 'Fire' :
@@ -339,7 +344,12 @@ export function resolveDiceCombat({
     absorbedByShield = 0;
     // No shield reduction for BACK STAB
   } else if (currentShield > 0) {
-    if (currentShield >= netHPDamage) {
+    // Official Rule: "SHIELD BASIC + 25HP - Prevents all damage except poison and fire"
+    const isFire = moveElement === 'Fire' || (actionCard?.name || '').includes('FIRE');
+    const isPoison = moveElement === 'Poison' || (actionCard?.name || '').includes('POISON') || isAttackerZombie;
+    if (defender.hasBasicShield && (isFire || isPoison)) {
+      absorbedByShield = 0;
+    } else if (currentShield >= netHPDamage) {
       absorbedByShield = netHPDamage;
       currentShield -= netHPDamage;
       netHPDamage = 0;
@@ -365,7 +375,7 @@ export function resolveDiceCombat({
   // 7. Check special effects
   const isPoisonX2 = actionCard?.id === 'poison_x2' || actionCard?.name === 'POISON X2';
   const isPoisonX1 = actionCard?.id === 'poison_x1' || actionCard?.name === 'POISON X1' || actionCard?.name?.includes('POISON');
-  const appliesPoison = characterMove?.appliesPoison || isPoisonX1 || isPoisonX2 || attacker.isZombie;
+  const appliesPoison = characterMove?.appliesPoison || isPoisonX1 || isPoisonX2 || isAttackerZombie;
   const poisonStacks = isPoisonX2 ? 2 : (appliesPoison ? 1 : 0);
   const appliesStun = characterMove?.appliesStun || characterMove?.stun || actionCard?.name?.includes('FREEZE') || false;
   const healsAttacker = clashWon ? (characterMove?.healsAttacker || 0) : 0;

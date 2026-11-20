@@ -686,8 +686,8 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     }
   }
 
-  const isAttackerZombie = Boolean(newAttackerState.isZombie || attackerChar?.isZombie || (newAttackerState.poisonCount >= 5));
-  const isDefenderZombie = Boolean(newDefenderState?.isZombie || defenderChar?.isZombie || (newDefenderState?.poisonCount >= 5));
+  const isAttackerZombie = Boolean(newAttackerState.isZombie || attackerChar?.isZombie || attackerState?.isZombie || (newAttackerState.poisonCount >= 5) || (newAttackerState.poisonCards >= 5) || (attackerState?.poisonCards >= 5));
+  const isDefenderZombie = Boolean(newDefenderState?.isZombie || defenderChar?.isZombie || defenderState?.isZombie || (newDefenderState?.poisonCount >= 5) || (newDefenderState?.poisonCards >= 5) || (defenderState?.poisonCards >= 5));
 
   const selectedMoveUpper = (attackSelectionName || '').toUpperCase();
   const isKontrolMove = cardName.includes('KONTROL') || selectedMoveUpper.includes('KONTROL');
@@ -868,7 +868,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     }
 
     let baseAP = 15;
-    let attackElement = 'Physical';
+    let attackElement = isAttackerZombie ? 'Poison' : 'Physical';
 
     if (cardName.includes('LIGHTNING')) {
       baseAP = cardName.includes('X2') ? 20 : 10;
@@ -1104,25 +1104,25 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
 
       // Weakness Bonus (+10 AP) - only applies if attack was not negated/reflected by defense
       // Official Rule: When Zombie has a successful attack, an additional weakness penalty of -10 HP is placed on characters with weakness of Poison
-      if (newDefenderState && attackElement && finalDamage > 0 && !newDefenderState.flyerNoWeakness) {
+      if (newDefenderState && !newDefenderState.flyerNoWeakness) {
         const defCharKey = (newDefenderState.characterId || newDefenderState.id || newDefenderState.name || '').toLowerCase();
         const defWeakness = (newDefenderState.weakness || '').toLowerCase();
         const hasPoisonWeakness = defWeakness.includes('poison') || ['chynaman', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k));
         const hasFireWeakness = defWeakness.includes('fire') || ['shroomy', 'queeny'].some(k => defCharKey.includes(k));
 
         const matchesWeakness = (isAttackerZombie && hasPoisonWeakness) ||
-          (attackElement.toLowerCase() === 'poison' && hasPoisonWeakness) ||
-          (attackElement.toLowerCase() === 'fire' && hasFireWeakness) ||
-          (newDefenderState.weakness && newDefenderState.weakness.toLowerCase().includes(attackElement.toLowerCase()));
+          (attackElement && attackElement.toLowerCase() === 'poison' && hasPoisonWeakness) ||
+          (attackElement && attackElement.toLowerCase() === 'fire' && hasFireWeakness) ||
+          (attackElement && newDefenderState.weakness && newDefenderState.weakness.toLowerCase().includes(attackElement.toLowerCase()));
 
-        if (matchesWeakness) {
+        if (matchesWeakness && (finalDamage > 0 || (isAttackerZombie && hasPoisonWeakness))) {
           const bonus = newDefenderState.weaknessBonus || 10;
           finalDamage += bonus;
           if (isAttackerZombie && hasPoisonWeakness) {
             log += ` ☠️ [ZOMBIE POISON WEAKNESS] ${newDefenderState.name} has Poison weakness! Suffer -${bonus} HP additional weakness penalty from Zombie attack!`;
-          } else if (attackElement.toLowerCase() === 'fire') {
+          } else if (attackElement && attackElement.toLowerCase() === 'fire') {
             log += ` 🔥 [FIRE WEAKNESS] ${newDefenderState.name} has Fire weakness! Additional -${bonus} HP weakness penalty applied!`;
-          } else if (attackElement.toLowerCase() === 'poison') {
+          } else if (attackElement && attackElement.toLowerCase() === 'poison') {
             log += ` ☠️ [POISON WEAKNESS] ${newDefenderState.name} has Poison weakness! Additional -${bonus} HP weakness penalty applied!`;
           } else {
             log += ` 🎯 [WEAKNESS TRIGGER] ${newDefenderState.name} has ${attackElement} weakness! +${bonus} AP bonus applied!`;
@@ -1145,9 +1145,10 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       // Official Rule: "SHIELD BASIC + 25HP - Prevents all damage except poison and fire"
       let shieldAbsorbed = 0;
       const isFireAttack = (attackElement === 'Fire') || cardName.includes('FIRE');
+      const isPoisonAttack = (attackElement === 'Poison') || cardName.includes('POISON') || isAttackerZombie;
       if (newDefenderState?.shield > 0 && finalDamage > 0) {
-        if (newDefenderState.hasBasicShield && isFireAttack) {
-          log += ` 🔥 SHIELD BASIC cannot block Fire damage! Fire bypasses basic shield!`;
+        if (newDefenderState.hasBasicShield && (isFireAttack || isPoisonAttack)) {
+          log += ` 🛡️🚫 SHIELD BASIC cannot block ${isFireAttack ? 'Fire' : 'Poison'} damage! ${isFireAttack ? 'Fire' : 'Poison'} bypasses basic shield!`;
         } else {
           shieldAbsorbed = Math.min(newDefenderState.shield, finalDamage);
           newDefenderState.shield -= shieldAbsorbed;
