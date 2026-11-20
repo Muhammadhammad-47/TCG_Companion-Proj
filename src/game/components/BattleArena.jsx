@@ -161,6 +161,7 @@ export default function BattleArena({
   const [activeBlitzData, setActiveBlitzData] = useState(null);
   const [activeRetreatData, setActiveRetreatData] = useState(null);
   const [isReserveModalOpen, setIsReserveModalOpen] = useState(false);
+  const [isReserveQRScannerOpen, setIsReserveQRScannerOpen] = useState(false);
   const [isCharCardsQRScannerOpen, setIsCharCardsQRScannerOpen] = useState(false);
 
   const [selectedEffectInfo, setSelectedEffectInfo] = useState(null);
@@ -2863,6 +2864,20 @@ export default function BattleArena({
           isMyTurn={true}
           onConfirmRecovery={(amount) => handleRecoverReserveAmount(amount)}
           onReleaseReserve={(hp) => handleReleaseReserveForPlayer(activePlayer.id, hp || 30)}
+          onOpenQRScanner={() => {
+            setIsReserveModalOpen(false);
+            setIsReserveQRScannerOpen(true);
+          }}
+        />
+
+        {/* Reserve Energy Release QR Code Scanner */}
+        <QRScannerModal
+          isOpen={isReserveQRScannerOpen}
+          onClose={() => setIsReserveQRScannerOpen(false)}
+          onScanSuccess={(redeemResult) => {
+            setIsReserveQRScannerOpen(false);
+            handleReleaseReserveForPlayer(activePlayer.id, redeemResult?.reserveHp || 30);
+          }}
         />
 
         {/* Character Cards QR Code Scanner */}

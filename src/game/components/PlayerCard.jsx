@@ -149,7 +149,7 @@ export default function PlayerCard({
           <span style={{ color: (player.reserveUnlocked || char.reserveUnlocked) ? '#34d399' : 'rgba(255,255,255,0.5)', fontWeight: 'bold' }}>
             {(player.reserveUnlocked || char.reserveUnlocked)
               ? `${player.reserveHp !== undefined ? player.reserveHp : (char.baseReserveHP || 0)} / ${player.maxReserveHp || char.baseReserveHP || 0} HP`
-              : '🔒 DORMANT (Lvl 2+)'}
+              : '🔒 LOCKED (Scan QR)'}
           </span>
         </div>
         {(player.reserveUnlocked || char.reserveUnlocked) && (player.maxReserveHp || char.baseReserveHP || 0) > 0 && (

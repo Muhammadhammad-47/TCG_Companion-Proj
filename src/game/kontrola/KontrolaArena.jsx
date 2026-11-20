@@ -6110,28 +6110,26 @@ export default function KontrolaArena() {
               {/* Reserve Energy Recovery Button (Custom Amount or QR Release) */}
               {isMyTurn && !isSpectator && (
                 myCharacter?.reserveUnlocked ? (
-                  (myCharacter.reserveHp || 0) > 0 && myCharacter.hp < myCharacter.maxHp && (
-                    <button
-                      onClick={() => setIsReserveModalOpen(true)}
-                      style={{
-                        background: 'linear-gradient(90deg, #10b981, #059669)',
-                        border: 'none',
-                        borderRadius: '6px',
-                        padding: '4px 10px',
-                        color: '#fff',
-                        fontWeight: 'bold',
-                        fontSize: '0.78rem',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        boxShadow: '0 0 10px rgba(16, 185, 129, 0.4)'
-                      }}
-                      title={`Open Reserve Energy panel: recover chosen HP (Cost: 2 ET)`}
-                    >
-                      <Sparkles size={13} fill="#fff" /> RECOVER RESERVE ({myCharacter.reserveHp} HP · 2 ET)
-                    </button>
-                  )
+                  <button
+                    onClick={() => setIsReserveModalOpen(true)}
+                    style={{
+                      background: 'linear-gradient(90deg, #10b981, #059669)',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '4px 10px',
+                      color: '#fff',
+                      fontWeight: 'bold',
+                      fontSize: '0.78rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      boxShadow: '0 0 10px rgba(16, 185, 129, 0.4)'
+                    }}
+                    title={`Open Reserve Energy panel: recover chosen HP (Cost: 2 ET)`}
+                  >
+                    <Sparkles size={13} fill="#fff" /> RECOVER RESERVE ({myCharacter.reserveHp || 0} HP · 2 ET)
+                  </button>
                 ) : (
                   <button
                     onClick={() => setIsReserveModalOpen(true)}
@@ -8523,11 +8521,8 @@ export default function KontrolaArena() {
         onClose={() => setIsReserveQRScannerOpen(false)}
         onScanSuccess={(redeemResult) => {
           setIsReserveQRScannerOpen(false);
-          if (redeemResult?.isReserveRelease) {
-            handleReleaseReserve(redeemResult.reserveHp || 30);
-          } else {
-            showNotice('QR Code redeemed successfully!', 'success');
-          }
+          handleReleaseReserve(redeemResult?.reserveHp || 30);
+          showNotice('QR Code verified! Energy Reserve Released (+30 Reserve HP)!', 'success');
         }}
       />
 

@@ -374,9 +374,34 @@ export default function ReserveEnergyModal({
                     <span style={{ fontSize: '0.88rem', fontWeight: 'bold', color: '#10b981' }}>
                       SELECT AMOUNT TO RECOVER
                     </span>
-                    <span style={{ fontSize: '1.25rem', fontWeight: '900', color: '#fff', fontFamily: 'Orbitron, sans-serif' }}>
-                      +{amount} <span style={{ fontSize: '0.8rem', color: '#10b981' }}>HP</span>
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '0.9rem', color: '#10b981', fontWeight: 'bold' }}>+</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={maxPossible}
+                        value={amount}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          if (!isNaN(val)) {
+                            setAmount(Math.min(maxPossible, Math.max(1, val)));
+                          }
+                        }}
+                        style={{
+                          width: '74px',
+                          background: 'rgba(0, 0, 0, 0.6)',
+                          border: '1.5px solid #10b981',
+                          borderRadius: '8px',
+                          color: '#fff',
+                          fontWeight: '900',
+                          fontSize: '1.25rem',
+                          fontFamily: 'Orbitron, sans-serif',
+                          textAlign: 'center',
+                          padding: '4px'
+                        }}
+                      />
+                      <span style={{ fontSize: '0.85rem', color: '#10b981', fontWeight: 'bold' }}>HP</span>
+                    </div>
                   </div>
 
                   {/* Range Slider */}

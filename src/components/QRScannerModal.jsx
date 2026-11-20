@@ -6,7 +6,7 @@ import {
 import { characterLicenseService } from '../services/characterLicenseService';
 import { soundFX } from '../game/utils/audio';
 
-export default function QRScannerModal({ isOpen, onClose, userId, onUnlockSuccess }) {
+export default function QRScannerModal({ isOpen, onClose, userId, onUnlockSuccess, onScanSuccess }) {
   const [manualCode, setManualCode] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [statusMessage, setStatusMessage] = useState({ text: '', type: '' });
@@ -98,6 +98,9 @@ export default function QRScannerModal({ isOpen, onClose, userId, onUnlockSucces
         stopCamera();
         if (onUnlockSuccess) {
           onUnlockSuccess(result);
+        }
+        if (onScanSuccess) {
+          onScanSuccess(result);
         }
         setTimeout(() => {
           onClose();
