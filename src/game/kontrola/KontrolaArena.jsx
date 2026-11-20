@@ -3686,11 +3686,11 @@ export default function KontrolaArena() {
       return;
     }
 
-    // Attack X1 is only functional if the player has Character Card Moves
-    const isAttackX1Play = cardName === 'ATTACK X1' || cardName.startsWith('ATTACK X1');
+    // Attack X1 and Attack X2 are only functional if the player has Character Card Moves
+    const isAttackMovesPlay = cardName === 'ATTACK X1' || cardName.startsWith('ATTACK X1') || cardName === 'ATTACK X2' || cardName.startsWith('ATTACK X2');
     const playerCharMoves = myCharacter?.characterCardMoves || [];
-    if (isAttackX1Play && playerCharMoves.length === 0) {
-      showNotice('⚠️ Attack X1 is only functional if you have Character Card Moves remaining! (0 moves left)', 'warning');
+    if (isAttackMovesPlay && playerCharMoves.length === 0) {
+      showNotice('⚠️ Attack X1 & Attack X2 are only functional if you have Character Card Moves remaining! (0 moves left. Scan physical QR code or purchase moves from store).', 'warning');
       return;
     }
 
@@ -7021,7 +7021,8 @@ export default function KontrolaArena() {
                       const isV40Blocked = selCardUpper.includes('V40') && (myCharacter?.level || 1) < 4;
                       const is3PlayerBlocked = ['BACK STAB', 'SOUL ALLIANCE', 'ABANDON', 'MISDIRECT'].some(kw => selCardUpper.includes(kw)) && ((gameState?.players?.length) || 2) <= 2;
                       const isReviveBlocked = selCardUpper.includes('REVIVE') && (myCharacter?.hp || 0) > 0;
-                      const isCtaCardLocked = isV20Blocked || isV30Blocked || isV40Blocked || is3PlayerBlocked || isReviveBlocked;
+                      const isAttackMovesBlocked = (selCardUpper.startsWith('ATTACK X1') || selCardUpper.startsWith('ATTACK X2') || selCardUpper === 'ATTACK X1' || selCardUpper === 'ATTACK X2') && (myCharacter?.characterCardMoves || []).length === 0;
+                      const isCtaCardLocked = isV20Blocked || isV30Blocked || isV40Blocked || is3PlayerBlocked || isReviveBlocked || isAttackMovesBlocked;
 
                       const selMoveUpper = (selectedCharacterAttack || '').toUpperCase();
                       const isPurchasedOrScanned = Boolean(myCharacter?.isUnlocked || myCharacter?.purchased || (myCharacter?.characterCardMoves?.length > 10));
@@ -7039,6 +7040,8 @@ export default function KontrolaArena() {
 
                       const buttonText = isReviveBlocked
                         ? '⚠️ REVIVE ONLY AT 0 HP'
+                        : isAttackMovesBlocked
+                        ? '⚠️ NO CHARACTER MOVES'
                         : isV20Blocked
                         ? '⚠️ REQUIRES LEVEL 2'
                         : isV30Blocked

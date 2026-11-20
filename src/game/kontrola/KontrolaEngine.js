@@ -302,11 +302,8 @@ export const executeReserveRecovery = (charState, requestedAmount = null) => {
  * Official Rules (Nov 2026 Update):
  * - Players are allowed to play characters as many times as they wish (no character match limits).
  * - Character Card Moves are restricted to 10 cards per match.
- * - Strict exclusion: System restricts giving out powerful cards:
- *   1. Blitz No Saigo (Saigo No Blitz)
- *   2. Kontrol
- *   3. Wild Cards (strictly 0 Wild Cards in free gifted moves)
- *   4. The character's most powerful move (highest AP and isSuper moves)
+ * - At the beginning of the game, players are given 10 free Character Card Moves.
+ * - Randomly given from standard moves, but will NOT give out special cards like No Saigo Blitz and Kontrol or too many Wild Cards (at most 1 Wild Card).
  * - After the 10 moves are used, players must have their own Character Cards purchased or scanned via QR Code.
  * @param {string} charKey - Character identifier (e.g., 'chynaman', 'bee', 'kiko', etc.)
  * @param {number} [totalCount=10] - Number of moves to gift (default: 10)
@@ -318,7 +315,7 @@ export const generateGiftedCharacterMoves = (charKey, totalCount = 10) => {
   const attacksObj = template?.attacks || {};
 
   const candidateMoves = [];
-  let maxAp = -1;
+  let wildMove = null;
 
   Object.entries(attacksObj).forEach(([atkName, atkData]) => {
     const upper = atkName.toUpperCase();
@@ -327,14 +324,19 @@ export const generateGiftedCharacterMoves = (charKey, totalCount = 10) => {
     const isWild = upper.includes('WILD') || Boolean(atkData.isWild);
     const isSuper = Boolean(atkData.isSuper);
 
-    // Completely restrict Blitz No Saigo, Kontrol, and Wild Cards
-    if (isBlitz || isKontrol || isWild) {
+    // Completely restrict special cards like No Saigo Blitz and Kontrol
+    if (isBlitz || isKontrol) {
       return;
     }
 
-    const ap = Number(atkData.ap) || 0;
-    if (ap > maxAp) {
-      maxAp = ap;
+    if (isWild) {
+      wildMove = {
+        name: atkName,
+        ...atkData,
+        isWild: true,
+        costET: 1
+      };
+      return;
     }
 
     candidateMoves.push({
@@ -345,23 +347,26 @@ export const generateGiftedCharacterMoves = (charKey, totalCount = 10) => {
     });
   });
 
-  // Restrict the character's most powerful move (isSuper or highest AP)
-  const standardMoves = candidateMoves.filter(move => {
-    if (move.isSuper) return false;
-    if (maxAp > 0 && (Number(move.ap) || 0) === maxAp) return false;
-    return true;
-  });
-
-  // Use standardMoves if available, or fall back to candidateMoves if all attacks share same AP
-  const pool = standardMoves.length > 0 ? standardMoves : candidateMoves;
+  const pool = candidateMoves.length > 0 ? candidateMoves : [{ name: 'Basic Strike', ap: 10, dice: 1, element: 'Physical', desc: 'Standard attack' }];
 
   const gifted = [];
+  // Restrict Wild Cards: system will not give out too many Wild Cards (at most 1 Wild Card out of the 10 free gifted moves)
+  const includeWildCard = wildMove && Math.random() < 0.35; // 35% chance of rolling at most 1 Wild Card
+  const wildCardIndex = includeWildCard ? Math.floor(Math.random() * totalCount) : -1;
+
   for (let i = 0; i < totalCount; i++) {
-    const picked = pool[Math.floor(Math.random() * pool.length)];
-    gifted.push({
-      ...picked,
-      id: `ccm_${Math.random().toString(36).substring(2, 9)}_${i}`
-    });
+    if (i === wildCardIndex && wildMove) {
+      gifted.push({
+        ...wildMove,
+        id: `ccm_${Math.random().toString(36).substring(2, 9)}_${i}`
+      });
+    } else {
+      const picked = pool[Math.floor(Math.random() * pool.length)];
+      gifted.push({
+        ...picked,
+        id: `ccm_${Math.random().toString(36).substring(2, 9)}_${i}`
+      });
+    }
   }
 
   return gifted;
@@ -415,7 +420,7 @@ export const generatePurchasedCharacterMoves = (charKey, totalCount = 15) => {
 
 // 100-Card Basic Blueprint from Action Cards % - Sheet1.csv
 export const ACTION_CARDS_BASIC = [
-  { name: 'ATTACK X1', type: 'ATTACK', count: 21, costET: 1, desc: 'Standard combat attack with paired Character Card Move. Allows only 1 turn regardless of success.' },
+  { name: 'ATTACK X1', type: 'ATTACK', count: 21, costET: 1, desc: 'Standard combat attack. An Attack X1 is only functional if the player has Character Card Moves. Strictly allows only 1 turn regardless of whether the attack is successful or not.' },
   { name: 'POISON X1', type: 'STATUS', count: 17, costET: 0, desc: 'Initial damage: -10 HP from Poison X1 (-20 HP against characters with Poison weakness: CHYNAMAN, Kiko, Poochi, Kat, Bee with -10 HP one-time weakness penalty). Ongoing damage: -10 HP per turn until treated with an Antidote Card. Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card.' },
   { name: 'DEFENCE - BASIC', type: 'DEFENSE', count: 7, costET: 0, desc: 'Reduces incoming damage by 25%.' },
   { name: 'ANTIDOTE X1', type: 'HEAL', count: 7, costET: 0, desc: 'Removes 1 Poison card.' },
@@ -428,7 +433,7 @@ export const ACTION_CARDS_BASIC = [
   { name: 'HEAL H30', type: 'HEAL', count: 6, costET: 0, desc: 'Restores +30 HP.' },
   { name: 'HEAL H40', type: 'HEAL', count: 6, costET: 0, desc: 'Restores +40 HP.' },
   { name: 'ANTIDOTE X2', type: 'HEAL', count: 6, costET: 0, desc: 'Removes 2 Poison cards.' },
-  { name: 'ATTACK X2', type: 'ATTACK', count: 6, costET: 2, desc: 'Double character attack. Allows only 2 turns regardless of success. Forfeited if Retreat is used.' },
+  { name: 'ATTACK X2', type: 'ATTACK', count: 6, costET: 2, desc: 'Double character attack. Attack X2 only allows the player to have two turns regardless if the attack is successful or not. However, if the player uses their Retreat Card, they will not receive two attacks. The whole Attack X2 is forfeited and the turn goes to the next player.' },
   { name: 'BOOMERANG FULL', type: 'DEFENSE', count: 6, costET: 0, desc: 'Defender reactive card: On successful defense or 6+ roll, reflects 100% attack damage back to attacker.' },
   { name: 'HEAL H20', type: 'HEAL', count: 6, costET: 0, desc: 'Restores +20 HP.' },
   { name: 'LIGHTNING X2', type: 'ATTACK', count: 6, costET: 2, desc: 'On successful attack, defendant receives -20 HP and attacker receives 2 extra turns. Cleanses 1 Poison from Zombie. If not successful, nothing happens.' },

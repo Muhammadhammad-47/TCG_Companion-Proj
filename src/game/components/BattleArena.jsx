@@ -761,9 +761,20 @@ export default function BattleArena({
 
         let extraTurns = p.extraTurns || 0;
         const isAttackX1 = (actionCard?.name || '').toUpperCase().includes('ATTACK X1') || actionCard?.id === 'atk_x1';
+        const isAttackX2 = (actionCard?.name || '').toUpperCase().includes('ATTACK X2') || actionCard?.id === 'atk_x2';
         if (isAttackX1) {
           // Attack X1 strictly allows ONLY one turn regardless of whether the attack is successful or not
           extraTurns = 0;
+        } else if (isAttackX2) {
+          // Attack X2 only allows the player to have two turns regardless if the attack is successful or not.
+          // However, if the player uses their Retreat Card, they will not receive two attacks. The whole Attack X2 is forfeited and the turn goes to the next player.
+          if (p.retreatedThisTurn) {
+            extraTurns = 0;
+          } else if (p.extraTurns > 0) {
+            extraTurns = 0; // Already on second attack turn, ends after 2 turns
+          } else {
+            extraTurns = 1; // Exactly two turns allowed regardless if successful or not
+          }
         } else if (result.extraTurnsGranted > 0) {
           extraTurns += result.extraTurnsGranted;
         }

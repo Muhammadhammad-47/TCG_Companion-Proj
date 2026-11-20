@@ -10,7 +10,7 @@ export const ACTION_CARDS = [
     costET: 1,
     icon: '⚔️',
     color: '#ff3b6b',
-    desc: 'Standard combat attack. Pair with a Character Card Move (Requires Character Moves; allows only 1 turn regardless of success).'
+    desc: 'Standard combat attack. An Attack X1 is only functional if the player has Character Card Moves. Strictly allows the player to have only one turn regardless if the attack is successful or not. (Costs 1 ET)'
   },
   {
     id: 'atk_x2',
@@ -19,7 +19,7 @@ export const ACTION_CARDS = [
     costET: 2,
     icon: '💥',
     color: '#ff9d2d',
-    desc: 'Double character attack unleash (Costs 2 ET).'
+    desc: 'Attack X2 only allows the player to have two turns regardless if the attack is successful or not. An Attack X1/X2 is only functional if the player has Character Card Moves. However, if the player uses their Retreat Card, they will not receive two attacks. The whole Attack X2 is forfeited and the turn goes to the next player. (Costs 2 ET)'
   },
   {
     id: 'poison_x1',

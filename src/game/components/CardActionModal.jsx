@@ -856,10 +856,10 @@ export default function CardActionModal({
 
                   {(() => {
                     const isReviveBlocked = (currentAction?.name || '').toUpperCase().includes('REVIVE') && (activePlayer?.hp || 0) > 0 && !activePlayer?.isDefeated;
-                    const isAttackX1Action = (currentAction?.name || '').toUpperCase().includes('ATTACK X1') || currentAction?.id === 'atk_x1';
+                    const isAttackAction = (currentAction?.name || '').toUpperCase().includes('ATTACK X1') || (currentAction?.name || '').toUpperCase().includes('ATTACK X2') || currentAction?.id === 'atk_x1' || currentAction?.id === 'atk_x2';
                     const hasCharMoves = (activePlayer.characterCardMoves || []).length > 0;
-                    const isAttackX1Blocked = isAttackX1Action && !hasCharMoves;
-                    const isActionBlocked = isReviveBlocked || isAttackX1Blocked;
+                    const isAttackActionBlocked = isAttackAction && !hasCharMoves;
+                    const isActionBlocked = isReviveBlocked || isAttackActionBlocked;
 
                     return (
                       <button
@@ -884,7 +884,7 @@ export default function CardActionModal({
                       >
                         {isReviveBlocked ? (
                           <span>🔒 REVIVE ONLY AT 0 HP</span>
-                        ) : isAttackX1Blocked ? (
+                        ) : isAttackActionBlocked ? (
                           <span>🔒 NO CHARACTER MOVES</span>
                         ) : (
                           <>
