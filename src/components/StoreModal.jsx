@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X, ShoppingCart, Sparkles, Trophy, Gift, Check, Shield, Flame,
-  Zap, Crown, Coins, Tag, ArrowRight, CheckCircle2, AlertCircle
+  Zap, Crown, Coins, Tag, ArrowRight, ArrowLeft, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle
 } from 'lucide-react';
 import { authService } from '../services/authService';
 import { economyService } from '../services/economyService';
@@ -22,6 +22,36 @@ import PlayerAvatar from './PlayerAvatar';
 
 export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete, initialTab = 'featured' }) => {
   const [activeTab, setActiveTab] = useState(initialTab); // 'featured' | 'characters' | 'season_pass' | 'gems' | 'gold_items' | 'gem_items' | 'daily' | 'promo'
+
+  const tabsContainerRef = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const checkTabsScroll = () => {
+    if (tabsContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = tabsContainerRef.current;
+      setCanScrollLeft(scrollLeft > 4);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 4);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(checkTabsScroll, 120);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, activeTab]);
+
+  const handleScrollTabs = (direction) => {
+    if (tabsContainerRef.current) {
+      const scrollAmount = 260;
+      tabsContainerRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+      setTimeout(checkTabsScroll, 320);
+    }
+  };
 
   useEffect(() => {
     if (isOpen && initialTab) {
@@ -421,17 +451,85 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete, i
               <ShoppingCart size={28} color="var(--neon-gold, #FBC80D)" />
             </div>
             <div>
-              <h2 style={{
-                color: 'var(--neon-gold, #FBC80D)',
-                margin: 0,
-                fontSize: '2rem',
-                fontFamily: 'Bebas Neue, sans-serif',
-                letterSpacing: '2px',
-                lineHeight: 1
-              }}>
-                ATTENTION TCG STORE & VAULT
-              </h2>
-              <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                {/* Scroll Left Arrow on Title */}
+                <button
+                  type="button"
+                  onClick={() => handleScrollTabs('left')}
+                  style={{
+                    background: 'rgba(251, 200, 13, 0.08)',
+                    border: '1px solid rgba(251, 200, 13, 0.25)',
+                    borderRadius: '8px',
+                    padding: '4px 6px',
+                    color: 'var(--neon-gold, #FBC80D)',
+                    opacity: canScrollLeft ? 0.45 : 0.2,
+                    cursor: canScrollLeft ? 'pointer' : 'default',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s ease',
+                    outline: 'none'
+                  }}
+                  onMouseEnter={e => {
+                    if (canScrollLeft) {
+                      e.currentTarget.style.opacity = '1';
+                      e.currentTarget.style.background = 'rgba(251, 200, 13, 0.2)';
+                    }
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.opacity = canScrollLeft ? '0.45' : '0.2';
+                    e.currentTarget.style.background = 'rgba(251, 200, 13, 0.08)';
+                  }}
+                  title="Scroll store tabs left"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+
+                <h2 style={{
+                  color: 'var(--neon-gold, #FBC80D)',
+                  margin: 0,
+                  fontSize: '2rem',
+                  fontFamily: 'Bebas Neue, sans-serif',
+                  letterSpacing: '2px',
+                  lineHeight: 1
+                }}>
+                  ATTENTION TCG STORE & VAULT
+                </h2>
+
+                {/* Scroll Right Arrow on Title */}
+                <button
+                  type="button"
+                  onClick={() => handleScrollTabs('right')}
+                  style={{
+                    background: 'rgba(251, 200, 13, 0.08)',
+                    border: '1px solid rgba(251, 200, 13, 0.25)',
+                    borderRadius: '8px',
+                    padding: '4px 6px',
+                    color: 'var(--neon-gold, #FBC80D)',
+                    opacity: canScrollRight ? 0.45 : 0.2,
+                    cursor: canScrollRight ? 'pointer' : 'default',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s ease',
+                    outline: 'none'
+                  }}
+                  onMouseEnter={e => {
+                    if (canScrollRight) {
+                      e.currentTarget.style.opacity = '1';
+                      e.currentTarget.style.background = 'rgba(251, 200, 13, 0.2)';
+                    }
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.opacity = canScrollRight ? '0.45' : '0.2';
+                    e.currentTarget.style.background = 'rgba(251, 200, 13, 0.08)';
+                  }}
+                  title="Scroll store tabs right"
+                >
+                  <ChevronRight size={20} />
+                </button>
+              </div>
+              <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', marginTop: '2px' }}>
                 Equip cosmetics, purchase gems, and claim daily rewards
               </div>
             </div>
@@ -530,39 +628,113 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete, i
           </div>
         )}
 
-        {/* NAVIGATION TABS */}
-        <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px', marginBottom: '16px', overflowX: 'auto' }}>
-          {[
-            { id: 'featured', label: '⭐ FEATURED & BUNDLES' },
-            { id: 'characters', label: '🛡️ PLAYABLE WARRIORS' },
-            { id: 'season_pass', label: '⚡ SEASON PASS' },
-            { id: 'gems', label: '💎 BUY GEMS (IAP)' },
-            { id: 'gold_items', label: '🪙 GOLD ITEMS' },
-            { id: 'gem_items', label: '🔮 GEM COSMETICS' },
-            { id: 'daily', label: '🎁 DAILY REWARDS & QUESTS' },
-            { id: 'promo', label: '🏷️ PROMO & DIAMONDS' }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                background: activeTab === tab.id ? 'linear-gradient(135deg, rgba(251,200,13,0.2) 0%, rgba(255,100,0,0.1) 100%)' : 'rgba(255,255,255,0.04)',
-                border: activeTab === tab.id ? '1.5px solid var(--neon-gold, #FBC80D)' : '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '10px',
-                padding: '8px 16px',
-                color: activeTab === tab.id ? 'var(--neon-gold, #FBC80D)' : 'rgba(255,255,255,0.7)',
-                fontWeight: 'bold',
-                fontFamily: 'Bebas Neue, sans-serif',
-                fontSize: '1.05rem',
-                cursor: 'pointer',
-                letterSpacing: '1px',
-                whiteSpace: 'nowrap',
-                transition: 'all 0.15s'
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
+        {/* NAVIGATION TABS WITH HORIZONTAL SCROLL & EDGE ARROWS */}
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
+          {/* Edge Left Arrow on Tabs */}
+          <button
+            type="button"
+            onClick={() => handleScrollTabs('left')}
+            style={{
+              position: 'absolute',
+              left: 0,
+              zIndex: 3,
+              background: 'linear-gradient(90deg, rgba(10, 14, 26, 0.95) 0%, rgba(10, 14, 26, 0.7) 70%, transparent 100%)',
+              border: 'none',
+              borderRadius: '8px 0 0 8px',
+              color: 'var(--neon-gold, #FBC80D)',
+              opacity: canScrollLeft ? 0.45 : 0,
+              pointerEvents: canScrollLeft ? 'auto' : 'none',
+              height: 'calc(100% - 10px)',
+              padding: '0 8px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              transition: 'opacity 0.2s ease',
+              outline: 'none'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.opacity = '1'; }}
+            onMouseLeave={e => { e.currentTarget.style.opacity = '0.45'; }}
+            title="Scroll store tabs left"
+          >
+            <ChevronLeft size={22} />
+          </button>
+
+          <div
+            ref={tabsContainerRef}
+            onScroll={checkTabsScroll}
+            style={{
+              display: 'flex',
+              gap: '8px',
+              borderBottom: '1px solid rgba(255,255,255,0.1)',
+              paddingBottom: '10px',
+              overflowX: 'auto',
+              width: '100%',
+              scrollBehavior: 'smooth',
+              scrollbarWidth: 'thin'
+            }}
+          >
+            {[
+              { id: 'featured', label: '⭐ FEATURED & BUNDLES' },
+              { id: 'characters', label: '🛡️ PLAYABLE WARRIORS' },
+              { id: 'season_pass', label: '⚡ SEASON PASS' },
+              { id: 'gems', label: '💎 BUY GEMS (IAP)' },
+              { id: 'gold_items', label: '🪙 GOLD ITEMS' },
+              { id: 'gem_items', label: '🔮 GEM COSMETICS' },
+              { id: 'daily', label: '🎁 DAILY REWARDS & QUESTS' },
+              { id: 'promo', label: '🏷️ PROMO & DIAMONDS' }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                style={{
+                  background: activeTab === tab.id ? 'linear-gradient(135deg, rgba(251,200,13,0.2) 0%, rgba(255,100,0,0.1) 100%)' : 'rgba(255,255,255,0.04)',
+                  border: activeTab === tab.id ? '1.5px solid var(--neon-gold, #FBC80D)' : '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '10px',
+                  padding: '8px 16px',
+                  color: activeTab === tab.id ? 'var(--neon-gold, #FBC80D)' : 'rgba(255,255,255,0.7)',
+                  fontWeight: 'bold',
+                  fontFamily: 'Bebas Neue, sans-serif',
+                  fontSize: '1.05rem',
+                  cursor: 'pointer',
+                  letterSpacing: '1px',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.15s',
+                  flexShrink: 0
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Edge Right Arrow on Tabs */}
+          <button
+            type="button"
+            onClick={() => handleScrollTabs('right')}
+            style={{
+              position: 'absolute',
+              right: 0,
+              zIndex: 3,
+              background: 'linear-gradient(270deg, rgba(10, 14, 26, 0.95) 0%, rgba(10, 14, 26, 0.7) 70%, transparent 100%)',
+              border: 'none',
+              borderRadius: '0 8px 8px 0',
+              color: 'var(--neon-gold, #FBC80D)',
+              opacity: canScrollRight ? 0.45 : 0,
+              pointerEvents: canScrollRight ? 'auto' : 'none',
+              height: 'calc(100% - 10px)',
+              padding: '0 8px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              transition: 'opacity 0.2s ease',
+              outline: 'none'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.opacity = '1'; }}
+            onMouseLeave={e => { e.currentTarget.style.opacity = '0.45'; }}
+            title="Scroll store tabs right"
+          >
+            <ChevronRight size={22} />
+          </button>
         </div>
 
         {/* TAB 1: FEATURED OFFERS & BUNDLES */}
@@ -687,7 +859,7 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete, i
                       PLAYABLE DUEL WARRIORS
                     </h3>
                     <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)' }}>
-                      Fighters chosen for match duels with specific HP, elements, and moves. 10 free trial matches per warrior.
+                      Play characters unlimited times with 10 free gifted moves per match. Once depleted, purchase Digital Cards or Physical Cards (physical card + digital unlock via QR code).
                     </div>
                   </div>
                 </div>
@@ -805,21 +977,34 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete, i
                       justifyContent: 'space-between',
                       fontSize: '0.8rem'
                     }}>
-                      <span style={{ color: 'rgba(255,255,255,0.6)' }}>Access Status:</span>
+                      <span style={{ color: 'rgba(255,255,255,0.6)' }}>Deck Status:</span>
                       {lic.isUnlocked ? (
                         <span style={{ color: '#10b981', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          👑 UNLIMITED LIFETIME ACCESS
-                        </span>
-                      ) : isExhausted ? (
-                        <span style={{ color: '#ef4444', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          🔒 10/10 FREE MATCHES USED
+                          👑 FULL CHARACTER DECK UNLOCKED
                         </span>
                       ) : (
                         <span style={{ color: '#00f0ff', fontWeight: 'bold' }}>
-                          ⚡ {left} of 10 Free Matches Remaining
+                          🎴 10 Free Moves / Match (Unlimited Play)
                         </span>
                       )}
                     </div>
+
+                    {/* Purchase Edition Notice */}
+                    {!lic.isUnlocked && (
+                      <div style={{
+                        padding: '6px 10px',
+                        borderRadius: '6px',
+                        background: 'rgba(0, 240, 255, 0.06)',
+                        border: '1px solid rgba(0, 240, 255, 0.2)',
+                        fontSize: '0.72rem',
+                        color: 'rgba(255,255,255,0.8)',
+                        lineHeight: '1.3'
+                      }}>
+                        <strong style={{ color: '#00f0ff' }}>Digital Edition:</strong> Instant unlock of full character deck.
+                        <br />
+                        <strong style={{ color: '#FBC80D' }}>Physical Edition:</strong> Ships physical card & unlocks digital card via QR Code.
+                      </div>
+                    )}
 
                     {/* Action Buttons */}
                     <div style={{ marginTop: 'auto', display: 'flex', gap: '8px' }}>
@@ -857,13 +1042,14 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete, i
                               borderRadius: '8px',
                               padding: '10px',
                               fontFamily: 'Bebas Neue, sans-serif',
-                              fontSize: '1.05rem',
+                              fontSize: '0.95rem',
                               fontWeight: 'bold',
                               letterSpacing: '1px',
                               cursor: wallet.gold >= prices.gold ? 'pointer' : 'not-allowed'
                             }}
+                            title="Instant Digital Edition Purchase"
                           >
-                            🪙 {prices.gold.toLocaleString()} GOLD
+                            🪙 {prices.gold.toLocaleString()} GOLD (DIGITAL)
                           </button>
 
                           <button
@@ -879,13 +1065,14 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete, i
                               borderRadius: '8px',
                               padding: '10px',
                               fontFamily: 'Bebas Neue, sans-serif',
-                              fontSize: '1.05rem',
+                              fontSize: '0.95rem',
                               fontWeight: 'bold',
                               letterSpacing: '1px',
                               cursor: wallet.gems >= prices.gems ? 'pointer' : 'not-allowed'
                             }}
+                            title="Instant Digital Edition Purchase"
                           >
-                            💎 {prices.gems.toLocaleString()} GEMS
+                            💎 {prices.gems.toLocaleString()} GEMS (DIGITAL)
                           </button>
                         </>
                       )}

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ACTION_CARDS } from '../data/cards';
 import { CHARACTERS, ZOMBIE_PROFILE, getAssetUrl } from '../data/characters';
 import { soundFX } from '../utils/audio';
-import { ArrowLeft, Zap, Shield, Sparkles, Flame, Brain, Skull, Heart, Swords, Target, Play, X, Trash2 } from 'lucide-react';
+import { ArrowLeft, Zap, Shield, Sparkles, Flame, Brain, Skull, Heart, Swords, Target, Play, X, Trash2, QrCode } from 'lucide-react';
 import CardVFXWrapper from '../kontrola/vfx/CardVFXWrapper';
 
 export default function CardActionModal({
@@ -13,6 +13,7 @@ export default function CardActionModal({
   onApplyInstantEffect,
   onOpenKontrol,
   onOpenBlitz,
+  onRequestScanQR,
   onOpenRetreat,
   onShowLevelRequirement,
   onDiscardCard,
@@ -22,6 +23,7 @@ export default function CardActionModal({
     activePlayer.actionCardsHand?.[0]?.instanceId || null
   );
   const [selectedMoveId, setSelectedMoveId] = useState(null);
+  const [selectedWildOption, setSelectedWildOption] = useState(null);
   const [targetPlayerId, setTargetPlayerId] = useState(
     allPlayers.find(p => p.id !== activePlayer.id)?.id || ''
   );
@@ -126,11 +128,16 @@ export default function CardActionModal({
         setErrorMsg('Please pick a target opponent.');
         return;
       }
+
+      const resolvedMove = currentMove?.isWild
+        ? (allCharMoves.find(m => m.name === (selectedWildOption || currentMove.wildOptions?.[0])) || currentMove)
+        : currentMove;
+
       setPlacementData({
         attacker: activePlayer,
         defender: targetPlayer,
         actionCard: currentAction,
-        characterMove: currentMove,
+        characterMove: resolvedMove,
         amplifyBonus: amplifyChoice === 'ap' ? 20 : 0,
         playerCount: allPlayers.length,
         isBackStab: currentAction.id === 'backstab'
@@ -161,12 +168,14 @@ export default function CardActionModal({
     }
 
     // Handle Antidote
-    if (currentAction.id === 'antidote_card') {
+    if (currentAction.id === 'antidote_card' || currentAction.id?.includes('antidote') || currentAction.name?.includes('ANTIDOTE')) {
       onApplyInstantEffect({
         type: 'antidote',
         sourcePlayerId: activePlayer.id,
         targetPlayerId: targetPlayer.id,
         costET: currentAction.costET,
+        cardName: currentAction.name,
+        actionCardId: currentAction.id,
         playedInstanceId: currentAction.instanceId
       });
       return;
@@ -225,8 +234,13 @@ export default function CardActionModal({
       return;
     }
 
-    // Handle KONTROL Card
-    if (currentAction.id === 'kontrol_card') {
+    // Handle KONTROL Card (Only available through digital purchase or QR Code system)
+    if (currentAction.id === 'kontrol_card' || (currentAction.name || '').toUpperCase().includes('KONTROL')) {
+      const isPurchasedOrScanned = Boolean(activePlayer.isUnlocked || activePlayer.purchased || (activePlayer.characterCardMoves?.length > 10));
+      if (!isPurchasedOrScanned) {
+        setErrorMsg('🔒 No Saigo Blitz and Kontrol is only available through digital purchase or through QR Code system!');
+        return;
+      }
       if (activePlayer.energyTokens < totalETCost) {
         setErrorMsg(`Need ${totalETCost} ET you have ${activePlayer.energyTokens} ET.`);
         return;
@@ -615,48 +629,148 @@ export default function CardActionModal({
                 {/* Character Move Selection (For Attacks) */}
                 {(currentAction?.category === 'Attack' || isZombie) && currentAction?.type !== 'VITALITY' && (
                   <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px' }}>
-                    <div style={{ fontSize: '0.82rem', color: 'var(--neon-pink)', fontWeight: 'bold', marginBottom: '8px' }}>
-                      2. PAIR PLAYER TECHNIQUE
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <div style={{ fontSize: '0.82rem', color: 'var(--neon-pink)', fontWeight: 'bold' }}>
+                        2. PAIR PLAYER TECHNIQUE
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: '#FBC80D', fontWeight: 'bold' }}>
+                        🎴 {(activePlayer.characterCardMoves || []).length} Moves Remaining
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto' }}>
-                      {availableMoves.map(move => {
-                        const isMoveSelected = (selectedMoveId || availableMoves[0]?.id) === move.id;
-                        const isMult = move.type === 'dice_mult';
 
-                        return (
-                          <div
-                            key={move.id}
-                            onClick={() => {
-                              soundFX.playCard();
-                              setSelectedMoveId(move.id);
-                            }}
-                            style={{
-                              background: isMoveSelected ? 'rgba(237, 30, 36, 0.18)' : 'rgba(255, 255, 255, 0.03)',
-                              border: isMoveSelected ? '1.5px solid #ED1E24' : '1px solid rgba(255, 255, 255, 0.08)',
-                              borderRadius: '8px',
-                              padding: '10px 12px',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center'
-                            }}
-                          >
-                            <div>
-                              <strong style={{ fontSize: '0.9rem', color: '#fff' }}>{move.name}</strong>
-                              <div style={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.7)', marginTop: '2px' }}>
-                                {move.desc || `${move.baseAP || 25} AP technique`}
+                    {((currentAction?.name || '').toUpperCase().includes('ATTACK X1') || (currentAction?.name || '').toUpperCase().includes('ATTACK X2') || currentAction?.id === 'atk_x1' || currentAction?.id === 'atk_x2') && (activePlayer.characterCardMoves || []).length === 0 ? (
+                      <div style={{ padding: '12px', background: 'rgba(255, 68, 68, 0.15)', border: '1px solid #FF4444', borderRadius: '8px', color: '#ff6b81', fontSize: '0.8rem', textAlign: 'center' }}>
+                        <div style={{ marginBottom: '6px', fontWeight: 'bold' }}>
+                          ⚠️ All 10 Character Move Cards used!
+                        </div>
+                        <div style={{ fontSize: '0.74rem', color: '#cbd5e1', marginBottom: '8px', lineHeight: '1.4' }}>
+                          Attack X1 and Attack X2 require Character Move Cards. Players must purchase more through the website or the TCG Card game.
+                          You have the option to purchase only digital or physical cards (Physical cards allow the player to receive a physical card and the digital card through our QR Code system).
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                          {onRequestScanQR && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                onClose();
+                                onRequestScanQR();
+                              }}
+                              style={{
+                                background: 'linear-gradient(90deg, #FBC80D, #ff9900)',
+                                border: 'none',
+                                borderRadius: '6px',
+                                padding: '6px 12px',
+                                color: '#000',
+                                fontWeight: 'bold',
+                                fontSize: '0.75rem',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                              }}
+                            >
+                              <QrCode size={14} /> SCAN PHYSICAL CARD (QR CODE)
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto' }}>
+                        {availableMoves.map(move => {
+                          const isMoveSelected = (selectedMoveId || availableMoves[0]?.id) === move.id;
+                          const isMult = move.type === 'dice_mult';
+
+                          return (
+                            <div
+                              key={move.id}
+                              onClick={() => {
+                                soundFX.playCard();
+                                setSelectedMoveId(move.id);
+                                if (move.isWild && !selectedWildOption && move.wildOptions?.length) {
+                                  setSelectedWildOption(move.wildOptions[0]);
+                                }
+                              }}
+                              style={{
+                                background: isMoveSelected ? 'rgba(237, 30, 36, 0.18)' : 'rgba(255, 255, 255, 0.03)',
+                                border: isMoveSelected ? '1.5px solid #ED1E24' : '1px solid rgba(255, 255, 255, 0.08)',
+                                borderRadius: '8px',
+                                padding: '10px 12px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '6px'
+                              }}
+                            >
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <strong style={{ fontSize: '0.9rem', color: '#fff' }}>{move.name}</strong>
+                                    {move.rarity && (
+                                      <span style={{
+                                        fontSize: '0.65rem',
+                                        padding: '1px 6px',
+                                        borderRadius: '4px',
+                                        fontWeight: 'bold',
+                                        background: move.rarity === 'Super Rare' ? 'rgba(251, 200, 13, 0.2)' : move.rarity === 'Rare' ? 'rgba(168, 85, 247, 0.2)' : move.rarity === 'Semi Common' ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.1)',
+                                        color: move.rarity === 'Super Rare' ? '#FBC80D' : move.rarity === 'Rare' ? '#c084fc' : move.rarity === 'Semi Common' ? '#38bdf8' : '#cbd5e1',
+                                        border: `1px solid ${move.rarity === 'Super Rare' ? 'rgba(251, 200, 13, 0.4)' : 'rgba(255,255,255,0.15)'}`
+                                      }}>
+                                        {move.rarity}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div style={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.7)', marginTop: '2px' }}>
+                                    {move.desc || `${move.baseAP || 25} AP technique`}
+                                  </div>
+                                </div>
+                                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                  <span style={{ fontSize: '0.82rem', color: '#ED1E24', fontWeight: 'bold' }}>
+                                    {isMult ? `🎲 × ${move.multiplier} AP` : move.isWild ? 'WILD' : `${move.baseAP} AP`}
+                                  </span>
+                                  <div style={{ fontSize: '0.7rem', color: '#FBC80D' }}>Cost: {move.costET || 0} ET</div>
+                                </div>
                               </div>
+
+                              {/* Wild Card: Allows players to choose only one Character Move from the list */}
+                              {move.isWild && isMoveSelected && (
+                                <div style={{ marginTop: '4px', padding: '8px', background: 'rgba(251, 200, 13, 0.08)', borderRadius: '6px', border: '1px solid rgba(251, 200, 13, 0.3)' }} onClick={e => e.stopPropagation()}>
+                                  <div style={{ fontSize: '0.7rem', color: '#FBC80D', fontWeight: 'bold', marginBottom: '6px' }}>
+                                    🃏 WILD CARD — CHOOSE 1 TECHNIQUE:
+                                  </div>
+                                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                    {(move.wildOptions || []).map(optName => {
+                                      const isOptSelected = (selectedWildOption || move.wildOptions[0]) === optName;
+                                      return (
+                                        <button
+                                          key={optName}
+                                          type="button"
+                                          onClick={() => {
+                                            soundFX.playCard();
+                                            setSelectedWildOption(optName);
+                                          }}
+                                          style={{
+                                            padding: '4px 8px',
+                                            borderRadius: '6px',
+                                            fontSize: '0.72rem',
+                                            fontWeight: 'bold',
+                                            border: isOptSelected ? '1.5px solid #FBC80D' : '1px solid rgba(255,255,255,0.2)',
+                                            background: isOptSelected ? 'rgba(251, 200, 13, 0.25)' : 'rgba(0,0,0,0.5)',
+                                            color: isOptSelected ? '#FBC80D' : '#fff',
+                                            cursor: 'pointer'
+                                          }}
+                                        >
+                                          {isOptSelected ? '✓ ' : ''}{optName}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                            <div style={{ textAlign: 'right' }}>
-                              <span style={{ fontSize: '0.82rem', color: '#ED1E24', fontWeight: 'bold' }}>
-                                {isMult ? `🎲 × ${move.multiplier} AP` : `${move.baseAP} AP`}
-                              </span>
-                              <div style={{ fontSize: '0.7rem', color: '#FBC80D' }}>Cost: {move.costET || 0} ET</div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -699,6 +813,9 @@ export default function CardActionModal({
                             <div>
                               <strong style={{ fontSize: '0.82rem', color: '#fff', display: 'block' }}>{target.name}</strong>
                               <span style={{ fontSize: '0.72rem', color: 'var(--neon-gold)' }}>{target.hp} HP</span>
+                              {isPoisonAction && ['chynaman', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => (target.characterId || target.name || '').toLowerCase().includes(k)) && (
+                                <span style={{ display: 'block', fontSize: '0.68rem', color: '#ff4444', fontWeight: 'bold' }}>☠️ -10 HP Weakness</span>
+                              )}
                             </div>
                           </div>
                         );
@@ -739,29 +856,36 @@ export default function CardActionModal({
 
                   {(() => {
                     const isReviveBlocked = (currentAction?.name || '').toUpperCase().includes('REVIVE') && (activePlayer?.hp || 0) > 0 && !activePlayer?.isDefeated;
+                    const isAttackX1Action = (currentAction?.name || '').toUpperCase().includes('ATTACK X1') || currentAction?.id === 'atk_x1';
+                    const hasCharMoves = (activePlayer.characterCardMoves || []).length > 0;
+                    const isAttackX1Blocked = isAttackX1Action && !hasCharMoves;
+                    const isActionBlocked = isReviveBlocked || isAttackX1Blocked;
+
                     return (
                       <button
                         onClick={handleConfirmAction}
-                        disabled={isReviveBlocked}
+                        disabled={isActionBlocked}
                         style={{
-                          background: isReviveBlocked
+                          background: isActionBlocked
                             ? 'rgba(255, 255, 255, 0.1)'
                             : 'linear-gradient(90deg, #FBC80D 0%, #FFD700 100%)',
-                          color: isReviveBlocked ? '#ff7777' : '#000',
-                          border: isReviveBlocked ? '2px solid rgba(255, 119, 119, 0.5)' : '2px solid #FBC80D',
+                          color: isActionBlocked ? '#ff7777' : '#000',
+                          border: isActionBlocked ? '2px solid rgba(255, 119, 119, 0.5)' : '2px solid #FBC80D',
                           borderRadius: '8px',
                           padding: '12px 24px',
                           fontWeight: 'bold',
                           fontSize: '0.95rem',
-                          cursor: isReviveBlocked ? 'not-allowed' : 'pointer',
+                          cursor: isActionBlocked ? 'not-allowed' : 'pointer',
                           display: 'flex',
                           alignItems: 'center',
                           gap: '8px',
-                          boxShadow: isReviveBlocked ? 'none' : '0 0 20px rgba(251, 200, 13, 0.6)'
+                          boxShadow: isActionBlocked ? 'none' : '0 0 20px rgba(251, 200, 13, 0.6)'
                         }}
                       >
                         {isReviveBlocked ? (
                           <span>🔒 REVIVE ONLY AT 0 HP</span>
+                        ) : isAttackX1Blocked ? (
+                          <span>🔒 NO CHARACTER MOVES</span>
                         ) : (
                           <>
                             <Play size={16} fill="#000" />

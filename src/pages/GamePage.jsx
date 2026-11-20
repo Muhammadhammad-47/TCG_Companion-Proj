@@ -133,24 +133,7 @@ export default function GamePage() {
   };
 
   const handleStartGame = ({ players, direction, turnTimerDuration = 60 }) => {
-    // 1. Check if user has at least one playable character available
-    if (!characterLicenseService.hasAnyPlayableCharacterSync(currentUser?.id)) {
-      soundFX.playMenuHover();
-      setLockedCharacterForModal(players[0]?.characterId || 'chynaman');
-      return;
-    }
-
-    // 2. Validate character quota before match begins
-    for (const p of players) {
-      const lic = characterLicenseService.getLicenseSync(currentUser?.id, p.characterId);
-      if (!lic.isUnlocked && lic.usageCount >= FREE_USAGE_LIMIT) {
-        soundFX.playMenuHover();
-        setLockedCharacterForModal(p.characterId);
-        return;
-      }
-    }
-
-    // 3. Record match usage for each participating character
+    // Record match usage for each participating character (players can play characters unlimited times)
     players.forEach(p => {
       characterLicenseService.recordMatchUse(currentUser?.id, p.characterId);
     });

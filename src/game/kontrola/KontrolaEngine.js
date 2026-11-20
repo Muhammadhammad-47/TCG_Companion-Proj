@@ -19,11 +19,18 @@ export const KONTROLA_CHARACTERS = {
     themeColor: '#ED1E24',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/CHYNA WILD CARD REG.png',
     attacks: {
-      'FIRE OF FURY PER PUNCH': { ap: 5, dice: 1, element: 'Fire', desc: 'Roll 1 Die × 5 AP Fire damage.' },
-      'FIRE TIGER SOUL PUNCH': { ap: 25, dice: 0, element: 'Fire', desc: 'Direct blazing strike dealing 25 AP.' },
-      'GOLDEN MIC LIGHTING': { ap: 40, dice: 0, element: 'Lightning', isSuper: true, desc: 'Super Lightning strike dealing 40 AP.' },
-      'KONTROL': { ap: 0, dice: 1, element: 'Psychic', isKontrol: true, desc: 'Roll 1d6 > target Mind Strength. Force attack alternate or steal 1 card (Rare, Max 2/match, 5-turn cooldown).' },
-      'SAIGO NO BLITZ': { ap: 200, dice: 0, element: 'Energy', isBlitz: true, desc: 'Requires HP < 50. Sacrifice 50% HP to deal 200 AP AoE (Rare, Max 2/match).' }
+      'FIRE OF FURY PER PUNCH': { ap: 5, dice: 1, element: 'Fire', costET: 1, rarity: 'Common', desc: 'Common Move. Roll 1 Die × 5 AP Fire damage.' },
+      'FIRE TIGER SOUL PUNCH': { ap: 25, dice: 0, element: 'Fire', costET: 1, rarity: 'Semi Common', desc: 'Semi Common Move. Direct blazing strike dealing 25 AP.' },
+      'GOLDEN MIC LIGHTING': { ap: 40, dice: 0, element: 'Lightning', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move. Super Lightning strike dealing 40 AP.' },
+      'WILD CARD': {
+        isWild: true,
+        rarity: 'Super Rare',
+        costET: 1,
+        wildOptions: ['FIRE OF FURY PER PUNCH', 'FIRE TIGER SOUL PUNCH', 'GOLDEN MIC LIGHTING'],
+        desc: 'Super Rare Wild Card. Allows choosing only one move from: Fire of Fury per Punch, Fire Tiger Soul Punch, or Golden Mic Lighting.'
+      },
+      'KONTROL': { ap: 0, dice: 1, element: 'Psychic', isKontrol: true, requiresPurchaseOrQR: true, desc: 'Roll 1d6 > target Mind Strength. Only available through digital purchase or QR Code system (Max 2/match, 5-turn cooldown).' },
+      'SAIGO NO BLITZ': { ap: 200, dice: 0, element: 'Energy', isBlitz: true, requiresPurchaseOrQR: true, desc: 'Requires HP < 50. Sacrifice 50% HP to deal 200 AP AoE. Only available through digital purchase or QR Code system (Max 2/match).' }
     }
   },
   bee: {
@@ -43,11 +50,19 @@ export const KONTROLA_CHARACTERS = {
     themeColor: '#FBC80D',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/BEE WILD CARD GOLD.png',
     attacks: {
-      'STING SLAP PER STING': { ap: 3, dice: 1, element: 'Lightning', desc: 'Roll 1 Die × 3 AP Sting damage.' },
-      'PAPARAZZI STUN': { ap: 25, dice: 0, element: 'Sonic', loseTurn: true, desc: '25 AP strike; target loses 1 turn.' },
-      'BEE DRONE BOMB': { ap: 40, dice: 0, element: 'Lightning', isSuper: true, desc: 'Super Drone Bomb dealing 40 AP.' },
-      'KONTROL': { ap: 0, dice: 1, element: 'Psychic', isKontrol: true, desc: 'Roll 1d6 > target Mind Strength. Force attack alternate or steal 1 card (Rare, Max 2/match, 5-turn cooldown).' },
-      'SAIGO NO BLITZ': { ap: 200, dice: 0, element: 'Energy', isBlitz: true, desc: 'Requires HP < 50. Sacrifice 50% HP to deal 200 AP AoE (Rare, Max 2/match).' }
+      'STING SLAP PER STING': { ap: 3, dice: 1, element: 'Lightning', costET: 1, rarity: 'Common', desc: 'Common Move. Roll 1 Die × 3 AP Sting damage.' },
+      'PARARAZZI STUN': { ap: 25, dice: 0, element: 'Sonic', costET: 1, loseTurn: true, appliesSleep: true, rarity: 'Semi Common', desc: 'Semi Common Move. 25 AP strike. If and only if the attack is successful, defendant loses one turn (Sleep X1).' },
+      'PAPARAZZI STUN': { ap: 25, dice: 0, element: 'Sonic', costET: 1, loseTurn: true, appliesSleep: true, rarity: 'Semi Common', desc: 'Semi Common Move. 25 AP strike. If and only if the attack is successful, defendant loses one turn (Sleep X1).' },
+      'BEE DRONE BOMB': { ap: 40, dice: 0, element: 'Lightning', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move. Super Drone Bomb dealing 40 AP.' },
+      'WILD CARD': {
+        isWild: true,
+        rarity: 'Super Rare',
+        costET: 1,
+        wildOptions: ['STING SLAP PER STING', 'PARARAZZI STUN', 'BEE DRONE BOMB'],
+        desc: 'Super Rare Wild Card. Allows choosing only one move from: Sting Slap per sting, Pararazzi Stun, or Bee Drone Bomb.'
+      },
+      'KONTROL': { ap: 0, dice: 1, element: 'Psychic', isKontrol: true, requiresPurchaseOrQR: true, desc: 'Roll 1d6 > target Mind Strength. Only available through digital purchase or QR Code system (Max 2/match, 5-turn cooldown).' },
+      'SAIGO NO BLITZ': { ap: 200, dice: 0, element: 'Energy', isBlitz: true, requiresPurchaseOrQR: true, desc: 'Requires HP < 50. Sacrifice 50% HP to deal 200 AP AoE. Only available through digital purchase or QR Code system (Max 2/match).' }
     }
   },
   kiko: {
@@ -67,11 +82,18 @@ export const KONTROLA_CHARACTERS = {
     themeColor: '#FBC80D',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/KIKO WILD CARD GOLD.png',
     attacks: {
-      'TAIL WHIP PER WHIP': { ap: 4, dice: 1, element: 'Physical', desc: 'Roll 1 Die × 4 AP Tail strikes.' },
-      'MULTIPLICITY': { ap: 30, dice: 0, element: 'Sonic', desc: 'Sonic clones strike dealing 30 AP.' },
-      'SOUL BLAST 3000': { ap: 40, dice: 0, element: 'Energy', isSuper: true, desc: 'Super Soul Blast dealing 40 AP.' },
-      'KONTROL': { ap: 0, dice: 1, element: 'Psychic', isKontrol: true, desc: 'Roll 1d6 > target Mind Strength. Force attack alternate or steal 1 card (Rare, Max 2/match, 5-turn cooldown).' },
-      'SAIGO NO BLITZ': { ap: 200, dice: 0, element: 'Energy', isBlitz: true, desc: 'Requires HP < 50. Sacrifice 50% HP to deal 200 AP AoE (Rare, Max 2/match).' }
+      'TAIL WHIP PER WHIP': { ap: 4, dice: 1, element: 'Physical', costET: 1, rarity: 'Common', desc: 'Common Move. Roll 1 Die × 4 AP Tail strikes.' },
+      'MULTIPLICITY': { ap: 30, dice: 0, element: 'Sonic', costET: 1, rarity: 'Semi Common', desc: 'Semi Common Move. Sonic clones strike dealing 30 AP.' },
+      'SOUL BLAST 3000': { ap: 40, dice: 0, element: 'Energy', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move. Super Soul Blast dealing 40 AP.' },
+      'WILD CARD': {
+        isWild: true,
+        rarity: 'Super Rare',
+        costET: 1,
+        wildOptions: ['TAIL WHIP PER WHIP', 'MULTIPLICITY', 'SOUL BLAST 3000'],
+        desc: 'Super Rare Wild Card. Allows choosing only one move from: Tail Whip per whip, Multiplicity, or Soul Blast 3000.'
+      },
+      'KONTROL': { ap: 0, dice: 1, element: 'Psychic', isKontrol: true, requiresPurchaseOrQR: true, desc: 'Roll 1d6 > target Mind Strength. Only available through digital purchase or QR Code system (Max 2/match, 5-turn cooldown).' },
+      'SAIGO NO BLITZ': { ap: 200, dice: 0, element: 'Energy', isBlitz: true, requiresPurchaseOrQR: true, desc: 'Requires HP < 50. Sacrifice 50% HP to deal 200 AP AoE. Only available through digital purchase or QR Code system (Max 2/match).' }
     }
   },
   katsumi: {
@@ -91,11 +113,18 @@ export const KONTROLA_CHARACTERS = {
     themeColor: '#FBC80D',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/KAT WILD CARD GOLD.png',
     attacks: {
-      'SAVAGE PAWS PER STRIKE': { ap: 5, dice: 1, element: 'Physical', desc: 'Roll 1 Die × 5 AP Paw strikes.' },
-      'SHADOW PURR': { ap: 30, dice: 0, element: 'Shadow', healsAttacker: 15, appliesSleep: true, desc: 'Restores +15 HP to attacker and puts opponent to sleep for 1 turn.' },
-      'CLAW OF FATE': { ap: 35, dice: 0, element: 'Shadow', desc: 'Critical shadow slash dealing 35 AP.' },
-      'KONTROL': { ap: 0, dice: 1, element: 'Psychic', isKontrol: true, desc: 'Roll 1d6 > target Mind Strength. Force attack alternate or steal 1 card (Rare, Max 2/match, 5-turn cooldown).' },
-      'SAIGO NO BLITZ': { ap: 200, dice: 0, element: 'Energy', isBlitz: true, desc: 'Requires HP < 50. Sacrifice 50% HP to deal 200 AP AoE (Rare, Max 2/match).' }
+      'SAVAGE PAWS PER STRIKE': { ap: 5, dice: 1, element: 'Physical', costET: 1, rarity: 'Common', desc: 'Common Move. Roll 1 Die × 5 AP Paw strikes.' },
+      'SHADOW PURR': { ap: 30, dice: 0, element: 'Shadow', costET: 1, healsAttacker: 15, appliesSleep: true, rarity: 'Semi Common', desc: 'Semi Common Move. Restores +15 HP to attacker. If and only if the attack is successful, inflicts Sleep X1 on defendant (loses 1 turn).' },
+      'CLAW OF FATE': { ap: 35, dice: 0, element: 'Shadow', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move. Critical shadow slash dealing 35 AP.' },
+      'WILD CARD': {
+        isWild: true,
+        rarity: 'Super Rare',
+        costET: 1,
+        wildOptions: ['SAVAGE PAWS PER STRIKE', 'SHADOW PURR', 'CLAW OF FATE'],
+        desc: 'Super Rare Wild Card. Allows choosing only one move from: Savage Paws per strike, Shadow Purr, or Claw of Fate.'
+      },
+      'KONTROL': { ap: 0, dice: 1, element: 'Psychic', isKontrol: true, requiresPurchaseOrQR: true, desc: 'Roll 1d6 > target Mind Strength. Only available through digital purchase or QR Code system (Max 2/match, 5-turn cooldown).' },
+      'SAIGO NO BLITZ': { ap: 200, dice: 0, element: 'Energy', isBlitz: true, requiresPurchaseOrQR: true, desc: 'Requires HP < 50. Sacrifice 50% HP to deal 200 AP AoE. Only available through digital purchase or QR Code system (Max 2/match).' }
     }
   },
   poochi: {
@@ -115,11 +144,18 @@ export const KONTROLA_CHARACTERS = {
     themeColor: '#ff66cc',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/POOCHI WILD CARD GOLD.png',
     attacks: {
-      'GLITTER SPARKS PER SPARK': { ap: 4, dice: 1, element: 'Magic', desc: 'Roll 1 Die × 4 AP Glitter sparks.' },
-      'LASSO OF TRUTH': { ap: 25, dice: 0, element: 'Magic', revealCards: true, desc: '25 AP strike; target reveals Action Cards.' },
-      'GLITTER BURST': { ap: 35, dice: 0, element: 'Magic', desc: 'Magical glitter explosion dealing 35 AP.' },
-      'KONTROL': { ap: 0, dice: 1, element: 'Psychic', isKontrol: true, desc: 'Roll 1d6 > target Mind Strength. Force attack alternate or steal 1 card (Rare, Max 2/match, 5-turn cooldown).' },
-      'SAIGO NO BLITZ': { ap: 200, dice: 0, element: 'Energy', isBlitz: true, desc: 'Requires HP < 50. Sacrifice 50% HP to deal 200 AP AoE (Rare, Max 2/match).' }
+      'GLITTER SPARKS PER SPARK': { ap: 4, dice: 1, element: 'Magic', costET: 1, rarity: 'Common', desc: 'Common Move. Roll 1 Die × 4 AP Glitter sparks.' },
+      'LASSO OF TRUTH': { ap: 25, dice: 0, element: 'Magic', costET: 1, revealCards: true, rarity: 'Semi Common', desc: 'Semi Common Move. 25 AP strike. If and only if the attack is successful, inflicts Vision X1 on defendant (reveals Action Cards).' },
+      'GLITTER BURST': { ap: 35, dice: 0, element: 'Magic', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move. Magical glitter explosion dealing 35 AP.' },
+      'WILD CARD': {
+        isWild: true,
+        rarity: 'Super Rare',
+        costET: 1,
+        wildOptions: ['GLITTER SPARKS PER SPARK', 'LASSO OF TRUTH', 'GLITTER BURST'],
+        desc: 'Super Rare Wild Card. Allows choosing only one move from: Glitter Sparks per spark, Lasso of Truth, or Glitter Burst.'
+      },
+      'KONTROL': { ap: 0, dice: 1, element: 'Psychic', isKontrol: true, requiresPurchaseOrQR: true, desc: 'Roll 1d6 > target Mind Strength. Only available through digital purchase or QR Code system (Max 2/match, 5-turn cooldown).' },
+      'SAIGO NO BLITZ': { ap: 200, dice: 0, element: 'Energy', isBlitz: true, requiresPurchaseOrQR: true, desc: 'Requires HP < 50. Sacrifice 50% HP to deal 200 AP AoE. Only available through digital purchase or QR Code system (Max 2/match).' }
     }
   },
   queeny: {
@@ -139,11 +175,18 @@ export const KONTROLA_CHARACTERS = {
     themeColor: '#FBC80D',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/QUEENY WILD CARD GOLD.png',
     attacks: {
-      'HAIR WHIP PER WHIP': { ap: 4, dice: 1, element: 'Physical', desc: 'Roll 1 Die × 4 AP Hair whip strikes.' },
-      'SIREN BLAST': { ap: 30, dice: 0, element: 'Psychic', desc: 'Hypnotic siren wave dealing 30 AP.' },
-      'RAINBOW FAN BLAST': { ap: 35, dice: 0, element: 'Psychic', desc: 'Prismatic fan blast dealing 35 AP.' },
-      'KONTROL': { ap: 0, dice: 1, element: 'Psychic', isKontrol: true, desc: 'Roll 1d6 > target Mind Strength (+2 bonus). Force attack alternate or steal 1 card (Rare, Max 2/match, 5-turn cooldown).' },
-      'SAIGO NO BLITZ': { ap: 200, dice: 0, element: 'Energy', isBlitz: true, desc: 'Requires HP < 50. Sacrifice 50% HP to deal 200 AP AoE (Rare, Max 2/match).' }
+      'HAIR WHIP PER WHIP': { ap: 4, dice: 1, element: 'Physical', costET: 1, rarity: 'Common', desc: 'Common Move. Roll 1 Die × 4 AP Hair whip strikes.' },
+      'SIREN BLAST': { ap: 30, dice: 0, element: 'Psychic', costET: 1, rarity: 'Semi Common', desc: 'Semi Common Move. Hypnotic siren wave dealing 30 AP.' },
+      'RAINBOW FAN BLAST': { ap: 35, dice: 0, element: 'Psychic', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move. Prismatic fan blast dealing 35 AP.' },
+      'WILD CARD': {
+        isWild: true,
+        rarity: 'Super Rare',
+        costET: 1,
+        wildOptions: ['HAIR WHIP PER WHIP', 'SIREN BLAST', 'RAINBOW FAN BLAST'],
+        desc: 'Super Rare Wild Card. Allows choosing only one move from: Hair Whip per whip, Siren Blast, or Rainbow Fan Blast.'
+      },
+      'KONTROL': { ap: 0, dice: 1, element: 'Psychic', isKontrol: true, requiresPurchaseOrQR: true, desc: 'Roll 1d6 > target Mind Strength (+2 bonus). Only available through digital purchase or QR Code system (Max 2/match, 5-turn cooldown).' },
+      'SAIGO NO BLITZ': { ap: 200, dice: 0, element: 'Energy', isBlitz: true, requiresPurchaseOrQR: true, desc: 'Requires HP < 50. Sacrifice 50% HP to deal 200 AP AoE. Only available through digital purchase or QR Code system (Max 2/match).' }
     }
   },
   shroomy: {
@@ -163,11 +206,18 @@ export const KONTROLA_CHARACTERS = {
     themeColor: '#39ff14',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/SHROOMY WILD CARD GOLD.png',
     attacks: {
-      'POPPERS PER POP': { ap: 4, dice: 1, element: 'Nature', desc: 'Roll 1 Die × 4 AP Spore poppers.' },
-      'MS BOMBA': { ap: 40, dice: 0, element: 'Fire', desc: 'Explosive spore bomb dealing 40 AP.' },
-      'SOUL SNATCHER': { ap: 50, dice: 0, element: 'Dark', isSuper: true, desc: 'Super Soul Snatcher dealing 50 AP.' },
-      'KONTROL': { ap: 0, dice: 1, element: 'Psychic', isKontrol: true, desc: 'Roll 1d6 > target Mind Strength. Force attack alternate or steal 1 card (Rare, Max 2/match, 5-turn cooldown).' },
-      'SAIGO NO BLITZ': { ap: 200, dice: 0, element: 'Energy', isBlitz: true, desc: 'Requires HP < 50. Sacrifice 50% HP to deal 200 AP AoE (Rare, Max 2/match).' }
+      'POPPERS PER POP': { ap: 4, dice: 1, element: 'Nature', costET: 1, rarity: 'Common', desc: 'Common Move. Roll 1 Die × 4 AP Spore poppers.' },
+      'MS BOMBA': { ap: 40, dice: 0, element: 'Fire', costET: 2, rarity: 'Semi Common', desc: 'Semi Common Move. Explosive spore bomb dealing 40 AP.' },
+      'SOUL SNATCHER': { ap: 50, dice: 0, element: 'Dark', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move. Super Soul Snatcher dealing 50 AP.' },
+      'WILD CARD': {
+        isWild: true,
+        rarity: 'Super Rare',
+        costET: 1,
+        wildOptions: ['POPPERS PER POP', 'MS BOMBA', 'SOUL SNATCHER'],
+        desc: 'Super Rare Wild Card. Allows choosing only one move from: Poppers per pop, MS Bomba, or Soul Snatcher.'
+      },
+      'KONTROL': { ap: 0, dice: 1, element: 'Psychic', isKontrol: true, requiresPurchaseOrQR: true, desc: 'Roll 1d6 > target Mind Strength. Only available through digital purchase or QR Code system (Max 2/match, 5-turn cooldown).' },
+      'SAIGO NO BLITZ': { ap: 200, dice: 0, element: 'Energy', isBlitz: true, requiresPurchaseOrQR: true, desc: 'Requires HP < 50. Sacrifice 50% HP to deal 200 AP AoE. Only available through digital purchase or QR Code system (Max 2/match).' }
     }
   }
 };
@@ -176,12 +226,12 @@ export const KONTROLA_CHARACTERS = {
 // Verbatim from Kontrolla_Data/Docs/?? TCG Companion AI Breakdowns.txt (Lines 358-364)
 export const LEVEL_HP_TABLE = {
   chynaman: { 1: 100, 2: 200, 3: 300, 4: 400 },
-  kiko:     { 1: 100, 2: 200, 3: 300, 4: 400 },
-  shroomy:  { 1: 65,  2: 130, 3: 260, 4: 320 },
-  bee:      { 1: 70,  2: 140, 3: 280, 4: 360 },
-  katsumi:  { 1: 100, 2: 200, 3: 300, 4: 400 },
-  poochi:   { 1: 70,  2: 140, 3: 280, 4: 360 },
-  queeny:   { 1: 100, 2: 200, 3: 300, 4: 400 }
+  kiko: { 1: 100, 2: 200, 3: 300, 4: 400 },
+  shroomy: { 1: 65, 2: 130, 3: 260, 4: 320 },
+  bee: { 1: 70, 2: 140, 3: 280, 4: 360 },
+  katsumi: { 1: 100, 2: 200, 3: 300, 4: 400 },
+  poochi: { 1: 70, 2: 140, 3: 280, 4: 360 },
+  queeny: { 1: 100, 2: 200, 3: 300, 4: 400 }
 };
 
 export const getCanonicalLevelCap = (charId, level = 1) => {
@@ -194,13 +244,13 @@ export const getCanonicalLevelCap = (charId, level = 1) => {
 // Canonical Character Reserve Energy Recovery Matrix
 // Verbatim from Kontrolla_Data/Docs/TCG Character Reserve Energy Recovery System.txt
 export const RESERVE_HP_TABLE = {
-  shroomy:  { baseReserveHP: 35, reserveUnlocked: true },
-  bee:      { baseReserveHP: 30, reserveUnlocked: true },
-  poochi:   { baseReserveHP: 30, reserveUnlocked: true },
-  chynaman: { baseReserveHP: 0,  reserveUnlocked: false },
-  kiko:     { baseReserveHP: 0,  reserveUnlocked: false },
-  katsumi:  { baseReserveHP: 0,  reserveUnlocked: false },
-  queeny:   { baseReserveHP: 0,  reserveUnlocked: false }
+  shroomy: { baseReserveHP: 35, reserveUnlocked: true },
+  bee: { baseReserveHP: 30, reserveUnlocked: true },
+  poochi: { baseReserveHP: 30, reserveUnlocked: true },
+  chynaman: { baseReserveHP: 0, reserveUnlocked: false },
+  kiko: { baseReserveHP: 0, reserveUnlocked: false },
+  katsumi: { baseReserveHP: 0, reserveUnlocked: false },
+  queeny: { baseReserveHP: 0, reserveUnlocked: false }
 };
 
 /**
@@ -247,27 +297,143 @@ export const executeReserveRecovery = (charState, requestedAmount = null) => {
   };
 };
 
+/**
+ * Gift 10 free Character Card Moves to a player at game start.
+ * Official Rules (Nov 2026 Update):
+ * - Players are allowed to play characters as many times as they wish (no character match limits).
+ * - Character Card Moves are restricted to 10 cards per match.
+ * - Strict exclusion: System restricts giving out powerful cards:
+ *   1. Blitz No Saigo (Saigo No Blitz)
+ *   2. Kontrol
+ *   3. Wild Cards (strictly 0 Wild Cards in free gifted moves)
+ *   4. The character's most powerful move (highest AP and isSuper moves)
+ * - After the 10 moves are used, players must have their own Character Cards purchased or scanned via QR Code.
+ * @param {string} charKey - Character identifier (e.g., 'chynaman', 'bee', 'kiko', etc.)
+ * @param {number} [totalCount=10] - Number of moves to gift (default: 10)
+ * @returns {Array<{ id: string, name: string, ap: number, dice: number, element: string, desc: string, isWild?: boolean, isSuper?: boolean, costET: number }>}
+ */
+export const generateGiftedCharacterMoves = (charKey, totalCount = 10) => {
+  const key = (charKey || 'chynaman').toLowerCase();
+  const template = KONTROLA_CHARACTERS[key] || KONTROLA_CHARACTERS.chynaman;
+  const attacksObj = template?.attacks || {};
+
+  const candidateMoves = [];
+  let maxAp = -1;
+
+  Object.entries(attacksObj).forEach(([atkName, atkData]) => {
+    const upper = atkName.toUpperCase();
+    const isBlitz = upper.includes('BLITZ') || Boolean(atkData.isBlitz);
+    const isKontrol = upper.includes('KONTROL') || Boolean(atkData.isKontrol);
+    const isWild = upper.includes('WILD') || Boolean(atkData.isWild);
+    const isSuper = Boolean(atkData.isSuper);
+
+    // Completely restrict Blitz No Saigo, Kontrol, and Wild Cards
+    if (isBlitz || isKontrol || isWild) {
+      return;
+    }
+
+    const ap = Number(atkData.ap) || 0;
+    if (ap > maxAp) {
+      maxAp = ap;
+    }
+
+    candidateMoves.push({
+      name: atkName,
+      ...atkData,
+      isSuper,
+      costET: isSuper ? 2 : 1
+    });
+  });
+
+  // Restrict the character's most powerful move (isSuper or highest AP)
+  const standardMoves = candidateMoves.filter(move => {
+    if (move.isSuper) return false;
+    if (maxAp > 0 && (Number(move.ap) || 0) === maxAp) return false;
+    return true;
+  });
+
+  // Use standardMoves if available, or fall back to candidateMoves if all attacks share same AP
+  const pool = standardMoves.length > 0 ? standardMoves : candidateMoves;
+
+  const gifted = [];
+  for (let i = 0; i < totalCount; i++) {
+    const picked = pool[Math.floor(Math.random() * pool.length)];
+    gifted.push({
+      ...picked,
+      id: `ccm_${Math.random().toString(36).substring(2, 9)}_${i}`
+    });
+  }
+
+  return gifted;
+};
+
+/**
+ * Generate full Character Card Moves deck for an owned/purchased/scanned character.
+ * Includes all standard moves, Wild Cards, and the character's most powerful move.
+ * @param {string} charKey - Character identifier
+ * @param {number} [totalCount=15] - Deck size
+ */
+export const generatePurchasedCharacterMoves = (charKey, totalCount = 15) => {
+  const key = (charKey || 'chynaman').toLowerCase();
+  const template = KONTROLA_CHARACTERS[key] || KONTROLA_CHARACTERS.chynaman;
+  const attacksObj = template?.attacks || {};
+
+  const allAvailable = [];
+  Object.entries(attacksObj).forEach(([atkName, atkData]) => {
+    const upper = atkName.toUpperCase();
+    // Blitz and Kontrol remain special cards requiring hand card activation
+    if (upper.includes('BLITZ') || atkData.isBlitz || upper.includes('KONTROL') || atkData.isKontrol) {
+      return;
+    }
+    allAvailable.push({
+      name: atkName,
+      ...atkData,
+      costET: atkData.isSuper ? 2 : 1
+    });
+  });
+
+  const fullDeck = [];
+  // Ensure at least 1 of each available attack (including wild and most powerful moves)
+  allAvailable.forEach((atk, idx) => {
+    fullDeck.push({
+      ...atk,
+      id: `ccm_own_${Math.random().toString(36).substring(2, 9)}_${idx}`
+    });
+  });
+
+  // Pad to requested count
+  while (fullDeck.length < totalCount && allAvailable.length > 0) {
+    const picked = allAvailable[Math.floor(Math.random() * allAvailable.length)];
+    fullDeck.push({
+      ...picked,
+      id: `ccm_own_${Math.random().toString(36).substring(2, 9)}_${fullDeck.length}`
+    });
+  }
+
+  return fullDeck;
+};
+
 // 100-Card Basic Blueprint from Action Cards % - Sheet1.csv
 export const ACTION_CARDS_BASIC = [
-  { name: 'ATTACK X1', type: 'ATTACK', count: 21, costET: 1, desc: 'Standard combat attack with paired character move.' },
-  { name: 'POISON X1', type: 'STATUS', count: 17, costET: 0, desc: 'Inflicts 1 Poison stack (-10 HP/turn).' },
+  { name: 'ATTACK X1', type: 'ATTACK', count: 21, costET: 1, desc: 'Standard combat attack with paired Character Card Move. Allows only 1 turn regardless of success.' },
+  { name: 'POISON X1', type: 'STATUS', count: 17, costET: 0, desc: 'Initial -10 HP damage (-20 HP against Poison weakness: Chynaman, Kiko, Poochi, Kat, Bee). Inflicts 1 Poison stack (-10 HP/turn ongoing until treated with an Antidote Card). Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card.' },
   { name: 'DEFENCE - BASIC', type: 'DEFENSE', count: 7, costET: 0, desc: 'Reduces incoming damage by 25%.' },
   { name: 'ANTIDOTE X1', type: 'HEAL', count: 7, costET: 0, desc: 'Removes 1 Poison card.' },
   { name: 'HEAL H10', type: 'HEAL', count: 6, costET: 0, desc: 'Restores +10 HP.' },
   { name: 'LIGHTNING X1', type: 'ATTACK', count: 6, costET: 1, desc: 'On successful attack, defendant receives -10 HP and attacker receives another turn. If not successful, nothing happens.' },
-  { name: 'RETREAT', type: 'TACTICAL', count: 6, costET: 0, desc: 'Escape combat without taking damage.' },
+  { name: 'RETREAT', type: 'TACTICAL', count: 6, costET: 0, desc: 'Disengage or forfeit combat. Only appears if held in Action Deck. Attacker can retreat before/after roll (before Defender rolls). Defender can retreat before rolling.' },
   { name: 'SHIELD BASIC +25 HP', type: 'DEFENSE', count: 6, costET: 0, desc: 'Grants +25 Shield barrier points.' },
   { name: 'SOUL ALLIANCE', type: 'OTHERS', count: 6, costET: 0, desc: 'Forge an alliance with another player.' },
   { name: 'VITALITY GAIN V10', type: 'HEAL', count: 6, costET: 0, desc: '+10 HP or prepare to Level Up.' },
   { name: 'HEAL H30', type: 'HEAL', count: 6, costET: 0, desc: 'Restores +30 HP.' },
   { name: 'HEAL H40', type: 'HEAL', count: 6, costET: 0, desc: 'Restores +40 HP.' },
   { name: 'ANTIDOTE X2', type: 'HEAL', count: 6, costET: 0, desc: 'Removes 2 Poison cards.' },
-  { name: 'ATTACK X2', type: 'ATTACK', count: 6, costET: 2, desc: 'Double character attack unleash.' },
+  { name: 'ATTACK X2', type: 'ATTACK', count: 6, costET: 2, desc: 'Double character attack. Allows only 2 turns regardless of success. Forfeited if Retreat is used.' },
   { name: 'BOOMERANG FULL', type: 'DEFENSE', count: 6, costET: 0, desc: 'Defender reactive card: On successful defense or 6+ roll, reflects 100% attack damage back to attacker.' },
   { name: 'HEAL H20', type: 'HEAL', count: 6, costET: 0, desc: 'Restores +20 HP.' },
   { name: 'LIGHTNING X2', type: 'ATTACK', count: 6, costET: 2, desc: 'On successful attack, defendant receives -20 HP and attacker receives 2 extra turns. Cleanses 1 Poison from Zombie. If not successful, nothing happens.' },
   { name: 'MISDIRECT', type: 'ATTACK', count: 6, costET: 1, desc: 'Redirect an opponent attack.' },
-  { name: 'POISON X2', type: 'STATUS', count: 6, costET: 0, desc: 'Inflicts 2 Poison stacks (-20 HP/turn).' },
+  { name: 'POISON X2', type: 'STATUS', count: 6, costET: 0, desc: 'Initial -20 HP damage (-30 HP against Poison weakness: Chynaman, Kiko, Poochi, Kat, Bee). Inflicts 2 Poison stacks (-20 HP/turn ongoing until treated with an Antidote Card). Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card.' },
   { name: 'REVIVE', type: 'HEAL', count: 6, costET: 0, desc: 'Used only when defeated. Note asks to quit or continue. If continue, card is discarded, replacement Action card re-appears, and character returns with 50% original HP.' },
   { name: 'SLEEPY X1', type: 'OTHERS', count: 6, costET: 0, desc: 'Target falls asleep and skips 1 turn.' },
   { name: 'VISION X1', type: 'OTHERS', count: 6, costET: 0, desc: 'Target reveals Action Cards for 15s.' },
@@ -420,7 +586,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   if (!actionCard) {
     return { log: 'Combat error: no action card provided.', newAttackerState: attackerState, newDefenderState: defenderState };
   }
-  
+
   // Helper function to calculate shield damage absorption
   const calculateShieldDamage = (incomingDamage, shieldHP) => {
     // Shield reduces damage by its remaining HP, then breaks if depleted
@@ -428,7 +594,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     const remainingDamage = Math.max(0, incomingDamage - damageToShield);
     const shieldHPAfter = Math.max(0, shieldHP - damageToShield);
     const shieldBroken = shieldHPAfter === 0;
-    
+
     return {
       damageToShield,
       remainingDamage,
@@ -436,7 +602,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       shieldBroken
     };
   };
-  
+
   const cardName = (typeof actionCard === 'string' ? actionCard : (actionCard?.name || '')).toUpperCase();
   const cardType = (typeof actionCard === 'object' && actionCard?.type) ? actionCard.type : (
     ['ATTACK', 'LIGHTNING', 'FIRE', 'BACK STAB'].some(kw => cardName.includes(kw)) ? 'ATTACK' : 'OTHERS'
@@ -515,8 +681,8 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     }
   }
 
-  const isAttackerZombie = newAttackerState.poisonCount >= 5;
-  const isDefenderZombie = newDefenderState?.poisonCount >= 5;
+  const isAttackerZombie = Boolean(newAttackerState.isZombie || attackerChar?.isZombie || (newAttackerState.poisonCount >= 5));
+  const isDefenderZombie = Boolean(newDefenderState?.isZombie || defenderChar?.isZombie || (newDefenderState?.poisonCount >= 5));
 
   const selectedMoveUpper = (attackSelectionName || '').toUpperCase();
   const isKontrolMove = cardName.includes('KONTROL') || selectedMoveUpper.includes('KONTROL');
@@ -553,28 +719,28 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       // Official Rule: Controller rolls 1d6 and must roll HIGHER than opponent's Mind Strength
       // If tie, re-roll (best of 3)
       // Queeny has +2 bonus to rolls, Magical creatures have +1 to their Mind Strength defense
-      
+
       let controllerRoll = kRoll.total;
       let targetMindStrength = newDefenderState.mind || 3;
-      
+
       // Apply Queeny +2 psychic bonus if attacker is Queeny
       if (newAttackerState.characterId === 'queeny') {
         controllerRoll += 2;
         log += ` 🧠 Queeny's +2 Psychic Bonus applied!`;
       }
-      
+
       // Apply +1 Mind defense for magical creatures
       if (['kiko', 'poochi', 'shroomy'].includes(newDefenderState.characterId)) {
         targetMindStrength += 1;
         log += ` 🧠 Magical creature +1 Mind defense applied!`;
       }
-      
+
       let rollCount = 1;
       let success = false;
       let finalRoll = controllerRoll;
-      
+
       log += ` 🎲 Kontrol Roll ${rollCount}: Controller rolled ${controllerRoll} vs Mind Strength ${targetMindStrength}.`;
-      
+
       // Handle ties with re-rolls (best of 3)
       while (rollCount < 3 && controllerRoll === targetMindStrength) {
         log += ` 🎲 TIE detected! Re-rolling...`;
@@ -585,7 +751,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         finalRoll = controllerRoll;
         log += ` 🎲 Kontrol Roll ${rollCount}: Controller rolled ${controllerRoll} vs Mind Strength ${targetMindStrength}.`;
       }
-      
+
       // Check if controller won (rolled higher than Mind Strength)
       if (finalRoll > targetMindStrength) {
         log += ` ✅ Kontrol SUCCESS! ${controllerRoll} > ${targetMindStrength}! ${newDefenderState.name} is mind-controlled!`;
@@ -598,7 +764,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       // Decrement usage counter and set cooldown (always, even on failure)
       newAttackerState.kontrolUsesLeft = Math.max(0, newAttackerState.kontrolUsesLeft - 1);
       newAttackerState.kontrolCooldown = 5; // 5-turn cooldown per official rules
-      
+
       // KONTROL Options: Choose to force alternate target OR steal 1 action card (only if successful)
       if (success) {
         const playerCount = gameState?.players?.length || 2;
@@ -615,14 +781,14 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         }
       }
     }
-    
+
     // Return early since Kontrol doesn't deal damage
     return { newAttackerState, newDefenderState, log, stealActionCard };
   }
   // 2. SAIGO NO BLITZ (200 AP)
   else if (isBlitzMove) {
     // Official Rule: Requires HP <= 50 AND 5 Energy Tokens
-    
+
     // Check cooldown
     if (newAttackerState.blitzCooldown > 0) {
       log += ` ⚡ BLITZ on cooldown! ${newAttackerState.blitzCooldown} more turn(s) before available.`;
@@ -649,18 +815,18 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
 
     // Deduct 5 ET cost
     newAttackerState.energyTokens = Math.max(0, (newAttackerState.energyTokens || 0) - 5);
-    
+
     // Sacrifice 50% of current HP
     const selfSacrifice = Math.floor(newAttackerState.hp * 0.5);
     newAttackerState.hp = Math.max(1, newAttackerState.hp - selfSacrifice);
-    
+
     // Blitz deals 200 AP damage
     const blitzDamage = 200;
-    
+
     // Decrement usage counter (limited to 2 uses per match)
     newAttackerState.blitzUsesLeft = Math.max(0, newAttackerState.blitzUsesLeft - 1);
     // No cooldown per official rules, but limited to 2 uses total per match
-    
+
     if (newDefenderState) {
       // One vs. One: Single target takes full 200 AP
       newDefenderState.hp = Math.max(0, newDefenderState.hp - blitzDamage);
@@ -744,7 +910,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       const isX2 = cardName.includes('X2');
       baseAP = isX2 ? 20 : 10;
       attackElement = 'Fire';
-      
+
       const rolledDoubles = !!(attackerRoll?.rolls && attackerRoll.rolls.length >= 2 && attackerRoll.rolls[0] === attackerRoll.rolls[1]);
       if (rolledDoubles) {
         log += ` [${cardName}: Rolled doubles! Critical Elemental Fire strike dealing ${baseAP} AP]`;
@@ -752,12 +918,12 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         log += ` [${cardName}: Elemental Fire strike dealing ${baseAP} AP]`;
       }
     } else if (isAttackerZombie) {
-      baseAP = 20; // Zombie Venom Strike
+      baseAP = 15; // Zombie Venom Strike (15 AP base)
       attackElement = 'Poison';
     } else if (attackSelectionName) {
       const charKey = attackerChar?.id || attackerState?.id || 'chynaman';
       const template = KONTROLA_CHARACTERS[charKey] || Object.values(KONTROLA_CHARACTERS).find(c => c.name?.toLowerCase() === attackerChar?.name?.toLowerCase());
-      const atk = attackerChar?.attacks?.[attackSelectionName] || template?.attacks?.[attackSelectionName];
+      const atk = attackerChar?.attacks?.[attackSelectionName] || template?.attacks?.[attackSelectionName] || (attackerChar?.characterCardMoves || []).find(m => m.name === attackSelectionName);
       if (atk) {
         attackElement = atk.element || 'Physical';
         if (atk.dice > 0) {
@@ -774,19 +940,19 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     // Apply any dice penalties (e.g., from FREEZE cards)
     let adjustedAttackerRoll = attackerRoll?.total || 0;
     let adjustedDefenderRoll = defenderRoll?.total || 0;
-    
+
     if (newDefenderState?.dicePenalty) {
       adjustedDefenderRoll = Math.max(0, adjustedDefenderRoll - newDefenderState.dicePenalty);
       log += ` ❄️ FREEZE penalty: -${newDefenderState.dicePenalty} to defender roll! (${defenderRoll?.total || 0} - ${newDefenderState.dicePenalty} = ${adjustedDefenderRoll})`;
       newDefenderState.dicePenalty = 0; // Penalty consumed for this clash
     }
-    
+
     if (newAttackerState?.dicePenalty) {
       adjustedAttackerRoll = Math.max(0, adjustedAttackerRoll - newAttackerState.dicePenalty);
       log += ` ❄️ FREEZE penalty: -${newAttackerState.dicePenalty} to attacker roll! (${attackerRoll?.total || 0} - ${newAttackerState.dicePenalty} = ${adjustedAttackerRoll})`;
       newAttackerState.dicePenalty = 0; // Penalty consumed for this clash
     }
-    
+
     const isClashTie = adjustedAttackerRoll === adjustedDefenderRoll;
     const atkWin = !isClashTie && adjustedAttackerRoll > adjustedDefenderRoll;
     isSuccessfulAttack = atkWin;
@@ -810,7 +976,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         baseAP = Math.floor(baseAP * 1.25);
         newDefenderState.hasDodge = false; // Consume the dodge
       }
-      
+
       let finalDamage = baseAP;
 
       if (cardName === 'DRAIN') {
@@ -829,7 +995,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           log += ` ⚔️ BACK STAB cannot be used! This card is only available in 3+ player matches (currently ${playerCount} players).`;
           return { newAttackerState, newDefenderState, log, cardBlocked: true };
         }
-        
+
         // Back stab bypasses shields and basic defenses
         if (newDefenderState) {
           newDefenderState.shield = 0; // Bypass shield
@@ -847,7 +1013,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           newAttackerState.hp = Math.min(newAttackerState.maxHp || 100, newAttackerState.hp + stolenHp);
           newAttackerState.energyTokens = (newAttackerState.energyTokens || 0) + stolenEt;
           log += ` 🧛 VAMPIRE LIFE STEAL hit! Stole ${stolenHp} HP and ${stolenEt} ET.`;
-          
+
           // Apply 3-turn duration to defender for continued drain effect (not additional attacks)
           newDefenderState.vampireStealStack = (newDefenderState.vampireStealStack || 0) + 1;
           newDefenderState.vampireStealTurnsLeft = 3;
@@ -876,7 +1042,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         } else if (newDefenderState.hasMisdirect) {
           // MISDIRECT: Try to redirect attack to random other player or fail with -20 HP penalty
           const redirectSuccess = Math.random() > 0.4; // 60% chance to redirect
-          
+
           if (redirectSuccess) {
             log += ` 🔀 MISDIRECT TRIGGERED! Attack redirected!`;
             // Attack is negated for original defender
@@ -888,12 +1054,12 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         } else if (newDefenderState.hasDodge) {
           // Check which DODGE card was used
           const dodgeCardName = (newDefenderState.dodgeCardName || 'DODGE - BASIC').toUpperCase();
-          
+
           if (dodgeCardName.includes('FULL GUARD') || dodgeCardName.includes('DODGE / FULL')) {
             // DODGE FULL GUARD: Requires doubles to evade completely
             const rolledDoubles = defenderRoll?.rolls && defenderRoll.rolls.length >= 2 && defenderRoll.rolls[0] === defenderRoll.rolls[1];
             const isBlitzActive = newAttackerState.isBlitzActive || isBlitzMove || false;
-            
+
             if (rolledDoubles) {
               log += ` 💨 DODGE FULL GUARD SUCCESS! Rolled doubles, evaded all damage!`;
               finalDamage = 0;
@@ -945,8 +1111,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           (newDefenderState.weakness && newDefenderState.weakness.toLowerCase().includes(attackElement.toLowerCase()));
 
         if (matchesWeakness) {
-          const isKat = ['kat', 'katsumi'].some(k => defCharKey.includes(k));
-          const bonus = (isKat && (isAttackerZombie || attackElement.toLowerCase() === 'poison')) ? 15 : (newDefenderState.weaknessBonus || 10);
+          const bonus = newDefenderState.weaknessBonus || 10;
           finalDamage += bonus;
           if (isAttackerZombie && hasPoisonWeakness) {
             log += ` ☠️ [ZOMBIE POISON WEAKNESS] ${newDefenderState.name} has Poison weakness! Suffer -${bonus} HP additional weakness penalty from Zombie attack!`;
@@ -1037,12 +1202,13 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           }
         }
 
-        // Poochi's Lasso of Truth: Target reveals Action Cards
+        // Poochi's Lasso of Truth: Target reveals Action Cards (Vision X1 if and only if attack is successful)
         const currentAttackerChar = attackerChar || KONTROLA_CHARACTERS[newAttackerState.characterId] || {};
         const chosenMove = currentAttackerChar?.attacks?.[attackSelectionName];
-        if (chosenMove?.revealCards) {
+        const isLassoOfTruth = Boolean(chosenMove?.revealCards) || (attackSelectionName || '').toUpperCase().includes('LASSO OF TRUTH');
+        if (isLassoOfTruth) {
           revealTargetHand = true;
-          log += ` 👁️ LASSO OF TRUTH: ${newDefenderState.name} must reveal all Action Cards!`;
+          log += ` 👁️ VISION X1 (LASSO OF TRUTH): ${newDefenderState.name} must reveal all Action Cards!`;
         }
       }
     } else {
@@ -1102,15 +1268,22 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       log += ` 💧 ${newDefenderState.name} rolled doubles (${defenderRoll.rolls[0]} & ${defenderRoll.rolls[1]}) and EXTINGUISHED their Burn!`;
     }
 
-    // Shadow Purr: Heals attacker + puts defender to sleep (only on successful hit)
+    // Kat's Shadow Purr: Heals attacker + puts defender to sleep (Sleep X1, if and only if attack is successful)
     const isShadowPurr = attackSelectionName && attackSelectionName.toUpperCase().replace(/\s+/g, '').includes('SHADOWPURR');
     if (isShadowPurr && atkWin && newDefenderState) {
-      newAttackerState.hp = Math.min(newAttackerState.maxHp || 100, newAttackerState.hp + 15);
+      newAttackerState.hp = Math.min(newAttackerState.maxHp || 100, newAttackerState.hp + 20);
       newDefenderState.sleepTurns = (newDefenderState.sleepTurns || 0) + 1;
-      log += ` 😻 SHADOW PURR! ${newAttackerState.name} restored +15 HP and ${newDefenderState.name} falls asleep for 1 turn!`;
+      log += ` 😻 SHADOW PURR! ${newAttackerState.name} restored +20 HP and ${newDefenderState.name} suffers Sleep X1 (loses 1 turn)!`;
+    }
+
+    // Bee's Pararazzi Stun: Defender loses 1 turn / Sleep X1 (if and only if attack is successful)
+    const isPararazziStun = attackSelectionName && (attackSelectionName.toUpperCase().includes('PARARAZZI') || attackSelectionName.toUpperCase().includes('PAPARAZZI'));
+    if (isPararazziStun && atkWin && newDefenderState && !isShadowPurr) {
+      newDefenderState.sleepTurns = (newDefenderState.sleepTurns || 0) + 1;
+      log += ` 📸 PARARAZZI STUN! ${newDefenderState.name} suffers Sleep X1 and loses their next turn!`;
     }
   }
-  // 4. POISON CARDS (Official Rules: Initial -10 HP for X1 / -20 HP for X2, one-time -10 HP weakness penalty on Poison-weak targets, ongoing -10 HP/turn on X1 & -20 HP/turn on X2 until Antidote)
+  // 4. POISON CARDS (Official Rules: Initial -10 HP for X1 / -20 HP for X2, one-time -10 HP weakness penalty on Poison-weak targets, ongoing -10 HP/turn on X1 & -20 HP/turn on X2 until Antidote. Additional -10 HP activates again if another player attacks with another Poison Card)
   else if (cardName.includes('POISON')) {
     const isX2 = cardName.includes('X2');
     const stacks = isX2 ? 2 : 1;
@@ -1124,7 +1297,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       const totalInitialDamage = initialDamage + weaknessPenalty;
       newDefenderState.hp = Math.max(0, newDefenderState.hp - totalInitialDamage);
       log += ` ☠️ ${cardName} hit ${newDefenderState.name}! Initial damage: -${initialDamage} HP` +
-        (weaknessPenalty > 0 ? ` ☠️ [POISON WEAKNESS] ${newDefenderState.name} has Poison weakness! Suffer -${weaknessPenalty} HP additional weakness penalty!` : '') +
+        (weaknessPenalty > 0 ? ` ☠️ [POISON WEAKNESS] ${newDefenderState.name} has Poison weakness! Suffer -${weaknessPenalty} HP additional weakness penalty! (Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card)` : '') +
         `, +${stacks} Poison stack(s) applied (-${stacks * 10} HP/turn ongoing until treated with an Antidote Card).`;
     } else {
       newAttackerState.poisonCount = (newAttackerState.poisonCount || 0) + stacks;
@@ -1151,7 +1324,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     if (cardName.includes('H20')) healAmount = 20;
     else if (cardName.includes('H30')) healAmount = 30;
     else if (cardName.includes('H40')) healAmount = 40;
-    
+
     const charKey = (newAttackerState.characterId || newAttackerState.id || '').toLowerCase();
     const currentLvl = newAttackerState.level || 1;
     const lvlCap = getCanonicalLevelCap(charKey, currentLvl);
@@ -1297,7 +1470,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   else if (cardName.includes('SLEEPY') || cardName.includes('FREEZE')) {
     const sleepRounds = cardName.includes('X2') ? 2 : 1;
     const dicePenalty = cardName.includes('FREEZE') ? (cardName.includes('X2') ? 4 : 2) : 0;
-    
+
     if (newDefenderState) {
       newDefenderState.sleepTurns = (newDefenderState.sleepTurns || 0) + sleepRounds;
       if (dicePenalty > 0) {
@@ -1354,17 +1527,17 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   else if (cardName === 'RETREAT') {
     // Per official rules: Available for attacker after they have rolled their dice, and available for defender after the attacker rolls their dice
     // Requires character's Retreat Speed stat - must roll >= that value on 1d6
-    
+
     // Get attacker's character to check retreat points (RP)
     // Per official rules (lines 67-73): Higher RP makes retreat easier (RP 5 -> 1+, RP 2 -> 4+). Formula: roll >= max(1, 6 - RP)
     const attackerCharData = attackerChar || KONTROLA_CHARACTERS[newAttackerState.characterId || 'chynaman'];
     const charRP = attackerCharData?.retreatSpeed || attackerCharData?.rp || 1;
     const targetRollReq = Math.max(1, 6 - charRP);
-    
+
     // Roll 1 die
     const retreatRoll = rollDice(1);
     const retreatSuccess = retreatRoll.total >= targetRollReq;
-    
+
     if (retreatSuccess) {
       log += ` 💨 RETREAT SUCCESS! ${newAttackerState.name} rolled ${retreatRoll.total} (needed ${targetRollReq}+ with RP ${charRP}) and escaped combat without taking damage!`;
       newAttackerState.retreatedThisTurn = true;
@@ -1380,7 +1553,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     // X-CHANGE FULL: Exchange cards with all opponents
     const isFullExchange = cardName.includes('FULL');
     log += ` 🔄 X-CHANGE activated! ${newAttackerState.name} can select cards to exchange with ${isFullExchange ? 'all opponents' : 'an opponent'}.`;
-    
+
     // Signal UI to show X-CHANGE modal
     return {
       newAttackerState,
@@ -1399,7 +1572,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       log += ` 🤝 SOUL ALLIANCE cannot be used! This card is only available in 3+ player matches (currently ${playerCount} players).`;
       return { newAttackerState, newDefenderState, log, cardBlocked: true };
     }
-    
+
     if (newDefenderState) {
       newAttackerState.allianceId = newDefenderState.id;
       newDefenderState.allianceId = newAttackerState.id;
@@ -1470,7 +1643,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     log,
     extraTurnGranted: cardName === 'TIME MACHINE' || (cardName.includes('LIGHTNING') && isSuccessfulAttack && !boomerangReflected && ((newAttackerState?.hp || 0) > 0)),
     extraTurnsGranted: (cardName.includes('LIGHTNING') && isSuccessfulAttack && !boomerangReflected && ((newAttackerState?.hp || 0) > 0)) ? (cardName.includes('X2') ? 2 : 1) : (cardName === 'TIME MACHINE' ? 1 : 0),
-    triggerAttackX2SecondHit: cardName.includes('ATTACK X2') && isSuccessfulAttack && !boomerangReflected && ((newAttackerState?.hp || 0) > 0),
+    triggerAttackX2SecondHit: cardName.includes('ATTACK X2') && !boomerangReflected && !newAttackerState?.retreatedThisTurn && ((newAttackerState?.hp || 0) > 0),
     triggerXChange: false, // Handled in Arena UI now
     stealActionCard: Boolean(stealActionCard),
     revealTargetHand: Boolean(revealTargetHand),

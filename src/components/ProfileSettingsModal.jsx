@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, User, Lock, Award, Trophy, Check, AlertCircle, Save, Sparkles, Edit3, Shield, Palette } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, User, Lock, Award, Trophy, Check, AlertCircle, Save, Sparkles, Edit3, Shield, Palette, Upload, Trash2, Plus, Image } from 'lucide-react';
 import { authService } from '../services/authService';
 import { AVAILABLE_AVATARS, getAvatarUrl, DEFAULT_AVATAR } from '../utils/avatarUtils';
 import { cosmeticsService, COSMETIC_FRAMES, COSMETIC_CARDBACKS, COSMETIC_TITLES } from '../services/cosmeticsService';
@@ -79,31 +79,120 @@ export default function ProfileSettingsModal({
           .catch((err) => console.warn('Failed to fetch fresh profile:', err))
           .finally(() => setIsLoadingProfile(false));
       }
+
+      // Load custom uploaded avatars from localStorage
+      try {
+        const key = `tcg_custom_avatars_${currentUser?.id || 'guest'}`;
+        const raw = localStorage.getItem(key);
+        const parsed = raw ? JSON.parse(raw) : [];
+        setCustomAvatars(parsed);
+      } catch {
+        setCustomAvatars([]);
+      }
     }
   }, [isOpen, currentUser?.id]);
+
+  const [customAvatars, setCustomAvatars] = useState([]);
+
+  // Handle uploading user's own Avatar image
+  const handleUploadAvatar = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setErrorMsg('Please select a valid image file (PNG, JPG, WEBP, GIF).');
+      return;
+    }
+
+    if (file.size > 8 * 1024 * 1024) {
+      setErrorMsg('Image file size must be under 8MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new window.Image();
+      img.onload = () => {
+        // Offscreen canvas to crop & scale to square 256x256
+        const canvas = document.createElement('canvas');
+        const dim = 256;
+        canvas.width = dim;
+        canvas.height = dim;
+        const ctx = canvas.getContext('2d');
+
+        const minSide = Math.min(img.width, img.height);
+        const sx = (img.width - minSide) / 2;
+        const sy = (img.height - minSide) / 2;
+
+        ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, dim, dim);
+        const dataUrl = canvas.toDataURL('image/png', 0.92);
+
+        // Save into custom list
+        try {
+          const key = `tcg_custom_avatars_${currentUser?.id || 'guest'}`;
+          const currentList = customAvatars.filter(u => u !== dataUrl);
+          const updatedList = [dataUrl, ...currentList].slice(0, 12);
+          localStorage.setItem(key, JSON.stringify(updatedList));
+          setCustomAvatars(updatedList);
+        } catch (err) {
+          console.warn('LocalStorage save failed for custom avatar:', err);
+        }
+
+        // Apply as active avatar
+        handleSaveAvatar(dataUrl);
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleDeleteCustomAvatar = (e, targetUrl) => {
+    e.stopPropagation();
+    try {
+      const key = `tcg_custom_avatars_${currentUser?.id || 'guest'}`;
+      const updatedList = customAvatars.filter(u => u !== targetUrl);
+      localStorage.setItem(key, JSON.stringify(updatedList));
+      setCustomAvatars(updatedList);
+      if (selectedAvatar === targetUrl) {
+        handleSaveAvatar(DEFAULT_AVATAR);
+      }
+    } catch (err) {
+      console.warn('Failed to delete custom avatar:', err);
+    }
+  };
 
   if (!isOpen) return null;
 
   // Handle saving chosen Avatar
   const handleSaveAvatar = async (avatarFilename) => {
-    if (!currentUser?.id) return;
     setIsSaving(true);
     setErrorMsg('');
     setSuccessMsg('');
 
     try {
-      const updated = await authService.updateProfile(currentUser.id, {
-        avatar_id: avatarFilename
-      });
       setSelectedAvatar(avatarFilename);
       setProfileData(prev => ({ ...(prev || userProfile), avatar_id: avatarFilename }));
+
+      try {
+        localStorage.setItem(`tcg_active_avatar_${currentUser?.id || 'guest'}`, avatarFilename);
+      } catch {}
+
+      if (currentUser?.id) {
+        await authService.updateProfile(currentUser.id, {
+          avatar_id: avatarFilename
+        });
+      }
       setSuccessMsg('Avatar updated successfully!');
       setIsAvatarPickerOpen(false);
-      if (onProfileUpdated) onProfileUpdated(updated || { ...userProfile, avatar_id: avatarFilename });
+      if (onProfileUpdated) onProfileUpdated({ ...(profileData || userProfile), avatar_id: avatarFilename });
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (err) {
-      console.error('Failed to update avatar:', err);
-      setErrorMsg(err.message || 'Failed to update avatar');
+      console.warn('Saved avatar locally:', err);
+      setSuccessMsg('Avatar updated locally!');
+      setIsAvatarPickerOpen(false);
+      if (onProfileUpdated) onProfileUpdated({ ...(profileData || userProfile), avatar_id: avatarFilename });
+      setTimeout(() => setSuccessMsg(''), 3000);
     } finally {
       setIsSaving(false);
     }
@@ -458,36 +547,69 @@ export default function ProfileSettingsModal({
                 {activeProfile?.username || 'Player'}
               </h2>
               <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)' }}>
-                Avatar File: <span style={{ color: 'var(--neon-gold, #FBC80D)' }}>{selectedAvatar}</span>
+                Avatar: <span style={{ color: 'var(--neon-gold, #FBC80D)' }}>{selectedAvatar?.startsWith('data:') ? 'Custom Uploaded Avatar' : selectedAvatar}</span>
               </div>
             </div>
           </div>
 
-          <button
-            onClick={() => setIsAvatarPickerOpen(true)}
-            style={{
-              background: 'linear-gradient(135deg, #00f0ff 0%, #0077ff 100%)',
-              border: 'none',
-              borderRadius: '10px',
-              padding: '10px 20px',
-              color: '#000',
-              fontWeight: 'bold',
-              fontSize: '0.95rem',
-              fontFamily: 'Bebas Neue, sans-serif',
-              letterSpacing: '0.8px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              boxShadow: '0 0 16px rgba(0, 240, 255, 0.35)',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseOver={(e) => (e.currentTarget.style.boxShadow = '0 0 22px rgba(0, 240, 255, 0.65)')}
-            onMouseOut={(e) => (e.currentTarget.style.boxShadow = '0 0 16px rgba(0, 240, 255, 0.35)')}
-          >
-            <Sparkles size={16} />
-            <span>CHANGE AVATAR</span>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            {/* Upload Own Avatar Button */}
+            <label
+              style={{
+                background: 'linear-gradient(135deg, #FBC80D 0%, #ff9900 100%)',
+                border: 'none',
+                borderRadius: '10px',
+                padding: '10px 18px',
+                color: '#000',
+                fontWeight: 'bold',
+                fontSize: '0.95rem',
+                fontFamily: 'Bebas Neue, sans-serif',
+                letterSpacing: '0.8px',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 0 16px rgba(251, 200, 13, 0.4)',
+                transition: 'all 0.2s ease'
+              }}
+              title="Upload your own avatar character image from your device"
+            >
+              <Upload size={16} />
+              <span>UPLOAD OWN AVATAR</span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleUploadAvatar}
+                style={{ display: 'none' }}
+              />
+            </label>
+
+            <button
+              onClick={() => setIsAvatarPickerOpen(true)}
+              style={{
+                background: 'linear-gradient(135deg, #00f0ff 0%, #0077ff 100%)',
+                border: 'none',
+                borderRadius: '10px',
+                padding: '10px 18px',
+                color: '#000',
+                fontWeight: 'bold',
+                fontSize: '0.95rem',
+                fontFamily: 'Bebas Neue, sans-serif',
+                letterSpacing: '0.8px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 0 16px rgba(0, 240, 255, 0.35)',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseOver={(e) => (e.currentTarget.style.boxShadow = '0 0 22px rgba(0, 240, 255, 0.65)')}
+              onMouseOut={(e) => (e.currentTarget.style.boxShadow = '0 0 16px rgba(0, 240, 255, 0.35)')}
+            >
+              <Palette size={16} />
+              <span>CHANGE AVATAR</span>
+            </button>
+          </div>
         </div>
 
         {/* ROW 2: PLAYER STATS & PROGRESS */}
@@ -1151,12 +1273,161 @@ export default function ProfileSettingsModal({
               </button>
             </div>
 
+            {/* Upload Your Own Avatar Character Bar */}
+            <div style={{
+              padding: '16px 24px',
+              background: 'rgba(251, 200, 13, 0.07)',
+              borderBottom: '1px solid rgba(251, 200, 13, 0.18)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '14px',
+              flexWrap: 'wrap'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, rgba(251,200,13,0.2), rgba(255,100,0,0.1))',
+                  border: '1px solid var(--neon-gold, #FBC80D)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <Upload size={20} color="var(--neon-gold, #FBC80D)" />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 'bold', color: '#fff', fontSize: '0.95rem' }}>
+                    Upload Your Own Avatar Character
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.6)' }}>
+                    PNG, JPG, WEBP, or GIF (Auto-cropped to high-res profile square)
+                  </div>
+                </div>
+              </div>
+
+              <label
+                style={{
+                  background: 'linear-gradient(90deg, #FBC80D, #ff9900)',
+                  color: '#000',
+                  fontWeight: 'bold',
+                  fontSize: '0.85rem',
+                  fontFamily: 'Bebas Neue, sans-serif',
+                  letterSpacing: '1px',
+                  padding: '8px 18px',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: '0 0 12px rgba(251,200,13,0.4)',
+                  transition: 'transform 0.15s ease'
+                }}
+              >
+                <Plus size={16} />
+                CHOOSE IMAGE FILE
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleUploadAvatar}
+                  style={{ display: 'none' }}
+                />
+              </label>
+            </div>
+
+            {/* Custom Uploaded Avatars Grid */}
+            {customAvatars.length > 0 && (
+              <div style={{ padding: '16px 24px 0 24px' }}>
+                <div style={{
+                  fontSize: '0.8rem',
+                  color: 'var(--neon-gold, #FBC80D)',
+                  fontFamily: 'Bebas Neue, sans-serif',
+                  letterSpacing: '1px',
+                  marginBottom: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                  <Sparkles size={14} /> YOUR UPLOADED CUSTOM AVATARS ({customAvatars.length})
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: '14px' }}>
+                  {customAvatars.map((customUrl, idx) => {
+                    const isSelected = selectedAvatar === customUrl;
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => handleSaveAvatar(customUrl)}
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '10px 8px',
+                          borderRadius: '14px',
+                          background: isSelected ? 'rgba(251, 200, 13, 0.22)' : 'rgba(255, 255, 255, 0.04)',
+                          border: isSelected ? '2px solid var(--neon-gold, #FBC80D)' : '1.5px solid rgba(251, 200, 13, 0.3)',
+                          boxShadow: isSelected ? '0 0 16px rgba(251, 200, 13, 0.45)' : 'none',
+                          cursor: isSaving ? 'wait' : 'pointer',
+                          transition: 'all 0.2s ease',
+                          position: 'relative'
+                        }}
+                      >
+                        <img
+                          src={customUrl}
+                          alt="Custom Avatar"
+                          style={{
+                            width: '64px',
+                            height: '64px',
+                            borderRadius: '50%',
+                            objectFit: 'cover',
+                            display: 'block',
+                            border: '1.5px solid rgba(251,200,13,0.5)'
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteCustomAvatar(e, customUrl)}
+                          title="Remove this uploaded avatar"
+                          style={{
+                            position: 'absolute',
+                            top: '4px',
+                            right: '4px',
+                            background: 'rgba(255,0,0,0.7)',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '20px',
+                            height: '20px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#fff',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <Trash2 size={11} />
+                        </button>
+                        <span style={{ fontSize: '0.72rem', color: '#FBC80D', fontWeight: 'bold' }}>
+                          CUSTOM #{idx + 1}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div style={{ padding: '16px 24px 0 24px', fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '1px' }}>
+              STANDARD SYSTEM AVATARS
+            </div>
+
             {/* Modal Grid */}
             <div
               style={{
                 flex: 1,
                 overflowY: 'auto',
-                padding: '24px',
+                padding: '16px 24px 24px',
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))',
                 gap: '14px'

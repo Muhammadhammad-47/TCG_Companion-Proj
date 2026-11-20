@@ -1,7 +1,7 @@
 // TCG Card Game — Official Game Logic & State Management Engine
 import { CHARACTERS, ZOMBIE_PROFILE } from '../data/characters.js';
 import { GAME_LIMITS, ACTION_CARDS } from '../data/cards.js';
-import { KONTROLA_CHARACTERS } from '../kontrola/KontrolaEngine.js';
+import { KONTROLA_CHARACTERS, generateGiftedCharacterMoves } from '../kontrola/KontrolaEngine.js';
 
 export function drawRandomCards(count) {
   const drawn = [];
@@ -28,6 +28,7 @@ export function createInitialGameState(playerConfigs) {
       maxReserveHp: charData?.baseReserveHP !== undefined ? charData.baseReserveHP : (CHARACTERS[characterId]?.baseReserveHP || 0),
       reserveUnlocked: charData?.reserveUnlocked !== undefined ? charData.reserveUnlocked : Boolean(CHARACTERS[characterId]?.reserveUnlocked),
       reserveActivations: 0,
+      characterCardMoves: generateGiftedCharacterMoves(characterId, 10),
       hp: cfg.startingHP || characterHP,
       maxHp: Math.max(characterHP, cfg.startingHP || characterHP),
       preZombieHP: cfg.startingHP || characterHP,
@@ -279,8 +280,7 @@ export function resolveDiceCombat({
   if (!hasflyerImmunity) {
     if ((isAttackerZombie || moveElement === 'Poison') && hasPoisonWeakness) {
       weaknessTriggered = true;
-      const isKat = ['kat', 'katsumi'].some(k => defCharKey.includes(k));
-      weaknessBonus = isKat ? 15 : 10;
+      weaknessBonus = 10;
     } else if (moveElement === 'Fire' && hasFireWeakness) {
       weaknessTriggered = true;
       weaknessBonus = 10;
@@ -379,17 +379,23 @@ export function resolveDiceCombat({
     }
   }
 
-  const revealCards = characterMove?.revealCards || false;
+  // Vision X1: Target reveals Action Cards (if and only if attack is successful)
+  const isLassoOfTruth = Boolean(characterMove?.revealCards) || (characterMove?.name || '').toUpperCase().includes('LASSO OF TRUTH');
+  const revealCards = clashWon && isLassoOfTruth;
 
-  // Official LIGHTNING Functionality:
+  // Official LIGHTNING, SLEEP & STUN Functionality (activated if and only if attack is successful):
   // LIGHTNING X1: On successful attack, defendant receives -10 HP and attacker receives another turn (1 extra turn).
   // LIGHTNING X2: On successful attack, defendant receives -20 HP and attacker receives 2 extra turns.
-  // If attack is not successful, nothing happens and game continues (no extra turn awarded).
+  // Kat's Shadow Purr: On successful attack, defendant receives Sleep X1 (loses 1 turn) and attacker heals +20 HP.
+  // Bee's Pararazzi Stun: On successful attack, defendant receives Sleep X1 (loses 1 turn).
+  // If attack is not successful, none of these status effects activate.
   let extraTurnsGranted = 0;
   let sleepTurns = 0;
 
   if (clashWon) {
-    const cardName = actionCard?.name || '';
+    const cardName = (actionCard?.name || '').toUpperCase();
+    const moveName = (characterMove?.name || '').toUpperCase();
+
     if (cardName.includes('LIGHTNING X2')) {
       extraTurnsGranted = 2;
     } else if (cardName.includes('LIGHTNING X1')) {
@@ -399,6 +405,15 @@ export function resolveDiceCombat({
     } else if (cardName.includes('SLEEPY X2')) {
       sleepTurns = 2;
     } else if (cardName.includes('SLEEPY X1')) {
+      sleepTurns = 1;
+    }
+
+    // Kat's Shadow Purr (Semi Common): Sleep X1 on defendant if successful
+    if (moveName.includes('SHADOW PURR') || characterMove?.appliesSleep) {
+      sleepTurns = 1;
+    }
+    // Bee's Pararazzi Stun (Semi Common): Sleep X1 / loses 1 turn on defendant if successful
+    else if (moveName.includes('PARARAZZI') || moveName.includes('PAPARAZZI') || characterMove?.loseTurn) {
       sleepTurns = 1;
     }
   }

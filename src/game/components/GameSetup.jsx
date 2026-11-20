@@ -201,16 +201,6 @@ export default function GameSetup({ onStartGame, onBack }) {
   };
 
   const handleStart = () => {
-    // Validate character usage quotas before launching match
-    for (const p of players) {
-      const lic = licenses[p.characterId] || characterLicenseService.getLicenseSync(currentUser?.id, p.characterId);
-      if (!lic.isUnlocked && lic.usageCount >= FREE_USAGE_LIMIT) {
-        soundFX.playMenuHover();
-        setUnlockModalChar(p.characterId);
-        return;
-      }
-    }
-
     soundFX.playGameStart();
     let ordered = [...players];
     if (startingPlayerIndex > 0 && startingPlayerIndex < ordered.length) {
@@ -315,16 +305,9 @@ export default function GameSetup({ onStartGame, onBack }) {
                           </span>
                         );
                       }
-                      if (lic.usageCount >= FREE_USAGE_LIMIT) {
-                        return (
-                          <span style={{ fontSize: '0.62rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.25)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.45)', fontWeight: 'bold' }}>
-                            🔒 LOCKED (10/10)
-                          </span>
-                        );
-                      }
                       return (
                         <span style={{ fontSize: '0.62rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(0, 240, 255, 0.2)', color: '#00f0ff', border: '1px solid rgba(0, 240, 255, 0.4)', fontWeight: 'bold' }}>
-                          ⚡ {FREE_USAGE_LIMIT - (lic.usageCount || 0)}/10 Left
+                          🎴 10 Moves / Match
                         </span>
                       );
                     })()}
@@ -338,20 +321,13 @@ export default function GameSetup({ onStartGame, onBack }) {
                 <div className="profile-dropdown-menu">
                   {availableChars.map(c => {
                     const lic = licenses[c.id] || characterLicenseService.getLicenseSync(currentUser?.id, c.id);
-                    const isLocked = !lic.isUnlocked && lic.usageCount >= FREE_USAGE_LIMIT;
-                    const left = Math.max(0, FREE_USAGE_LIMIT - (lic.usageCount || 0));
 
                     return (
                       <div
                         key={c.id}
-                        className={`profile-option-row ${isLocked ? 'profile-option-locked' : ''}`}
-                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', opacity: isLocked ? 0.75 : 1 }}
+                        className="profile-option-row"
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
                         onClick={() => {
-                          if (isLocked) {
-                            soundFX.playMenuHover();
-                            setUnlockModalChar(c.id);
-                            return;
-                          }
                           const next = [...players];
                           if (next[0]) next[0].characterId = c.id;
                           setPlayers(next);
@@ -364,15 +340,11 @@ export default function GameSetup({ onStartGame, onBack }) {
                         </div>
                         {lic.isUnlocked ? (
                           <span style={{ fontSize: '0.65rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.4)', fontWeight: 'bold' }}>
-                            👑 UNLIMITED
-                          </span>
-                        ) : isLocked ? (
-                          <span style={{ fontSize: '0.65rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.25)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.4)', fontWeight: 'bold' }}>
-                            🔒 LOCKED (10/10)
+                            👑 FULL DECK
                           </span>
                         ) : (
                           <span style={{ fontSize: '0.65rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(0, 240, 255, 0.15)', color: '#00f0ff', border: '1px solid rgba(0, 240, 255, 0.3)', fontWeight: 'bold' }}>
-                            ⚡ {left}/10 Left
+                            🎴 10 Moves
                           </span>
                         )}
                       </div>

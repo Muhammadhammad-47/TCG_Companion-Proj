@@ -240,7 +240,7 @@ export default function CharacterUnlockModal({
                   PLAYABLE WARRIOR ACCESS GATE
                 </h3>
                 <p className="text-[11px] text-gray-400">
-                  Duel Champions (10 Free Matches Per Warrior Card)
+                  Play Characters Unlimited Times · Unlock Permanent Full Move Decks
                 </p>
               </div>
             </div>
@@ -274,11 +274,9 @@ export default function CharacterUnlockModal({
                   <span className="text-sm">{c.avatar || '⚔️'}</span>
                   <span>{c.name}</span>
                   {cLic.isUnlocked ? (
-                    <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">👑</span>
-                  ) : cLic.usageCount >= FREE_USAGE_LIMIT ? (
-                    <span className="text-[9px] px-1 py-0.2 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">🔒</span>
+                    <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">👑 FULL</span>
                   ) : (
-                    <span className="text-[9px] px-1 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">{FREE_USAGE_LIMIT - (cLic.usageCount || 0)}</span>
+                    <span className="text-[9px] px-1 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">🎴 10</span>
                   )}
                 </button>
               );
@@ -318,15 +316,11 @@ export default function CharacterUnlockModal({
               <div className="mt-1 flex items-center gap-2 text-xs">
                 {license?.isUnlocked ? (
                   <span className="text-emerald-400 font-bold flex items-center gap-1">
-                    <CheckCircle2 size={14} /> 👑 Unlimited Permanent Access Active
-                  </span>
-                ) : (license?.usageCount || 0) >= FREE_USAGE_LIMIT ? (
-                  <span className="text-rose-400 font-semibold flex items-center gap-1">
-                    <ShieldAlert size={14} /> 10 / 10 Free Matches Exhausted
+                    <CheckCircle2 size={14} /> 👑 Full Character Card Deck Unlocked (Wild Cards & Super Move)
                   </span>
                 ) : (
                   <span className="text-cyan-300 font-semibold flex items-center gap-1">
-                    <Zap size={14} /> {FREE_USAGE_LIMIT - (license?.usageCount || 0)} / 10 Free Trial Matches Left
+                    <Zap size={14} /> 🎴 10 Gifted Move Cards at Start · Purchase Digital or Physical Cards (with QR Code)
                   </span>
                 )}
               </div>
@@ -352,14 +346,17 @@ export default function CharacterUnlockModal({
           {/* The 3 Unlock Options */}
           <div className="p-4 flex flex-col gap-3.5 overflow-y-auto max-h-[50vh]">
             
-            {/* OPTION 1: Buy with In-Game Currency */}
+            {/* OPTION 1: Buy Digital Edition */}
             <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 hover:border-amber-500/40 transition-all">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2 font-bold text-xs text-amber-300">
-                  <Coins size={15} /> OPTION 1: BUY WITH GOLD OR GEMS
+                  <Coins size={15} /> OPTION 1: DIGITAL CARD EDITION (GOLD / GEMS)
                 </div>
-                <span className="text-[10px] text-gray-400">Instant Unlock</span>
+                <span className="text-[10px] text-gray-400">Instant Digital Unlock</span>
               </div>
+              <p className="text-[11px] text-gray-400 mb-2">
+                Purchase only digital cards through the website or game store to unlock permanent full Character Move Cards.
+              </p>
 
               {/* Currency Selector */}
               <div className="grid grid-cols-2 gap-2 mb-2.5">
@@ -418,25 +415,25 @@ export default function CharacterUnlockModal({
               </button>
             </div>
 
-            {/* OPTION 2: Scan QR Code Voucher */}
+            {/* OPTION 2: Scan Physical Card QR Code */}
             <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 hover:border-cyan-500/40 transition-all">
               <div className="flex items-center justify-between mb-1.5">
                 <div className="flex items-center gap-2 font-bold text-xs text-cyan-300">
-                  <QrCode size={15} /> OPTION 2: SCAN PHYSICAL CARD QR
+                  <QrCode size={15} /> OPTION 2: PHYSICAL TCG CARD (INCLUDES QR CODE)
                 </div>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                  Retail Card
+                <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-semibold">
+                  Physical + Digital
                 </span>
               </div>
-              <p className="text-[11px] text-gray-400 mb-2.5">
-                Bought physical Attention TCG booster packs? Scan the QR code or enter voucher token.
+              <p className="text-[11px] text-gray-400 mb-2.5 leading-relaxed">
+                Physical cards allow the player to receive a physical card and the digital card through our QR Code system. Scan the QR code printed on your physical card or enter your voucher token below.
               </p>
               <button
                 type="button"
                 onClick={() => setIsQRScannerOpen(true)}
                 className="w-full py-2 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/40 text-cyan-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
               >
-                <QrCode size={14} /> Open Camera Scanner / Enter Code
+                <QrCode size={14} /> Scan Physical Card QR / Enter Voucher
               </button>
             </div>
 

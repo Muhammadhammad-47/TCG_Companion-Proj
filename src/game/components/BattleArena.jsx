@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { CHARACTERS, ZOMBIE_PROFILE, getAssetUrl } from '../data/characters';
 import { ACTION_CARDS, GAME_LIMITS } from '../data/cards';
 import { resolveDiceCombat, advanceTurn, checkZombieStatus, drawRandomCards } from '../utils/gameEngine';
-import { tradeWithAlly } from '../kontrola/KontrolaEngine';
+import { tradeWithAlly, generatePurchasedCharacterMoves } from '../kontrola/KontrolaEngine';
 import { soundFX } from '../utils/audio';
 import { createGameRoom, updateGameRoom } from '../../services/roomService';
 import WinnerModal from './WinnerModal';
@@ -14,6 +14,8 @@ import BlitzModal from './BlitzModal';
 import RetreatModal from './RetreatModal';
 import TauntModal from './TauntModal';
 import CharacterCardModal from './CharacterCardModal';
+import ReserveEnergyModal from './ReserveEnergyModal';
+import QRScannerModal from '../../components/QRScannerModal';
 import CardZoneModal from './CardZoneModal';
 import ZombieBanner from './ZombieBanner';
 import LocalMatchChatModal from './LocalMatchChatModal';
@@ -63,15 +65,15 @@ export default function BattleArena({
   const [showLocalChat, setShowLocalChat] = useState(false);
   const [showTauntModal, setShowTauntModal] = useState(false);
   const [showCharacterCardModal, setShowCharacterCardModal] = useState(false);
-  
+
   // NEW: Crystal Split Modal State
   const [showCrystalSplitModal, setShowCrystalSplitModal] = useState(false);
   const [crystalSplitData, setCrystalSplitData] = useState(null);
-  
+
   // NEW: Action Card Modal States
   const [showReviveModal, setShowReviveModal] = useState(false);
   const [reviveModalData, setReviveModalData] = useState({ playerName: '', reviveHP: 50, maxHP: 100, playerId: null });
-  
+
   const [showXChangeModal, setShowXChangeModal] = useState(false);
   const [xChangeModalData, setXChangeModalData] = useState({
     xChangeType: 'X1',
@@ -80,7 +82,7 @@ export default function BattleArena({
     defenderName: '',
     initiatorId: null
   });
-  
+
   const [showTradeModal, setShowTradeModal] = useState(false);
   const [tradeModalData, setTradeModalData] = useState({
     playerName: '',
@@ -88,7 +90,7 @@ export default function BattleArena({
     playerHand: [],
     playerEnergyTokens: 0
   });
-  
+
   // NEW: Level Requirement Modal State
   const [showLevelReqModal, setShowLevelReqModal] = useState(false);
   const [levelReqModalData, setLevelReqModalData] = useState({
@@ -137,7 +139,7 @@ export default function BattleArena({
   const [selectedAllianceTerms, setSelectedAllianceTerms] = useState([]);
   const [allianceConfirmations, setAllianceConfirmations] = useState({ player1: false, player2: false });
   const [allianceSoulAllianceCardInstanceId, setAllianceSoulAllianceCardInstanceId] = useState(null);
-  
+
   const [activeTauntBubble, setActiveTauntBubble] = useState(null);
   const [systemError, setSystemError] = useState(null);
   const [roomCode, setRoomCode] = useState(null); // Room code for persistence
@@ -158,6 +160,8 @@ export default function BattleArena({
   const [activeKontrolData, setActiveKontrolData] = useState(null);
   const [activeBlitzData, setActiveBlitzData] = useState(null);
   const [activeRetreatData, setActiveRetreatData] = useState(null);
+  const [isReserveModalOpen, setIsReserveModalOpen] = useState(false);
+  const [isCharCardsQRScannerOpen, setIsCharCardsQRScannerOpen] = useState(false);
 
   const [selectedEffectInfo, setSelectedEffectInfo] = useState(null);
   const [cardCategoryFilter, setCardCategoryFilter] = useState('ALL');
@@ -185,14 +189,14 @@ export default function BattleArena({
   // EFFECT: Monitor for defeated players and show REVIVE modal (Nov 8 Notes: Pop up asking whether player wishes to quit or continue)
   useEffect(() => {
     if (!gameState?.players) return;
-    
+
     // Check if any player has fallen (hp <= 0 or isDefeated), holds a REVIVE card, and hasn't yet handled revive
     const victim = gameState.players.find(p =>
       (p.hp <= 0 || p.isDefeated) &&
       !p.reviveHandled &&
       (p.actionCardsHand || []).some(c => (c.name || '').toUpperCase().includes('REVIVE'))
     );
-    
+
     if (victim && !showReviveModal) {
       const char = CHARACTERS[victim.characterId] || CHARACTERS.chynaman;
       const baseOriginalHP = char.baseHP || victim.maxHp || 100;
@@ -244,12 +248,12 @@ export default function BattleArena({
 
     const interval = setInterval(() => {
       const idleTime = Date.now() - lastSnapshotTime;
-      
+
       // Warn at 9 minutes (540000 ms)
       if (idleTime >= 540000 && !warnIdleCleanup) {
         setWarnIdleCleanup(true);
       }
-      
+
       // Clear at 10 minutes (600000 ms)
       if (idleTime >= 600000) {
         setHistoryStack([]);
@@ -314,7 +318,7 @@ export default function BattleArena({
   // REVIVE MODAL: Handle continue with revive (Nov 8 Notes: Discard REVIVE card, re-appear Action card, restore 50% HP)
   const handleReviveAccept = () => {
     if (!reviveModalData.playerId) return;
-    
+
     pushStateSnapshot();
     const updatedPlayers = (gameState.players || []).map(p => {
       if (p.id === reviveModalData.playerId) {
@@ -341,7 +345,7 @@ export default function BattleArena({
     });
     setShowReviveModal(false);
     if (soundFX && soundFX.playHeal) soundFX.playHeal();
-    
+
     const log = `${reviveModalData.playerName} used REVIVE and re-entered the game!`;
     setLocalChatMessages(prev => [...prev, {
       id: `revive_${Date.now()}`,
@@ -389,26 +393,26 @@ export default function BattleArena({
   // X-CHANGE MODAL: Handle card exchange
   const handleXChangeConfirm = (exchangeData) => {
     if (!exchangeData.attackerCard || !exchangeData.defenderCard) return;
-    
+
     const updatedStates = { ...gameState.characterStates };
     const attacker = updatedStates[xChangeModalData.initiatorId];
-    const defender = Object.values(gameState.characterStates).find(c => 
+    const defender = Object.values(gameState.characterStates).find(c =>
       c.id !== xChangeModalData.initiatorId && c.actionCardsHand?.length > 0
     );
-    
+
     if (attacker && defender) {
       const attackerCardIdx = attacker.actionCardsHand.findIndex(c => c.id === exchangeData.attackerCard.id);
       const defenderCardIdx = defender.actionCardsHand.findIndex(c => c.id === exchangeData.defenderCard.id);
-      
+
       if (attackerCardIdx !== -1 && defenderCardIdx !== -1) {
         const [attackerCardToGive] = attacker.actionCardsHand.splice(attackerCardIdx, 1);
         const [defenderCardToGive] = defender.actionCardsHand.splice(defenderCardIdx, 1);
-        
+
         attacker.actionCardsHand.push(defenderCardToGive);
         defender.actionCardsHand.push(attackerCardToGive);
-        
+
         setGameState({ ...gameState, characterStates: updatedStates });
-        
+
         setLocalChatMessages(prev => [...prev, {
           id: `xchange_${Date.now()}`,
           senderId: 'system',
@@ -418,7 +422,7 @@ export default function BattleArena({
         }]);
       }
     }
-    
+
     setShowXChangeModal(false);
   };
 
@@ -429,27 +433,27 @@ export default function BattleArena({
 
   // SOUL ALLIANCE TRADE: Handle trade confirmation
   const handleTradeConfirm = (tradeData) => {
-    const traderPlayerId = Object.keys(gameState.characterStates).find(id => 
+    const traderPlayerId = Object.keys(gameState.characterStates).find(id =>
       gameState.characterStates[id].name === tradeModalData.playerName
     );
-    const allyPlayerId = Object.keys(gameState.characterStates).find(id => 
+    const allyPlayerId = Object.keys(gameState.characterStates).find(id =>
       gameState.characterStates[id].name === tradeModalData.allyName
     );
-    
+
     if (!traderPlayerId || !allyPlayerId) return;
-    
+
     const traderState = gameState.characterStates[traderPlayerId];
     const allyState = gameState.characterStates[allyPlayerId];
-    
+
     const result = tradeWithAlly(traderState, allyState, tradeData);
-    
+
     if (result.success) {
       const updatedStates = { ...gameState.characterStates };
       updatedStates[traderPlayerId] = result.updatedTrader;
       updatedStates[allyPlayerId] = result.updatedRecipient;
-      
+
       setGameState({ ...gameState, characterStates: updatedStates });
-      
+
       setLocalChatMessages(prev => [...prev, {
         id: `trade_${Date.now()}`,
         senderId: 'system',
@@ -458,7 +462,7 @@ export default function BattleArena({
         time: new Date().toLocaleTimeString()
       }]);
     }
-    
+
     setShowTradeModal(false);
   };
 
@@ -468,7 +472,7 @@ export default function BattleArena({
   };
 
   // ===== SECRET ALLIANCE HANDLERS =====
-  
+
   // Open secret alliance invite modal
   const handleOpenSecretAllianceInvite = (cardInstanceId, targetPlayerId) => {
     setAllianceSoulAllianceCardInstanceId(cardInstanceId);
@@ -479,7 +483,7 @@ export default function BattleArena({
   // Send secret alliance invite
   const handleSendAllianceInvite = (inviteData) => {
     soundFX.playMenuSelect();
-    
+
     // Create pending invite that only recipient can see
     setPendingAllianceInvite({
       fromPlayerId: inviteData.fromPlayerId,
@@ -756,8 +760,23 @@ export default function BattleArena({
         }
 
         let extraTurns = p.extraTurns || 0;
-        if (result.extraTurnsGranted > 0) {
+        const isAttackX1 = (actionCard?.name || '').toUpperCase().includes('ATTACK X1') || actionCard?.id === 'atk_x1';
+        if (isAttackX1) {
+          // Attack X1 strictly allows ONLY one turn regardless of whether the attack is successful or not
+          extraTurns = 0;
+        } else if (result.extraTurnsGranted > 0) {
           extraTurns += result.extraTurnsGranted;
+        }
+
+        // Consume 1 Character Card Move if attack used a character move
+        let updatedCharMoves = p.characterCardMoves ? [...p.characterCardMoves] : [];
+        if (updatedCharMoves.length > 0) {
+          const moveIdx = updatedCharMoves.findIndex(m => m.id === characterMove?.id || m.name === characterMove?.name);
+          if (moveIdx !== -1) {
+            updatedCharMoves.splice(moveIdx, 1);
+          } else {
+            updatedCharMoves.shift();
+          }
         }
 
         let attackerHP = Math.min(p.maxHp || 100, p.hp + stolenHP + (result.isMiss ? 0 : (result.healsAttacker || 0)));
@@ -781,6 +800,7 @@ export default function BattleArena({
           alliedWith: attackerAlliedWith,
           energyTokens: Math.max(0, p.energyTokens - totalET) + stolenET,
           extraTurns,
+          characterCardMoves: updatedCharMoves,
           turnActionCompleted: true,
           actionCardsHand: newHand,
           stats: {
@@ -838,9 +858,9 @@ export default function BattleArena({
     // Show modal when: 2+ players in game AND opponent defeated AND crystal available
     const otherPlayers = updatedPlayers.filter(p => p.id !== attacker.id && !p.isDefeated);
     const defenderStillDefeated = updatedPlayers.find(p => p.id === defender.id && p.hp === 0);
-    const shouldShowCrystalSplitModal = 
-      defenderDefeated && 
-      defender.crystals > 0 && 
+    const shouldShowCrystalSplitModal =
+      defenderDefeated &&
+      defender.crystals > 0 &&
       otherPlayers.length > 0;
 
     // FIX #2: Validate defender is still defeated before showing crystal split modal
@@ -1056,16 +1076,18 @@ export default function BattleArena({
           logText = `Deployed +${amount || 30} Shield barrier`;
           logAmount = `+${amount || 30} Shield`;
         } else if (type === 'antidote') {
-          updated.poisonCards = Math.max(0, (updated.poisonCards || 0) - 1);
-          updated.hp = Math.min(updated.maxHP, updated.hp + 20);
+          const removeCount = cardName?.includes('FULL') ? 99 : (cardName?.includes('X2') ? 2 : 1);
+          const prevPoison = updated.poisonCards || 0;
+          updated.poisonCards = Math.max(0, prevPoison - removeCount);
+          const curedCount = prevPoison - updated.poisonCards;
           soundFX.playHeal();
-          logText = `Used Antidote: -1 Poison & +20 HP`;
-          logAmount = `+20 HP`;
+          logText = `Used Antidote: -${curedCount} Poison card(s)`;
+          logAmount = `-${curedCount} ☠️`;
         } else if (type === 'poison') {
           const isX2 = cardName?.includes('X2') || actionCardId === 'poison_x2' || amount === 2;
           const stacks = isX2 ? 2 : 1;
           const initialDmg = isX2 ? 20 : 10;
-          
+
           // Check Poison Weakness on defender (Chynaman, Kiko, Poochi, Kat, Bee)
           const defChar = CHARACTERS[updated.characterId] || {};
           const defWeakness = (defChar.weakness?.type || updated.weakness?.type || updated.weakness || '').toLowerCase();
@@ -1079,7 +1101,7 @@ export default function BattleArena({
           soundFX.playDamage();
           logText = `Infected ${updated.name} with ${cardName || (isX2 ? 'POISON X2' : 'POISON X1')} (-${initialDmg} HP initial, +${stacks} Poison cards)`;
           if (weaknessPenalty > 0) {
-            logText += ` 🎯 [POISON WEAKNESS] ${updated.name} has Poison weakness! Suffer -${weaknessPenalty} HP additional weakness penalty!`;
+            logText += ` 🎯 [POISON WEAKNESS] ${updated.name} has Poison weakness! Suffer -${weaknessPenalty} HP additional weakness penalty! (Activates again if another player attacks with another Poison Card)`;
           }
           logAmount = `-${totalInitialDmg} HP, +${stacks} ☠️`;
         } else if (type === 'amplify') {
@@ -1098,15 +1120,15 @@ export default function BattleArena({
           }
         } else if (type === 'vitality') {
           // VITALITY GAIN cards - increase max HP and apply level up
-          const vitAmount = cardName?.includes('V10') ? 10 : 
-                            cardName?.includes('V20') ? 20 : 
-                            cardName?.includes('V30') ? 30 : 
-                            cardName?.includes('V40') ? 40 : 10;
-          
+          const vitAmount = cardName?.includes('V10') ? 10 :
+            cardName?.includes('V20') ? 20 :
+              cardName?.includes('V30') ? 30 :
+                cardName?.includes('V40') ? 40 : 10;
+
           updated.maxHP = (updated.maxHP || 100) + vitAmount;
           updated.hp = Math.min(updated.maxHP, updated.hp + vitAmount);
           updated.level = (updated.level || 1) + 1;
-          
+
           soundFX.playHeal();
           logText = `${updated.name} used ${cardName}!`;
           logAmount = `+${vitAmount} Max HP, Lv.${updated.level}`;
@@ -1169,7 +1191,7 @@ export default function BattleArena({
 
     let stolenCard = null;
     let forceAttackVictim = null;
-    
+
     if (success && chosenOption === 'steal_card' && stolenCardId) {
       const targetHand = target.actionCardsHand || [];
       stolenCard = targetHand.find(c => c.instanceId === stolenCardId);
@@ -1180,7 +1202,7 @@ export default function BattleArena({
 
     const updatedPlayers = players.map(p => {
       let updated = { ...p };
-      
+
       // Attacker costs & rewards
       if (p.id === attackerId) {
         let newHand = updated.actionCardsHand || [];
@@ -1191,14 +1213,14 @@ export default function BattleArena({
         if (stolenCard) {
           newHand.push({ ...stolenCard, instanceId: `stolen_${Date.now()}_${Math.random()}` });
         }
-        
+
         updated.energyTokens = Math.max(0, updated.energyTokens - 3);
         updated.turnActionCompleted = true;
         updated.actionCardsHand = newHand;
         updated.kontrolUsesLeft = Math.max(0, (updated.kontrolUsesLeft ?? 2) - 1);
         updated.kontrolCooldown = 5; // 5-turn cooldown after Kontrol use
       }
-      
+
       // Target penalties
       if (p.id === targetId) {
         if (stolenCard) {
@@ -1212,13 +1234,13 @@ export default function BattleArena({
           updated = checkZombieStatus(updated);
         }
       }
-      
+
       // Other victim (if multiplayer)
       if (forceAttackVictim && p.id === forceAttackVictim.id && forceAttackVictim.id !== targetId) {
         updated.hp = Math.max(0, updated.hp - 25);
         updated = checkZombieStatus(updated);
       }
-      
+
       return updated;
     });
 
@@ -1344,10 +1366,18 @@ export default function BattleArena({
         if (playedInstanceId) {
           newHand = newHand.filter(c => c.instanceId !== playedInstanceId);
           newHand.push(...drawRandomCards(1));
+        } else {
+          // If retreated directly from combat modal, consume 1 RETREAT card from hand
+          const retreatCardIdx = newHand.findIndex(c => (c.name || c.id || '').toUpperCase().includes('RETREAT'));
+          if (retreatCardIdx !== -1) {
+            newHand = newHand.filter((_, idx) => idx !== retreatCardIdx);
+            newHand.push(...drawRandomCards(1));
+          }
         }
-        return { 
-          ...p, 
+        return {
+          ...p,
           retreatedThisTurn: success,
+          extraTurns: 0,
           actionCardsHand: newHand
         };
       }
@@ -1357,15 +1387,140 @@ export default function BattleArena({
     const newLog = {
       turn: turnNum,
       actor: player.name,
-      action: success ? `Successfully retreated from battle!` : `Retreat attempt failed! Must stay and fight.`,
+      action: success ? `Successfully retreated from battle! Any Attack X2 is forfeited and turn ended.` : `Retreat attempt failed! Must stay and fight.`,
       type: 'retreat',
       amount: success ? 'ESCAPED' : 'FAILED'
     };
 
-    setGameState({
+    const intermediateState = {
       ...gameState,
       players: updatedPlayers,
       history: [newLog, ...(gameState.history || [])]
+    };
+
+    if (success) {
+      const nextState = advanceTurn(intermediateState);
+      setGameState(nextState);
+      const nextActivePlayer = nextState.players[nextState.activePlayerIndex];
+      setTurnAnnouncement({
+        turn: nextState.turnNumber,
+        player: nextActivePlayer.name,
+        isExtraTurn: false,
+        reason: `${player.name} retreated! Any Attack X2 is forfeited and turn passed to ${nextActivePlayer.name}.`
+      });
+      setTimeout(() => setTurnAnnouncement(null), 2500);
+    } else {
+      setGameState(intermediateState);
+    }
+  };
+
+  // Disengage from combat directly inside DiceRollerModal
+  const handleExecuteRetreatFromCombat = (role = 'attacker') => {
+    if (!activeDiceCombatData) return;
+    const { attacker, defender } = activeDiceCombatData;
+    const retreatingPlayer = role === 'attacker' ? attacker : defender;
+    setActiveDiceCombatData(null);
+    handleCompleteRetreat({ playerId: retreatingPlayer.id, success: true });
+  };
+
+  // Recover chosen amount from Reserve Energy pool (costs 2 ET)
+  const handleRecoverReserveAmount = (chosenAmount) => {
+    if ((activePlayer.energyTokens || 0) < 2) {
+      alert("Reserve Energy Recovery requires 2 Energy Tokens (ET).");
+      return;
+    }
+    pushStateSnapshot();
+    const missingHp = (activePlayer.maxHp || 100) - activePlayer.hp;
+    const maxHeal = Math.min(activePlayer.reserveHp, missingHp);
+    const healAmount = Math.min(chosenAmount, maxHeal);
+    const updated = players.map(p => {
+      if (p.id === activePlayer.id) {
+        return {
+          ...p,
+          hp: p.hp + healAmount,
+          reserveHp: p.reserveHp - healAmount,
+          energyTokens: p.energyTokens - 2,
+          reserveActivations: (p.reserveActivations || 0) + 1
+        };
+      }
+      return p;
+    });
+    setGameState({
+      ...gameState,
+      players: updated,
+      lastActionLog: `💚 ${activePlayer.name} activated Reserve Energy! Restored +${healAmount} HP (spent 2 ET). Remaining Reserve: ${activePlayer.reserveHp - healAmount} HP.`
+    });
+    setFloatingDamage({ targetId: activePlayer.id, text: `+${healAmount} HP (Reserve)`, type: 'heal' });
+    setTimeout(() => setFloatingDamage(null), 1500);
+    setTurnAnnouncement({
+      turn: gameState.turnNumber,
+      player: activePlayer.name,
+      isExtraTurn: false,
+      reason: `💚 Reserve Energy Recovery: Restored +${healAmount} HP (spent 2 ET)`
+    });
+    setTimeout(() => setTurnAnnouncement(null), 2500);
+    if (soundFX && soundFX.playReserveEnergy) soundFX.playReserveEnergy();
+    else if (soundFX && soundFX.playHeal) soundFX.playHeal();
+  };
+
+  // Release / Unlock Reserve Energy via QR scan or voucher code
+  const handleReleaseReserveForPlayer = (playerId, reserveHp = 30) => {
+    pushStateSnapshot();
+    const targetP = players.find(p => p.id === playerId);
+    const updated = players.map(p => {
+      if (p.id === playerId) {
+        return {
+          ...p,
+          reserveUnlocked: true,
+          reserveHp: (p.reserveHp && p.reserveHp > 0) ? p.reserveHp : reserveHp,
+          maxReserveHp: (p.maxReserveHp && p.maxReserveHp > 0) ? p.maxReserveHp : reserveHp
+        };
+      }
+      return p;
+    });
+    setGameState({
+      ...gameState,
+      players: updated,
+      history: [{
+        turn: turnNum,
+        actor: targetP?.name || 'Player',
+        action: `Scanned QR Code and RELEASED Energy Reserve (${reserveHp} HP unlocked)!`,
+        type: 'heal',
+        amount: `+${reserveHp} Reserve`
+      }, ...(gameState.history || [])]
+    });
+  };
+
+  // Replenish Character Card Moves via physical card QR scan
+  const handleReplenishMovesForPlayer = (playerId, characterId) => {
+    soundFX.playCard();
+    const targetKey = (characterId || 'chynaman').toLowerCase();
+    const fullDeck = generatePurchasedCharacterMoves(targetKey, 15);
+    const targetP = players.find(p => p.id === playerId);
+    setGameState(prev => {
+      const updatedPlayers = (prev.players || []).map(p => {
+        if (p.id === playerId) {
+          return {
+            ...p,
+            characterCardMoves: [...(p.characterCardMoves || []), ...fullDeck]
+          };
+        }
+        return p;
+      });
+      return {
+        ...prev,
+        players: updatedPlayers,
+        history: [{
+          turn: turnNum,
+          actor: targetP?.name || 'Player',
+          action: `Scanned physical Character Card QR Code! Unlocked Character Card Moves deck (+${fullDeck.length} moves).`,
+          type: 'card'
+        }, ...(prev.history || [])]
+      };
+    });
+    setTurnAnnouncement({
+      title: '🎴 CHARACTER CARDS UNLOCKED!',
+      subtitle: `Scanned physical Character Card QR Code (+${fullDeck.length} moves unlocked)`
     });
   };
 
@@ -1376,13 +1531,13 @@ export default function BattleArena({
     pushStateSnapshot();
 
     const { winner, loser, offer, method } = result;
-    
+
     // Update game state with crystal and item transfers
     const updatedPlayers = players.map(p => {
       if (p.id === winner.id) {
         // Winner gets the crystal
         let updatedCards = p.actionCardsHand || [];
-        
+
         // FIX #7: Safely access offer (may be null if fight outcome)
         // If negotiation was accepted, add offered items
         if (result.accepted && offer) {
@@ -1414,7 +1569,7 @@ export default function BattleArena({
       if (p.id === loser.id) {
         // Loser loses the crystal
         let updatedCards = p.actionCardsHand || [];
-        
+
         // If negotiation was accepted, remove offered items
         if (result.accepted && offer) {
           if (offer.actionCards && offer.actionCards.length > 0) {
@@ -1486,7 +1641,7 @@ export default function BattleArena({
         newHand = newHand.filter(c => c.instanceId !== cardToDiscard.instanceId);
         // Draw a new card
         newHand.push(...drawRandomCards(1));
-        
+
         return {
           ...p,
           actionCardsHand: newHand,
@@ -1645,7 +1800,7 @@ export default function BattleArena({
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       <div className={`webgl-screen arena-screen ${isShaking ? 'shake-animation damage-flash-overlay' : ''}`}>
-        
+
         {/* Turn Announcement Overlay */}
         {turnAnnouncement && (
           <div className="turn-announcement-overlay">
@@ -1663,9 +1818,11 @@ export default function BattleArena({
 
         {/* Idle Cleanup Warning */}
         {warnIdleCleanup && (
-          <div style={{ position: 'fixed', bottom: '80px', left: '50%', transform: 'translateX(-50%)',
+          <div style={{
+            position: 'fixed', bottom: '80px', left: '50%', transform: 'translateX(-50%)',
             background: 'rgba(251,200,13,0.95)', color: '#000', padding: '8px 20px',
-            borderRadius: '8px', fontWeight: 'bold', zIndex: 9999 }}>
+            borderRadius: '8px', fontWeight: 'bold', zIndex: 9999
+          }}>
             ⚠️ Undo history will clear in 1 minute due to inactivity.
           </div>
         )}
@@ -1711,7 +1868,7 @@ export default function BattleArena({
               <Clock size={16} color="var(--neon-cyan)" />
               <span className="hud-turn-text">TURN {turnNum} · ROUND {roundNum}</span>
             </div>
-            
+
             {/* ET Claim reminder button */}
             {!activePlayer.claimedTurnET && (
               <button
@@ -1965,7 +2122,7 @@ export default function BattleArena({
                   const isActive = i === activeIdx;
                   let x = 0;
                   let y = 0;
-                  
+
                   if (!isActive) {
                     let relativeIdx = i;
                     if (i > activeIdx) relativeIdx--;
@@ -2061,7 +2218,7 @@ export default function BattleArena({
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         />
                       </div>
-                      
+
                       {/* Compact, Clean, High-Contrast Stat Strip */}
                       <div
                         style={{
@@ -2382,66 +2539,41 @@ export default function BattleArena({
                   </button>
                 )}
 
-                {activePlayer.reserveUnlocked && (activePlayer.reserveHp || 0) > 0 && activePlayer.hp < (activePlayer.maxHp || 100) && (
-                  <button
-                    className="btn-play-card-cta"
-                    onClick={() => {
-                      if ((activePlayer.energyTokens || 0) < 2) {
-                        alert("Reserve Energy Recovery requires 2 Energy Tokens (ET).");
-                        return;
-                      }
-                      pushStateSnapshot();
-                      const missingHp = (activePlayer.maxHp || 100) - activePlayer.hp;
-                      const healAmount = Math.min(activePlayer.reserveHp, missingHp);
-                      const updated = players.map(p => {
-                        if (p.id === activePlayer.id) {
-                          return {
-                            ...p,
-                            hp: p.hp + healAmount,
-                            reserveHp: p.reserveHp - healAmount,
-                            energyTokens: p.energyTokens - 2,
-                            reserveActivations: (p.reserveActivations || 0) + 1
-                          };
-                        }
-                        return p;
-                      });
-                      setGameState({
-                        ...gameState,
-                        players: updated,
-                        lastActionLog: `💚 ${activePlayer.name} activated Reserve Energy! Restored +${healAmount} HP (spent 2 ET). Remaining Reserve: ${activePlayer.reserveHp - healAmount} HP.`
-                      });
-                      setFloatingDamage({ targetId: activePlayer.id, text: `+${healAmount} HP (Reserve)`, type: 'heal' });
-                      setTimeout(() => setFloatingDamage(null), 1500);
-                      setTurnAnnouncement({
-                        turn: gameState.turnNumber,
-                        player: activePlayer.name,
-                        isExtraTurn: false,
-                        reason: `💚 Reserve Energy Recovery: Restored +${healAmount} HP (spent 2 ET)`
-                      });
-                      setTimeout(() => setTurnAnnouncement(null), 2500);
-                      if (soundFX && soundFX.playReserveEnergy) soundFX.playReserveEnergy();
-                      else if (soundFX && soundFX.playHeal) soundFX.playHeal();
-                    }}
-                    style={{
-                      padding: '12px 10px',
-                      fontSize: '0.82rem',
-                      background: 'linear-gradient(90deg, #10b981, #059669)',
-                      color: '#fff',
-                      fontWeight: 'bold',
-                      borderRadius: '10px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                      whiteSpace: 'nowrap',
-                      boxShadow: '0 0 10px rgba(16, 185, 129, 0.4)'
-                    }}
-                    title={`Recover up to ${Math.min(activePlayer.reserveHp, (activePlayer.maxHp || 100) - activePlayer.hp)} HP from Reserve pool (Costs 2 ET)`}
-                  >
-                    <Sparkles size={16} fill="#fff" />
-                    <span>RECOVER RESERVE ({activePlayer.reserveHp} HP)</span>
-                  </button>
-                )}
+                {/* Reserve Energy Recovery Button & Section */}
+                <button
+                  className="btn-play-card-cta"
+                  onClick={() => setIsReserveModalOpen(true)}
+                  style={{
+                    padding: '12px 10px',
+                    fontSize: '0.82rem',
+                    background: activePlayer.reserveUnlocked
+                      ? 'linear-gradient(90deg, #10b981, #059669)'
+                      : 'rgba(255, 255, 255, 0.08)',
+                    border: activePlayer.reserveUnlocked ? 'none' : '1px solid rgba(255, 255, 255, 0.25)',
+                    color: activePlayer.reserveUnlocked ? '#fff' : '#ccc',
+                    fontWeight: 'bold',
+                    borderRadius: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    whiteSpace: 'nowrap',
+                    boxShadow: activePlayer.reserveUnlocked ? '0 0 10px rgba(16, 185, 129, 0.4)' : 'none'
+                  }}
+                  title={activePlayer.reserveUnlocked ? `Recover Reserve Energy (${activePlayer.reserveHp || 0} HP available, Cost: 2 ET)` : "Reserve Energy Locked. Scan QR Code to release reserve."}
+                >
+                  {activePlayer.reserveUnlocked ? (
+                    <>
+                      <Sparkles size={16} fill="#fff" />
+                      <span>RECOVER RESERVE ({activePlayer.reserveHp || 0} HP · 2 ET)</span>
+                    </>
+                  ) : (
+                    <>
+                      <Lock size={16} color="#f87171" />
+                      <span>RESERVE LOCKED (SCAN QR)</span>
+                    </>
+                  )}
+                </button>
 
 
 
@@ -2569,7 +2701,7 @@ export default function BattleArena({
                 Action Completed! Please End Turn ➔
               </div>
             )}
-            <button 
+            <button
               className={`btn-end-turn-cta ${activePlayer.turnActionCompleted ? 'flashing-end-turn-cta' : ''}`}
               style={{
                 boxShadow: activePlayer.turnActionCompleted ? '0 0 20px #39ff14' : 'none',
@@ -2607,6 +2739,7 @@ export default function BattleArena({
             onShowLevelRequirement={showLevelRequirementError}
             onDiscardCard={(card) => { handleDiscardActionCard(card); setShowCardActionModal(false); }}
             onOpenSecretAllianceInvite={handleOpenSecretAllianceInvite}
+            onRequestScanQR={() => setIsCharCardsQRScannerOpen(true)}
           />
         )}
 
@@ -2658,6 +2791,7 @@ export default function BattleArena({
             combatData={activeDiceCombatData}
             onCombatComplete={handleCompleteCombatResolution}
             onClose={() => setActiveDiceCombatData(null)}
+            onExecuteRetreat={handleExecuteRetreatFromCombat}
           />
         )}
 
@@ -2704,6 +2838,27 @@ export default function BattleArena({
             }}
           />
         )}
+
+        {/* Reserve Energy Recovery Modal */}
+        <ReserveEnergyModal
+          isOpen={isReserveModalOpen}
+          onClose={() => setIsReserveModalOpen(false)}
+          character={activePlayer}
+          isMyTurn={true}
+          onConfirmRecovery={(amount) => handleRecoverReserveAmount(amount)}
+          onReleaseReserve={(hp) => handleReleaseReserveForPlayer(activePlayer.id, hp || 30)}
+        />
+
+        {/* Character Cards QR Code Scanner */}
+        <QRScannerModal
+          isOpen={isCharCardsQRScannerOpen}
+          onClose={() => setIsCharCardsQRScannerOpen(false)}
+          onScanSuccess={(redeemResult) => {
+            setIsCharCardsQRScannerOpen(false);
+            const targetChar = redeemResult?.characterId || activePlayer.characterId;
+            handleReplenishMovesForPlayer(activePlayer.id, targetChar);
+          }}
+        />
 
         {/* Rules Chatbot In-Game Overlay */}
         {showRulesChatOverlay && (
@@ -3281,10 +3436,10 @@ export default function BattleArena({
             existingAlliance={
               activePlayer.allianceId
                 ? {
-                    id: activePlayer.allianceId,
-                    allyName: players.find(p => p.id === activePlayer.alliedWith)?.name,
-                    turnsRemaining: 1
-                  }
+                  id: activePlayer.allianceId,
+                  allyName: players.find(p => p.id === activePlayer.alliedWith)?.name,
+                  turnsRemaining: 1
+                }
                 : null
             }
             preselectedTargetId={preselectedAllianceTargetId}

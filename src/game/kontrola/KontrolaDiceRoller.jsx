@@ -214,9 +214,13 @@ export default function KontrolaDiceRoller({
   playerHand = [],
   onExecuteRetreat = null
 }) {
-  const hasRetreatCard = Array.isArray(playerHand) && playerHand.some(c => 
-    (typeof c === 'string' ? c : (c?.name || '')).toUpperCase().includes('RETREAT')
-  );
+  const hasRetreatCard = Array.isArray(playerHand) && playerHand.some(c => {
+    if (!c) return false;
+    if (typeof c === 'string') return c.toUpperCase().includes('RETREAT');
+    const name = String(c.name || '').toUpperCase();
+    const id = String(c.id || '').toUpperCase();
+    return name.includes('RETREAT') || id.includes('RETREAT');
+  });
   // SAFETY: Ensure combatData and all required properties exist before using them
   // This prevents "Cannot access X before initialization" errors during build minification
   if (!combatData) {
@@ -306,7 +310,7 @@ export default function KontrolaDiceRoller({
   // Robust attack info lookup with character template fallback
   const charKey = atkChar?.id || combatData?.attackerId || combatData?.actorId || 'chynaman';
   const charTemplate = KONTROLA_CHARACTERS[charKey] || Object.values(KONTROLA_CHARACTERS).find(c => c.name?.toLowerCase() === atkChar?.name?.toLowerCase());
-  const selectedAttackInfo = atkChar?.attacks?.[attackSelectionName] || charTemplate?.attacks?.[attackSelectionName];
+  const selectedAttackInfo = atkChar?.attacks?.[attackSelectionName] || charTemplate?.attacks?.[attackSelectionName] || (atkChar?.characterCardMoves || []).find(m => m.name === attackSelectionName);
   const hasMultiplierDie = Boolean(selectedAttackInfo && selectedAttackInfo.dice > 0);
   const activeDefenseCard = combatData?.defenseCard || precalculatedRolls?.defenseCard || null;
   const defCardName = activeDefenseCard ? (typeof activeDefenseCard === 'string' ? activeDefenseCard : (activeDefenseCard.name || '')).toUpperCase() : '';
@@ -346,9 +350,8 @@ export default function KontrolaDiceRoller({
         weaknessLabel = 'FIRE WEAKNESS (+10 AP)';
       } else if ((attackElem.toLowerCase() === 'poison' || (atkChar?.poisonCount >= 5) || (atkChar?.isZombie)) && isPoisonWeakness) {
         weaknessTriggered = true;
-        const isKat = ['kat', 'katsumi'].some(k => defCharKey.includes(k));
-        weaknessBonus = isKat ? 15 : 10;
-        weaknessLabel = isKat ? 'KATSUMI POISON WEAKNESS (+15 AP)' : 'POISON WEAKNESS (+10 AP)';
+        weaknessBonus = 10;
+        weaknessLabel = (atkChar?.poisonCount >= 5 || atkChar?.isZombie) ? 'ZOMBIE POISON WEAKNESS (+10 AP)' : 'POISON WEAKNESS (+10 AP)';
       }
     }
 
@@ -1118,48 +1121,101 @@ export default function KontrolaDiceRoller({
               {/* Step 1: Attacker has not rolled */}
               {!hasAttackerRolled && (
                 isAttacker ? (
-                  <button
-                    onClick={handleRollAttacker}
-                    disabled={isAttackerRolling}
-                    style={{
-                      background: 'linear-gradient(90deg, #ff2a55 0%, #ff6b8b 100%)',
-                      border: 'none',
-                      color: '#fff',
-                      padding: '16px 44px',
-                      borderRadius: '12px',
-                      fontSize: '1.25rem',
-                      fontWeight: '900',
-                      cursor: isAttackerRolling ? 'wait' : 'pointer',
-                      boxShadow: '0 0 30px rgba(255, 42, 85, 0.6)',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '14px',
-                      fontFamily: 'Bebas Neue, sans-serif',
-                      letterSpacing: '1px',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    <Dices size={26} />
-                    <span>{isAttackerRolling ? 'ROLLING ATTACK DICE...' : '?? ROLL ATTACK DICE'}</span>
-                  </button>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', justifyContent: 'center' }}>
+                    <button
+                      onClick={handleRollAttacker}
+                      disabled={isAttackerRolling}
+                      style={{
+                        background: 'linear-gradient(90deg, #ff2a55 0%, #ff6b8b 100%)',
+                        border: 'none',
+                        color: '#fff',
+                        padding: '16px 44px',
+                        borderRadius: '12px',
+                        fontSize: '1.25rem',
+                        fontWeight: '900',
+                        cursor: isAttackerRolling ? 'wait' : 'pointer',
+                        boxShadow: '0 0 30px rgba(255, 42, 85, 0.6)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '14px',
+                        fontFamily: 'Bebas Neue, sans-serif',
+                        letterSpacing: '1px',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <Dices size={26} />
+                      <span>{isAttackerRolling ? 'ROLLING ATTACK DICE...' : '🎲 ROLL ATTACK DICE'}</span>
+                    </button>
+                    {hasRetreatCard && onExecuteRetreat && (
+                      <button
+                        onClick={() => onExecuteRetreat('attacker')}
+                        disabled={isAttackerRolling}
+                        style={{
+                          background: 'linear-gradient(135deg, #00d2ff, #0066ff)',
+                          color: '#fff',
+                          border: 'none',
+                          padding: '16px 36px',
+                          borderRadius: '12px',
+                          fontSize: '1.15rem',
+                          fontWeight: '900',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          fontFamily: 'Bebas Neue, sans-serif',
+                          letterSpacing: '1px',
+                          boxShadow: '0 0 25px rgba(0, 210, 255, 0.55)'
+                        }}
+                        title="Forfeit attack completely"
+                      >
+                        <span>💨 PLAY RETREAT CARD (FORFEIT ATTACK)</span>
+                      </button>
+                    )}
+                  </div>
                 ) : (
-                  <div
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      padding: '14px 28px',
-                      borderRadius: '12px',
-                      background: 'rgba(255, 42, 85, 0.08)',
-                      border: '1.5px solid rgba(255, 42, 85, 0.3)',
-                      color: '#ff8899',
-                      fontSize: '1.1rem',
-                      fontFamily: 'Bebas Neue, sans-serif',
-                      letterSpacing: '1px'
-                    }}
-                  >
-                    <Swords size={22} />
-                    <span>? WAITING FOR {atkChar.name.toUpperCase()} TO ROLL ATTACK DICE...</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                    <div
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '14px 28px',
+                        borderRadius: '12px',
+                        background: 'rgba(255, 42, 85, 0.08)',
+                        border: '1.5px solid rgba(255, 42, 85, 0.3)',
+                        color: '#ff8899',
+                        fontSize: '1.1rem',
+                        fontFamily: 'Bebas Neue, sans-serif',
+                        letterSpacing: '1px'
+                      }}
+                    >
+                      <Swords size={22} />
+                      <span>⚔️ WAITING FOR {atkChar.name.toUpperCase()} TO ROLL ATTACK DICE...</span>
+                    </div>
+                    {isDefender && hasRetreatCard && onExecuteRetreat && (
+                      <button
+                        onClick={() => onExecuteRetreat('defender')}
+                        style={{
+                          background: 'linear-gradient(135deg, #00d2ff, #0066ff)',
+                          color: '#fff',
+                          border: 'none',
+                          padding: '12px 28px',
+                          borderRadius: '12px',
+                          fontSize: '1.05rem',
+                          fontWeight: '900',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          fontFamily: 'Bebas Neue, sans-serif',
+                          letterSpacing: '1px',
+                          boxShadow: '0 0 20px rgba(0, 210, 255, 0.45)'
+                        }}
+                        title="Disengage battle and safely escape (lose next turn)"
+                      >
+                        <span>💨 PLAY RETREAT CARD (ESCAPE BATTLE - LOSE 1 TURN)</span>
+                      </button>
+                    )}
                   </div>
                 )
               )}
@@ -1612,30 +1668,6 @@ export default function KontrolaDiceRoller({
                         </div>
                       )
                     ) : null}
-                    {hasRetreatCard && onExecuteRetreat && isAttacker && (
-                      <button
-                        onClick={() => onExecuteRetreat(isAttacker ? 'attacker' : 'defender')}
-                        style={{
-                          background: 'linear-gradient(135deg, #00d2ff, #0066ff)',
-                          color: '#fff',
-                          border: 'none',
-                          padding: '12px 28px',
-                          borderRadius: '12px',
-                          fontSize: '1.1rem',
-                          fontWeight: '900',
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          fontFamily: 'Bebas Neue, sans-serif',
-                          letterSpacing: '1px',
-                          boxShadow: '0 0 20px rgba(0, 210, 255, 0.45)'
-                        }}
-                        title={isAttacker ? 'Disengage attack without taking damage' : 'Disengage battle and safely escape (lose next turn)'}
-                      >
-                        <span>💨 PLAY RETREAT CARD ({isAttacker ? 'ATTACKER DISENGAGE' : 'DEFENDER ESCAPE -1 TURN'})</span>
-                      </button>
-                    )}
 
                     {/* Authoritative Real-Time Combat Math & Score Calculation Breakdown */}
                     {previewMath && (

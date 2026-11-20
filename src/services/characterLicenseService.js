@@ -101,22 +101,21 @@ class CharacterLicenseService {
       }
     }
 
-    const usesRemaining = record.isUnlocked
-      ? Infinity
-      : Math.max(0, FREE_USAGE_LIMIT - (record.usageCount || 0));
-
-    const canPlay = record.isUnlocked || usesRemaining > 0;
+    // Character match usages are unlimited! Players can play characters as many times as they wish.
+    // The restriction applies to the 10 Character Card Moves in battle.
+    const usesRemaining = Infinity;
+    const canPlay = true;
 
     return {
       characterId: charKey,
       characterName: CHARACTERS[charKey]?.name || charKey,
       usageCount: record.usageCount || 0,
-      limit: FREE_USAGE_LIMIT,
-      usesRemaining,
+      limit: Infinity,
+      usesRemaining: Infinity,
       isUnlocked: Boolean(record.isUnlocked),
       unlockedVia: record.unlockedVia,
       unlockedAt: record.unlockedAt,
-      canPlay
+      canPlay: true
     };
   }
 
@@ -140,19 +139,15 @@ class CharacterLicenseService {
       unlockedVia: null
     };
 
-    const usesRemaining = record.isUnlocked
-      ? Infinity
-      : Math.max(0, FREE_USAGE_LIMIT - (record.usageCount || 0));
-
     return {
       characterId: charKey,
       characterName: CHARACTERS[charKey]?.name || charKey,
       usageCount: record.usageCount || 0,
-      limit: FREE_USAGE_LIMIT,
-      usesRemaining,
+      limit: Infinity,
+      usesRemaining: Infinity,
       isUnlocked: Boolean(record.isUnlocked),
       unlockedVia: record.unlockedVia,
-      canPlay: record.isUnlocked || usesRemaining > 0
+      canPlay: true
     };
   }
 
@@ -335,13 +330,46 @@ class CharacterLicenseService {
       };
     }
 
+    // Check for Reserve Energy Release QR Code (Releases/unlocks Energy Reserve)
+    if (
+      clean.includes('RELEASE-RESERVE') ||
+      clean.includes('UNLOCK-RESERVE') ||
+      clean.includes('KTRL-RESERVE') ||
+      clean.includes('RELEASE_RESERVE')
+    ) {
+      let targetChar = null;
+      for (const k of Object.keys(CHARACTERS)) {
+        if (clean.includes(k.toUpperCase())) {
+          targetChar = k;
+          break;
+        }
+      }
+      return {
+        success: true,
+        isReserveRelease: true,
+        targetChar,
+        reserveHp: 30,
+        message: targetChar
+          ? `QR Verified! Energy Reserve Released for ${CHARACTERS[targetChar]?.name || targetChar} (+30 Reserve HP unlocked)!`
+          : 'QR Verified! Energy Reserve Released (+30 Reserve HP unlocked)!'
+      };
+    }
+
     // Check specific character formats:
-    // Format 1: KTRL-CHAR-[NAME]-[TOKEN] (e.g. KTRL-CHAR-CHYNAMAN-8892)
-    // Format 2: UNLOCK-[NAME]
-    // Format 3: JSON payload {"type": "char_unlock", "char": "..."}
+    // Format 1: KTRL-CARD-[NAME] or CARD-[NAME] (Physical card scan)
+    // Format 2: KTRL-CHAR-[NAME]-[TOKEN] (e.g. KTRL-CHAR-CHYNAMAN-8892)
+    // Format 3: UNLOCK-[NAME]
+    // Format 4: JSON payload {"type": "char_unlock", "char": "..."}
     let targetChar = null;
 
-    if (clean.startsWith('KTRL-CHAR-')) {
+    if (clean.startsWith('KTRL-CARD-')) {
+      const parts = clean.split('-');
+      if (parts.length >= 3) targetChar = parts[2].toLowerCase();
+    } else if (clean.startsWith('CARD-')) {
+      targetChar = clean.replace('CARD-', '').toLowerCase();
+    } else if (clean.startsWith('MOVES-')) {
+      targetChar = clean.replace('MOVES-', '').toLowerCase();
+    } else if (clean.startsWith('KTRL-CHAR-')) {
       const parts = clean.split('-');
       if (parts.length >= 3) {
         targetChar = parts[2].toLowerCase();
@@ -372,7 +400,7 @@ class CharacterLicenseService {
       };
     }
 
-    // Unlock the detected character
+    // Unlock the detected character and their Character Card Deck
     const localData = this._getLocalData(userId);
     localData[targetChar] = {
       ...(localData[targetChar] || {}),
@@ -404,7 +432,8 @@ class CharacterLicenseService {
       success: true,
       characterId: targetChar,
       characterName: charName,
-      message: `QR Card Verified! ${charName} has been permanently unlocked for your account!`
+      isCharacterCardUnlock: true,
+      message: `Verified! Physical Character Card unlocked for ${charName}! Character Card Moves deck unlocked!`
     };
   }
 

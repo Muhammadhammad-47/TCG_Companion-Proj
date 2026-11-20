@@ -4,12 +4,12 @@ import {
   ArrowLeft, Wifi, Swords, Shield, Skull, Zap, ScrollText, MessageSquare,
   Dices, Crown, Trophy, Layers, Clock, HelpCircle, X, Eye, Users, RefreshCw,
   Lock, Radio, AlertTriangle, Play, Sparkles, CheckCircle2, SkipForward, FastForward,
-  Music, Pause, Volume2, VolumeX, ChevronDown, ChevronUp, Trash2, ShoppingBag
+  Music, Pause, Volume2, VolumeX, ChevronDown, ChevronUp, Trash2, ShoppingBag, QrCode
 } from 'lucide-react';
 import { DynamicScaleWrapper } from '../../components/DynamicScaleWrapper';
 import { soundFX } from '../utils/audio';
 import { getAssetUrl } from '../data/characters';
-import { KONTROLA_CHARACTERS, KONTROLA_ACTION_CARDS, generateDeck, dealInitialHands, resolveTurn, rollDice } from './KontrolaEngine';
+import { KONTROLA_CHARACTERS, KONTROLA_ACTION_CARDS, generateDeck, dealInitialHands, generateGiftedCharacterMoves, generatePurchasedCharacterMoves, resolveTurn, rollDice } from './KontrolaEngine';
 import {
   createMatch, joinMatch, subscribeToMatch, requestJoin, takeTurn, broadcastState,
   advertiseRoom, closeRoom, subscribeToGlobalLobby, broadcastLeave, requestSync,
@@ -40,6 +40,8 @@ import KontrolaBracketView from './KontrolaBracketView';
 import { cosmeticsService } from '../../services/cosmeticsService';
 import { characterLicenseService, FREE_USAGE_LIMIT } from '../../services/characterLicenseService';
 import CharacterUnlockModal from '../../components/CharacterUnlockModal';
+import ReserveEnergyModal from '../components/ReserveEnergyModal';
+import QRScannerModal from '../../components/QRScannerModal';
 import { StoreModal } from '../../components/StoreModal';
 import AdModal from '../../components/AdModal';
 import CardVFXWrapper from './vfx/CardVFXWrapper';
@@ -124,7 +126,7 @@ export default function KontrolaArena() {
     try {
       const cached = localStorage.getItem('tcg_warrior_username');
       if (cached) return cached;
-    } catch (e) {}
+    } catch (e) { }
     return 'Player';
   });
   const [isHost, setIsHost] = useState(false);
@@ -147,7 +149,7 @@ export default function KontrolaArena() {
               setPlayerName(prof.username);
               try {
                 localStorage.setItem('tcg_warrior_username', prof.username);
-              } catch (e) {}
+              } catch (e) { }
             }
           }
         });
@@ -162,10 +164,10 @@ export default function KontrolaArena() {
                 const result = await fetchGameRoom(savedMatchId);
                 // Show rejoin only if room exists and is not ended/finished
                 if (result && !result.error &&
-                    result.gameState?.status !== 'ended' &&
-                    result.gameState?.status !== 'finished' &&
-                    result.gameState?.status !== 'completed' &&
-                    result.gameState?.status !== 'game_over') {
+                  result.gameState?.status !== 'ended' &&
+                  result.gameState?.status !== 'finished' &&
+                  result.gameState?.status !== 'completed' &&
+                  result.gameState?.status !== 'game_over') {
                   setLastActiveMatchId(savedMatchId);
                 }
               } catch {
@@ -249,6 +251,7 @@ export default function KontrolaArena() {
   const [selectedActionCard, setSelectedActionCard] = useState(null);
   const [dissolvingCardId, setDissolvingCardId] = useState(null);
   const [selectedCharacterAttack, setSelectedCharacterAttack] = useState(null);
+  const [selectedWildMoveChoice, setSelectedWildMoveChoice] = useState(null);
   const [selectedTargetId, setSelectedTargetId] = useState(null);
 
   // Full-Screen Cinematic & Scenario VFX States
@@ -296,7 +299,7 @@ export default function KontrolaArena() {
           isSleepSkip: true,
           color: '#a855f7'
         });
-        try { soundFX.playZombie(); } catch {}
+        try { soundFX.playZombie(); } catch { }
       } else if (isSecondStrike) {
         setTurnBanner({
           badge: '⚔️ ATTACK X2: SECOND HIT',
@@ -307,7 +310,7 @@ export default function KontrolaArena() {
           isAttackX2: true,
           color: '#ff0055'
         });
-        try { soundFX.playPowerUp(); } catch {}
+        try { soundFX.playPowerUp(); } catch { }
       } else if (isExtraTurn) {
         const extraTurnsLeft = activeChar?.extraTurns ?? 0;
         setTurnBanner({
@@ -319,7 +322,7 @@ export default function KontrolaArena() {
           isExtraTurn: true,
           color: '#FBC80D'
         });
-        try { soundFX.playPowerUp(); } catch {}
+        try { soundFX.playPowerUp(); } catch { }
       } else {
         setTurnBanner({
           badge: `TURN ${currentTurnNum}`,
@@ -328,7 +331,7 @@ export default function KontrolaArena() {
           isMe: isMyTurn,
           color: isMyTurn ? '#00f0ff' : '#ff2a55'
         });
-        try { soundFX.playCard(); } catch {}
+        try { soundFX.playCard(); } catch { }
       }
 
       lastTurnAnnouncedRef.current = {
@@ -424,7 +427,7 @@ export default function KontrolaArena() {
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
   };
-  
+
   // NEW: Secret Alliance System State
   const [showSecretAllianceInviteModal, setShowSecretAllianceInviteModal] = useState(false);
   const [showAllianceChatModal, setShowAllianceChatModal] = useState(false);
@@ -435,7 +438,7 @@ export default function KontrolaArena() {
   const [allianceConfirmations, setAllianceConfirmations] = useState({ player1: false, player2: false });
   const [preselectedAllianceTargetId, setPreselectedAllianceTargetId] = useState(null);
   const inviteTimeoutRef = useRef(null);
-  
+
   // NEW: Crystal Split System State
   const [showCrystalSplitModal, setShowCrystalSplitModal] = useState(false);
   const [crystalSplitData, setCrystalSplitData] = useState(null);
@@ -449,15 +452,18 @@ export default function KontrolaArena() {
   const [isExtinguishRolling, setIsExtinguishRolling] = useState(false);
   const [extinguishDice, setExtinguishDice] = useState(null);
   const [extinguishResult, setExtinguishResult] = useState(null);
-  
+
   // Room Persistence State
   const [roomCode, setRoomCode] = useState(null);
   const [roomPersistenceError, setRoomPersistenceError] = useState(null);
   // Rejoin: non-null only when a previous in-progress game is detected on load
   const [lastActiveMatchId, setLastActiveMatchId] = useState(null);
-  
+
   const [countdownNumber, setCountdownNumber] = useState(3);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+  const [isReserveModalOpen, setIsReserveModalOpen] = useState(false);
+  const [isReserveQRScannerOpen, setIsReserveQRScannerOpen] = useState(false);
+  const [isCharacterQRScannerOpen, setIsCharacterQRScannerOpen] = useState(false);
 
   // Synchronized Combat Clash & Dice
   const [activeCombat, setActiveCombat] = useState(null);
@@ -793,7 +799,7 @@ export default function KontrolaArena() {
       setCountdownNumber(3);
     }
   }, [gameState?.status]);
-  
+
   useEffect(() => {
     let timer;
     if (gameState?.activeDefenseState) {
@@ -818,9 +824,9 @@ export default function KontrolaArena() {
     if (isProcessingAction) return;
     setIsProcessingAction(true);
     playClick();
-    
+
     console.log('[handleDefenseSelect] Defense card selected:', card?.name || 'SKIP');
-    
+
     const payload = { actionType: 'DEFENSE_SELECTED', defenseCard: card };
     if (isHostRef.current) enqueueHostAction(payload);
     else takeTurn(matchIdRef.current, { type: 'PLAYER_ACTION', payload });
@@ -858,13 +864,13 @@ export default function KontrolaArena() {
 
   const handleRollOff = () => {
     if (isProcessingAction || rollingOffPlayers[playerId]) return;
-    
+
     // Broadcast animation to everyone immediately (fire-and-forget, never block execution)
-    broadcastUIEvent(matchIdRef.current, 'roll_off_animation', { actorId: playerId }).catch(() => {});
-    
+    broadcastUIEvent(matchIdRef.current, 'roll_off_animation', { actorId: playerId }).catch(() => { });
+
     // Trigger local animation with a guaranteed auto-release safety timeout
     setRollingOffPlayers(prev => ({ ...prev, [playerId]: true }));
-    
+
     // Safety auto-clear timeout: never allow rolling animation to hang indefinitely
     const safetyTimer = setTimeout(() => {
       setRollingOffPlayers(prev => {
@@ -874,18 +880,18 @@ export default function KontrolaArena() {
       });
       setIsProcessingAction(false);
     }, 4000);
-    
+
     playClick();
     if (soundFX?.playDiceRoll) soundFX.playDiceRoll();
     setIsProcessingAction(true);
-    
+
     // Animate dice rolling for 1.2s before submitting result
     setTimeout(() => {
       const d1 = rollDice(1).total;
       const d2 = rollDice(1).total;
       const total = d1 + d2;
       const payload = { actionType: 'ROLL_OFF', actorId: playerId, total, dice: [d1, d2] };
-      
+
       const submitRoll = () => {
         if (isHostRef.current) {
           enqueueHostAction(payload);
@@ -1177,19 +1183,19 @@ export default function KontrolaArena() {
             hasGameState: !!gameStateRef.current?.characterStates,
             characterCount: Object.keys(gameStateRef.current?.characterStates || {}).length
           });
-          
+
           // CRITICAL FIX: Ensure all required fields exist with safe defaults BEFORE creating combatData
           // This prevents "Cannot access 'fe' before initialization" errors
-          
+
           const actorId = event.payload?.actorId || null;
           const targetId = event.payload?.targetId || null;
           const attackerPlayerId = event.payload?.attackerPlayerId || actorId;
           const defenderPlayerId = event.payload?.defenderPlayerId || targetId;
-          
+
           // Reconstruct character objects from current gameState
           const attacker = gameStateRef.current?.characterStates?.[actorId];
           const defender = gameStateRef.current?.characterStates?.[targetId];
-          
+
           // Fallback: if character data is missing, use the names from broadcast
           // IMPORTANT: These must NEVER be undefined
           const attackerFallback = attacker || {
@@ -1208,12 +1214,12 @@ export default function KontrolaArena() {
             shield: 0,
             poisonCards: 0
           };
-          
+
           // Ensure actionCard exists
           const actionCard = event.payload?.actionCard || { name: 'ATTACK', ap: 5 };
           const attackSelectionName = event.payload?.attackSelectionName || null;
           const combatId = event.payload?.combatId || ('combat_' + (actorId || 'atk') + '_' + (targetId || 'def') + '_' + (actionCard?.id || actionCard?.name || 'action'));
-          
+
           const combatData = {
             combatId,
             // Core IDs - NEVER null
@@ -1221,23 +1227,23 @@ export default function KontrolaArena() {
             targetId: targetId || 'unknown-defender',
             attackerPlayerId: attackerPlayerId || 'unknown-attacker',
             defenderPlayerId: defenderPlayerId || 'unknown-defender',
-            
+
             // Character data - NEVER null
             attacker: attackerFallback,
             defender: defenderFallback,
             attackerPlayerName: attackerFallback.name,
             defenderPlayerName: defenderFallback.name,
-            
+
             // Card/Action data
             actionCard: actionCard,
             attackSelectionName: attackSelectionName,
             actionType: event.payload?.actionType || 'RESOLVE_COMBAT',
             defenseCard: event.payload?.defenseCard || null,
-            
+
             // Rolls
             precalculatedRolls: event.payload?.precalculatedRolls || {}
           };
-          
+
           console.log('[DICE_SCREEN_OPEN] Reconstructed combatData:', {
             hasAttacker: !!combatData.attacker,
             hasDefender: !!combatData.defender,
@@ -1252,7 +1258,7 @@ export default function KontrolaArena() {
               combatData.defender?.name
             ].every(f => f)
           });
-          
+
           setActiveCombat(combatData);
           setIsDiceRollingSync(false);
         }
@@ -1324,12 +1330,12 @@ export default function KontrolaArena() {
           setActiveTauntBubble(event.payload);
           setChatMessages((prev) => [...prev, { ...event.payload, text: `??? [TAUNT]: "${event.payload.text}"` }]);
           setTimeout(() => setActiveTauntBubble(null), 4500);
-          try { if (soundFX?.playTaunt) soundFX.playTaunt(true); } catch {}
-          
+          try { if (soundFX?.playTaunt) soundFX.playTaunt(true); } catch { }
+
           if (!showChatRef.current) {
-             const toastId = 'toast_' + Date.now() + Math.random();
-             setChatToasts((prev) => [...prev, { ...event.payload, toastId, type: 'TAUNT' }]);
-             setTimeout(() => setChatToasts((prev) => prev.filter(t => t.toastId !== toastId)), 4500);
+            const toastId = 'toast_' + Date.now() + Math.random();
+            setChatToasts((prev) => [...prev, { ...event.payload, toastId, type: 'TAUNT' }]);
+            setTimeout(() => setChatToasts((prev) => prev.filter(t => t.toastId !== toastId)), 4500);
           }
         }
         else if (event.type === 'ROLL_OFF_ANIMATION') {
@@ -1403,7 +1409,7 @@ export default function KontrolaArena() {
             setIsShaking(true);
             setTimeout(() => setIsShaking(false), 800);
             soundFX.init();
-            
+
             // Cinematic super move triggers
             const actionUpper = String(actionName || '').toUpperCase();
             if (actionUpper.includes('BLITZ')) {
@@ -1419,7 +1425,7 @@ export default function KontrolaArena() {
 
             if (dmgDealt > 0) spawnDamagePopup(`-${dmgDealt}`, false);
             if (atkDmgDealt > 0) spawnDamagePopup(`-${atkDmgDealt}`, false);
-            
+
             if (actionName && actionName.includes('FIRE FLAME')) {
               soundFX.playTimeout();
             } else if (actionName && actionName.includes('LIGHTNING')) {
@@ -1498,15 +1504,15 @@ export default function KontrolaArena() {
           if (isHostRef.current && disconnectTimeoutsRef.current[rId]) {
             clearTimeout(disconnectTimeoutsRef.current[rId]);
             delete disconnectTimeoutsRef.current[rId];
-            
+
             // Broadcast state to the reconnected player just in case they missed something
             if (gameStateRef.current) {
-               broadcastState(matchIdRef.current, gameStateRef.current);
+              broadcastState(matchIdRef.current, gameStateRef.current);
             }
           }
 
           if (rId === playerIdRef.current && !isHostRef.current) {
-             requestSync(matchIdRef.current, playerIdRef.current);
+            requestSync(matchIdRef.current, playerIdRef.current);
           }
         }
       },
@@ -1654,8 +1660,7 @@ export default function KontrolaArena() {
         players: remainingPlayers,
         turn: updatedTurn,
         logs: [
-          `?? ${leaverName} has left the match.${
-            isLeaverHost ? ` New host is ${currentGS.playerNames?.[remainingPlayers[0]] || 'Player'}.` : ''
+          `?? ${leaverName} has left the match.${isLeaverHost ? ` New host is ${currentGS.playerNames?.[remainingPlayers[0]] || 'Player'}.` : ''
           }`,
           ...(currentGS.logs || [])
         ],
@@ -1792,11 +1797,11 @@ export default function KontrolaArena() {
         let nextState = { ...state };
         nextState.status = 'roll_off_leaderboard';
         nextState.turn = payload.winnerId;
-        
+
         if (isHostRef.current) {
-             setTimeout(() => {
-                enqueueHostAction({ actionType: 'START_CHARACTER_SELECT', winnerId: payload.winnerId });
-             }, 4000); // show leaderboard for 4 seconds
+          setTimeout(() => {
+            enqueueHostAction({ actionType: 'START_CHARACTER_SELECT', winnerId: payload.winnerId });
+          }, 4000); // show leaderboard for 4 seconds
         }
         pendingStateRef.current = nextState;
         broadcastState(matchIdRef.current, nextState);
@@ -1804,12 +1809,12 @@ export default function KontrolaArena() {
       }
       if (payload.actionType === 'START_CHARACTER_SELECT') {
         let nextState = { ...state };
-        
+
         // Sort players array based on rollOffs (highest first)
         nextState.players = [...state.players].sort((a, b) => {
           return (state.rollOffs?.[b] || 0) - (state.rollOffs?.[a] || 0);
         });
-        
+
         nextState.status = 'character_select';
         nextState.turn = payload.winnerId;
         nextState.turnDirection = 'clockwise';
@@ -1821,7 +1826,7 @@ export default function KontrolaArena() {
 
       if (payload.actionType === 'CHARACTER_SELECT') {
         const { actorId, characterId } = payload;
-        
+
         const newSelections = { ...(currentState.characterSelections || {}), [actorId]: characterId };
         const turnLogs = [`? ${currentState.playerNames?.[actorId] || 'Player'} selected ${KONTROLA_CHARACTERS[characterId]?.name || 'a character'}!`, ...(currentState.logs || [])];
 
@@ -1829,73 +1834,78 @@ export default function KontrolaArena() {
 
         // Has everyone picked?
         if (Object.keys(newSelections).length === currentState.players.length) {
-            // Everyone picked! Initialize game state.
-            const deck = generateDeck(currentState.isPremium, currentState.players?.length || 2);
-            const { updatedDeck, hands } = dealInitialHands(deck, currentState.players);
-            const startingCrystals = currentState.players.length === 2 ? 2 : 1;
+          // Everyone picked! Initialize game state.
+          const deck = generateDeck(currentState.isPremium, currentState.players?.length || 2);
+          const { updatedDeck, hands } = dealInitialHands(deck, currentState.players);
+          const startingCrystals = currentState.players.length === 2 ? 2 : 1;
 
-            const initialCharacterStates = {};
-            currentState.players.forEach((pId) => {
-              const charKey = newSelections[pId] || 'chynaman';
-              const customName = currentState.playerNames?.[pId];
-              const template = KONTROLA_CHARACTERS[charKey] || KONTROLA_CHARACTERS.chynaman;
-              initialCharacterStates[pId] = {
-                ...template,
-                name: customName || template.name,
-                playerId: pId,
-                hp: template.hp || template.baseHP || 100,
-                maxHp: template.maxHp || 100,
-                level: 1,
-                reserveHp: template.baseReserveHP !== undefined ? template.baseReserveHP : 0,
-                maxReserveHp: template.baseReserveHP !== undefined ? template.baseReserveHP : 0,
-                reserveUnlocked: Boolean(template.reserveUnlocked),
-                reserveActivations: 0,
-                shield: 0,
-                energyTokens: 5,
-                crystals: startingCrystals,
-                poisonCount: 0,
-                burnCount: 0,
-                sleepTurns: 0,
-                isDefeated: false,
-                claimedTurnET: false
-              };
-            });
+          const initialCharacterStates = {};
+          currentState.players.forEach((pId) => {
+            const charKey = newSelections[pId] || 'chynaman';
+            const customName = currentState.playerNames?.[pId];
+            const template = KONTROLA_CHARACTERS[charKey] || KONTROLA_CHARACTERS.chynaman;
+            const pLic = characterLicenseService.getLicenseSync(pId, charKey);
+            const moves = pLic?.isUnlocked
+              ? generatePurchasedCharacterMoves(charKey, 15)
+              : generateGiftedCharacterMoves(charKey, 10);
+            initialCharacterStates[pId] = {
+              ...template,
+              characterCardMoves: moves,
+              name: customName || template.name,
+              playerId: pId,
+              hp: template.hp || template.baseHP || 100,
+              maxHp: template.maxHp || 100,
+              level: 1,
+              reserveHp: template.baseReserveHP !== undefined ? template.baseReserveHP : 0,
+              maxReserveHp: template.baseReserveHP !== undefined ? template.baseReserveHP : 0,
+              reserveUnlocked: Boolean(template.reserveUnlocked),
+              reserveActivations: 0,
+              shield: 0,
+              energyTokens: 5,
+              crystals: startingCrystals,
+              poisonCount: 0,
+              burnCount: 0,
+              sleepTurns: 0,
+              isDefeated: false,
+              claimedTurnET: false
+            };
+          });
 
-            nextState.status = 'match_countdown';
-            nextState.deck = updatedDeck;
-            nextState.hands = hands;
-            nextState.characterStates = initialCharacterStates;
-            
-            if (isHostRef.current) {
-               setTimeout(() => {
-                  enqueueHostAction({ actionType: 'START_MATCH' });
-               }, 3000);
+          nextState.status = 'match_countdown';
+          nextState.deck = updatedDeck;
+          nextState.hands = hands;
+          nextState.characterStates = initialCharacterStates;
+
+          if (isHostRef.current) {
+            setTimeout(() => {
+              enqueueHostAction({ actionType: 'START_MATCH' });
+            }, 3000);
+          }
+
+          // Turn goes back to the winner (the first person who picked)
+          let winnerId = null;
+          let maxTotal = -1;
+          for (const pId of currentState.players) {
+            if ((currentState.rollOffs?.[pId] || 0) > maxTotal) {
+              maxTotal = currentState.rollOffs[pId];
+              winnerId = pId;
             }
-            
-            // Turn goes back to the winner (the first person who picked)
-            let winnerId = null;
-            let maxTotal = -1;
-            for (const pId of currentState.players) {
-              if ((currentState.rollOffs?.[pId] || 0) > maxTotal) {
-                maxTotal = currentState.rollOffs[pId];
-                winnerId = pId;
-              }
-            }
-            nextState.turn = winnerId;
-            nextState.logs.unshift(`?? All characters selected! The match begins!`);
+          }
+          nextState.turn = winnerId;
+          nextState.logs.unshift(`?? All characters selected! The match begins!`);
         } else {
-            // Advance turn to next player for character selection
-            const currentIdx = currentState.players.indexOf(actorId);
-            const step = currentState.turnDirection === 'counter' ? -1 : 1;
-            let nextIdx = (currentIdx + step) % currentState.players.length;
-            if (nextIdx < 0) nextIdx += currentState.players.length;
-            nextState.turn = currentState.players[nextIdx] || currentState.players[0];
+          // Advance turn to next player for character selection
+          const currentIdx = currentState.players.indexOf(actorId);
+          const step = currentState.turnDirection === 'counter' ? -1 : 1;
+          let nextIdx = (currentIdx + step) % currentState.players.length;
+          if (nextIdx < 0) nextIdx += currentState.players.length;
+          nextState.turn = currentState.players[nextIdx] || currentState.players[0];
         }
 
         broadcastState(matchIdRef.current, nextState);
         return nextState;
       }
-      
+
       if (payload.actionType === 'START_MATCH') {
         let nextState = { ...currentState };
         if (!nextState.characterStates) {
@@ -1908,8 +1918,13 @@ export default function KontrolaArena() {
             const charKey = selections[pId] || 'chynaman';
             const customName = nextState.playerNames?.[pId];
             const template = KONTROLA_CHARACTERS[charKey] || KONTROLA_CHARACTERS.chynaman;
+            const pLic = characterLicenseService.getLicenseSync(pId, charKey);
+            const moves = pLic?.isUnlocked
+              ? generatePurchasedCharacterMoves(charKey, 15)
+              : generateGiftedCharacterMoves(charKey, 10);
             initialCharacterStates[pId] = {
               ...template,
+              characterCardMoves: moves,
               name: customName || template.name,
               playerId: pId,
               hp: template.hp || template.baseHP || 100,
@@ -1962,11 +1977,11 @@ export default function KontrolaArena() {
           return -1;
         };
 
-        const giveIdx = findSafeCardIndex(actorHand, giveCard) !== -1 
+        const giveIdx = findSafeCardIndex(actorHand, giveCard) !== -1
           ? findSafeCardIndex(actorHand, giveCard)
           : actorHand.findIndex(c => getSafeCardName(c) === getSafeCardName(giveCard));
 
-        const takeIdx = findSafeCardIndex(targetHand, takeCard) !== -1 
+        const takeIdx = findSafeCardIndex(targetHand, takeCard) !== -1
           ? findSafeCardIndex(targetHand, takeCard)
           : targetHand.findIndex(c => getSafeCardName(c) === getSafeCardName(takeCard));
 
@@ -2192,14 +2207,16 @@ export default function KontrolaArena() {
         let nextTurnPlayerId = livingPlayers[nextIdx] || livingPlayers[0];
 
         const logMsg = role === 'attacker'
-          ? `💨 ${char?.name || 'Attacker'} used RETREAT to disengage from combat! Turn ended without taking damage.`
+          ? `💨 ${char?.name || 'Attacker'} used RETREAT to disengage from combat! Any Attack X2 is forfeited and turn ended.`
           : `💨 ${char?.name || 'Defender'} used RETREAT to disengage from battle and safely escapes (loses next turn)!`;
 
         const updatedCharStates = { ...currentState.characterStates };
-        if (role === 'defender' && updatedCharStates[retreatingPlayerId]) {
+        if (updatedCharStates[retreatingPlayerId]) {
           updatedCharStates[retreatingPlayerId] = {
             ...updatedCharStates[retreatingPlayerId],
-            sleepTurns: (updatedCharStates[retreatingPlayerId].sleepTurns || 0) + 1
+            extraTurns: 0,
+            retreatedThisTurn: true,
+            ...(role === 'defender' ? { sleepTurns: (updatedCharStates[retreatingPlayerId].sleepTurns || 0) + 1 } : {})
           };
         }
 
@@ -2299,13 +2316,13 @@ export default function KontrolaArena() {
       if (payload.actionType === 'CLAIM_ET') {
         const char = currentState.characterStates[payload.actorId];
         if (!char || char.claimedTurnET) return currentState;
-        
+
         const updatedChar = {
           ...char,
           energyTokens: Math.min(10, (char.energyTokens || 0) + 1),
           claimedTurnET: true
         };
-        
+
         const nextState = {
           ...currentState,
           characterStates: {
@@ -2379,6 +2396,78 @@ export default function KontrolaArena() {
         return nextState;
       }
 
+      if (payload.actionType === 'RELEASE_RESERVE') {
+        const actorId = payload.actorId;
+        const char = currentState.characterStates?.[actorId];
+        if (!char) return currentState;
+
+        const bonusHp = payload.reserveHp || 30;
+        const updatedChar = {
+          ...char,
+          reserveUnlocked: true,
+          reserveHp: (char.reserveHp || 0) + bonusHp,
+          maxReserveHp: (char.maxReserveHp || 0) + bonusHp
+        };
+
+        const nextState = {
+          ...currentState,
+          characterStates: {
+            ...currentState.characterStates,
+            [actorId]: updatedChar
+          },
+          logs: [
+            `🔓 ${char.name}'s Energy Reserve was RELEASED! (+${bonusHp} Reserve HP unlocked via QR Code scan).`,
+            ...(currentState.logs || [])
+          ]
+        };
+
+        broadcastUIEvent(matchIdRef.current, 'action_effect', {
+          actionType: 'RELEASE_RESERVE',
+          actionName: 'Reserve Energy Released',
+          actorName: char?.name,
+          logText: `🔓 ${char.name}'s Energy Reserve Released (+${bonusHp} Reserve HP)`
+        });
+        broadcastState(matchIdRef.current, nextState);
+        return nextState;
+      }
+
+      if (payload.actionType === 'REPLENISH_CHARACTER_MOVES') {
+        const actorId = payload.actorId;
+        const char = currentState.characterStates?.[actorId];
+        if (!char) return currentState;
+
+        const charKey = (char.id || 'chynaman').toLowerCase();
+        const replenishedMoves = payload.moves || generatePurchasedCharacterMoves(charKey, 15);
+        const updatedChar = {
+          ...char,
+          characterCardMoves: [
+            ...(char.characterCardMoves || []),
+            ...replenishedMoves
+          ]
+        };
+
+        const nextState = {
+          ...currentState,
+          characterStates: {
+            ...currentState.characterStates,
+            [actorId]: updatedChar
+          },
+          logs: [
+            `🎴 ${char.name} scanned their physical Character Card QR Code! Unlocked Character Card Moves deck (+${replenishedMoves.length} cards).`,
+            ...(currentState.logs || [])
+          ]
+        };
+
+        broadcastUIEvent(matchIdRef.current, 'action_effect', {
+          actionType: 'REPLENISH_CHARACTER_MOVES',
+          actionName: 'Character Cards Unlocked',
+          actorName: char?.name,
+          logText: `🎴 ${char.name} unlocked Character Card Moves deck!`
+        });
+        broadcastState(matchIdRef.current, nextState);
+        return nextState;
+      }
+
       if (payload.actionType === 'ATTACK_DECLARED') {
         console.log('[ATTACK_DECLARED] Received attack declaration:', {
           attackerPlayerName: payload.attackerPlayerName,
@@ -2388,7 +2477,7 @@ export default function KontrolaArena() {
           actorId: payload.actorId,
           targetId: payload.targetId
         });
-        
+
         const combatId = payload.combatId || ('combat_' + Date.now() + '_' + payload.actorId + '_' + payload.targetId);
         const nextState = {
           ...currentState,
@@ -2411,21 +2500,21 @@ export default function KontrolaArena() {
         const precalculatedRolls = {
           defenseCard: payload.defenseCard ?? null
         };
-        
+
         // CRITICAL: Retrieve the actual character objects from characterStates
         // KontrolaDiceRoller needs these to display properly
         const attackerChar = currentState.characterStates[activeDefense.actorId];
         const defenderChar = currentState.characterStates[activeDefense.targetId];
-        
+
         if (!attackerChar || !defenderChar) {
-          console.error('[DEFENSE_SELECTED] Missing character data!', { 
-            attackerChar, 
-            defenderChar, 
-            actorId: activeDefense.actorId, 
-            targetId: activeDefense.targetId 
+          console.error('[DEFENSE_SELECTED] Missing character data!', {
+            attackerChar,
+            defenderChar,
+            actorId: activeDefense.actorId,
+            targetId: activeDefense.targetId
           });
         }
-        
+
         // IMPORTANT: Don't send full character objects via WebSocket - they have complex data
         // Instead, send minimal data and let clients reconstruct from their gameState
         const combatId = activeDefense.combatId || ('combat_' + Date.now() + '_' + activeDefense.actorId + '_' + activeDefense.targetId);
@@ -2447,7 +2536,7 @@ export default function KontrolaArena() {
           precalculatedRolls,
           defenseCard: payload.defenseCard ?? null
         };
-        
+
         console.log('[DEFENSE_SELECTED] Created activeCombat:', {
           hasAttacker: !!activeCombat.attacker,
           hasDefender: !!activeCombat.defender,
@@ -2476,14 +2565,14 @@ export default function KontrolaArena() {
 
         // FIX: Set local state IMMEDIATELY and broadcast simultaneously to prevent freeze
         setActiveCombat(activeCombat);
-        
+
         console.log('[DEFENSE_SELECTED] Local state updated, broadcasting dice_screen_open event', {
           attackerPlayerId: activeCombat.actorId,
           defenderPlayerId: activeCombat.targetId,
           currentPlayerId: playerId,
           willBeDefender: activeCombat.targetId === playerId
         });
-        
+
         // Broadcast to other clients (no delay - state already set locally)
         broadcastUIEvent(matchIdRef.current, 'dice_screen_open', broadcastData);
 
@@ -2549,15 +2638,28 @@ export default function KontrolaArena() {
         // Commit turn resolution
         const attackSelectionUpper = (attackSelectionName || '').toUpperCase();
         const isSpecialETHandled = attackSelectionUpper.includes('BLITZ') || attackSelectionUpper.includes('KONTROL');
-        
+
         newAttackerState = resolved.newAttackerState;
         newDefenderState = resolved.newDefenderState;
         log = resolved.log;
-        
+
         // If not already deducted by special ability (Blitz -5 ET, Kontrol -3 ET), deduct standard card cost
         if (!isSpecialETHandled) {
           const cost = actionCard?.costET || (actionCard?.type === 'ATTACK' ? 1 : 0);
           newAttackerState.energyTokens = Math.max(0, (newAttackerState.energyTokens || 5) - cost);
+        }
+
+        // Consume 1 Character Card Move if attack used a character move
+        if (attackSelectionName && newAttackerState.characterCardMoves && newAttackerState.characterCardMoves.length > 0) {
+          const moveIdx = newAttackerState.characterCardMoves.findIndex(m => m.name === attackSelectionName || m.id === payload.characterMoveId);
+          if (moveIdx !== -1) {
+            newAttackerState.characterCardMoves = [
+              ...newAttackerState.characterCardMoves.slice(0, moveIdx),
+              ...newAttackerState.characterCardMoves.slice(moveIdx + 1)
+            ];
+          } else {
+            newAttackerState.characterCardMoves = newAttackerState.characterCardMoves.slice(1);
+          }
         }
 
         if (resolved.stealActionCard && targetId && newDefenderHand && newDefenderHand.length > 0) {
@@ -2611,17 +2713,17 @@ export default function KontrolaArena() {
         let healDelta = 0;
         let atkDmgDealt = 0;
         if (playedCardType === 'ATTACK') {
-           const prevDefHP = (currentState.characterStates?.[targetId]?.hp) ?? 0;
-           const newDefHP = newDefenderState?.hp ?? 0;
-           dmgDealt = Math.max(0, prevDefHP - newDefHP);
+          const prevDefHP = (currentState.characterStates?.[targetId]?.hp) ?? 0;
+          const newDefHP = newDefenderState?.hp ?? 0;
+          dmgDealt = Math.max(0, prevDefHP - newDefHP);
 
-           const prevAtkHP = (currentState.characterStates?.[actorId]?.hp) ?? 0;
-           const newAtkHP = newAttackerState?.hp ?? 0;
-           atkDmgDealt = Math.max(0, prevAtkHP - newAtkHP);
+          const prevAtkHP = (currentState.characterStates?.[actorId]?.hp) ?? 0;
+          const newAtkHP = newAttackerState?.hp ?? 0;
+          atkDmgDealt = Math.max(0, prevAtkHP - newAtkHP);
         } else if (playedCardType === 'HEAL') {
-           const prevAtkHP = (currentState.characterStates?.[actorId]?.hp) ?? 0;
-           const newAtkHP = newAttackerState?.hp ?? 0;
-           healDelta = Math.max(0, newAtkHP - prevAtkHP);
+          const prevAtkHP = (currentState.characterStates?.[actorId]?.hp) ?? 0;
+          const newAtkHP = newAttackerState?.hp ?? 0;
+          healDelta = Math.max(0, newAtkHP - prevAtkHP);
         }
 
         const prevDefShield = currentState.characterStates?.[targetId]?.shield || 0;
@@ -2803,11 +2905,11 @@ export default function KontrolaArena() {
         updatedStates[targetId] = newDefenderState;
       } else if (targetId === 'ALL' && resolved.aoeDamage) {
         // Count active defenders for AoE damage splitting
-        const activeDefenders = currentState.players.filter(pId => 
+        const activeDefenders = currentState.players.filter(pId =>
           pId !== actorId && !currentState.characterStates[pId]?.isDefeated
         );
         const damagePerDefender = Math.ceil(resolved.aoeDamage / Math.max(1, activeDefenders.length));
-        
+
         activeDefenders.forEach(pId => {
           const char = { ...currentState.characterStates[pId] };
           char.hp = Math.max(0, char.hp - damagePerDefender);
@@ -2838,6 +2940,11 @@ export default function KontrolaArena() {
       const isStatusOrHealCard = Boolean(actionCard) &&
         ['STATUS', 'HEAL', 'OTHERS', 'TACTICAL', 'DEFENSE', 'SPECIAL'].includes(resolvedEndTurnCardType) &&
         resolvedEndTurnCardName !== 'TIME MACHINE';
+      const isAttackX1Action = Boolean(actionCard) && (
+        resolvedEndTurnCardName === 'ATTACK X1' ||
+        resolvedEndTurnCardName.startsWith('ATTACK X1') ||
+        (resolvedEndTurnCardType === 'ATTACK' && !resolvedEndTurnCardName.includes('X2') && !resolvedEndTurnCardName.includes('LIGHTNING') && !resolvedEndTurnCardName.includes('TIME MACHINE'))
+      );
 
       if (livingPlayers.length <= 1) {
         matchWinner = updatedStates[livingPlayers[0]] ? { ...updatedStates[livingPlayers[0]], playerId: livingPlayers[0] } : matchWinner;
@@ -2848,7 +2955,7 @@ export default function KontrolaArena() {
         const triggerSecondHit = !isAlreadySecondHit && Boolean(resolved.triggerAttackX2SecondHit);
 
         let grantExtraTurn = false;
-        if (!isStatusOrHealCard) {
+        if (!isStatusOrHealCard && !isAttackX1Action) {
           if (triggerSecondHit) {
             grantExtraTurn = true;
           } else if (newAttackerState?.extraTurns > 0) {
@@ -2857,6 +2964,21 @@ export default function KontrolaArena() {
             turnLogs.unshift(`⚡ Extra turn activated for ${newAttackerState.name}! (${newAttackerState.extraTurns} extra turn(s) remaining)`);
           } else if (resolved.extraTurnGranted) {
             grantExtraTurn = true;
+          }
+        }
+
+        // Strict Invariant: Attack X1 allows the player to have only ONE turn regardless if successful or not
+        if (isAttackX1Action) {
+          grantExtraTurn = false;
+          pendingAttackX2For = null;
+        }
+
+        // Strict Invariant: Retreat forfeits the whole Attack X2 and ends the turn immediately
+        if (resolvedEndTurnCardName.includes('RETREAT') || newAttackerState?.retreatedThisTurn) {
+          grantExtraTurn = false;
+          pendingAttackX2For = null;
+          if (newAttackerState) {
+            newAttackerState.extraTurns = 0;
           }
         }
 
@@ -2910,7 +3032,7 @@ export default function KontrolaArena() {
           nextTurnPlayerId = livingPlayers[nextSIdx];
           checkedSleepCount++;
         }
-        
+
         // Safety: ensure we have a valid next player even if something went wrong
         if (!nextTurnPlayerId || !updatedStates[nextTurnPlayerId]) {
           nextTurnPlayerId = livingPlayers[0];
@@ -2921,10 +3043,10 @@ export default function KontrolaArena() {
         if (incomingChar && incomingChar.poisonCount > 0 && !incomingChar.isDefeated) {
           const poisonDmg = incomingChar.poisonCount * 10;
           incomingChar.hp = Math.max(0, incomingChar.hp - poisonDmg);
-          turnLogs.unshift(`?? ${incomingChar.name} suffered ${poisonDmg} Poison damage (${incomingChar.poisonCount} stack${incomingChar.poisonCount > 1 ? 's' : ''})! HP: ${incomingChar.hp}`);
+          turnLogs.unshift(`☠️ ${incomingChar.name} suffered ${poisonDmg} Poison damage (${incomingChar.poisonCount} stack${incomingChar.poisonCount > 1 ? 's' : ''})! HP: ${incomingChar.hp}`);
           if (incomingChar.hp <= 0) {
             incomingChar.isDefeated = true;
-            turnLogs.unshift(`?? ${incomingChar.name} succumbed to Poison and was eliminated!`);
+            turnLogs.unshift(`💀 ${incomingChar.name} succumbed to Poison and was eliminated!`);
             const remainingLiving = currentState.players.filter((pId) => !updatedStates[pId]?.isDefeated);
             if (remainingLiving.length === 1) {
               matchWinner = updatedStates[remainingLiving[0]] ? { ...updatedStates[remainingLiving[0]], playerId: remainingLiving[0] } : null;
@@ -2978,7 +3100,7 @@ export default function KontrolaArena() {
         updatedHands[targetId] = newDefenderHand;
       }
 
-// X-CHANGE is handled interactively via EXECUTE_XCHANGE modal
+      // X-CHANGE is handled interactively via EXECUTE_XCHANGE modal
 
 
       // Absolute maximum hand size limit for all players (Global Enforcer)
@@ -2990,12 +3112,12 @@ export default function KontrolaArena() {
 
       // Update Match Summary Stats
       let updatedStats = { ...(currentState.stats || { damageDealt: {}, cardsPlayed: {}, turnsTaken: {} }) };
-      
+
       // Cards Played
       if (!isPass) {
         updatedStats.cardsPlayed[actorId] = (updatedStats.cardsPlayed[actorId] || 0) + 1;
       }
-      
+
       // Turns Taken
       updatedStats.turnsTaken[actorId] = (updatedStats.turnsTaken[actorId] || 0) + 1;
 
@@ -3003,20 +3125,20 @@ export default function KontrolaArena() {
       if (!isPass && getSafeCardType(actionCard) === 'ATTACK') {
         let totalTurnDmg = 0;
         if (targetId && targetId !== 'ALL' && newDefenderState) {
-           const prevDefHP = (currentState.characterStates?.[targetId]?.hp) ?? 0;
-           totalTurnDmg = Math.max(0, prevDefHP - newDefenderState.hp);
+          const prevDefHP = (currentState.characterStates?.[targetId]?.hp) ?? 0;
+          totalTurnDmg = Math.max(0, prevDefHP - newDefenderState.hp);
         } else if (targetId === 'ALL' && resolved.aoeDamage) {
-           // Calculate split damage per defender for AoE attacks
-           const activeDefenders = currentState.players.filter(pId => 
-             pId !== actorId && !currentState.characterStates[pId]?.isDefeated
-           );
-           const damagePerDefender = Math.ceil(resolved.aoeDamage / Math.max(1, activeDefenders.length));
-           
-           activeDefenders.forEach(pId => {
-              const prevHp = currentState.characterStates[pId].hp;
-              const newHp = Math.max(0, prevHp - damagePerDefender);
-              totalTurnDmg += Math.max(0, prevHp - newHp);
-           });
+          // Calculate split damage per defender for AoE attacks
+          const activeDefenders = currentState.players.filter(pId =>
+            pId !== actorId && !currentState.characterStates[pId]?.isDefeated
+          );
+          const damagePerDefender = Math.ceil(resolved.aoeDamage / Math.max(1, activeDefenders.length));
+
+          activeDefenders.forEach(pId => {
+            const prevHp = currentState.characterStates[pId].hp;
+            const newHp = Math.max(0, prevHp - damagePerDefender);
+            totalTurnDmg += Math.max(0, prevHp - newHp);
+          });
         }
         updatedStats.damageDealt[actorId] = (updatedStats.damageDealt[actorId] || 0) + totalTurnDmg;
       }
@@ -3245,7 +3367,7 @@ export default function KontrolaArena() {
       setIsHost(false);
       setIsSpectator(false);
       setTournamentMatchContext(null);
-      
+
       const tempState = await joinMatch(cleanId, playerId, selectedCharacter);
       tempState.playerNames = { [playerId]: finalName };
       setGameState(tempState);
@@ -3253,7 +3375,7 @@ export default function KontrolaArena() {
       setError(null);
       // Persist session to DB + localStorage
       sessionService.saveSession(cleanId, playerId, 'player', currentUser?.id ?? null);
-      
+
       if (matchId === cleanId) {
         // Already subscribed to this room channel, but need to re-request join
         requestJoin(cleanId, {
@@ -3284,7 +3406,7 @@ export default function KontrolaArena() {
 
     // Record match usage for host (guarded by sessionStorage so useEffect won't double count)
     const hostStorageKey = `kontrola_match_used_${matchId}_${playerId}`;
-    try { sessionStorage.setItem(hostStorageKey, 'true'); } catch {}
+    try { sessionStorage.setItem(hostStorageKey, 'true'); } catch { }
     characterLicenseService.recordMatchUse(currentUser?.id, selectedCharacter);
 
     // Remove room from global lobby broadcast
@@ -3327,13 +3449,13 @@ export default function KontrolaArena() {
     const payload = { actionType: 'CLAIM_ET', actorId: playerId };
     if (isHost) enqueueHostAction(payload);
     else takeTurn(matchId, { type: 'PLAYER_ACTION', payload });
-    
+
     // Locally clear lock quickly since this doesn't pop up a modal
     setTimeout(() => setIsProcessingAction(false), 500);
   };
 
-  // Recover Reserve Energy (2 ET cost, heals up to missing HP from Reserve HP pool)
-  const handleRecoverReserveEnergy = () => {
+  // Recover Reserve Energy (2 ET cost, heals user-chosen amount from Reserve HP pool)
+  const handleRecoverReserveEnergy = (chosenAmount = null) => {
     if (isProcessingAction) return;
     playClick();
     if (isSpectator) {
@@ -3345,7 +3467,8 @@ export default function KontrolaArena() {
       return;
     }
     if (!myCharacter?.reserveUnlocked) {
-      showNotice('Reserve Energy is dormant. Unlock via Level 2+ card or Add-On Card.', 'warning');
+      // Prompt modal so user can view locked state or scan QR Code to release
+      setIsReserveModalOpen(true);
       return;
     }
     if ((myCharacter?.reserveHp || 0) <= 0) {
@@ -3362,7 +3485,15 @@ export default function KontrolaArena() {
       return;
     }
 
-    const healAmount = Math.min(myCharacter.reserveHp, missingHp);
+    if (chosenAmount === null) {
+      // Open modal so user can pick however much reserve energy they wish to recover
+      setIsReserveModalOpen(true);
+      return;
+    }
+
+    const maxHeal = Math.min(myCharacter.reserveHp, missingHp);
+    const healAmount = Math.max(1, Math.min(chosenAmount, maxHeal));
+
     setIsProcessingAction(true);
     const payload = {
       actionType: 'EXECUTE_RESERVE_RECOVERY',
@@ -3379,7 +3510,34 @@ export default function KontrolaArena() {
     if (isHost) enqueueHostAction(payload);
     else takeTurn(matchId, { type: 'PLAYER_ACTION', payload });
 
+    setIsReserveModalOpen(false);
     setTimeout(() => setIsProcessingAction(false), 500);
+  };
+
+  const handleReleaseReserve = (reserveHp = 30) => {
+    playClick();
+    const payload = {
+      actionType: 'RELEASE_RESERVE',
+      actorId: playerId,
+      reserveHp
+    };
+    if (isHost) enqueueHostAction(payload);
+    else takeTurn(matchId, { type: 'PLAYER_ACTION', payload });
+    showNotice(`Energy Reserve Released! +${reserveHp} Reserve HP unlocked.`, 'success');
+  };
+
+  const handleReplenishCharacterMoves = (charId = null) => {
+    playClick();
+    const targetKey = (charId || myCharacter?.id || 'chynaman').toLowerCase();
+    const fullDeck = generatePurchasedCharacterMoves(targetKey, 15);
+    const payload = {
+      actionType: 'REPLENISH_CHARACTER_MOVES',
+      actorId: playerId,
+      moves: fullDeck
+    };
+    if (isHost) enqueueHostAction(payload);
+    else takeTurn(matchId, { type: 'PLAYER_ACTION', payload });
+    showNotice(`Character Card Moves unlocked via QR scan (+${fullDeck.length} cards)!`, 'success');
   };
 
   // Pass turn without playing a card or consuming ET
@@ -3401,6 +3559,7 @@ export default function KontrolaArena() {
     setTimeout(() => setIsProcessingAction(false), 2500);
     setSelectedActionCard(null);
     setSelectedCharacterAttack(null);
+    setSelectedWildMoveChoice(null);
     setSelectedTargetId(null);
   };
 
@@ -3433,6 +3592,7 @@ export default function KontrolaArena() {
       setDissolvingCardId(null);
       setSelectedActionCard(null);
       setSelectedCharacterAttack(null);
+      setSelectedWildMoveChoice(null);
       setSelectedTargetId(null);
     }, 600);
   };
@@ -3442,7 +3602,7 @@ export default function KontrolaArena() {
     playClick();
     if (isProcessingAction) return;
     if (!isHost || isMyTurn || !gameState?.turn) return;
-    
+
     setIsProcessingAction(true);
     setTimeout(() => setIsProcessingAction(false), 2000);
     const stalledPlayerId = gameState.turn;
@@ -3467,7 +3627,7 @@ export default function KontrolaArena() {
       selectedTargetId,
       myCharacterName: myCharacter?.name
     });
-    
+
     playClick();
     if (isProcessingAction) {
       console.log('[playTurn] BLOCKED: isProcessingAction is true');
@@ -3526,6 +3686,14 @@ export default function KontrolaArena() {
       return;
     }
 
+    // Attack X1 is only functional if the player has Character Card Moves
+    const isAttackX1Play = cardName === 'ATTACK X1' || cardName.startsWith('ATTACK X1');
+    const playerCharMoves = myCharacter?.characterCardMoves || [];
+    if (isAttackX1Play && playerCharMoves.length === 0) {
+      showNotice('⚠️ Attack X1 is only functional if you have Character Card Moves remaining! (0 moves left)', 'warning');
+      return;
+    }
+
     if (isAttack && !isAoE && !selectedTargetId) {
       console.log('[playTurn] VALIDATION FAILED: Attack requires target');
       showNotice('Please select a target opponent player first!', 'warning');
@@ -3558,10 +3726,14 @@ export default function KontrolaArena() {
       return;
     }
 
+    const effectiveAttackSelection = (selectedCharacterAttack === 'WILD CARD' || (selectedCharacterAttack || '').toUpperCase().includes('WILD'))
+      ? (selectedWildMoveChoice || Object.keys(myCharacter?.attacks || {})[0] || selectedCharacterAttack)
+      : selectedCharacterAttack;
+
     const payload = {
       actorId: playerId,
       actionCard: selectedActionCard,
-      attackSelectionName: (isLightning || isFire || isVampire || isBackStab || isMisdirect || isDrain) ? null : selectedCharacterAttack,
+      attackSelectionName: (isLightning || isFire || isVampire || isBackStab || isMisdirect || isDrain) ? null : effectiveAttackSelection,
       targetId: isAoE ? 'ALL' : selectedTargetId
     };
 
@@ -3607,7 +3779,7 @@ export default function KontrolaArena() {
           showNotice('Target player not found in game state!', 'error');
           return;
         }
-        
+
         const clashData = {
           ...payload,
           actionType: 'ATTACK_DECLARED',
@@ -3617,7 +3789,7 @@ export default function KontrolaArena() {
           attackerPlayerName: myCharacter?.name || playerName || 'Attacker',
           defenderPlayerName: targetChar?.name || 'Defender'
         };
-        
+
         console.log('[playTurn] Regular Attack - Broadcasting ATTACK_DECLARED:', {
           attackerName: clashData.attackerPlayerName,
           defenderName: clashData.defenderPlayerName,
@@ -3625,7 +3797,7 @@ export default function KontrolaArena() {
           attackSelectionName: clashData.attackSelectionName,
           isHost
         });
-        
+
         if (isHost) enqueueHostAction(clashData);
         else takeTurn(matchId, { type: 'PLAYER_ACTION', payload: clashData });
       }
@@ -3644,7 +3816,7 @@ export default function KontrolaArena() {
     setSelectedActionCard(null);
     setSelectedCharacterAttack(null);
     setSelectedTargetId(null);
-    
+
     console.log('[playTurn] Action sent, state cleared, processing lock set for 2.5s');
   };
 
@@ -3763,7 +3935,7 @@ export default function KontrolaArena() {
     };
     setChatMessages((prev) => [...prev, msg]);
     broadcastUIEvent(matchIdRef.current, 'chat_message', msg);
-    
+
     if (!showChatRef.current) {
       const toastId = 'toast_' + Date.now() + Math.random();
       setChatToasts((prev) => [...prev, { ...msg, toastId, type: 'CHAT' }]);
@@ -3782,9 +3954,9 @@ export default function KontrolaArena() {
     setActiveTauntBubble(msg);
     setChatMessages((prev) => [...prev, { ...msg, text: `??? [TAUNT]: "${msg.text}"` }]);
     setTimeout(() => setActiveTauntBubble(null), 4500);
-    try { if (soundFX?.playTaunt) soundFX.playTaunt(true); } catch {}
+    try { if (soundFX?.playTaunt) soundFX.playTaunt(true); } catch { }
     broadcastUIEvent(matchIdRef.current, 'player_taunt', msg);
-    
+
     if (!showChatRef.current) {
       const toastId = 'toast_' + Date.now() + Math.random();
       setChatToasts((prev) => [...prev, { ...msg, toastId, type: 'TAUNT' }]);
@@ -3818,7 +3990,7 @@ export default function KontrolaArena() {
   const handleAcceptAllianceInvite = () => {
     if (!pendingAllianceInvite) return;
     soundFX.playMenuSelect?.();
-    
+
     if (inviteTimeoutRef.current) {
       clearTimeout(inviteTimeoutRef.current);
       inviteTimeoutRef.current = null;
@@ -4072,7 +4244,7 @@ export default function KontrolaArena() {
     setCrystalSplitData(null);
 
     const { winner, loser, offer, method } = result;
-    
+
     setGameState(prev => {
       if (!prev) return prev;
       const updatedPlayers = { ...prev.characterStates };
@@ -4472,13 +4644,13 @@ export default function KontrolaArena() {
                                 background: isSelected
                                   ? 'linear-gradient(135deg, rgba(0, 240, 255, 0.25) 0%, rgba(20, 40, 70, 0.8) 100%)'
                                   : !lic.canPlay
-                                  ? 'rgba(30, 10, 15, 0.6)'
-                                  : 'rgba(255,255,255,0.03)',
+                                    ? 'rgba(30, 10, 15, 0.6)'
+                                    : 'rgba(255,255,255,0.03)',
                                 border: isSelected
                                   ? '2px solid var(--neon-cyan)'
                                   : !lic.canPlay
-                                  ? '1.5px solid rgba(239, 68, 68, 0.5)'
-                                  : '1px solid rgba(255,255,255,0.1)',
+                                    ? '1.5px solid rgba(239, 68, 68, 0.5)'
+                                    : '1px solid rgba(255,255,255,0.1)',
                                 borderRadius: '10px',
                                 padding: '8px 6px',
                                 display: 'flex',
@@ -4538,13 +4710,13 @@ export default function KontrolaArena() {
                                 background: lic.isUnlocked
                                   ? 'rgba(16, 185, 129, 0.25)'
                                   : !lic.canPlay
-                                  ? 'rgba(239, 68, 68, 0.3)'
-                                  : 'rgba(251, 200, 13, 0.2)',
+                                    ? 'rgba(239, 68, 68, 0.3)'
+                                    : 'rgba(251, 200, 13, 0.2)',
                                 color: lic.isUnlocked
                                   ? '#34d399'
                                   : !lic.canPlay
-                                  ? '#fca5a5'
-                                  : '#FBC80D'
+                                    ? '#fca5a5'
+                                    : '#FBC80D'
                               }}>
                                 {lic.isUnlocked ? '👑 UNLOCKED' : !lic.canPlay ? '🔒 LOCKED' : `${10 - lic.usageCount}/10`}
                               </div>
@@ -5468,8 +5640,8 @@ export default function KontrolaArena() {
                         {isHostCharLocked
                           ? `WARRIOR LOCKED (${hostLic.characterName.toUpperCase()}) - UNLOCK TO BATTLE`
                           : gameState.players?.length >= 2
-                          ? 'COMMENCE BATTLE (LOCK ROOM)'
-                          : 'WAITING FOR PLAYERS (MIN 2)...'}
+                            ? 'COMMENCE BATTLE (LOCK ROOM)'
+                            : 'WAITING FOR PLAYERS (MIN 2)...'}
                       </span>
                     </button>
                   );
@@ -5574,8 +5746,8 @@ export default function KontrolaArena() {
                 background: inAppNotice.type === 'error'
                   ? 'linear-gradient(90deg, #ff2a55 0%, #c00028 100%)'
                   : inAppNotice.type === 'info'
-                  ? 'linear-gradient(90deg, #FBC80D 0%, #0077ff 100%)'
-                  : 'linear-gradient(90deg, #FBC80D 0%, #ff9900 100%)',
+                    ? 'linear-gradient(90deg, #FBC80D 0%, #0077ff 100%)'
+                    : 'linear-gradient(90deg, #FBC80D 0%, #ff9900 100%)',
                 color: '#000',
                 fontWeight: '900',
                 fontFamily: 'Bebas Neue, sans-serif',
@@ -5616,25 +5788,25 @@ export default function KontrolaArena() {
             pointerEvents: 'none'
           }}>
             {chatToasts.map(toast => (
-               <div key={toast.toastId} style={{
-                 background: toast.type === 'TAUNT' ? 'linear-gradient(90deg, #ff2a55 0%, #880022 100%)' : 'rgba(10, 20, 35, 0.9)',
-                 border: toast.type === 'TAUNT' ? '2px solid #ff8899' : '1px solid rgba(251, 200, 13, 0.4)',
-                 borderRadius: '12px',
-                 padding: '10px 15px',
-                 color: '#fff',
-                 display: 'flex',
-                 flexDirection: 'column',
-                 gap: '4px',
-                 boxShadow: '0 5px 15px rgba(0,0,0,0.6)',
-                 animation: 'slideInLeft 0.3s ease-out, fadeOut 0.3s ease-in 4.2s forwards'
-               }}>
-                 <span style={{ fontSize: '0.75rem', color: toast.type === 'TAUNT' ? '#FBC80D' : '#FBC80D', fontWeight: 'bold' }}>
-                   {toast.type === 'TAUNT' ? '??? TAUNT' : '?? MSG'} � {toast.senderName}
-                 </span>
-                 <span style={{ fontSize: '0.9rem', fontWeight: '500' }}>
-                   {toast.text.replace('??? [TAUNT]: "', '').replace('"', '')}
-                 </span>
-               </div>
+              <div key={toast.toastId} style={{
+                background: toast.type === 'TAUNT' ? 'linear-gradient(90deg, #ff2a55 0%, #880022 100%)' : 'rgba(10, 20, 35, 0.9)',
+                border: toast.type === 'TAUNT' ? '2px solid #ff8899' : '1px solid rgba(251, 200, 13, 0.4)',
+                borderRadius: '12px',
+                padding: '10px 15px',
+                color: '#fff',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px',
+                boxShadow: '0 5px 15px rgba(0,0,0,0.6)',
+                animation: 'slideInLeft 0.3s ease-out, fadeOut 0.3s ease-in 4.2s forwards'
+              }}>
+                <span style={{ fontSize: '0.75rem', color: toast.type === 'TAUNT' ? '#FBC80D' : '#FBC80D', fontWeight: 'bold' }}>
+                  {toast.type === 'TAUNT' ? '??? TAUNT' : '?? MSG'} � {toast.senderName}
+                </span>
+                <span style={{ fontSize: '0.9rem', fontWeight: '500' }}>
+                  {toast.text.replace('??? [TAUNT]: "', '').replace('"', '')}
+                </span>
+              </div>
             ))}
           </div>
           {/* Leave Confirmation Modal */}
@@ -5758,9 +5930,9 @@ export default function KontrolaArena() {
                           </div>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px' }}>
-                          <span>?? DMG: <strong style={{color: '#fff'}}>{dmg}</strong></span>
-                          <span>?? Cards: <strong style={{color: '#fff'}}>{cards}</strong></span>
-                          <span>? Turns: <strong style={{color: '#fff'}}>{turns}</strong></span>
+                          <span>?? DMG: <strong style={{ color: '#fff' }}>{dmg}</strong></span>
+                          <span>?? Cards: <strong style={{ color: '#fff' }}>{cards}</strong></span>
+                          <span>? Turns: <strong style={{ color: '#fff' }}>{turns}</strong></span>
                         </div>
                       </div>
                     );
@@ -5774,7 +5946,7 @@ export default function KontrolaArena() {
                       setMatchId('');
                       setWinner(null);
                       setTournamentMatchContext(null);
-                      try { localStorage.removeItem('kontrola_current_match'); } catch(e) {}
+                      try { localStorage.removeItem('kontrola_current_match'); } catch (e) { }
                       setLobbyTab('tournaments');
                     }}
                     className="btn-enter-game-cta"
@@ -5830,13 +6002,13 @@ export default function KontrolaArena() {
                 background: isSpectator
                   ? 'rgba(251, 200, 13, 0.12)'
                   : isMyTurn
-                  ? 'rgba(57, 255, 20, 0.15)'
-                  : 'rgba(237, 30, 36, 0.12)',
+                    ? 'rgba(57, 255, 20, 0.15)'
+                    : 'rgba(237, 30, 36, 0.12)',
                 border: isSpectator
                   ? '1.5px solid var(--neon-cyan)'
                   : isMyTurn
-                  ? '2px solid #39ff14'
-                  : '1.5px solid rgba(237, 30, 36, 0.4)',
+                    ? '2px solid #39ff14'
+                    : '1.5px solid rgba(237, 30, 36, 0.4)',
                 boxShadow: isMyTurn ? '0 0 20px rgba(57, 255, 20, 0.4)' : 'none'
               }}
             >
@@ -5935,28 +6107,53 @@ export default function KontrolaArena() {
                 </button>
               )}
 
-              {/* Reserve Energy Recovery Button */}
-              {isMyTurn && !isSpectator && myCharacter?.reserveUnlocked && (myCharacter.reserveHp || 0) > 0 && myCharacter.hp < myCharacter.maxHp && (
-                <button
-                  onClick={handleRecoverReserveEnergy}
-                  style={{
-                    background: 'linear-gradient(90deg, #10b981, #059669)',
-                    border: 'none',
-                    borderRadius: '6px',
-                    padding: '4px 10px',
-                    color: '#fff',
-                    fontWeight: 'bold',
-                    fontSize: '0.78rem',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    boxShadow: '0 0 10px rgba(16, 185, 129, 0.4)'
-                  }}
-                  title={`Recover up to ${Math.min(myCharacter.reserveHp, myCharacter.maxHp - myCharacter.hp)} HP from Reserve (Cost: 2 ET)`}
-                >
-                  <Sparkles size={13} fill="#fff" /> RECOVER RESERVE ({myCharacter.reserveHp} HP · 2 ET)
-                </button>
+              {/* Reserve Energy Recovery Button (Custom Amount or QR Release) */}
+              {isMyTurn && !isSpectator && (
+                myCharacter?.reserveUnlocked ? (
+                  (myCharacter.reserveHp || 0) > 0 && myCharacter.hp < myCharacter.maxHp && (
+                    <button
+                      onClick={() => setIsReserveModalOpen(true)}
+                      style={{
+                        background: 'linear-gradient(90deg, #10b981, #059669)',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '4px 10px',
+                        color: '#fff',
+                        fontWeight: 'bold',
+                        fontSize: '0.78rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        boxShadow: '0 0 10px rgba(16, 185, 129, 0.4)'
+                      }}
+                      title={`Open Reserve Energy panel: recover chosen HP (Cost: 2 ET)`}
+                    >
+                      <Sparkles size={13} fill="#fff" /> RECOVER RESERVE ({myCharacter.reserveHp} HP · 2 ET)
+                    </button>
+                  )
+                ) : (
+                  <button
+                    onClick={() => setIsReserveModalOpen(true)}
+                    style={{
+                      background: 'linear-gradient(90deg, #475569, #334155)',
+                      border: '1px dashed #94a3b8',
+                      borderRadius: '6px',
+                      padding: '4px 10px',
+                      color: '#cbd5e1',
+                      fontWeight: 'bold',
+                      fontSize: '0.78rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      boxShadow: '0 0 6px rgba(0,0,0,0.4)'
+                    }}
+                    title="Energy Reserve is locked. Scan QR code to release!"
+                  >
+                    <Lock size={13} /> 🔒 RESERVE LOCKED (SCAN QR)
+                  </button>
+                )
               )}
             </div>
 
@@ -6295,16 +6492,16 @@ export default function KontrolaArena() {
                     {isSpectator
                       ? `SPECTATING � ${activeTurnPlayerName.toUpperCase()}`
                       : isMyTurn
-                      ? '? YOUR TURN TO STRIKE!'
-                      : `${activeTurnPlayerName.toUpperCase()}'S TURN`}
+                        ? '? YOUR TURN TO STRIKE!'
+                        : `${activeTurnPlayerName.toUpperCase()}'S TURN`}
                   </div>
 
                   <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.65)', marginTop: '6px', textAlign: 'center', padding: '0 20px' }}>
                     {isSpectator
                       ? 'Observing realtime multiplayer combat clash'
                       : isMyTurn
-                      ? 'Select an Action Card from your hand below'
-                      : `Waiting for ${activeTurnPlayerName} to execute their turn...`}
+                        ? 'Select an Action Card from your hand below'
+                        : `Waiting for ${activeTurnPlayerName} to execute their turn...`}
                   </div>
                 </div>
               </div>
@@ -6314,8 +6511,8 @@ export default function KontrolaArena() {
                 <div className="action-cards-fan-container" style={{ opacity: (!isMyTurn || isPendingSecondAttack) ? 0.6 : 1 }}>
                   {myHand.map((card, index) => {
                     const mid = Math.floor(myHand.length / 2);
-                    const rotation = (index - mid) * 4; 
-                    const yOffset = Math.abs(index - mid) * 2; 
+                    const rotation = (index - mid) * 4;
+                    const yOffset = Math.abs(index - mid) * 2;
                     const cName = getSafeCardName(card);
                     const cType = getSafeCardType(card);
                     const cId = getSafeCardId(card, index);
@@ -6326,7 +6523,7 @@ export default function KontrolaArena() {
                     );
                     const cardArt = getCardGraphicUrl(cName, myCharacter?.id);
                     const cardObj = typeof card === 'object' ? card : { id: cId, name: cName, type: cType, costET: cCost };
-                    
+
                     // Level Lock Verification (Feedback Lines 6 & 15, AI Breakdowns Lines 346-356)
                     const pLevel = myCharacter?.level || 1;
                     const upperCardName = cName.toUpperCase();
@@ -6335,12 +6532,13 @@ export default function KontrolaArena() {
                     const isV40Locked = upperCardName.includes('VITALITY') && upperCardName.includes('V40') && pLevel < 4;
                     const is3PlayerLocked = (upperCardName.includes('BACK STAB') || upperCardName.includes('SOUL ALLIANCE') || upperCardName.includes('ABANDON') || upperCardName.includes('MISDIRECT')) && (gameState?.players?.length || 2) <= 2;
                     const isReviveLocked = upperCardName.includes('REVIVE') && (myCharacter?.hp || 0) > 0;
-                    const isCardLocked = isV20Locked || isV30Locked || isV40Locked || is3PlayerLocked || isReviveLocked;
+                    const isAttackMovesLocked = (upperCardName.startsWith('ATTACK X1') || upperCardName.startsWith('ATTACK X2') || upperCardName === 'ATTACK X1' || upperCardName === 'ATTACK X2') && (myCharacter?.characterCardMoves?.length || 0) === 0;
+                    const isCardLocked = isV20Locked || isV30Locked || isV40Locked || is3PlayerLocked || isReviveLocked || isAttackMovesLocked;
                     const reqLvl = isV20Locked ? 2 : isV30Locked ? 3 : isV40Locked ? 4 : null;
-                    
+
                     return (
-                      <div 
-                        key={cId} 
+                      <div
+                        key={cId}
                         className={`uno-action-card ${isSelected ? 'selected' : ''} ${isCardLocked ? 'locked-level-card' : ''}`}
                         style={{
                           transform: `rotate(${rotation}deg) translateY(${yOffset}px)`,
@@ -6355,14 +6553,17 @@ export default function KontrolaArena() {
                             playClick();
                             setSelectedActionCard(cardObj);
                             if (isCardLocked) {
-                              if (isReviveLocked) {
+                              if (isAttackX1Locked) {
+                                showNotice('🔒 Attack X1 is only functional if you have Character Card Moves remaining! (0 moves left)', 'warning');
+                              } else if (isReviveLocked) {
                                 showNotice('🔒 REVIVE can only be used when your character reaches 0 HP! (You can still discard & draw)', 'info');
                               } else if (is3PlayerLocked) {
                                 if (upperCardName.includes('MISDIRECT')) {
                                   showNotice('⚠️ Valid only with more than two players! Requires 3+ players. (You can still discard & draw)', 'info');
                                 } else {
                                   showNotice('⚠️ Requires 3+ players to attack! (You can still discard & draw)', 'info');
-                                }                              } else {
+                                }
+                              } else {
                                 showNotice(`🔒 Requires Level ${reqLvl} to play! (Reach Level ${reqLvl} first. You can still discard & draw)`, 'info');
                               }
                             }
@@ -6460,144 +6661,288 @@ export default function KontrolaArena() {
                 ['POISON', 'SLEEPY', 'FREEZE', 'X-CHANGE', 'KONTROL', 'SOUL ALLIANCE', 'DRAIN', 'VAMPIRE'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw)) ||
                 (getSafeCardName(selectedActionCard).toUpperCase().includes('VISION') && !getSafeCardName(selectedActionCard).toUpperCase().includes('FULL'))
               ) && (
-                <div className="arena-panel" style={{ background: 'rgba(20, 10, 20, 0.95)', border: '1.5px solid var(--neon-crimson)', padding: '12px' }}>
-                  {/* Staged Card Visual Banner */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', background: 'rgba(0,0,0,0.5)', padding: '6px 10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    <CardVFXWrapper
-                      cardName={getSafeCardName(selectedActionCard)}
-                      isSelected={true}
-                      style={{
-                        width: '38px',
-                        height: '54px',
-                        borderRadius: '6px',
-                        overflow: 'hidden',
-                        flexShrink: 0
-                      }}
-                    >
-                      <img
-                        src={getCardGraphicUrl(getSafeCardName(selectedActionCard))}
-                        alt={getSafeCardName(selectedActionCard)}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
-                    </CardVFXWrapper>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '0.86rem', fontWeight: 'bold', color: 'var(--neon-gold)', textTransform: 'uppercase' }}>
-                        {getSafeCardName(selectedActionCard)}
-                      </div>
-                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.6)' }}>
-                        Action Staged  Choose target opponent below
+                  <div className="arena-panel" style={{ background: 'rgba(20, 10, 20, 0.95)', border: '1.5px solid var(--neon-crimson)', padding: '12px' }}>
+                    {/* Staged Card Visual Banner */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', background: 'rgba(0,0,0,0.5)', padding: '6px 10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      <CardVFXWrapper
+                        cardName={getSafeCardName(selectedActionCard)}
+                        isSelected={true}
+                        style={{
+                          width: '38px',
+                          height: '54px',
+                          borderRadius: '6px',
+                          overflow: 'hidden',
+                          flexShrink: 0
+                        }}
+                      >
+                        <img
+                          src={getCardGraphicUrl(getSafeCardName(selectedActionCard))}
+                          alt={getSafeCardName(selectedActionCard)}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      </CardVFXWrapper>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '0.86rem', fontWeight: 'bold', color: 'var(--neon-gold)', textTransform: 'uppercase' }}>
+                          {getSafeCardName(selectedActionCard)}
+                        </div>
+                        <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.6)' }}>
+                          Action Staged  Choose target opponent below
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="panel-title-bar" style={{ marginBottom: '8px' }}>
-                    <span className="panel-kicker" style={{ color: 'var(--neon-crimson)' }}>1. SELECT TARGET</span>
-                  </div>
+                    <div className="panel-title-bar" style={{ marginBottom: '8px' }}>
+                      <span className="panel-kicker" style={{ color: 'var(--neon-crimson)' }}>1. SELECT TARGET</span>
+                    </div>
 
-                  <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', flexWrap: 'wrap' }}>
-                    {(getSafeCardName(selectedActionCard).toUpperCase().includes('POISON') ? [...opponents, playerId] : opponents).map((oId) => {
-                      const oChar = gameState.characterStates?.[oId];
-                      if (!oChar || oChar.isDefeated) return null;
-                      const isSelectedTarget = selectedTargetId === oId;
+                    <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                      {(getSafeCardName(selectedActionCard).toUpperCase().includes('POISON') ? [...opponents, playerId] : opponents).map((oId) => {
+                        const oChar = gameState.characterStates?.[oId];
+                        if (!oChar || oChar.isDefeated) return null;
+                        const isSelectedTarget = selectedTargetId === oId;
 
-                      return (
-                        <button
-                          key={oId}
-                          onClick={() => {
-                            playClick();
-                            setSelectedTargetId(oId);
-                          }}
-                          style={{
-                            flex: '1 1 45%',
-                            background: isSelectedTarget ? 'rgba(237, 30, 36, 0.3)' : 'rgba(0, 0, 0, 0.55)',
-                            border: isSelectedTarget ? '1.5px solid var(--neon-crimson)' : '1px solid rgba(255, 255, 255, 0.12)',
-                            color: isSelectedTarget ? 'var(--neon-crimson)' : '#fff',
-                            borderRadius: '8px',
-                            padding: '8px',
-                            cursor: 'pointer',
-                            textAlign: 'center',
-                            fontSize: '0.78rem',
-                            fontWeight: 'bold'
-                          }}
-                        >
-                          <div>{oChar.name}</div>
-                          <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>{oChar.hp} HP</div>
-                        </button>
-                      );
-                    })}
-                  </div>
+                        return (
+                          <button
+                            key={oId}
+                            onClick={() => {
+                              playClick();
+                              setSelectedTargetId(oId);
+                            }}
+                            style={{
+                              flex: '1 1 45%',
+                              background: isSelectedTarget ? 'rgba(237, 30, 36, 0.3)' : 'rgba(0, 0, 0, 0.55)',
+                              border: isSelectedTarget ? '1.5px solid var(--neon-crimson)' : '1px solid rgba(255, 255, 255, 0.12)',
+                              color: isSelectedTarget ? 'var(--neon-crimson)' : '#fff',
+                              borderRadius: '8px',
+                              padding: '8px',
+                              cursor: 'pointer',
+                              textAlign: 'center',
+                              fontSize: '0.78rem',
+                              fontWeight: 'bold'
+                            }}
+                          >
+                            <div>{oChar.name}</div>
+                            <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>{oChar.hp} HP</div>
+                          </button>
+                        );
+                      })}
+                    </div>
 
-                  {(selectedActionCard?.type === 'ATTACK' || getSafeCardName(selectedActionCard).toUpperCase().includes('BACK STAB')) && !['LIGHTNING', 'FIRE FLAME', 'VAMPIRE', 'DRAIN', 'BACK STAB', 'BOOMERANG', 'MISDIRECT', 'BLITZ'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw)) && (
-                    <>
-                      <div className="panel-title-bar" style={{ marginBottom: '8px' }}>
-                        <span className="panel-kicker" style={{ color: 'var(--neon-crimson)' }}>2. SELECT CHARACTER MOVE</span>
-                      </div>
+                    {(selectedActionCard?.type === 'ATTACK' || getSafeCardName(selectedActionCard).toUpperCase().includes('BACK STAB')) && !['LIGHTNING', 'FIRE FLAME', 'VAMPIRE', 'DRAIN', 'BACK STAB', 'BOOMERANG', 'MISDIRECT', 'BLITZ'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw)) && (
+                          <>
+                            <div className="panel-title-bar" style={{ marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span className="panel-kicker" style={{ color: 'var(--neon-crimson)' }}>2. SELECT CHARACTER MOVE</span>
+                              <span style={{ fontSize: '0.72rem', color: '#FBC80D', fontWeight: 'bold' }}>
+                                🎴 {(myCharacter?.characterCardMoves || []).length} Move(s) Remaining
+                              </span>
+                            </div>
 
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '180px', overflowY: 'auto' }}>
-                        {Object.entries(myCharacter.attacks || {}).map(([atkName, atkData]) => {
-                          const isSelectedAtk = selectedCharacterAttack === atkName;
-                          const atkUpper = atkName.toUpperCase();
-                          const isBlitzMove = atkUpper.includes('BLITZ');
-                          const isKontrolMove = atkUpper.includes('KONTROL');
-
-                          const hasBlitzInHand = myHand.some(c => getSafeCardName(c).toUpperCase().includes('BLITZ'));
-                          const isBlitzHpEligible = (myCharacter?.hp || 0) <= 50;
-                          const isBlitzLocked = isBlitzMove && (!hasBlitzInHand || !isBlitzHpEligible);
-
-                          const hasKontrolInHand = myHand.some(c => getSafeCardName(c).toUpperCase().includes('KONTROL'));
-                          const isKontrolLocked = isKontrolMove && !hasKontrolInHand;
-
-                          const isMoveLocked = isBlitzLocked || isKontrolLocked;
-                          return (
-                            <button
-                              key={atkName}
-                              disabled={isMoveLocked}
-                              onClick={() => {
-                                playClick();
-                                if (isMoveLocked) {
-                                  if (isBlitzLocked) {
-                                    showNotice(!hasBlitzInHand ? '🔒 SAIGO NO BLITZ requires having the Blitz card in hand!' : '🔒 SAIGO NO BLITZ requires HP ≤ 50!', 'warning');
-                                  } else {
-                                    showNotice('🔒 KONTROL requires having the Kontrol card in hand!', 'warning');
-                                  }
-                                  return;
-                                }
-                                setSelectedCharacterAttack(atkName);
-                              }}
-                              style={{
-                                background: isSelectedAtk ? 'rgba(237, 30, 36, 0.25)' : (isMoveLocked ? 'rgba(0,0,0,0.2)' : 'rgba(0, 0, 0, 0.45)'),
-                                border: isSelectedAtk ? '1.5px solid var(--neon-crimson)' : (isMoveLocked ? '1px dashed rgba(255, 68, 68, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)'),
-                                color: isSelectedAtk ? 'var(--neon-crimson)' : (isMoveLocked ? '#888' : '#fff'),
-                                borderRadius: '8px',
-                                padding: '8px 10px',
-                                cursor: isMoveLocked ? 'not-allowed' : 'pointer',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                fontSize: '0.8rem',
-                                textAlign: 'left',
-                                opacity: isMoveLocked ? 0.5 : 1
-                              }}
-                            >
-                              <div>
-                                <div style={{ fontWeight: 'bold' }}>{atkName}</div>
-                                <div style={{ fontSize: '0.68rem', opacity: 0.7 }}>{atkData.desc}</div>
+                            {(myCharacter?.characterCardMoves || []).length === 0 ? (
+                              <div style={{ padding: '14px', background: 'rgba(255, 68, 68, 0.15)', border: '1px solid #FF4444', borderRadius: '10px', color: '#ff6b81', fontSize: '0.8rem', textAlign: 'center', marginBottom: '8px' }}>
+                                <div style={{ marginBottom: '6px', fontWeight: 'bold', fontSize: '0.9rem', color: '#fff' }}>
+                                  ⚠️ All 10 Character Move Cards Used!
+                                </div>
+                                <div style={{ fontSize: '0.74rem', color: '#cbd5e1', marginBottom: '10px', lineHeight: 1.4 }}>
+                                  Attack X1 and X2 require Character Move Cards. Players must purchase more through the website or the TCG Card game.
+                                  You have the option to purchase digital or physical cards (Physical cards include a physical card and digital card via our QR Code system).
+                                </div>
+                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => setIsCharacterQRScannerOpen(true)}
+                                    style={{
+                                      background: 'linear-gradient(90deg, #FBC80D, #ff9900)',
+                                      border: 'none',
+                                      borderRadius: '6px',
+                                      padding: '6px 14px',
+                                      color: '#000',
+                                      fontWeight: 'bold',
+                                      fontSize: '0.78rem',
+                                      cursor: 'pointer',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '6px',
+                                      boxShadow: '0 0 10px rgba(251, 200, 13, 0.4)'
+                                    }}
+                                  >
+                                    <QrCode size={14} /> SCAN PHYSICAL CARD (QR CODE)
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setIsStoreOpen(true)}
+                                    style={{
+                                      background: 'linear-gradient(90deg, #00f0ff, #0077ff)',
+                                      border: 'none',
+                                      borderRadius: '6px',
+                                      padding: '6px 14px',
+                                      color: '#000',
+                                      fontWeight: 'bold',
+                                      fontSize: '0.78rem',
+                                      cursor: 'pointer',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '6px',
+                                      boxShadow: '0 0 10px rgba(0, 240, 255, 0.4)'
+                                    }}
+                                  >
+                                    <ShoppingBag size={14} /> PURCHASE DIGITAL / PHYSICAL CARDS
+                                  </button>
+                                </div>
                               </div>
-                              {isMoveLocked ? (
-                                <span style={{ color: '#FF4444', fontSize: '0.68rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                                  <Lock size={11} /> {isBlitzLocked ? (!hasBlitzInHand ? 'CARD REQ' : 'HP ≤ 50') : 'CARD REQ'}
-                                </span>
-                              ) : (
-                                <span style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>{atkData.ap} AP</span>
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </>
+                            ) : (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '180px', overflowY: 'auto' }}>
+                                {(() => {
+                                  const moveCounts = {};
+                                  (myCharacter.characterCardMoves || []).forEach(m => {
+                                    if (!moveCounts[m.name]) moveCounts[m.name] = { ...m, count: 0 };
+                                    moveCounts[m.name].count += 1;
+                                  });
+
+                                  // Also include Blitz & Kontrol if present in character's template
+                                  Object.entries(myCharacter.attacks || {}).forEach(([atkName, atkData]) => {
+                                    const upper = atkName.toUpperCase();
+                                    if ((upper.includes('BLITZ') || upper.includes('KONTROL')) && !moveCounts[atkName]) {
+                                      moveCounts[atkName] = { ...atkData, name: atkName, count: 1, isSpecial: true };
+                                    }
+                                  });
+
+                                  return Object.values(moveCounts).map(move => {
+                                    const atkName = move.name;
+                                    const atkData = move;
+                                    const isSelectedAtk = selectedCharacterAttack === atkName;
+                                    const atkUpper = atkName.toUpperCase();
+                                    const isBlitzMove = atkUpper.includes('BLITZ');
+                                    const isKontrolMove = atkUpper.includes('KONTROL');
+
+                                    const isPurchasedOrScanned = Boolean(myCharacter?.isUnlocked || myCharacter?.purchased || (myCharacter?.characterCardMoves?.length > 10));
+                                    const hasBlitzInHand = myHand.some(c => getSafeCardName(c).toUpperCase().includes('BLITZ'));
+                                    const isBlitzHpEligible = (myCharacter?.hp || 0) <= 50;
+                                    const isBlitzLicenseLocked = isBlitzMove && !isPurchasedOrScanned;
+                                    const isBlitzLocked = isBlitzMove && (!hasBlitzInHand || !isBlitzHpEligible || isBlitzLicenseLocked);
+
+                                    const hasKontrolInHand = myHand.some(c => getSafeCardName(c).toUpperCase().includes('KONTROL'));
+                                    const isKontrolLicenseLocked = isKontrolMove && !isPurchasedOrScanned;
+                                    const isKontrolLocked = isKontrolMove && (!hasKontrolInHand || isKontrolLicenseLocked);
+
+                                    const isMoveLocked = isBlitzLocked || isKontrolLocked || (move.count <= 0);
+                                    return (
+                                      <div key={atkName} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                        <button
+                                          disabled={isMoveLocked}
+                                          onClick={() => {
+                                            playClick();
+                                            if (isMoveLocked) {
+                                              if (isBlitzLicenseLocked || isKontrolLicenseLocked) {
+                                                showNotice('🔒 No Saigo Blitz and Kontrol is only available through digital purchase or through QR Code system!', 'warning');
+                                              } else if (isBlitzLocked) {
+                                                showNotice(!hasBlitzInHand ? '🔒 SAIGO NO BLITZ requires having the Blitz card in hand!' : '🔒 SAIGO NO BLITZ requires HP ≤ 50!', 'warning');
+                                              } else if (isKontrolLocked) {
+                                                showNotice('🔒 KONTROL requires having the Kontrol card in hand!', 'warning');
+                                              } else {
+                                                showNotice('🔒 No remaining stock of this Character Card Move!', 'warning');
+                                              }
+                                              return;
+                                            }
+                                            setSelectedCharacterAttack(atkName);
+                                            if (atkData.isWild && !selectedWildMoveChoice && atkData.wildOptions?.length) {
+                                              setSelectedWildMoveChoice(atkData.wildOptions[0]);
+                                            }
+                                          }}
+                                          style={{
+                                            background: isSelectedAtk ? 'rgba(237, 30, 36, 0.25)' : (isMoveLocked ? 'rgba(0,0,0,0.2)' : 'rgba(0, 0, 0, 0.45)'),
+                                            border: isSelectedAtk ? '1.5px solid var(--neon-crimson)' : (isMoveLocked ? '1px dashed rgba(255, 68, 68, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)'),
+                                            color: isSelectedAtk ? 'var(--neon-crimson)' : (isMoveLocked ? '#888' : '#fff'),
+                                            borderRadius: '8px',
+                                            padding: '8px 10px',
+                                            cursor: isMoveLocked ? 'not-allowed' : 'pointer',
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            fontSize: '0.8rem',
+                                            textAlign: 'left',
+                                            opacity: isMoveLocked ? 0.5 : 1,
+                                            width: '100%'
+                                          }}
+                                        >
+                                          <div>
+                                            <div style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                              <span>{atkName}</span>
+                                              {atkData.rarity && (
+                                                <span style={{
+                                                  fontSize: '0.62rem',
+                                                  padding: '1px 5px',
+                                                  borderRadius: '4px',
+                                                  fontWeight: 'bold',
+                                                  background: atkData.rarity === 'Super Rare' ? 'rgba(251, 200, 13, 0.2)' : atkData.rarity === 'Rare' ? 'rgba(168, 85, 247, 0.2)' : atkData.rarity === 'Semi Common' ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.1)',
+                                                  color: atkData.rarity === 'Super Rare' ? '#FBC80D' : atkData.rarity === 'Rare' ? '#c084fc' : atkData.rarity === 'Semi Common' ? '#38bdf8' : '#cbd5e1',
+                                                  border: `1px solid ${atkData.rarity === 'Super Rare' ? 'rgba(251, 200, 13, 0.4)' : 'rgba(255,255,255,0.15)'}`
+                                                }}>
+                                                  {atkData.rarity}
+                                                </span>
+                                              )}
+                                              {!move.isSpecial && (
+                                                <span style={{ fontSize: '0.68rem', color: '#FBC80D', background: 'rgba(251, 200, 13, 0.15)', padding: '1px 6px', borderRadius: '4px' }}>
+                                                  ×{move.count}
+                                                </span>
+                                              )}
+                                            </div>
+                                            <div style={{ fontSize: '0.68rem', opacity: 0.7 }}>{atkData.desc}</div>
+                                          </div>
+                                          {isMoveLocked ? (
+                                            <span style={{ color: '#FF4444', fontSize: '0.68rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                              <Lock size={11} /> {(isBlitzLicenseLocked || isKontrolLicenseLocked) ? 'QR/STORE REQ' : isBlitzLocked ? (!hasBlitzInHand ? 'CARD REQ' : 'HP ≤ 50') : isKontrolLocked ? 'CARD REQ' : 'DEPLETED'}
+                                            </span>
+                                          ) : (
+                                            <span style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>{atkData.isWild ? 'WILD' : `${atkData.ap} AP`}</span>
+                                          )}
+                                        </button>
+
+                                        {/* Wild Card: Allows players to choose only one Character Move from the list */}
+                                        {atkData.isWild && isSelectedAtk && (
+                                          <div style={{ padding: '8px', background: 'rgba(251, 200, 13, 0.08)', borderRadius: '6px', border: '1px solid rgba(251, 200, 13, 0.3)', marginBottom: '4px' }} onClick={e => e.stopPropagation()}>
+                                            <div style={{ fontSize: '0.7rem', color: '#FBC80D', fontWeight: 'bold', marginBottom: '6px' }}>
+                                              🃏 WILD CARD — CHOOSE 1 MOVE:
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                              {(atkData.wildOptions || []).map(opt => {
+                                                const isOptSelected = (selectedWildMoveChoice || atkData.wildOptions[0]) === opt;
+                                                return (
+                                                  <button
+                                                    key={opt}
+                                                    type="button"
+                                                    onClick={() => {
+                                                      playClick();
+                                                      setSelectedWildMoveChoice(opt);
+                                                    }}
+                                                    style={{
+                                                      padding: '4px 8px',
+                                                      borderRadius: '6px',
+                                                      fontSize: '0.72rem',
+                                                      fontWeight: 'bold',
+                                                      border: isOptSelected ? '1.5px solid #FBC80D' : '1px solid rgba(255,255,255,0.2)',
+                                                      background: isOptSelected ? 'rgba(251, 200, 13, 0.3)' : 'rgba(0,0,0,0.5)',
+                                                      color: isOptSelected ? '#FBC80D' : '#fff',
+                                                      cursor: 'pointer'
+                                                    }}
+                                                  >
+                                                    {isOptSelected ? '✓ ' : ''}{opt}
+                                                  </button>
+                                                );
+                                              })}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  });
+                                })()}
+                              </div>
+                            )}
+                          </>
+                        )}
+                    </div>
                   )}
-                </div>
-              )}
+
               {/* Bottom Right Actions (Moved from footer to prevent UI collision) */}
               <div className="bottom-right-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '12px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                 {isSpectator ? (
@@ -6679,8 +7024,9 @@ export default function KontrolaArena() {
                       const isCtaCardLocked = isV20Blocked || isV30Blocked || isV40Blocked || is3PlayerBlocked || isReviveBlocked;
 
                       const selMoveUpper = (selectedCharacterAttack || '').toUpperCase();
-                      const isSelBlitzLocked = selMoveUpper.includes('BLITZ') && (!myHand.some(c => getSafeCardName(c).toUpperCase().includes('BLITZ')) || (myCharacter?.hp || 0) > 50);
-                      const isSelKontrolLocked = selMoveUpper.includes('KONTROL') && !myHand.some(c => getSafeCardName(c).toUpperCase().includes('KONTROL'));
+                      const isPurchasedOrScanned = Boolean(myCharacter?.isUnlocked || myCharacter?.purchased || (myCharacter?.characterCardMoves?.length > 10));
+                      const isSelBlitzLocked = selMoveUpper.includes('BLITZ') && (!myHand.some(c => getSafeCardName(c).toUpperCase().includes('BLITZ')) || (myCharacter?.hp || 0) > 50 || !isPurchasedOrScanned);
+                      const isSelKontrolLocked = selMoveUpper.includes('KONTROL') && (!myHand.some(c => getSafeCardName(c).toUpperCase().includes('KONTROL')) || !isPurchasedOrScanned);
                       const isSelMoveLocked = isSelBlitzLocked || isSelKontrolLocked;
 
                       const isCtaDisabled = !isMyTurn || !selectedActionCard || isCtaCardLocked || isSelMoveLocked || (
@@ -6692,17 +7038,17 @@ export default function KontrolaArena() {
                       (selCardUpper.includes('VISION') && !selCardUpper.includes('FULL') && !selectedTargetId);
 
                       const buttonText = isReviveBlocked
-                        ? '🔒 REVIVE ONLY AT 0 HP'
+                        ? '⚠️ REVIVE ONLY AT 0 HP'
                         : isV20Blocked
-                        ? '🔒 REQUIRES LEVEL 2'
+                        ? '⚠️ REQUIRES LEVEL 2'
                         : isV30Blocked
-                        ? '🔒 REQUIRES LEVEL 3'
+                        ? '⚠️ REQUIRES LEVEL 3'
                         : isV40Blocked
-                        ? '🔒 REQUIRES LEVEL 4'
+                        ? '⚠️ REQUIRES LEVEL 4'
                         : is3PlayerBlocked
-                        ? ('🔒 REQUIRES 3+ PLAYERS')
+                        ? ('⚠️ REQUIRES 3+ PLAYERS')
                         : isSelMoveLocked
-                        ? '🔒 MOVE LOCKED'
+                        ? '⚠️ MOVE LOCKED'
                         : selectedActionCard?.type === 'ATTACK'
                         ? 'ROLL COMBAT CLASH'
                         : 'PLAY ACTION CARD';
@@ -6741,8 +7087,8 @@ export default function KontrolaArena() {
           {/* Bottom Controls Bar */}
           <footer className="arena-bottom-controls" style={{ justifyContent: 'flex-start', marginTop: '12px' }}>
             <div className="bottom-left-buttons">
-              <button 
-                className="btn-arena-chat" 
+              <button
+                className="btn-arena-chat"
                 onClick={() => { playClick(); setShowChat(true); setUnreadChatCount(0); }}
                 style={{ position: 'relative' }}
               >
@@ -6781,7 +7127,7 @@ export default function KontrolaArena() {
                 </button>
               )}
               {!isSpectator && gameState?.alliances && gameState.alliances.length > 0 && (() => {
-                const myAlliance = gameState.alliances.find(a => 
+                const myAlliance = gameState.alliances.find(a =>
                   a.status === 'active' && (a.player1Id === playerId || a.player2Id === playerId)
                 );
                 if (!myAlliance) return null;
@@ -6804,7 +7150,7 @@ export default function KontrolaArena() {
               })()}
             </div>
 
-              {/* Action buttons moved to arena-col-right above */}
+            {/* Action buttons moved to arena-col-right above */}
 
           </footer>
 
@@ -7220,7 +7566,7 @@ export default function KontrolaArena() {
             <div
               style={{
                 position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                background: 'radial-gradient(ellipse at center, rgba(15, 20, 35, 0.98) 0%, rgba(5, 8, 15, 0.99) 100%)', 
+                background: 'radial-gradient(ellipse at center, rgba(15, 20, 35, 0.98) 0%, rgba(5, 8, 15, 0.99) 100%)',
                 zIndex: 10000,
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff',
                 animation: 'fadeIn 0.3s ease'
@@ -7242,7 +7588,7 @@ export default function KontrolaArena() {
                   </p>
                 </>
               )}
-              
+
               <div style={{ display: 'flex', gap: '30px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '50px' }}>
                 {[...gameState.players]
                   .sort((a, b) => {
@@ -7252,61 +7598,61 @@ export default function KontrolaArena() {
                     return 0;
                   })
                   .map((pId, idx) => {
-                  const isTiebreakParticipant = !gameState.tiebreakPool || gameState.tiebreakPool.includes(pId);
-                  const hasRolled = Boolean(gameState.rollOffs?.[pId]);
-                  const isRolling = Boolean(rollingOffPlayers[pId]) && !hasRolled;
-                  // Players sitting out a tiebreak are shown greyed-out with their previous roll
-                  const isSittingOut = gameState.tiebreakPool && !gameState.tiebreakPool.includes(pId);
-                  return (
-                    <div key={pId} style={{ 
-                      background: isSittingOut ? 'rgba(0,0,0,0.3)' : hasRolled ? 'rgba(57, 255, 20, 0.08)' : 'rgba(0,0,0,0.6)', 
-                      padding: '25px 35px', 
-                      borderRadius: '16px', 
-                      border: isSittingOut ? '1px solid rgba(255,255,255,0.08)' : hasRolled ? '2px solid #39ff14' : '1px solid rgba(255,255,255,0.2)', 
-                      minWidth: '180px', 
-                      textAlign: 'center',
-                      opacity: isSittingOut ? 0.45 : 1,
-                      boxShadow: hasRolled && !isSittingOut ? '0 0 20px rgba(57, 255, 20, 0.2)' : 'none',
-                      transition: 'all 0.3s ease'
-                    }}>
-                      <div style={{ fontWeight: '900', fontSize: '1.2rem', marginBottom: '15px', color: pId === playerId ? 'var(--neon-cyan)' : '#fff', position: 'relative' }}>
-                        {gameState.status === 'roll_off_complete' && (
-                          <div style={{ position: 'absolute', top: '-40px', left: '50%', transform: 'translateX(-50%)', background: idx === 0 ? 'var(--neon-gold)' : '#333', color: idx === 0 ? '#000' : '#fff', padding: '4px 12px', borderRadius: '8px', fontSize: '1rem', boxShadow: idx === 0 ? '0 0 10px var(--neon-gold)' : 'none' }}>
-                            #{idx + 1}
-                          </div>
-                        )}
-                        {gameState.playerNames?.[pId] || 'Player'}
-                        {pId === playerId && ' (You)'}
-                        {isSittingOut && <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>Sitting out</div>}
-                      </div>
-                      
-                      <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', minHeight: '60px', alignItems: 'center' }}>
-                        {hasRolled ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
-                            <div style={{ display: 'flex', gap: '15px' }}>
-                              <CanvasPipDie value={gameState.rollOffDice?.[pId]?.[0] || 1} theme="red" isRolling={false} size={55} />
-                              <CanvasPipDie value={gameState.rollOffDice?.[pId]?.[1] || 1} theme="red" isRolling={false} size={55} />
+                    const isTiebreakParticipant = !gameState.tiebreakPool || gameState.tiebreakPool.includes(pId);
+                    const hasRolled = Boolean(gameState.rollOffs?.[pId]);
+                    const isRolling = Boolean(rollingOffPlayers[pId]) && !hasRolled;
+                    // Players sitting out a tiebreak are shown greyed-out with their previous roll
+                    const isSittingOut = gameState.tiebreakPool && !gameState.tiebreakPool.includes(pId);
+                    return (
+                      <div key={pId} style={{
+                        background: isSittingOut ? 'rgba(0,0,0,0.3)' : hasRolled ? 'rgba(57, 255, 20, 0.08)' : 'rgba(0,0,0,0.6)',
+                        padding: '25px 35px',
+                        borderRadius: '16px',
+                        border: isSittingOut ? '1px solid rgba(255,255,255,0.08)' : hasRolled ? '2px solid #39ff14' : '1px solid rgba(255,255,255,0.2)',
+                        minWidth: '180px',
+                        textAlign: 'center',
+                        opacity: isSittingOut ? 0.45 : 1,
+                        boxShadow: hasRolled && !isSittingOut ? '0 0 20px rgba(57, 255, 20, 0.2)' : 'none',
+                        transition: 'all 0.3s ease'
+                      }}>
+                        <div style={{ fontWeight: '900', fontSize: '1.2rem', marginBottom: '15px', color: pId === playerId ? 'var(--neon-cyan)' : '#fff', position: 'relative' }}>
+                          {gameState.status === 'roll_off_complete' && (
+                            <div style={{ position: 'absolute', top: '-40px', left: '50%', transform: 'translateX(-50%)', background: idx === 0 ? 'var(--neon-gold)' : '#333', color: idx === 0 ? '#000' : '#fff', padding: '4px 12px', borderRadius: '8px', fontSize: '1rem', boxShadow: idx === 0 ? '0 0 10px var(--neon-gold)' : 'none' }}>
+                              #{idx + 1}
                             </div>
-                            <div style={{ fontSize: '1.2rem', color: isSittingOut ? 'rgba(255,255,255,0.4)' : '#39ff14', fontWeight: 'bold', textShadow: isSittingOut ? 'none' : '0 0 10px rgba(57, 255, 20, 0.4)' }}>
-                              Total: {gameState.rollOffs[pId]}
+                          )}
+                          {gameState.playerNames?.[pId] || 'Player'}
+                          {pId === playerId && ' (You)'}
+                          {isSittingOut && <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>Sitting out</div>}
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', minHeight: '60px', alignItems: 'center' }}>
+                          {hasRolled ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+                              <div style={{ display: 'flex', gap: '15px' }}>
+                                <CanvasPipDie value={gameState.rollOffDice?.[pId]?.[0] || 1} theme="red" isRolling={false} size={55} />
+                                <CanvasPipDie value={gameState.rollOffDice?.[pId]?.[1] || 1} theme="red" isRolling={false} size={55} />
+                              </div>
+                              <div style={{ fontSize: '1.2rem', color: isSittingOut ? 'rgba(255,255,255,0.4)' : '#39ff14', fontWeight: 'bold', textShadow: isSittingOut ? 'none' : '0 0 10px rgba(57, 255, 20, 0.4)' }}>
+                                Total: {gameState.rollOffs[pId]}
+                              </div>
                             </div>
-                          </div>
-                        ) : isRolling ? (
-                          <>
-                            <CanvasPipDie value={Math.floor(Math.random() * 6) + 1} theme="red" isRolling={true} size={55} />
-                            <CanvasPipDie value={Math.floor(Math.random() * 6) + 1} theme="red" isRolling={true} size={55} />
-                          </>
-                        ) : (
-                          <div style={{ fontSize: '2.5rem', color: 'rgba(255,255,255,0.2)' }}>?</div>
-                        )}
+                          ) : isRolling ? (
+                            <>
+                              <CanvasPipDie value={Math.floor(Math.random() * 6) + 1} theme="red" isRolling={true} size={55} />
+                              <CanvasPipDie value={Math.floor(Math.random() * 6) + 1} theme="red" isRolling={true} size={55} />
+                            </>
+                          ) : (
+                            <div style={{ fontSize: '2.5rem', color: 'rgba(255,255,255,0.2)' }}>?</div>
+                          )}
+                        </div>
+
+                        {hasRolled && !isSittingOut && <div style={{ marginTop: '10px', color: '#39ff14', fontSize: '0.9rem' }}>Roll Complete</div>}
+                        {isRolling && <div style={{ marginTop: '10px', color: '#ff2a55', fontSize: '0.9rem', animation: 'pulse 0.5s infinite alternate' }}>Rolling...</div>}
+                        {!hasRolled && !isRolling && isTiebreakParticipant && <div style={{ marginTop: '10px', color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem' }}>Waiting...</div>}
                       </div>
-                      
-                      {hasRolled && !isSittingOut && <div style={{ marginTop: '10px', color: '#39ff14', fontSize: '0.9rem' }}>Roll Complete</div>}
-                      {isRolling && <div style={{ marginTop: '10px', color: '#ff2a55', fontSize: '0.9rem', animation: 'pulse 0.5s infinite alternate' }}>Rolling...</div>}
-                      {!hasRolled && !isRolling && isTiebreakParticipant && <div style={{ marginTop: '10px', color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem' }}>Waiting...</div>}
-                    </div>
-                  );
-                })}
+                    );
+                  })}
               </div>
 
               {/* Show roll button only if: not spectator, haven't rolled yet, AND either no tiebreak or you're in the tiebreak pool */}
@@ -7320,7 +7666,7 @@ export default function KontrolaArena() {
                       : 'linear-gradient(180deg, #ff2a55 0%, #a80022 100%)',
                     border: gameState.tiebreakPool ? '2px solid #ff8899' : '2px solid #ff8899',
                     borderRadius: '12px', padding: '18px 50px',
-                    color: '#fff', fontSize: '1.5rem', fontWeight: '900', 
+                    color: '#fff', fontSize: '1.5rem', fontWeight: '900',
                     cursor: (rollingOffPlayers[playerId] || isProcessingAction) ? 'wait' : 'pointer',
                     boxShadow: '0 0 30px rgba(255, 42, 85, 0.6)',
                     display: 'flex', alignItems: 'center', gap: '12px',
@@ -7451,8 +7797,8 @@ export default function KontrolaArena() {
                           <div style={{ fontSize: '1.4rem' }}>
                             {cName.toUpperCase().includes('BOOMERANG') ? '🪃'
                               : cName.toUpperCase().includes('DODGE') ? '💨'
-                              : cName.toUpperCase().includes('COUNTER') ? '⚡'
-                              : '🛡️'}
+                                : cName.toUpperCase().includes('COUNTER') ? '⚡'
+                                  : '🛡️'}
                           </div>
                           <div style={{ fontWeight: 'bold', fontSize: '0.75rem', textAlign: 'center', lineHeight: '1.2' }}>{cName}</div>
                           <div style={{
@@ -7522,7 +7868,7 @@ export default function KontrolaArena() {
                 padding: '40px', display: 'flex', flexDirection: 'column', gap: '20px', minWidth: '400px',
                 boxShadow: '0 0 40px rgba(251, 200, 13, 0.3)'
               }}>
-                {[...gameState.players].sort((a,b) => (gameState.rollOffs?.[b] || 0) - (gameState.rollOffs?.[a] || 0)).map((pId, idx) => (
+                {[...gameState.players].sort((a, b) => (gameState.rollOffs?.[b] || 0) - (gameState.rollOffs?.[a] || 0)).map((pId, idx) => (
                   <div key={pId} style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     padding: '16px 24px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px',
@@ -7564,207 +7910,207 @@ export default function KontrolaArena() {
 
           {/* CHARACTER SELECT MODAL */}
           {gameState?.status === 'character_select' && (
-             <div
+            <div
               style={{
                 position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
                 background: 'var(--bg-card)', zIndex: 10000,
                 display: 'flex', color: '#fff'
               }}
-             >
-                {/* LEFT DOCK - TURN ORDER LEADERBOARD */}
-                <div style={{
-                  width: '320px', background: 'rgba(0,0,0,0.8)', borderRight: '1px solid rgba(255,255,255,0.1)',
-                  padding: '30px 20px', display: 'flex', flexDirection: 'column', gap: '15px'
-                }}>
-                  <h3 style={{ color: 'var(--neon-gold)', textShadow: '0 0 10px var(--neon-gold)', textAlign: 'center', marginBottom: '20px' }}>TURN ORDER</h3>
-                  {[...gameState.players].sort((a,b) => (gameState.rollOffs?.[b] || 0) - (gameState.rollOffs?.[a] || 0)).map((pId, idx) => {
-                    const charId = gameState.characterSelections?.[pId];
-                    const charObj = charId ? KONTROLA_CHARACTERS[charId] : null;
-                    return (
-                      <div key={pId} style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '12px 15px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px',
-                        borderLeft: gameState.turn === pId ? '4px solid var(--neon-cyan)' : '4px solid transparent',
-                        transition: 'all 0.3s ease'
+            >
+              {/* LEFT DOCK - TURN ORDER LEADERBOARD */}
+              <div style={{
+                width: '320px', background: 'rgba(0,0,0,0.8)', borderRight: '1px solid rgba(255,255,255,0.1)',
+                padding: '30px 20px', display: 'flex', flexDirection: 'column', gap: '15px'
+              }}>
+                <h3 style={{ color: 'var(--neon-gold)', textShadow: '0 0 10px var(--neon-gold)', textAlign: 'center', marginBottom: '20px' }}>TURN ORDER</h3>
+                {[...gameState.players].sort((a, b) => (gameState.rollOffs?.[b] || 0) - (gameState.rollOffs?.[a] || 0)).map((pId, idx) => {
+                  const charId = gameState.characterSelections?.[pId];
+                  const charObj = charId ? KONTROLA_CHARACTERS[charId] : null;
+                  return (
+                    <div key={pId} style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '12px 15px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px',
+                      borderLeft: gameState.turn === pId ? '4px solid var(--neon-cyan)' : '4px solid transparent',
+                      transition: 'all 0.3s ease'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ color: 'var(--neon-gold)', fontWeight: 'bold' }}>#{idx + 1}</span>
+                        <span style={{ fontWeight: 'bold', color: gameState.turn === pId ? 'var(--neon-cyan)' : '#fff' }}>
+                          {gameState.playerNames?.[pId] || 'Player'}
+                        </span>
+                      </div>
+                      <div style={{
+                        width: '45px', height: '45px', borderRadius: '50%', background: charObj ? 'transparent' : 'rgba(255,255,255,0.1)',
+                        border: charObj ? `2px solid ${charObj.themeColor}` : '2px dashed rgba(255,255,255,0.3)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden'
                       }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ color: 'var(--neon-gold)', fontWeight: 'bold' }}>#{idx + 1}</span>
-                          <span style={{ fontWeight: 'bold', color: gameState.turn === pId ? 'var(--neon-cyan)' : '#fff' }}>
-                            {gameState.playerNames?.[pId] || 'Player'}
-                          </span>
+                        {charObj ? <img src={getAssetUrl(charObj.image)} alt="char" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>?</span>}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* RIGHT SIDE - CHARACTER SELECTION GRID */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+                <h2 style={{ color: 'var(--neon-cyan)', fontSize: '2.5rem', marginBottom: '20px', textShadow: '0 0 20px var(--neon-cyan)' }}>? CHARACTER SELECTION ?</h2>
+                {isHost && (
+                  <button
+                    onClick={() => {
+                      const hostChar = gameState.characterSelections?.[playerId] || selectedCharacter;
+                      const hostLic = characterLicenseService.getLicenseSync(currentUser?.id, hostChar);
+                      if (!hostLic.canPlay) {
+                        playClick();
+                        showNotice(`Cannot start match: ${hostLic.characterName} has exhausted the 10-match quota!`, 'warning');
+                        setQuotaUnlockChar(hostChar);
+                        return;
+                      }
+                      playClick();
+                      enqueueHostAction({ actionType: 'START_MATCH' });
+                    }}
+                    style={{
+                      background: 'linear-gradient(90deg, #FBC80D, #ff8800)',
+                      border: 'none',
+                      color: '#000',
+                      padding: '10px 24px',
+                      borderRadius: '8px',
+                      fontSize: '1rem',
+                      fontWeight: 'bold',
+                      marginBottom: '20px',
+                      cursor: 'pointer',
+                      boxShadow: '0 0 15px rgba(251, 200, 13, 0.5)'
+                    }}
+                  >
+                    ⚡ START MATCH NOW
+                  </button>
+                )}
+
+                {gameState.turn === playerId ? (
+                  <p style={{ fontSize: '1.2rem', marginBottom: '30px', color: '#fff' }}>
+                    It's your turn to choose a character!
+                  </p>
+                ) : (
+                  <p style={{ fontSize: '1.5rem', color: 'var(--neon-cyan)', fontWeight: 'bold', marginBottom: '30px' }}>
+                    Waiting for {gameState.playerNames?.[gameState.turn] || 'the next player'} to choose a character...
+                  </p>
+                )}
+
+                <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'center', maxWidth: '900px' }}>
+                  {Object.values(KONTROLA_CHARACTERS).map((char) => {
+                    const isTaken = gameState && Object.values(gameState.characterSelections || {}).includes(char.id);
+                    let ownerName = null;
+                    if (isTaken) {
+                      const ownerId = Object.keys(gameState.characterSelections).find(id => gameState.characterSelections[id] === char.id);
+                      ownerName = gameState.playerNames?.[ownerId] || 'Taken';
+                    }
+
+                    const lic = characterLicenseService.getLicenseSync(currentUser?.id, char.id);
+                    const isLockedByQuota = !lic.canPlay;
+
+                    return (
+                      <div
+                        key={char.id}
+                        onClick={() => {
+                          if (isLockedByQuota) {
+                            playClick();
+                            showNotice(`${char.name} has exhausted the 10-match free quota!`, 'warning');
+                            setQuotaUnlockChar(char.id);
+                            return;
+                          }
+                          if (gameState.turn !== playerId) return;
+                          if (isTaken) {
+                            showNotice(`${char.name} has already been chosen!`, 'warning');
+                            return;
+                          }
+                          handleCharacterSelect(char.id);
+                        }}
+                        style={{
+                          background: isLockedByQuota ? 'rgba(30, 5, 10, 0.65)' : isTaken ? 'rgba(30, 10, 20, 0.55)' : 'rgba(0, 0, 0, 0.45)',
+                          border: isLockedByQuota ? '1.5px solid rgba(239, 68, 68, 0.6)' : isTaken ? '1px dashed rgba(255, 42, 85, 0.5)' : `2px solid ${char.themeColor || 'var(--neon-cyan)'}`,
+                          borderRadius: '12px',
+                          padding: '15px',
+                          textAlign: 'center',
+                          cursor: isLockedByQuota ? 'pointer' : (gameState.turn === playerId && !isTaken ? 'pointer' : 'not-allowed'),
+                          opacity: isTaken ? 0.45 : (isLockedByQuota ? 0.8 : 1),
+                          width: '140px',
+                          transition: 'transform 0.2s',
+                          position: 'relative'
+                        }}
+                      >
+                        {isTaken && (
+                          <div style={{ position: 'absolute', top: -10, right: -10, background: '#ff2a55', color: '#fff', padding: '4px 8px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 'bold', zIndex: 10 }}>
+                            {ownerName}
+                          </div>
+                        )}
+                        {isLockedByQuota && (
+                          <div style={{ position: 'absolute', top: -10, left: -10, background: '#ef4444', color: '#fff', padding: '3px 7px', borderRadius: '8px', fontSize: '0.65rem', fontWeight: 'bold', zIndex: 10, display: 'flex', alignItems: 'center', gap: '3px', boxShadow: '0 0 10px rgba(239,68,68,0.5)' }}>
+                            <Lock size={10} /> 10/10
+                          </div>
+                        )}
+                        <div style={{ position: 'relative', display: 'inline-block' }}>
+                          <img src={getAssetUrl(char.image)} alt={char.name} style={{ width: '85px', height: '85px', borderRadius: '50%', border: `2px solid ${char.themeColor}`, filter: isLockedByQuota ? 'grayscale(0.5)' : 'none' }} />
+                          {/* Level Badge */}
+                          <div style={{
+                            position: 'absolute',
+                            top: '-8px',
+                            right: '-8px',
+                            background: 'linear-gradient(135deg, #FBC80D 0%, #FF7700 100%)',
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.65rem',
+                            fontWeight: 'bold',
+                            color: '#000',
+                            border: '2px solid rgba(0,0,0,0.8)',
+                            boxShadow: '0 0 10px rgba(255, 215, 0, 0.7)',
+                            zIndex: 10
+                          }}>
+                            1
+                          </div>
                         </div>
-                        <div style={{
-                          width: '45px', height: '45px', borderRadius: '50%', background: charObj ? 'transparent' : 'rgba(255,255,255,0.1)',
-                          border: charObj ? `2px solid ${charObj.themeColor}` : '2px dashed rgba(255,255,255,0.3)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden'
-                        }}>
-                          {charObj ? <img src={getAssetUrl(charObj.image)} alt="char" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>?</span>}
+                        <div style={{ fontWeight: 'bold', marginTop: '10px' }}>{char.name}</div>
+                        <div style={{ fontSize: '0.8rem', color: char.themeColor }}>{char.element}</div>
+                        <div style={{ fontSize: '0.65rem', marginTop: '4px', fontWeight: 'bold' }}>
+                          {lic.isUnlocked ? (
+                            <span style={{ color: '#10b981' }}>👑 UNLIMITED</span>
+                          ) : isLockedByQuota ? (
+                            <span style={{ color: '#ef4444' }}>🔒 LOCKED</span>
+                          ) : (
+                            <span style={{ color: '#00f0ff' }}>⚡ {lic.usesRemaining}/10 Left</span>
+                          )}
                         </div>
                       </div>
                     )
                   })}
                 </div>
-
-                {/* RIGHT SIDE - CHARACTER SELECTION GRID */}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
-                  <h2 style={{ color: 'var(--neon-cyan)', fontSize: '2.5rem', marginBottom: '20px', textShadow: '0 0 20px var(--neon-cyan)' }}>? CHARACTER SELECTION ?</h2>
-                  {isHost && (
-                    <button
-                      onClick={() => {
-                        const hostChar = gameState.characterSelections?.[playerId] || selectedCharacter;
-                        const hostLic = characterLicenseService.getLicenseSync(currentUser?.id, hostChar);
-                        if (!hostLic.canPlay) {
-                          playClick();
-                          showNotice(`Cannot start match: ${hostLic.characterName} has exhausted the 10-match quota!`, 'warning');
-                          setQuotaUnlockChar(hostChar);
-                          return;
-                        }
-                        playClick();
-                        enqueueHostAction({ actionType: 'START_MATCH' });
-                      }}
-                      style={{
-                        background: 'linear-gradient(90deg, #FBC80D, #ff8800)',
-                        border: 'none',
-                        color: '#000',
-                        padding: '10px 24px',
-                        borderRadius: '8px',
-                        fontSize: '1rem',
-                        fontWeight: 'bold',
-                        marginBottom: '20px',
-                        cursor: 'pointer',
-                        boxShadow: '0 0 15px rgba(251, 200, 13, 0.5)'
-                      }}
-                    >
-                      ⚡ START MATCH NOW
-                    </button>
-                  )}
-                  
-                  {gameState.turn === playerId ? (
-                    <p style={{ fontSize: '1.2rem', marginBottom: '30px', color: '#fff' }}>
-                      It's your turn to choose a character!
-                    </p>
-                  ) : (
-                    <p style={{ fontSize: '1.5rem', color: 'var(--neon-cyan)', fontWeight: 'bold', marginBottom: '30px' }}>
-                      Waiting for {gameState.playerNames?.[gameState.turn] || 'the next player'} to choose a character...
-                    </p>
-                  )}
-
-                  <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'center', maxWidth: '900px' }}>
-                    {Object.values(KONTROLA_CHARACTERS).map((char) => {
-                      const isTaken = gameState && Object.values(gameState.characterSelections || {}).includes(char.id);
-                      let ownerName = null;
-                      if (isTaken) {
-                         const ownerId = Object.keys(gameState.characterSelections).find(id => gameState.characterSelections[id] === char.id);
-                         ownerName = gameState.playerNames?.[ownerId] || 'Taken';
-                      }
-
-                      const lic = characterLicenseService.getLicenseSync(currentUser?.id, char.id);
-                      const isLockedByQuota = !lic.canPlay;
-
-                      return (
-                        <div
-                          key={char.id}
-                          onClick={() => {
-                            if (isLockedByQuota) {
-                              playClick();
-                              showNotice(`${char.name} has exhausted the 10-match free quota!`, 'warning');
-                              setQuotaUnlockChar(char.id);
-                              return;
-                            }
-                            if (gameState.turn !== playerId) return;
-                            if (isTaken) {
-                              showNotice(`${char.name} has already been chosen!`, 'warning');
-                              return;
-                            }
-                            handleCharacterSelect(char.id);
-                          }}
-                          style={{
-                            background: isLockedByQuota ? 'rgba(30, 5, 10, 0.65)' : isTaken ? 'rgba(30, 10, 20, 0.55)' : 'rgba(0, 0, 0, 0.45)',
-                            border: isLockedByQuota ? '1.5px solid rgba(239, 68, 68, 0.6)' : isTaken ? '1px dashed rgba(255, 42, 85, 0.5)' : `2px solid ${char.themeColor || 'var(--neon-cyan)'}`,
-                            borderRadius: '12px',
-                            padding: '15px',
-                            textAlign: 'center',
-                            cursor: isLockedByQuota ? 'pointer' : (gameState.turn === playerId && !isTaken ? 'pointer' : 'not-allowed'),
-                            opacity: isTaken ? 0.45 : (isLockedByQuota ? 0.8 : 1),
-                            width: '140px',
-                            transition: 'transform 0.2s',
-                            position: 'relative'
-                          }}
-                        >
-                          {isTaken && (
-                            <div style={{ position: 'absolute', top: -10, right: -10, background: '#ff2a55', color: '#fff', padding: '4px 8px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 'bold', zIndex: 10 }}>
-                              {ownerName}
-                            </div>
-                          )}
-                          {isLockedByQuota && (
-                            <div style={{ position: 'absolute', top: -10, left: -10, background: '#ef4444', color: '#fff', padding: '3px 7px', borderRadius: '8px', fontSize: '0.65rem', fontWeight: 'bold', zIndex: 10, display: 'flex', alignItems: 'center', gap: '3px', boxShadow: '0 0 10px rgba(239,68,68,0.5)' }}>
-                              <Lock size={10} /> 10/10
-                            </div>
-                          )}
-                          <div style={{ position: 'relative', display: 'inline-block' }}>
-                            <img src={getAssetUrl(char.image)} alt={char.name} style={{ width: '85px', height: '85px', borderRadius: '50%', border: `2px solid ${char.themeColor}`, filter: isLockedByQuota ? 'grayscale(0.5)' : 'none' }} />
-                            {/* Level Badge */}
-                            <div style={{
-                              position: 'absolute',
-                              top: '-8px',
-                              right: '-8px',
-                              background: 'linear-gradient(135deg, #FBC80D 0%, #FF7700 100%)',
-                              width: '24px',
-                              height: '24px',
-                              borderRadius: '50%',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: '0.65rem',
-                              fontWeight: 'bold',
-                              color: '#000',
-                              border: '2px solid rgba(0,0,0,0.8)',
-                              boxShadow: '0 0 10px rgba(255, 215, 0, 0.7)',
-                              zIndex: 10
-                            }}>
-                              1
-                            </div>
-                          </div>
-                          <div style={{ fontWeight: 'bold', marginTop: '10px' }}>{char.name}</div>
-                          <div style={{ fontSize: '0.8rem', color: char.themeColor }}>{char.element}</div>
-                          <div style={{ fontSize: '0.65rem', marginTop: '4px', fontWeight: 'bold' }}>
-                            {lic.isUnlocked ? (
-                              <span style={{ color: '#10b981' }}>👑 UNLIMITED</span>
-                            ) : isLockedByQuota ? (
-                              <span style={{ color: '#ef4444' }}>🔒 LOCKED</span>
-                            ) : (
-                              <span style={{ color: '#00f0ff' }}>⚡ {lic.usesRemaining}/10 Left</span>
-                            )}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-             </div>
+              </div>
+            </div>
           )}
 
           {/* MATCH COUNTDOWN MODAL */}
           {gameState?.status === 'match_countdown' && (
-             <div
+            <div
               style={{
                 position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
                 background: 'var(--bg-card)', zIndex: 10000,
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff'
               }}
-             >
-                <h1 style={{ 
-                  fontSize: '8rem', 
-                  color: 'var(--neon-gold)', 
-                  textShadow: '0 0 30px var(--neon-gold)',
-                  animation: 'zoomIn 0.5s ease-out'
-                }}>
-                  {countdownNumber > 0 ? countdownNumber : 'START!'}
-                </h1>
-                <p style={{ fontSize: '1.5rem', marginTop: '20px', color: 'var(--neon-cyan)' }}>
-                  Prepare for battle...
-                </p>
-             </div>
+            >
+              <h1 style={{
+                fontSize: '8rem',
+                color: 'var(--neon-gold)',
+                textShadow: '0 0 30px var(--neon-gold)',
+                animation: 'zoomIn 0.5s ease-out'
+              }}>
+                {countdownNumber > 0 ? countdownNumber : 'START!'}
+              </h1>
+              <p style={{ fontSize: '1.5rem', marginTop: '20px', color: 'var(--neon-cyan)' }}>
+                Prepare for battle...
+              </p>
+            </div>
           )}
 
           {/* VISION REVEAL MODAL */}
@@ -7877,7 +8223,7 @@ export default function KontrolaArena() {
               precalculatedRolls={activeCombat.precalculatedRolls}
               isAttacker={activeCombat.attackerPlayerId === playerId}
               isDefender={
-                activeCombat.defenderPlayerId === playerId || 
+                activeCombat.defenderPlayerId === playerId ||
                 (activeCombat.defenderPlayerId === 'ALL' && activeCombat.attackerPlayerId !== playerId)
               }
               isSpectator={activeCombat.attackerPlayerId !== playerId && activeCombat.defenderPlayerId !== playerId && activeCombat.defenderPlayerId !== 'ALL'}
@@ -7892,7 +8238,7 @@ export default function KontrolaArena() {
             />
           )}
 
-                  </div>
+        </div>
       </DynamicScaleWrapper>
 
       {/* Floating Music Player Widget (Positioned outside DynamicScaleWrapper for 1:1 true viewport tracking) */}
@@ -8154,6 +8500,45 @@ export default function KontrolaArena() {
         initialTab={storeInitialTab}
         onPurchaseComplete={() => {
           setLicenseVersion(v => v + 1);
+        }}
+      />
+
+      {/* Reserve Energy Recovery & QR Unlock Modal */}
+      <ReserveEnergyModal
+        isOpen={isReserveModalOpen}
+        onClose={() => setIsReserveModalOpen(false)}
+        character={myCharacter}
+        isMyTurn={isMyTurn}
+        onConfirmRecovery={(amount) => handleRecoverReserveEnergy(amount)}
+        onReleaseReserve={handleReleaseReserve}
+        onOpenQRScanner={() => setIsReserveQRScannerOpen(true)}
+      />
+
+      {/* Reserve Energy QR Code Scanner */}
+      <QRScannerModal
+        isOpen={isReserveQRScannerOpen}
+        onClose={() => setIsReserveQRScannerOpen(false)}
+        onScanSuccess={(redeemResult) => {
+          setIsReserveQRScannerOpen(false);
+          if (redeemResult?.isReserveRelease) {
+            handleReleaseReserve(redeemResult.reserveHp || 30);
+          } else {
+            showNotice('QR Code redeemed successfully!', 'success');
+          }
+        }}
+      />
+
+      {/* Character Cards QR Code Scanner */}
+      <QRScannerModal
+        isOpen={isCharacterQRScannerOpen}
+        onClose={() => setIsCharacterQRScannerOpen(false)}
+        onScanSuccess={(redeemResult) => {
+          setIsCharacterQRScannerOpen(false);
+          if (redeemResult?.characterId || redeemResult?.isCharacterCardUnlock) {
+            handleReplenishCharacterMoves(redeemResult.characterId);
+          } else {
+            handleReplenishCharacterMoves(myCharacter?.id);
+          }
         }}
       />
     </div>

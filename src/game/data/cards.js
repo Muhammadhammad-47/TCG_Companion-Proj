@@ -10,7 +10,7 @@ export const ACTION_CARDS = [
     costET: 1,
     icon: '⚔️',
     color: '#ff3b6b',
-    desc: 'Standard combat attack. Pair with a character move (Costs 1 ET).'
+    desc: 'Standard combat attack. Pair with a Character Card Move (Requires Character Moves; allows only 1 turn regardless of success).'
   },
   {
     id: 'atk_x2',
@@ -28,7 +28,7 @@ export const ACTION_CARDS = [
     costET: 0,
     icon: '☠️',
     color: '#39ff14',
-    desc: 'Deals -10 HP initial damage (-20 HP if target has Poison Weakness) and inflicts 1 Poison stack (-10 HP/turn ongoing until treated with an Antidote Card). (0 ET)'
+    desc: 'Initial damage: -10 HP (-20 HP against Poison weakness: Chynaman, Kiko, Poochi, Kat, Bee). Ongoing damage: -10 HP per turn until treated with an Antidote Card. Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card. (0 ET)'
   },
   {
     id: 'poison_x2',
@@ -37,7 +37,7 @@ export const ACTION_CARDS = [
     costET: 0,
     icon: '☠️☠️',
     color: '#39ff14',
-    desc: 'Deals -20 HP initial damage (-30 HP if target has Poison Weakness) and inflicts 2 Poison stacks (-20 HP/turn ongoing until treated with an Antidote Card). (0 ET)'
+    desc: 'Initial damage: -20 HP (-30 HP against Poison weakness: Chynaman, Kiko, Poochi, Kat, Bee). Ongoing damage: -20 HP per turn until treated with an Antidote Card. Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card. (0 ET)'
   },
   {
     id: 'antidote_x1',
@@ -82,7 +82,7 @@ export const ACTION_CARDS = [
     costET: 0,
     icon: '💨',
     color: '#7c8dff',
-    desc: 'Escape combat without taking damage based on character retreat speed (0 ET).'
+    desc: 'Disengage or forfeit combat. Only appears if held in Action Deck. Attacker can retreat before/after roll (before Defender rolls). Defender can retreat before rolling (0 ET).'
   },
   {
     id: 'lightning_x1',

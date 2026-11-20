@@ -1,4 +1,4 @@
-// TCG Card Game � Official Character Database & Statistics from GDD
+// TCG Card Game — Official Character Database & Statistics from GDD
 
 export const getAssetUrl = (path) => {
   if (!path) return '';
@@ -14,7 +14,7 @@ export const CHARACTERS = {
     name: 'Chynaman',
     title: 'The Blazing Duelist',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/CHYNA WILD CARD REG.png',
-    avatar: '????',
+    avatar: '🥋',
     themeColor: '#ED1E24',
     bgGradient: 'linear-gradient(135deg, #431418 0%, #1f080a 100%)',
     baseHP: 100,
@@ -32,12 +32,13 @@ export const CHARACTERS = {
     moves: [
       {
         id: 'c_punch',
-        name: 'Fire of Fury',
+        name: 'Fire of Fury per Punch',
         type: 'dice_mult',
         multiplier: 5,
         element: 'Fire',
         costET: 1,
-        desc: 'Roll 1 Die � 5 AP Fire combat strikes.'
+        rarity: 'Common',
+        desc: 'Common Move. Roll 1 Die × 5 AP Fire combat strikes.'
       },
       {
         id: 'c_tiger',
@@ -46,45 +47,30 @@ export const CHARACTERS = {
         baseAP: 25,
         element: 'Fire',
         costET: 1,
-        desc: 'Direct blazing strike dealing 25 AP.'
+        rarity: 'Semi Common',
+        desc: 'Semi Common Move. Direct blazing strike dealing 25 AP.'
       },
       {
         id: 'c_mic',
-        name: 'Golden Mic Lightning',
+        name: 'Golden Mic Lighting',
         type: 'flat',
         baseAP: 40,
         element: 'Lightning',
         costET: 2,
         isSuper: true,
-        desc: 'Super Lightning strike dealing 40 AP.'
+        rarity: 'Rare',
+        desc: 'Rare Move. Super Lightning strike dealing 40 AP.'
       },
       {
-        id: 'c_wild1',
-        name: 'Wild Card Soul Combo',
-        type: 'flat',
-        baseAP: 20,
-        element: 'Physical',
+        id: 'c_wild',
+        name: 'Wild Card',
+        displayName: 'Wild Card (Super Rare)',
+        type: 'wild',
+        rarity: 'Super Rare',
+        isWild: true,
+        wildOptions: ['Fire of Fury per Punch', 'Fire Tiger Soul Punch', 'Golden Mic Lighting'],
         costET: 1,
-        desc: 'Unpredictable rapid strikes dealing 20 AP.'
-      },
-      {
-        id: 'c_wild2',
-        name: 'Wild Card Blazing Kick',
-        type: 'flat',
-        baseAP: 30,
-        element: 'Fire',
-        costET: 1,
-        desc: 'A wild flaming kick dealing 30 AP.'
-      },
-      {
-        id: 'c_wild3',
-        name: 'Wild Card Hidden Flame',
-        type: 'flat',
-        baseAP: 35,
-        element: 'Fire',
-        costET: 2,
-        isSuper: true,
-        desc: 'A hidden fire technique dealing 35 AP.'
+        desc: 'Super Rare Wild Card. Allows choosing only one move from: Fire of Fury per Punch, Fire Tiger Soul Punch, or Golden Mic Lighting.'
       },
       {
         id: 'c_blitz',
@@ -92,16 +78,30 @@ export const CHARACTERS = {
         type: 'blitz',
         baseAP: 200,
         costET: 5,
-        desc: 'Requires HP < 50. Sacrifices 50% HP for 200 AP devastation.'
+        isBlitz: true,
+        rarity: 'Ultra Rare',
+        requiresPurchaseOrQR: true,
+        desc: 'Requires HP < 50. Sacrifices 50% HP for 200 AP devastation. Only available through digital purchase or QR Code system.'
+      },
+      {
+        id: 'c_kontrol',
+        name: 'Kontrol',
+        type: 'kontrol',
+        element: 'Psychic',
+        costET: 3,
+        isKontrol: true,
+        rarity: 'Ultra Rare',
+        requiresPurchaseOrQR: true,
+        desc: 'Mental battle using Mind Strength (4). Only available through digital purchase or QR Code system.'
       }
     ]
   },
   bee: {
     id: 'bee',
-    name: 'Zabina "Bee" Sol�',
+    name: 'Zabina "Bee" Solé',
     title: 'Queen of the Hive',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/BEE WILD CARD GOLD.png',
-    avatar: '????',
+    avatar: '🐝',
     themeColor: '#FBC80D',
     bgGradient: 'linear-gradient(135deg, #093436 0%, #031517 100%)',
     baseHP: 70,
@@ -113,29 +113,31 @@ export const CHARACTERS = {
     retreatTarget: 3,
     weakness: { type: 'Poison', bonusAP: 10, icon: '☠️' },
     traits: ['High Mind Strength (5)', 'Stun & Drone Specialist', 'Fast Retreat (3+)'],
-    signatureMove: 'Paparazzi Stun',
-    signatureDesc: '25 AP strike that forces target to skip their next turn.',
+    signatureMove: 'Pararazzi Stun',
+    signatureDesc: '25 AP strike that forces target to skip their next turn (Sleep X1).',
     quote: 'The hive always protects its own.',
     moves: [
       {
         id: 'b_sting',
-        name: 'Sting Slap',
+        name: 'Sting Slap per sting',
         type: 'dice_mult',
         multiplier: 3,
         element: 'Physical',
         costET: 1,
-        desc: 'Roll 1 Die � 3 AP rapid piercing stings.'
+        rarity: 'Common',
+        desc: 'Common Move. Roll 1 Die × 3 AP rapid piercing stings.'
       },
       {
         id: 'b_stun',
-        name: 'Paparazzi Stun',
+        name: 'Pararazzi Stun',
         type: 'flat',
         baseAP: 25,
         element: 'Lightning',
-        stun: true,
-        costET: 2,
-        isSuper: true,
-        desc: '25 AP damage and target loses their next turn.'
+        costET: 1,
+        rarity: 'Semi Common',
+        loseTurn: true,
+        appliesSleep: true,
+        desc: 'Semi Common Move. 25 AP damage. If and only if the attack is successful, the defendant loses one turn (Sleep X1).'
       },
       {
         id: 'b_bomb',
@@ -144,15 +146,20 @@ export const CHARACTERS = {
         baseAP: 40,
         element: 'Physical',
         costET: 2,
-        desc: 'Explosive swarm blast dealing 40 AP.'
+        isSuper: true,
+        rarity: 'Rare',
+        desc: 'Rare Move. Explosive swarm blast dealing 40 AP.'
       },
       {
-        id: 'b_guard',
-        name: 'Azure Guard',
-        type: 'shield',
-        baseShield: 30,
+        id: 'b_wild',
+        name: 'Wild Card',
+        displayName: 'Wild Card (Super Rare)',
+        type: 'wild',
+        rarity: 'Super Rare',
+        isWild: true,
+        wildOptions: ['Sting Slap per sting', 'Pararazzi Stun', 'Bee Drone Bomb'],
         costET: 1,
-        desc: 'Deploy high-tech hex barrier (+30 Shield).'
+        desc: 'Super Rare Wild Card. Allows choosing only one move from: Sting Slap per sting, Pararazzi Stun, or Bee Drone Bomb.'
       },
       {
         id: 'b_blitz',
@@ -160,7 +167,21 @@ export const CHARACTERS = {
         type: 'blitz',
         baseAP: 200,
         costET: 5,
-        desc: 'Requires HP < 50. Sacrifices 50% HP for 200 AP devastation.'
+        isBlitz: true,
+        rarity: 'Ultra Rare',
+        requiresPurchaseOrQR: true,
+        desc: 'Requires HP < 50. Sacrifices 50% HP for 200 AP devastation. Only available through digital purchase or QR Code system.'
+      },
+      {
+        id: 'b_kontrol',
+        name: 'Kontrol',
+        type: 'kontrol',
+        element: 'Psychic',
+        costET: 3,
+        isKontrol: true,
+        rarity: 'Ultra Rare',
+        requiresPurchaseOrQR: true,
+        desc: 'Mental battle using Mind Strength (5). Only available through digital purchase or QR Code system.'
       }
     ]
   },
@@ -169,7 +190,7 @@ export const CHARACTERS = {
     name: 'Katsumi',
     title: 'Shadow Fox of Fate',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/KAT WILD CARD GOLD.png',
-    avatar: '?????',
+    avatar: '🦊',
     themeColor: '#FBC80D',
     bgGradient: 'linear-gradient(135deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.95) 100%)',
     baseHP: 100,
@@ -187,23 +208,25 @@ export const CHARACTERS = {
     moves: [
       {
         id: 'k_paws',
-        name: 'Savage Paws',
+        name: 'Savage Paws per strike',
         type: 'dice_mult',
         multiplier: 5,
         element: 'Physical',
         costET: 1,
-        desc: 'Roll 1 Die � 5 AP razor claws.'
+        rarity: 'Common',
+        desc: 'Common Move. Roll 1 Die × 5 AP razor claws.'
       },
       {
         id: 'k_purr',
-        name: 'Shadow Purrr',
+        name: 'Shadow Purr',
         type: 'flat',
         baseAP: 30,
         element: 'Shadow',
         costET: 1,
-        desc: 'Stealth shadow strike dealing 30 AP. Heals attacker for 20 HP. On successful hit, defender falls asleep and loses 1 turn.',
-        appliesStun: true,
-        healsAttacker: 20
+        rarity: 'Semi Common',
+        healsAttacker: 20,
+        appliesSleep: true,
+        desc: 'Semi Common Move. Stealth shadow strike dealing 30 AP. Heals attacker for 20 HP. If and only if the attack is successful, inflicts Sleep X1 on the defendant (loses 1 turn).'
       },
       {
         id: 'k_fate',
@@ -213,35 +236,19 @@ export const CHARACTERS = {
         element: 'Physical',
         costET: 2,
         isSuper: true,
-        desc: 'Critical fatal slash dealing 45 AP.'
+        rarity: 'Rare',
+        desc: 'Rare Move. Critical fatal slash dealing 45 AP.'
       },
       {
-        id: 'k_wild1',
-        name: 'Wild Card Shadow Pounce',
-        type: 'flat',
-        baseAP: 20,
-        element: 'Shadow',
+        id: 'k_wild',
+        name: 'Wild Card',
+        displayName: 'Wild Card (Super Rare)',
+        type: 'wild',
+        rarity: 'Super Rare',
+        isWild: true,
+        wildOptions: ['Savage Paws per strike', 'Shadow Purr', 'Claw of Fate'],
         costET: 1,
-        desc: 'Sneaky shadow pounce dealing 20 AP.'
-      },
-      {
-        id: 'k_wild2',
-        name: 'Wild Card Fox Fire',
-        type: 'flat',
-        baseAP: 30,
-        element: 'Physical',
-        costET: 1,
-        desc: 'Wild fox flame strike dealing 30 AP.'
-      },
-      {
-        id: 'k_wild3',
-        name: 'Wild Card Twin Slash',
-        type: 'flat',
-        baseAP: 40,
-        element: 'Physical',
-        costET: 2,
-        isSuper: true,
-        desc: 'Two rapid slashes dealing 40 AP.'
+        desc: 'Super Rare Wild Card. Allows choosing only one move from: Savage Paws per strike, Shadow Purr, or Claw of Fate.'
       },
       {
         id: 'k_blitz',
@@ -249,7 +256,21 @@ export const CHARACTERS = {
         type: 'blitz',
         baseAP: 200,
         costET: 5,
-        desc: 'Requires HP < 50. Sacrifices 50% HP for 200 AP devastation.'
+        isBlitz: true,
+        rarity: 'Ultra Rare',
+        requiresPurchaseOrQR: true,
+        desc: 'Requires HP < 50. Sacrifices 50% HP for 200 AP devastation. Only available through digital purchase or QR Code system.'
+      },
+      {
+        id: 'k_kontrol',
+        name: 'Kontrol',
+        type: 'kontrol',
+        element: 'Psychic',
+        costET: 3,
+        isKontrol: true,
+        rarity: 'Ultra Rare',
+        requiresPurchaseOrQR: true,
+        desc: 'Mental battle using Mind Strength (3). Only available through digital purchase or QR Code system.'
       }
     ]
   },
@@ -258,7 +279,7 @@ export const CHARACTERS = {
     name: 'Kiko the Monkey',
     title: 'Mystic Primate Illusionist',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/KIKO WILD CARD GOLD.png',
-    avatar: '????',
+    avatar: '🐵',
     themeColor: '#39ff14',
     bgGradient: 'linear-gradient(135deg, #173d09 0%, #061403 100%)',
     baseHP: 100,
@@ -277,12 +298,13 @@ export const CHARACTERS = {
     moves: [
       {
         id: 'm_whip',
-        name: 'Tail Whip',
+        name: 'Tail Whip per whip',
         type: 'dice_mult',
         multiplier: 4,
         element: 'Physical',
         costET: 1,
-        desc: 'Roll 1 Die � 4 AP sweeping tail strikes.'
+        rarity: 'Common',
+        desc: 'Common Move. Roll 1 Die × 4 AP sweeping tail strikes.'
       },
       {
         id: 'm_multi',
@@ -291,7 +313,8 @@ export const CHARACTERS = {
         baseAP: 30,
         element: 'Magic',
         costET: 1,
-        desc: 'Summon illusionary clones dealing 30 AP.'
+        rarity: 'Semi Common',
+        desc: 'Semi Common Move. Summon illusionary clones dealing 30 AP.'
       },
       {
         id: 'm_soul',
@@ -301,35 +324,19 @@ export const CHARACTERS = {
         element: 'Magic',
         costET: 2,
         isSuper: true,
-        desc: 'Mystic sonic beat pulse dealing 40 AP.'
+        rarity: 'Rare',
+        desc: 'Rare Move. Mystic sonic beat pulse dealing 40 AP.'
       },
       {
-        id: 'kiko_wild1',
-        name: 'Wild Card Banana Toss',
-        type: 'flat',
-        baseAP: 15,
-        element: 'Physical',
+        id: 'kiko_wild',
+        name: 'Wild Card',
+        displayName: 'Wild Card (Super Rare)',
+        type: 'wild',
+        rarity: 'Super Rare',
+        isWild: true,
+        wildOptions: ['Tail Whip per whip', 'Multiplicity', 'Soul Blast 3000'],
         costET: 1,
-        desc: 'Throws a banana dealing 15 AP.'
-      },
-      {
-        id: 'kiko_wild2',
-        name: 'Wild Card Monkey Flip',
-        type: 'flat',
-        baseAP: 25,
-        element: 'Physical',
-        costET: 1,
-        desc: 'A wild flip kick dealing 25 AP.'
-      },
-      {
-        id: 'kiko_wild3',
-        name: 'Wild Card Jungle Strike',
-        type: 'flat',
-        baseAP: 35,
-        element: 'Magic',
-        costET: 2,
-        isSuper: true,
-        desc: 'Unpredictable magic strike dealing 35 AP.'
+        desc: 'Super Rare Wild Card. Allows choosing only one move from: Tail Whip per whip, Multiplicity, or Soul Blast 3000.'
       },
       {
         id: 'm_blitz',
@@ -337,7 +344,21 @@ export const CHARACTERS = {
         type: 'blitz',
         baseAP: 200,
         costET: 5,
-        desc: 'Requires HP < 50. Sacrifices 50% HP for 200 AP devastation.'
+        isBlitz: true,
+        rarity: 'Ultra Rare',
+        requiresPurchaseOrQR: true,
+        desc: 'Requires HP < 50. Sacrifices 50% HP for 200 AP devastation. Only available through digital purchase or QR Code system.'
+      },
+      {
+        id: 'm_kontrol',
+        name: 'Kontrol',
+        type: 'kontrol',
+        element: 'Psychic',
+        costET: 3,
+        isKontrol: true,
+        rarity: 'Ultra Rare',
+        requiresPurchaseOrQR: true,
+        desc: 'Mental battle using Mind Strength (3). Only available through digital purchase or QR Code system.'
       }
     ]
   },
@@ -346,7 +367,7 @@ export const CHARACTERS = {
     name: 'Shroomy',
     title: 'Spore Alchemist',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/SHROOMY WILD CARD GOLD.png',
-    avatar: '????',
+    avatar: '🍄',
     themeColor: '#39ff14',
     bgGradient: 'linear-gradient(135deg, #173d09 0%, #061402 100%)',
     baseHP: 65,
@@ -365,22 +386,23 @@ export const CHARACTERS = {
     moves: [
       {
         id: 's_pop',
-        name: 'Poppers per Pop',
+        name: 'Poppers per pop',
         type: 'dice_mult',
         multiplier: 4,
         element: 'Nature',
         costET: 1,
-        desc: 'Roll 1 Die � 4 AP rapid popping spores.'
+        rarity: 'Common',
+        desc: 'Common Move. Roll 1 Die × 4 AP rapid popping spores.'
       },
       {
         id: 's_bomba',
-        name: 'Ms Bomba',
+        name: 'MS Bomba',
         type: 'flat',
         baseAP: 40,
         element: 'Nature',
         costET: 2,
-        isSuper: true,
-        desc: 'Massive explosive fungal burst dealing 40 AP.'
+        rarity: 'Semi Common',
+        desc: 'Semi Common Move. Massive explosive fungal burst dealing 40 AP.'
       },
       {
         id: 's_snatcher',
@@ -388,8 +410,21 @@ export const CHARACTERS = {
         type: 'flat',
         baseAP: 50,
         element: 'Magic',
-        costET: 3,
-        desc: 'High potency mystic spore extraction dealing 50 AP.'
+        costET: 2,
+        isSuper: true,
+        rarity: 'Rare',
+        desc: 'Rare Move. High potency mystic spore extraction dealing 50 AP.'
+      },
+      {
+        id: 's_wild',
+        name: 'Wild Card',
+        displayName: 'Wild Card (Super Rare)',
+        type: 'wild',
+        rarity: 'Super Rare',
+        isWild: true,
+        wildOptions: ['Poppers per pop', 'MS Bomba', 'Soul Snatcher'],
+        costET: 1,
+        desc: 'Super Rare Wild Card. Allows choosing only one move from: Poppers per pop, MS Bomba, or Soul Snatcher.'
       },
       {
         id: 's_blitz',
@@ -397,7 +432,21 @@ export const CHARACTERS = {
         type: 'blitz',
         baseAP: 200,
         costET: 5,
-        desc: 'Requires HP < 50. Sacrifices 50% HP for 200 AP devastation.'
+        isBlitz: true,
+        rarity: 'Ultra Rare',
+        requiresPurchaseOrQR: true,
+        desc: 'Requires HP < 50. Sacrifices 50% HP for 200 AP devastation. Only available through digital purchase or QR Code system.'
+      },
+      {
+        id: 's_kontrol',
+        name: 'Kontrol',
+        type: 'kontrol',
+        element: 'Psychic',
+        costET: 3,
+        isKontrol: true,
+        rarity: 'Ultra Rare',
+        requiresPurchaseOrQR: true,
+        desc: 'Mental battle using Mind Strength (2). Only available through digital purchase or QR Code system.'
       }
     ]
   },
@@ -406,7 +455,7 @@ export const CHARACTERS = {
     name: 'Poochi',
     title: 'Glitter Guardian',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/POOCHI WILD CARD GOLD.png',
-    avatar: '????',
+    avatar: '🐶',
     themeColor: '#ff1a9d',
     bgGradient: 'linear-gradient(135deg, #4a0d2e 0%, #17040e 100%)',
     baseHP: 70,
@@ -425,12 +474,13 @@ export const CHARACTERS = {
     moves: [
       {
         id: 'p_sparks',
-        name: 'Glitter Sparks',
+        name: 'Glitter Sparks per spark',
         type: 'dice_mult',
         multiplier: 4,
         element: 'Magic',
         costET: 1,
-        desc: 'Roll 1 Die � 4 AP shimmering sparks.'
+        rarity: 'Common',
+        desc: 'Common Move. Roll 1 Die × 4 AP shimmering sparks.'
       },
       {
         id: 'p_lasso',
@@ -440,7 +490,8 @@ export const CHARACTERS = {
         revealCards: true,
         element: 'Magic',
         costET: 1,
-        desc: '25 AP strike and target must reveal their Action Cards.'
+        rarity: 'Semi Common',
+        desc: 'Semi Common Move. 25 AP strike. If and only if the attack is successful, inflicts Vision X1 on the defendant (target reveals Action Cards).'
       },
       {
         id: 'p_burst',
@@ -450,7 +501,19 @@ export const CHARACTERS = {
         element: 'Magic',
         costET: 2,
         isSuper: true,
-        desc: 'Radiant glitter super burst dealing 35 AP.'
+        rarity: 'Rare',
+        desc: 'Rare Move. Radiant glitter super burst dealing 35 AP.'
+      },
+      {
+        id: 'p_wild',
+        name: 'Wild Card',
+        displayName: 'Wild Card (Super Rare)',
+        type: 'wild',
+        rarity: 'Super Rare',
+        isWild: true,
+        wildOptions: ['Glitter Sparks per spark', 'Lasso of Truth', 'Glitter Burst'],
+        costET: 1,
+        desc: 'Super Rare Wild Card. Allows choosing only one move from: Glitter Sparks per spark, Lasso of Truth, or Glitter Burst.'
       },
       {
         id: 'p_blitz',
@@ -458,7 +521,21 @@ export const CHARACTERS = {
         type: 'blitz',
         baseAP: 200,
         costET: 5,
-        desc: 'Requires HP < 50. Sacrifices 50% HP for 200 AP devastation.'
+        isBlitz: true,
+        rarity: 'Ultra Rare',
+        requiresPurchaseOrQR: true,
+        desc: 'Requires HP < 50. Sacrifices 50% HP for 200 AP devastation. Only available through digital purchase or QR Code system.'
+      },
+      {
+        id: 'p_kontrol',
+        name: 'Kontrol',
+        type: 'kontrol',
+        element: 'Psychic',
+        costET: 3,
+        isKontrol: true,
+        rarity: 'Ultra Rare',
+        requiresPurchaseOrQR: true,
+        desc: 'Mental battle using Mind Strength (2). Only available through digital purchase or QR Code system.'
       }
     ]
   },
@@ -467,7 +544,7 @@ export const CHARACTERS = {
     name: 'Queeny',
     title: 'Psychic Empress',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/QUEENY WILD CARD GOLD.png',
-    avatar: '????',
+    avatar: '👑',
     themeColor: '#ff9d2d',
     bgGradient: 'linear-gradient(135deg, #452107 0%, #170a02 100%)',
     baseHP: 100,
@@ -486,12 +563,13 @@ export const CHARACTERS = {
     moves: [
       {
         id: 'q_whip',
-        name: 'Hair Whip',
+        name: 'Hair Whip per whip',
         type: 'dice_mult',
         multiplier: 4,
         element: 'Physical',
         costET: 1,
-        desc: 'Roll 1 Die � 4 AP psychic hair slashes.'
+        rarity: 'Common',
+        desc: 'Common Move. Roll 1 Die × 4 AP psychic hair slashes.'
       },
       {
         id: 'q_siren',
@@ -500,7 +578,8 @@ export const CHARACTERS = {
         baseAP: 30,
         element: 'Magic',
         costET: 1,
-        desc: 'Sonic psychic screech dealing 30 AP.'
+        rarity: 'Semi Common',
+        desc: 'Semi Common Move. Sonic psychic screech dealing 30 AP.'
       },
       {
         id: 'q_fan',
@@ -510,7 +589,19 @@ export const CHARACTERS = {
         element: 'Magic',
         costET: 2,
         isSuper: true,
-        desc: 'Prism energy fan storm dealing 40 AP.'
+        rarity: 'Rare',
+        desc: 'Rare Move. Prism energy fan storm dealing 40 AP.'
+      },
+      {
+        id: 'q_wild',
+        name: 'Wild Card',
+        displayName: 'Wild Card (Super Rare)',
+        type: 'wild',
+        rarity: 'Super Rare',
+        isWild: true,
+        wildOptions: ['Hair Whip per whip', 'Siren Blast', 'Rainbow Fan Blast'],
+        costET: 1,
+        desc: 'Super Rare Wild Card. Allows choosing only one move from: Hair Whip per whip, Siren Blast, or Rainbow Fan Blast.'
       },
       {
         id: 'q_blitz',
@@ -518,7 +609,21 @@ export const CHARACTERS = {
         type: 'blitz',
         baseAP: 200,
         costET: 5,
-        desc: 'Requires HP < 50. Sacrifices 50% HP for 200 AP devastation.'
+        isBlitz: true,
+        rarity: 'Ultra Rare',
+        requiresPurchaseOrQR: true,
+        desc: 'Requires HP < 50. Sacrifices 50% HP for 200 AP devastation. Only available through digital purchase or QR Code system.'
+      },
+      {
+        id: 'q_kontrol',
+        name: 'Kontrol',
+        type: 'kontrol',
+        element: 'Psychic',
+        costET: 3,
+        isKontrol: true,
+        rarity: 'Ultra Rare',
+        requiresPurchaseOrQR: true,
+        desc: 'Mental battle using Mind Strength (2 +2 bonus). Only available through digital purchase or QR Code system.'
       }
     ]
   }
@@ -528,7 +633,7 @@ export const CHARACTERS = {
 export const ZOMBIE_PROFILE = {
   name: 'ZOMBIE INFECTED',
   title: 'Undead Plagued Husk',
-  avatar: '???????',
+  avatar: '🧟',
   themeColor: '#39ff14',
   bgGradient: 'linear-gradient(135deg, #133806 0%, #061402 100%)',
   baseHP: 40,
@@ -541,7 +646,7 @@ export const ZOMBIE_PROFILE = {
     type: 'Fire & Lightning',
     bonusAP: 10,
     desc: 'Fire & Lightning attacks deal normal damage AND strip 1 Poison card!',
-    icon: '???'
+    icon: '🔥⚡'
   },
   moves: [
     {
@@ -556,5 +661,3 @@ export const ZOMBIE_PROFILE = {
     }
   ]
 };
-
-

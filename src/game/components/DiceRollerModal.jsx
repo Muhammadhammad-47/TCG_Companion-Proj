@@ -5,10 +5,26 @@ import { soundFX } from '../utils/audio';
 import { Dices, Shield, Swords, Check, Zap, Flame, Skull, X, RotateCcw } from 'lucide-react';
 import ThreeDiceArena from './ThreeDiceArena';
 
-export default function DiceRollerModal({ combatData, onCombatComplete, onClose }) {
+export default function DiceRollerModal({ combatData, onCombatComplete, onClose, onExecuteRetreat = null }) {
   const { attacker, defender, actionCard, characterMove, amplifyBonus = 0, playerCount = 2, isBackStab = false } = combatData;
   const defChar = defender.isZombie ? ZOMBIE_PROFILE : (CHARACTERS[defender.characterId] || CHARACTERS.chynaman);
   const atkChar = attacker.isZombie ? ZOMBIE_PROFILE : (CHARACTERS[attacker.characterId] || CHARACTERS.chynaman);
+
+  const attackerHasRetreat = Array.isArray(attacker?.actionCardsHand) && attacker.actionCardsHand.some(c => {
+    if (!c) return false;
+    if (typeof c === 'string') return c.toUpperCase().includes('RETREAT');
+    const name = String(c.name || '').toUpperCase();
+    const id = String(c.id || '').toUpperCase();
+    return name.includes('RETREAT') || id.includes('RETREAT');
+  });
+
+  const defenderHasRetreat = Array.isArray(defender?.actionCardsHand) && defender.actionCardsHand.some(c => {
+    if (!c) return false;
+    if (typeof c === 'string') return c.toUpperCase().includes('RETREAT');
+    const name = String(c.name || '').toUpperCase();
+    const id = String(c.id || '').toUpperCase();
+    return name.includes('RETREAT') || id.includes('RETREAT');
+  });
 
   const isMultiplier = characterMove?.type === 'dice_mult';
 
@@ -211,6 +227,38 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose 
                 {isRolling ? 'CASTING CLASH...' : 'ROLL CLASH (2 RED vs 2 GOLD)'}
               </button>
             </div>
+            {(attackerHasRetreat || defenderHasRetreat) && onExecuteRetreat && (
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                {attackerHasRetreat && (
+                  <button
+                    onClick={() => onExecuteRetreat('attacker')}
+                    disabled={isRolling}
+                    style={{
+                      flex: 1, padding: '12px 18px', background: 'linear-gradient(135deg, #00d2ff, #0066ff)',
+                      color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer',
+                      boxShadow: '0 0 15px rgba(0, 210, 255, 0.4)'
+                    }}
+                    title="Attacker forfeits the attack completely"
+                  >
+                    💨 ATTACKER RETREAT (FORFEIT)
+                  </button>
+                )}
+                {defenderHasRetreat && (
+                  <button
+                    onClick={() => onExecuteRetreat('defender')}
+                    disabled={isRolling}
+                    style={{
+                      flex: 1, padding: '12px 18px', background: 'linear-gradient(135deg, #00d2ff, #0066ff)',
+                      color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer',
+                      boxShadow: '0 0 15px rgba(0, 210, 255, 0.4)'
+                    }}
+                    title="Defender escapes battle safely"
+                  >
+                    💨 DEFENDER RETREAT (ESCAPE)
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
 
