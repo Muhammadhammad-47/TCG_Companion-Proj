@@ -1087,8 +1087,9 @@ export default function BattleArena({
           const isX2 = cardName?.includes('X2') || actionCardId === 'poison_x2' || amount === 2;
           const stacks = isX2 ? 2 : 1;
           const initialDmg = isX2 ? 20 : 10;
+          const ongoingTurnDmg = isX2 ? 20 : 10;
 
-          // Check Poison Weakness on defender (Chynaman, Kiko, Poochi, Kat, Bee)
+          // Check Poison Weakness on defender (CHYNAMAN, Kiko, Poochi, Kat, Bee)
           const defChar = CHARACTERS[updated.characterId] || {};
           const defWeakness = (defChar.weakness?.type || updated.weakness?.type || updated.weakness || '').toLowerCase();
           const defCharKey = (updated.characterId || updated.id || updated.name || '').toLowerCase();
@@ -1098,10 +1099,13 @@ export default function BattleArena({
 
           updated.poisonCards = (updated.poisonCards || 0) + stacks;
           updated.hp = Math.max(0, updated.hp - totalInitialDmg);
+          if (updated.hp === 0) {
+            updated.isDefeated = true;
+          }
           soundFX.playDamage();
-          logText = `Infected ${updated.name} with ${cardName || (isX2 ? 'POISON X2' : 'POISON X1')} (-${initialDmg} HP initial, +${stacks} Poison cards)`;
+          logText = `Infected ${updated.name} with ${cardName || (isX2 ? 'POISON X2' : 'POISON X1')} (Initial damage: -${initialDmg} HP, Ongoing: -${ongoingTurnDmg} HP/turn until Antidote)`;
           if (weaknessPenalty > 0) {
-            logText += ` 🎯 [POISON WEAKNESS] ${updated.name} has Poison weakness! Suffer -${weaknessPenalty} HP additional weakness penalty! (Activates again if another player attacks with another Poison Card)`;
+            logText += ` 🎯 [POISON WEAKNESS] ${updated.name} has Poison weakness! Suffer -${weaknessPenalty} HP additional weakness penalty (Total initial: -${totalInitialDmg} HP)! (Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card)`;
           }
           logAmount = `-${totalInitialDmg} HP, +${stacks} ☠️`;
         } else if (type === 'amplify') {

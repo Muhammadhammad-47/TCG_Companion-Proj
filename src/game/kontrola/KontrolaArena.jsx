@@ -3006,7 +3006,7 @@ export default function KontrolaArena() {
           if (sleepingChar.poisonCount > 0 && !sleepingChar.isDefeated) {
             const pDmg = sleepingChar.poisonCount * 10;
             sleepingChar.hp = Math.max(0, sleepingChar.hp - pDmg);
-            turnLogs.unshift(`☠️ ${sleepingChar.name} suffered ${pDmg} Poison damage while asleep! HP: ${sleepingChar.hp}`);
+            turnLogs.unshift(`☠️ ${sleepingChar.name} suffered -${pDmg} Poison ongoing damage while asleep (continues until treated with Antidote)! HP: ${sleepingChar.hp}`);
             if (sleepingChar.hp <= 0) {
               sleepingChar.isDefeated = true;
               turnLogs.unshift(`💀 ${sleepingChar.name} succumbed to Poison and was eliminated!`);
@@ -3038,12 +3038,12 @@ export default function KontrolaArena() {
           nextTurnPlayerId = livingPlayers[0];
         }
 
-        // Check Poison damage tick on the player starting their turn (-10 HP per turn per poison stack)
+        // Check Poison damage tick on the player starting their turn (-10 HP per turn on Poison X1, -20 HP per turn on Poison X2 until treated with an Antidote Card)
         const incomingChar = updatedStates[nextTurnPlayerId];
         if (incomingChar && incomingChar.poisonCount > 0 && !incomingChar.isDefeated) {
           const poisonDmg = incomingChar.poisonCount * 10;
           incomingChar.hp = Math.max(0, incomingChar.hp - poisonDmg);
-          turnLogs.unshift(`☠️ ${incomingChar.name} suffered ${poisonDmg} Poison damage (${incomingChar.poisonCount} stack${incomingChar.poisonCount > 1 ? 's' : ''})! HP: ${incomingChar.hp}`);
+          turnLogs.unshift(`☠️ ${incomingChar.name} suffered -${poisonDmg} Poison ongoing damage (${incomingChar.poisonCount} stack${incomingChar.poisonCount > 1 ? 's' : ''}, continues until treated with Antidote)! HP: ${incomingChar.hp}`);
           if (incomingChar.hp <= 0) {
             incomingChar.isDefeated = true;
             turnLogs.unshift(`💀 ${incomingChar.name} succumbed to Poison and was eliminated!`);

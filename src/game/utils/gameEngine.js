@@ -545,11 +545,17 @@ export function advanceTurn(state) {
         updated.hp = Math.min(updated.maxHp || updated.maxHP || 100, updated.hp + ZOMBIE_PROFILE.turnRegen);
       }
 
-      // Poison damage at start of turn (-10 HP per poison card for non-zombies)
+      // Poison damage at start of turn (-10 HP per poison card/stack until treated with an Antidote Card)
       if (!updated.isZombie && updated.poisonCards > 0) {
         const poisonDmg = updated.poisonCards * 10;
         updated.hp = Math.max(0, updated.hp - poisonDmg);
         updated.stats.damageTaken += poisonDmg;
+        updated.turnLogs = updated.turnLogs || [];
+        updated.turnLogs.unshift(`☠️ ${updated.name} suffered -${poisonDmg} Poison ongoing damage (${updated.poisonCards} Poison card(s))! Ongoing damage continues until treated with an Antidote Card. HP: ${updated.hp}`);
+        if (updated.hp <= 0) {
+          updated.isDefeated = true;
+          updated.turnLogs.unshift(`💀 ${updated.name} succumbed to Poison damage and was eliminated!`);
+        }
       }
       // Note: Active player's Fire Flame Burn is resolved interactively via the pre-turn Extinguish Modal
     }
@@ -559,6 +565,18 @@ export function advanceTurn(state) {
       // Also decrement sleepTurns counter
       if (updated.sleepTurns && updated.sleepTurns > 0) {
         updated.sleepTurns -= 1;
+      }
+      // Sleeping / stunned players suffer poison ongoing damage tick during skipped turn
+      if (!updated.isZombie && updated.poisonCards > 0) {
+        const poisonDmg = updated.poisonCards * 10;
+        updated.hp = Math.max(0, updated.hp - poisonDmg);
+        updated.stats.damageTaken += poisonDmg;
+        updated.turnLogs = updated.turnLogs || [];
+        updated.turnLogs.unshift(`☠️ ${updated.name} suffered -${poisonDmg} Poison ongoing damage while asleep/stunned! HP: ${updated.hp}`);
+        if (updated.hp <= 0) {
+          updated.isDefeated = true;
+          updated.turnLogs.unshift(`💀 ${updated.name} succumbed to Poison damage while asleep/stunned and was eliminated!`);
+        }
       }
       // Sleeping / stunned players suffer burn tick during skipped turn
       if (!updated.isZombie && updated.burnCount > 0) {

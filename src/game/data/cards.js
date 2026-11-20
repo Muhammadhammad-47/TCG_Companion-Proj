@@ -28,7 +28,7 @@ export const ACTION_CARDS = [
     costET: 0,
     icon: '☠️',
     color: '#39ff14',
-    desc: 'Initial damage: -10 HP (-20 HP against Poison weakness: Chynaman, Kiko, Poochi, Kat, Bee). Ongoing damage: -10 HP per turn until treated with an Antidote Card. Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card. (0 ET)'
+    desc: 'Initial damage: -10 HP from Poison X1 (-20 HP against Poison weakness: CHYNAMAN, Kiko, Poochi, Kat, Bee with -10 HP one-time weakness penalty). Ongoing damage: -10 HP per turn until treated with an Antidote Card. Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card. (0 ET)'
   },
   {
     id: 'poison_x2',
@@ -37,7 +37,7 @@ export const ACTION_CARDS = [
     costET: 0,
     icon: '☠️☠️',
     color: '#39ff14',
-    desc: 'Initial damage: -20 HP (-30 HP against Poison weakness: Chynaman, Kiko, Poochi, Kat, Bee). Ongoing damage: -20 HP per turn until treated with an Antidote Card. Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card. (0 ET)'
+    desc: 'Initial damage: -20 HP from Poison X2 (-30 HP against Poison weakness: CHYNAMAN, Kiko, Poochi, Kat, Bee with -10 HP one-time weakness penalty). Ongoing damage: -20 HP per turn until treated with an Antidote Card. Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card. (0 ET)'
   },
   {
     id: 'antidote_x1',
