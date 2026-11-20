@@ -535,6 +535,7 @@ export function advanceTurn(state) {
       updated.turnActionCompleted = false;
       updated.retreatedThisTurn = false;
       updated.flyerNoWeakness = false; // Reset FLYER card immunity at turn end
+      updated.revealCards = false; // Reset Vision X1 hand reveal at turn start
       updated.buffAP = 0;
       updated.buffDP = 0;
 

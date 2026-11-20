@@ -860,6 +860,7 @@ export default function BattleArena({
           alliedWith: defAlliedWith,
           isStunned: hasSleep ? false : (result.appliesStun ? true : p.isStunned),
           sleepTurns: newSleepTurns,
+          revealCards: result.revealCards ? true : p.revealCards,
           stats: {
             ...p.stats,
             damageTaken: (p.stats?.damageTaken || 0) + damage
@@ -953,14 +954,34 @@ export default function BattleArena({
       });
     }
 
-    // Log stun if applied
-    if (result.appliesStun) {
+    // Log stun / sleep if applied
+    if (result.sleepTurns > 0 || result.appliesStun) {
+      const moveNameUpper = (characterMove?.name || '').toUpperCase();
+      const isKatPurr = moveNameUpper.includes('SHADOW PURR');
+      const isBeeStun = moveNameUpper.includes('PARARAZZI') || moveNameUpper.includes('PAPARAZZI');
+      const actionDesc = isKatPurr
+        ? `😻 SHADOW PURR: Successful attack! ${defender.name} suffers Sleep X1 (loses 1 turn)!`
+        : isBeeStun
+        ? `📸 PARARAZZI STUN: Successful attack! ${defender.name} loses 1 turn (Sleep X1)!`
+        : `${defender.name} was put to sleep by ${characterMove?.name || 'attack'} (Sleep X1: loses 1 turn)!`;
+
       newLogs.push({
         turn: turnNum,
         actor: attacker.name,
-        action: `${defender.name} was put to sleep by ${characterMove?.name}!`,
+        action: actionDesc,
         type: 'stun',
         amount: 'Loses 1 turn'
+      });
+    }
+
+    // Log Vision X1 (Lasso of Truth) if applied
+    if (result.revealCards) {
+      newLogs.push({
+        turn: turnNum,
+        actor: attacker.name,
+        action: `👁️ VISION X1: Lasso of Truth was successful! ${defender.name} must reveal their Action Cards!`,
+        type: 'reveal',
+        amount: 'Cards Revealed'
       });
     }
 
@@ -2109,6 +2130,7 @@ export default function BattleArena({
                           )}
                           {p.poisonCards > 0 && <span style={{ color: '#39ff14' }}>☠️ {p.poisonCards}</span>}
                           {typeof p.burnCount === 'number' && p.burnCount > 0 && <span style={{ color: '#ff4d00' }}>🔥 {p.burnCount}</span>}
+                          {p.revealCards && <span style={{ color: '#00f0ff' }} title="Vision X1: Action Cards Revealed!">👁️ Revealed</span>}
                         </div>
                       </div>
 
@@ -2170,6 +2192,16 @@ export default function BattleArena({
                     <Zap size={15} color="#ffe600" />
                     <span className="effect-name" style={{ color: '#ffe600' }}>Lightning Stun</span>
                     <span className="effect-count" style={{ color: '#ffe600' }}>{activePlayer.sleepTurns || 1}t</span>
+                  </div>
+                )}
+                {activePlayer.revealCards && (
+                  <div
+                    className="effect-chip effect-vision"
+                    style={{ cursor: 'default', borderColor: 'rgba(0, 240, 255, 0.4)', background: 'rgba(0, 240, 255, 0.1)' }}
+                  >
+                    <Eye size={15} color="#00f0ff" />
+                    <span className="effect-name" style={{ color: '#00f0ff' }}>Vision X1</span>
+                    <span className="effect-count" style={{ color: '#00f0ff' }}>Revealed</span>
                   </div>
                 )}
                 {activePlayer.isFrozen && (

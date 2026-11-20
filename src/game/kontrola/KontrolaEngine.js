@@ -114,8 +114,8 @@ export const KONTROLA_CHARACTERS = {
     image: 'Kontrolla_Data/Graphics/WILD CARDS/KAT WILD CARD GOLD.png',
     attacks: {
       'SAVAGE PAWS PER STRIKE': { ap: 5, dice: 1, element: 'Physical', costET: 1, rarity: 'Common', desc: 'Common Move. Roll 1 Die × 5 AP Paw strikes.' },
-      'SHADOW PURR': { ap: 30, dice: 0, element: 'Shadow', costET: 1, healsAttacker: 15, appliesSleep: true, rarity: 'Semi Common', desc: 'Semi Common Move. Restores +15 HP to attacker. If and only if the attack is successful, inflicts Sleep X1 on defendant (loses 1 turn).' },
-      'CLAW OF FATE': { ap: 35, dice: 0, element: 'Shadow', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move. Critical shadow slash dealing 35 AP.' },
+      'SHADOW PURR': { ap: 30, dice: 0, element: 'Shadow', costET: 1, healsAttacker: 20, appliesSleep: true, rarity: 'Semi Common', desc: 'Semi Common Move. Stealth shadow strike dealing 30 AP. Restores +20 HP to attacker. If and only if the attack is successful, inflicts Sleep X1 on defendant (loses 1 turn).' },
+      'CLAW OF FATE': { ap: 45, dice: 0, element: 'Physical', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move. Critical fatal slash dealing 45 AP.' },
       'WILD CARD': {
         isWild: true,
         rarity: 'Super Rare',
@@ -177,7 +177,7 @@ export const KONTROLA_CHARACTERS = {
     attacks: {
       'HAIR WHIP PER WHIP': { ap: 4, dice: 1, element: 'Physical', costET: 1, rarity: 'Common', desc: 'Common Move. Roll 1 Die × 4 AP Hair whip strikes.' },
       'SIREN BLAST': { ap: 30, dice: 0, element: 'Psychic', costET: 1, rarity: 'Semi Common', desc: 'Semi Common Move. Hypnotic siren wave dealing 30 AP.' },
-      'RAINBOW FAN BLAST': { ap: 35, dice: 0, element: 'Psychic', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move. Prismatic fan blast dealing 35 AP.' },
+      'RAINBOW FAN BLAST': { ap: 40, dice: 0, element: 'Psychic', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move. Prism energy fan storm dealing 40 AP.' },
       'WILD CARD': {
         isWild: true,
         rarity: 'Super Rare',
