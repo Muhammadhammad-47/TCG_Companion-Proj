@@ -44,12 +44,24 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete, i
 
   const handleScrollTabs = (direction) => {
     if (tabsContainerRef.current) {
-      const scrollAmount = 260;
-      tabsContainerRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth'
-      });
-      setTimeout(checkTabsScroll, 320);
+      const { scrollLeft, scrollWidth, clientWidth } = tabsContainerRef.current;
+      const scrollAmount = 280;
+      if (direction === 'right') {
+        if (scrollLeft + clientWidth >= scrollWidth - 10) {
+          // Wrap around to beginning
+          tabsContainerRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          tabsContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        }
+      } else {
+        if (scrollLeft <= 10) {
+          // Wrap around to end
+          tabsContainerRef.current.scrollTo({ left: scrollWidth, behavior: 'smooth' });
+        } else {
+          tabsContainerRef.current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+        }
+      }
+      setTimeout(checkTabsScroll, 350);
     }
   };
 
@@ -452,37 +464,38 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete, i
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                {/* Scroll Left Arrow on Title */}
+                {/* Scroll Left Arrow on Title with low opacity */}
                 <button
                   type="button"
                   onClick={() => handleScrollTabs('left')}
                   style={{
                     background: 'rgba(251, 200, 13, 0.08)',
-                    border: '1px solid rgba(251, 200, 13, 0.25)',
+                    border: '1px solid rgba(251, 200, 13, 0.3)',
                     borderRadius: '8px',
-                    padding: '4px 6px',
+                    padding: '4px 8px',
                     color: 'var(--neon-gold, #FBC80D)',
-                    opacity: canScrollLeft ? 0.45 : 0.2,
-                    cursor: canScrollLeft ? 'pointer' : 'default',
+                    opacity: 0.45,
+                    cursor: 'pointer',
                     display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     transition: 'all 0.2s ease',
-                    outline: 'none'
+                    outline: 'none',
+                    boxShadow: '0 0 10px rgba(251, 200, 13, 0.15)'
                   }}
                   onMouseEnter={e => {
-                    if (canScrollLeft) {
-                      e.currentTarget.style.opacity = '1';
-                      e.currentTarget.style.background = 'rgba(251, 200, 13, 0.2)';
-                    }
+                    e.currentTarget.style.opacity = '1';
+                    e.currentTarget.style.background = 'rgba(251, 200, 13, 0.25)';
+                    e.currentTarget.style.boxShadow = '0 0 15px rgba(251, 200, 13, 0.4)';
                   }}
                   onMouseLeave={e => {
-                    e.currentTarget.style.opacity = canScrollLeft ? '0.45' : '0.2';
+                    e.currentTarget.style.opacity = '0.45';
                     e.currentTarget.style.background = 'rgba(251, 200, 13, 0.08)';
+                    e.currentTarget.style.boxShadow = '0 0 10px rgba(251, 200, 13, 0.15)';
                   }}
-                  title="Scroll store tabs left"
+                  title="Scroll store tabs left (more tabs available)"
                 >
-                  <ChevronLeft size={20} />
+                  <ChevronLeft size={22} />
                 </button>
 
                 <h2 style={{
@@ -496,37 +509,38 @@ export const StoreModal = ({ isOpen, onClose, userProfile, onPurchaseComplete, i
                   ATTENTION TCG STORE & VAULT
                 </h2>
 
-                {/* Scroll Right Arrow on Title */}
+                {/* Scroll Right Arrow on Title with low opacity */}
                 <button
                   type="button"
                   onClick={() => handleScrollTabs('right')}
                   style={{
                     background: 'rgba(251, 200, 13, 0.08)',
-                    border: '1px solid rgba(251, 200, 13, 0.25)',
+                    border: '1px solid rgba(251, 200, 13, 0.3)',
                     borderRadius: '8px',
-                    padding: '4px 6px',
+                    padding: '4px 8px',
                     color: 'var(--neon-gold, #FBC80D)',
-                    opacity: canScrollRight ? 0.45 : 0.2,
-                    cursor: canScrollRight ? 'pointer' : 'default',
+                    opacity: 0.45,
+                    cursor: 'pointer',
                     display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     transition: 'all 0.2s ease',
-                    outline: 'none'
+                    outline: 'none',
+                    boxShadow: '0 0 10px rgba(251, 200, 13, 0.15)'
                   }}
                   onMouseEnter={e => {
-                    if (canScrollRight) {
-                      e.currentTarget.style.opacity = '1';
-                      e.currentTarget.style.background = 'rgba(251, 200, 13, 0.2)';
-                    }
+                    e.currentTarget.style.opacity = '1';
+                    e.currentTarget.style.background = 'rgba(251, 200, 13, 0.25)';
+                    e.currentTarget.style.boxShadow = '0 0 15px rgba(251, 200, 13, 0.4)';
                   }}
                   onMouseLeave={e => {
-                    e.currentTarget.style.opacity = canScrollRight ? '0.45' : '0.2';
+                    e.currentTarget.style.opacity = '0.45';
                     e.currentTarget.style.background = 'rgba(251, 200, 13, 0.08)';
+                    e.currentTarget.style.boxShadow = '0 0 10px rgba(251, 200, 13, 0.15)';
                   }}
-                  title="Scroll store tabs right"
+                  title="Scroll store tabs right (more tabs available)"
                 >
-                  <ChevronRight size={20} />
+                  <ChevronRight size={22} />
                 </button>
               </div>
               <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', marginTop: '2px' }}>
