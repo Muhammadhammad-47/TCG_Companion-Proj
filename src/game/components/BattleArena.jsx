@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { CHARACTERS, ZOMBIE_PROFILE, getAssetUrl } from '../data/characters';
+import { CHARACTERS, ZOMBIE_PROFILE, getAssetUrl, CHARACTER_LEVEL_MATRIX, getCharacterLevelData } from '../data/characters';
 import { ACTION_CARDS, GAME_LIMITS } from '../data/cards';
 import { resolveDiceCombat, advanceTurn, checkZombieStatus, drawRandomCards } from '../utils/gameEngine';
 import { tradeWithAlly, generatePurchasedCharacterMoves } from '../kontrola/KontrolaEngine';
@@ -1176,15 +1176,35 @@ export default function BattleArena({
             logAmount = `+10 DP`;
           }
         } else if (type === 'vitality') {
-          // VITALITY GAIN cards - increase max HP and apply level up
+          // VITALITY GAIN cards - increase max HP and apply level up per Nov 18, 2026 Level Matrix
           const vitAmount = cardName?.includes('V10') ? 10 :
             cardName?.includes('V20') ? 20 :
               cardName?.includes('V30') ? 30 :
                 cardName?.includes('V40') ? 40 : 10;
 
-          updated.maxHP = (updated.maxHP || 100) + vitAmount;
-          updated.hp = Math.min(updated.maxHP, updated.hp + vitAmount);
-          updated.level = (updated.level || 1) + 1;
+          const charKey = (updated.characterId || updated.id || 'chynaman').toLowerCase();
+          const l2Threshold = charKey === 'shroomy' ? 110 : (charKey === 'bee' || charKey === 'poochi' ? 120 : 150);
+          const l3Threshold = charKey === 'shroomy' ? 130 : (charKey === 'bee' || charKey === 'poochi' ? 140 : 200);
+          const l4Threshold = charKey === 'shroomy' ? 195 : (charKey === 'poochi' ? 210 : (charKey === 'bee' ? 250 : 300));
+
+          const oldLvl = updated.level || 1;
+          const nextHP = updated.hp + vitAmount;
+          let newLvl = oldLvl;
+          if (nextHP >= l4Threshold) newLvl = 4;
+          else if (nextHP >= l3Threshold) newLvl = 3;
+          else if (nextHP >= l2Threshold) newLvl = 2;
+
+          const lvlData = getCharacterLevelData(charKey, newLvl);
+          updated.level = newLvl;
+          updated.maxHP = lvlData.hp;
+          updated.hp = Math.min(updated.maxHP, nextHP);
+
+          if (newLvl !== oldLvl) {
+            updated.maxReserveHp = lvlData.reserveHp;
+            updated.reserveHp = Math.max(updated.reserveHp || 0, lvlData.reserveHp);
+            updated.reserveThreshold = lvlData.threshold;
+            updated.reserveUnlocked = lvlData.reserveUnlocked;
+          }
 
           soundFX.playHeal();
           logText = `${updated.name} used ${cardName}!`;

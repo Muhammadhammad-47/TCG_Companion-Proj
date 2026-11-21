@@ -1,5 +1,6 @@
 // TCG Companion — Kontrola Rule Engine
-// Validated against Kontrolla_Data/Docs (Rules & Regulations, AI Breakdowns, Action Cards CSV)
+// Validated against Kontrolla_Data/Docs (Rules & Regulations, AI Breakdowns, Action Cards CSV, Nov 18 2026 HP/Reserve Matrix)
+import { CHARACTER_LEVEL_MATRIX, getCharacterLevelData } from '../data/characters';
 
 export const KONTROLA_CHARACTERS = {
   chynaman: {
@@ -222,16 +223,16 @@ export const KONTROLA_CHARACTERS = {
   }
 };
 
-// Canonical Character HP Progression Table by Level
-// Verbatim from Kontrolla_Data/Docs/?? TCG Companion AI Breakdowns.txt (Lines 358-364)
+// Canonical Character HP Progression Table by Level (Nov 18, 2026 notes)
 export const LEVEL_HP_TABLE = {
-  chynaman: { 1: 100, 2: 200, 3: 300, 4: 400 },
-  kiko: { 1: 100, 2: 200, 3: 300, 4: 400 },
-  shroomy: { 1: 65, 2: 130, 3: 260, 4: 320 },
-  bee: { 1: 70, 2: 140, 3: 280, 4: 360 },
-  katsumi: { 1: 100, 2: 200, 3: 300, 4: 400 },
-  poochi: { 1: 70, 2: 140, 3: 280, 4: 360 },
-  queeny: { 1: 100, 2: 200, 3: 300, 4: 400 }
+  chynaman: { 1: 100, 2: 150, 3: 200, 4: 300 },
+  kiko: { 1: 100, 2: 150, 3: 200, 4: 300 },
+  katsumi: { 1: 100, 2: 150, 3: 200, 4: 300 },
+  kat: { 1: 100, 2: 150, 3: 200, 4: 300 },
+  queeny: { 1: 100, 2: 150, 3: 200, 4: 300 },
+  shroomy: { 1: 65, 2: 110, 3: 130, 4: 195 },
+  poochi: { 1: 70, 2: 120, 3: 140, 4: 210 },
+  bee: { 1: 70, 2: 120, 3: 140, 4: 250 }
 };
 
 export const getCanonicalLevelCap = (charId, level = 1) => {
@@ -241,26 +242,68 @@ export const getCanonicalLevelCap = (charId, level = 1) => {
   return caps[lvl] || caps[1];
 };
 
-// Canonical Character Reserve Energy Recovery Matrix
-// Verbatim from Kontrolla_Data/Docs/TCG Character Reserve Energy Recovery System.txt
+// Canonical Character Reserve Energy Recovery Matrix by Level (Nov 18, 2026 notes)
 export const RESERVE_HP_TABLE = {
-  shroomy: { baseReserveHP: 35, reserveUnlocked: true },
-  bee: { baseReserveHP: 30, reserveUnlocked: true },
-  poochi: { baseReserveHP: 30, reserveUnlocked: true },
-  chynaman: { baseReserveHP: 0, reserveUnlocked: false },
-  kiko: { baseReserveHP: 0, reserveUnlocked: false },
-  katsumi: { baseReserveHP: 0, reserveUnlocked: false },
-  queeny: { baseReserveHP: 0, reserveUnlocked: false }
+  chynaman: {
+    1: { baseReserveHP: 0, threshold: 0, reserveUnlocked: false },
+    2: { baseReserveHP: 50, threshold: 25, reserveUnlocked: true },
+    3: { baseReserveHP: 75, threshold: 35, reserveUnlocked: true },
+    4: { baseReserveHP: 100, threshold: 50, reserveUnlocked: true }
+  },
+  kiko: {
+    1: { baseReserveHP: 0, threshold: 0, reserveUnlocked: false },
+    2: { baseReserveHP: 50, threshold: 25, reserveUnlocked: true },
+    3: { baseReserveHP: 75, threshold: 35, reserveUnlocked: true },
+    4: { baseReserveHP: 100, threshold: 50, reserveUnlocked: true }
+  },
+  katsumi: {
+    1: { baseReserveHP: 0, threshold: 0, reserveUnlocked: false },
+    2: { baseReserveHP: 50, threshold: 25, reserveUnlocked: true },
+    3: { baseReserveHP: 75, threshold: 35, reserveUnlocked: true },
+    4: { baseReserveHP: 100, threshold: 50, reserveUnlocked: true }
+  },
+  kat: {
+    1: { baseReserveHP: 0, threshold: 0, reserveUnlocked: false },
+    2: { baseReserveHP: 50, threshold: 25, reserveUnlocked: true },
+    3: { baseReserveHP: 75, threshold: 35, reserveUnlocked: true },
+    4: { baseReserveHP: 100, threshold: 50, reserveUnlocked: true }
+  },
+  queeny: {
+    1: { baseReserveHP: 0, threshold: 0, reserveUnlocked: false },
+    2: { baseReserveHP: 50, threshold: 25, reserveUnlocked: true },
+    3: { baseReserveHP: 75, threshold: 35, reserveUnlocked: true },
+    4: { baseReserveHP: 100, threshold: 50, reserveUnlocked: true }
+  },
+  shroomy: {
+    1: { baseReserveHP: 35, threshold: 20, reserveUnlocked: true },
+    2: { baseReserveHP: 90, threshold: 25, reserveUnlocked: true },
+    3: { baseReserveHP: 70, threshold: 35, reserveUnlocked: true },
+    4: { baseReserveHP: 105, threshold: 50, reserveUnlocked: true }
+  },
+  poochi: {
+    1: { baseReserveHP: 30, threshold: 20, reserveUnlocked: true },
+    2: { baseReserveHP: 80, threshold: 25, reserveUnlocked: true },
+    3: { baseReserveHP: 60, threshold: 35, reserveUnlocked: true },
+    4: { baseReserveHP: 90, threshold: 50, reserveUnlocked: true }
+  },
+  bee: {
+    1: { baseReserveHP: 30, threshold: 20, reserveUnlocked: true },
+    2: { baseReserveHP: 80, threshold: 25, reserveUnlocked: true },
+    3: { baseReserveHP: 60, threshold: 35, reserveUnlocked: true },
+    4: { baseReserveHP: 100, threshold: 50, reserveUnlocked: true }
+  }
 };
 
 /**
  * Execute Character Reserve Energy Recovery
- * Rulebook Specifications:
+ * Rulebook Specifications (Nov 18, 2026):
  * - Cost: Exactly 2 Energy Tokens (ET)
  * - Timing: Any time during active turn
  * - Character must have reserveUnlocked === true
  * - Reserve HP must be > 0
  * - Current HP must be < maxHp
+ * - Activation Threshold: Can only be activated after taking required HP damage:
+ *   Level 1: after -20 HP | Level 2: after -25 HP | Level 3: after -35 HP | Level 4: after -50 HP
  * - Recovery cannot exceed missing HP or remaining Reserve HP
  * @param {Object} charState - Current character state { hp, maxHp, energyTokens, reserveHp, reserveUnlocked, ... }
  * @param {number} [requestedAmount] - Optional custom amount to heal (defaults to missing HP)
@@ -269,7 +312,7 @@ export const RESERVE_HP_TABLE = {
 export const executeReserveRecovery = (charState, requestedAmount = null) => {
   if (!charState) return { success: false, healAmount: 0, costET: 0, error: 'Character state is missing.' };
   if (!charState.reserveUnlocked) {
-    return { success: false, healAmount: 0, costET: 0, error: 'Reserve Energy is dormant. Unlock via Level 2+ card or Add-On Card.' };
+    return { success: false, healAmount: 0, costET: 0, error: 'Reserve Energy is dormant. Unlock via Level 2+ or Add-On Card.' };
   }
   if ((charState.reserveHp || 0) <= 0) {
     return { success: false, healAmount: 0, costET: 0, error: 'Reserve Energy pool is depleted (0 HP remaining).' };
@@ -277,10 +320,27 @@ export const executeReserveRecovery = (charState, requestedAmount = null) => {
   if ((charState.energyTokens || 0) < 2) {
     return { success: false, healAmount: 0, costET: 0, error: 'Insufficient Energy Tokens. Reserve Recovery requires 2 ET.' };
   }
+
+  // Check Activation Threshold from official Nov 18, 2026 notes
+  const currentLvl = Math.max(1, Math.min(4, Number(charState.level) || 1));
+  const charKey = (charState.characterId || charState.id || 'chynaman').toLowerCase();
+  const levelEntry = CHARACTER_LEVEL_MATRIX[charKey]?.[currentLvl] || CHARACTER_LEVEL_MATRIX.chynaman[currentLvl];
+  const requiredThreshold = charState.reserveThreshold !== undefined ? charState.reserveThreshold : (levelEntry?.threshold || 0);
+
   const missingHp = (charState.maxHp || 100) - (charState.hp || 0);
   if (missingHp <= 0) {
     return { success: false, healAmount: 0, costET: 0, error: 'Character is already at full HP.' };
   }
+
+  if (requiredThreshold > 0 && missingHp < requiredThreshold) {
+    return {
+      success: false,
+      healAmount: 0,
+      costET: 0,
+      error: `Reserve Energy can only be activated after losing -${requiredThreshold} HP! (Current damage taken: ${missingHp} HP)`
+    };
+  }
+
   const maxPossible = Math.min(charState.reserveHp, missingHp);
   const healAmount = (requestedAmount && requestedAmount > 0)
     ? Math.min(requestedAmount, maxPossible)
@@ -1408,23 +1468,34 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       // Apply vitality HP gain
       newAttackerState.hp += vitAmount;
 
-      // Check for level progression:
-      // Level 1 -> Level 2: Requires raising HP to 150 (Rules line 79)
-      if (newAttackerState.hp >= 150 && (newAttackerState.level || 1) < 2) {
-        newAttackerState.level = 2;
-      }
-      // Level 2 -> Level 3: Reaching 200 HP threshold
-      if (newAttackerState.hp >= 200 && (newAttackerState.level || 1) < 3) {
-        newAttackerState.level = 3;
-      }
-      // Level 3 -> Level 4: Reaching 300 HP threshold (or 260 for Shroomy, 280 for Bee/Poochi)
-      const l4Threshold = (charKey === 'shroomy' ? 260 : (charKey === 'bee' || charKey === 'poochi' ? 280 : 300));
-      if (newAttackerState.hp >= l4Threshold && (newAttackerState.level || 1) < 4) {
-        newAttackerState.level = 4;
+      // Check for level progression per official Nov 18, 2026 Level Matrix:
+      const l2Threshold = charKey === 'shroomy' ? 110 : (charKey === 'bee' || charKey === 'poochi' ? 120 : 150);
+      const l3Threshold = charKey === 'shroomy' ? 130 : (charKey === 'bee' || charKey === 'poochi' ? 140 : 200);
+      const l4Threshold = charKey === 'shroomy' ? 195 : (charKey === 'poochi' ? 210 : (charKey === 'bee' ? 250 : 300));
+
+      const oldLevel = newAttackerState.level || 1;
+      let newLevel = oldLevel;
+      if (newAttackerState.hp >= l4Threshold) {
+        newLevel = 4;
+      } else if (newAttackerState.hp >= l3Threshold) {
+        newLevel = 3;
+      } else if (newAttackerState.hp >= l2Threshold) {
+        newLevel = 2;
       }
 
-      // Update maxHp to the canonical cap for the active level
-      newAttackerState.maxHp = getCanonicalLevelCap(charKey, newAttackerState.level || 1);
+      newAttackerState.level = newLevel;
+
+      // Update maxHp, reserveHp, reserveThreshold, and reserveUnlocked from the matrix
+      const matrixData = getCharacterLevelData(charKey, newLevel);
+      newAttackerState.maxHp = matrixData.hp;
+
+      if (newLevel !== oldLevel) {
+        newAttackerState.maxReserveHp = matrixData.reserveHp;
+        newAttackerState.reserveHp = Math.max(newAttackerState.reserveHp || 0, matrixData.reserveHp);
+        newAttackerState.reserveThreshold = matrixData.threshold;
+        newAttackerState.reserveUnlocked = matrixData.reserveUnlocked;
+        log += ` 🌟 LEVEL UP! ${newAttackerState.name} reached Level ${newLevel}! Max HP: ${matrixData.hp}, Reserve Energy: +${matrixData.reserveHp} HP (unlocked after -${matrixData.threshold} HP damage).`;
+      }
 
       log += ` ✨ Vitality expanded! Restored +${vitAmount} HP. ${newAttackerState.name} is Level ${newAttackerState.level || 1}! (Current HP: ${newAttackerState.hp}/${newAttackerState.maxHp})`;
     }

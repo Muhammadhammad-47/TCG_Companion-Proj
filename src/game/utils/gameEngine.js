@@ -1,5 +1,5 @@
 // TCG Card Game — Official Game Logic & State Management Engine
-import { CHARACTERS, ZOMBIE_PROFILE } from '../data/characters.js';
+import { CHARACTERS, ZOMBIE_PROFILE, CHARACTER_LEVEL_MATRIX, getCharacterLevelData } from '../data/characters.js';
 import { GAME_LIMITS, ACTION_CARDS } from '../data/cards.js';
 import { KONTROLA_CHARACTERS, generateGiftedCharacterMoves, generatePurchasedCharacterMoves } from '../kontrola/KontrolaEngine.js';
 
@@ -17,17 +17,19 @@ export function createInitialGameState(playerConfigs) {
   const players = playerConfigs.map((cfg, idx) => {
     const characterId = cfg.characterId || 'chynaman';
     const charData = KONTROLA_CHARACTERS[characterId];
-    const characterHP = charData?.maxHp || GAME_LIMITS.BASE_HP;
+    const lvl1Data = getCharacterLevelData(characterId, 1);
+    const characterHP = lvl1Data.hp;
     
     return {
       id: `player_${idx + 1}`,
       name: cfg.name || `Player ${idx + 1}`,
       characterId: characterId,
       customAvatar: cfg.customAvatar || null,
-      level: 1, // NEW: Character level starts at 1
-      reserveHp: charData?.baseReserveHP !== undefined ? charData.baseReserveHP : (CHARACTERS[characterId]?.baseReserveHP || 0),
-      maxReserveHp: charData?.baseReserveHP !== undefined ? charData.baseReserveHP : (CHARACTERS[characterId]?.baseReserveHP || 0),
-      reserveUnlocked: charData?.reserveUnlocked !== undefined ? charData.reserveUnlocked : Boolean(CHARACTERS[characterId]?.reserveUnlocked),
+      level: 1, // Character level starts at 1
+      reserveHp: lvl1Data.reserveHp,
+      maxReserveHp: lvl1Data.reserveHp,
+      reserveUnlocked: lvl1Data.reserveUnlocked,
+      reserveThreshold: lvl1Data.threshold,
       reserveActivations: 0,
       characterCardMoves: cfg.isUnlocked ? generatePurchasedCharacterMoves(characterId, 15) : generateGiftedCharacterMoves(characterId, 10),
       hp: cfg.startingHP || characterHP,

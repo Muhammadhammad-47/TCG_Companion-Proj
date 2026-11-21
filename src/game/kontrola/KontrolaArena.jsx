@@ -8,8 +8,8 @@ import {
 } from 'lucide-react';
 import { DynamicScaleWrapper } from '../../components/DynamicScaleWrapper';
 import { soundFX } from '../utils/audio';
-import { getAssetUrl } from '../data/characters';
-import { KONTROLA_CHARACTERS, KONTROLA_ACTION_CARDS, generateDeck, dealInitialHands, generateGiftedCharacterMoves, generatePurchasedCharacterMoves, resolveTurn, rollDice } from './KontrolaEngine';
+import { getAssetUrl, CHARACTER_LEVEL_MATRIX, getCharacterLevelData } from '../data/characters';
+import { KONTROLA_CHARACTERS, KONTROLA_ACTION_CARDS, generateDeck, dealInitialHands, generateGiftedCharacterMoves, generatePurchasedCharacterMoves, resolveTurn, rollDice, executeReserveRecovery } from './KontrolaEngine';
 import {
   createMatch, joinMatch, subscribeToMatch, requestJoin, takeTurn, broadcastState,
   advertiseRoom, closeRoom, subscribeToGlobalLobby, broadcastLeave, requestSync,
@@ -1877,18 +1877,20 @@ export default function KontrolaArena() {
             const moves = pLic?.isUnlocked
               ? generatePurchasedCharacterMoves(charKey, 15)
               : generateGiftedCharacterMoves(charKey, 10);
+            const lvl1Data = getCharacterLevelData(charKey, 1);
             initialCharacterStates[pId] = {
               ...template,
               characterCardMoves: moves,
               customAvatar: currentState.customAvatars?.[pId] || (pId === playerId ? localCustomAvatar : null) || null,
               name: customName || template.name,
               playerId: pId,
-              hp: template.hp || template.baseHP || 100,
-              maxHp: template.maxHp || 100,
+              hp: lvl1Data.hp,
+              maxHp: lvl1Data.hp,
               level: 1,
-              reserveHp: template.baseReserveHP !== undefined ? template.baseReserveHP : 0,
-              maxReserveHp: template.baseReserveHP !== undefined ? template.baseReserveHP : 0,
-              reserveUnlocked: Boolean(template.reserveUnlocked),
+              reserveHp: lvl1Data.reserveHp,
+              maxReserveHp: lvl1Data.reserveHp,
+              reserveUnlocked: lvl1Data.reserveUnlocked,
+              reserveThreshold: lvl1Data.threshold,
               reserveActivations: 0,
               shield: 0,
               energyTokens: 5,
@@ -1952,18 +1954,20 @@ export default function KontrolaArena() {
             const moves = pLic?.isUnlocked
               ? generatePurchasedCharacterMoves(charKey, 15)
               : generateGiftedCharacterMoves(charKey, 10);
+            const lvl1Data = getCharacterLevelData(charKey, 1);
             initialCharacterStates[pId] = {
               ...template,
               characterCardMoves: moves,
               customAvatar: currentState.customAvatars?.[pId] || (pId === playerId ? localCustomAvatar : null) || null,
               name: customName || template.name,
               playerId: pId,
-              hp: template.hp || template.baseHP || 100,
-              maxHp: template.maxHp || 100,
+              hp: lvl1Data.hp,
+              maxHp: lvl1Data.hp,
               level: 1,
-              reserveHp: template.baseReserveHP !== undefined ? template.baseReserveHP : 0,
-              maxReserveHp: template.baseReserveHP !== undefined ? template.baseReserveHP : 0,
-              reserveUnlocked: Boolean(template.reserveUnlocked),
+              reserveHp: lvl1Data.reserveHp,
+              maxReserveHp: lvl1Data.reserveHp,
+              reserveUnlocked: lvl1Data.reserveUnlocked,
+              reserveThreshold: lvl1Data.threshold,
               reserveActivations: 0,
               shield: 0,
               energyTokens: 5,

@@ -661,3 +661,62 @@ export const ZOMBIE_PROFILE = {
     }
   ]
 };
+
+// Official Character HP, Reserve Energy, and Level Matrix (Nov 18, 2026 notes)
+export const CHARACTER_LEVEL_MATRIX = {
+  chynaman: {
+    1: { hp: 100, reserveHp: 0, threshold: 0, reserveUnlocked: false },
+    2: { hp: 150, reserveHp: 50, threshold: 25, reserveUnlocked: true },
+    3: { hp: 200, reserveHp: 75, threshold: 35, reserveUnlocked: true },
+    4: { hp: 300, reserveHp: 100, threshold: 50, reserveUnlocked: true }
+  },
+  kiko: {
+    1: { hp: 100, reserveHp: 0, threshold: 0, reserveUnlocked: false },
+    2: { hp: 150, reserveHp: 50, threshold: 25, reserveUnlocked: true },
+    3: { hp: 200, reserveHp: 75, threshold: 35, reserveUnlocked: true },
+    4: { hp: 300, reserveHp: 100, threshold: 50, reserveUnlocked: true }
+  },
+  katsumi: {
+    1: { hp: 100, reserveHp: 0, threshold: 0, reserveUnlocked: false },
+    2: { hp: 150, reserveHp: 50, threshold: 25, reserveUnlocked: true },
+    3: { hp: 200, reserveHp: 75, threshold: 35, reserveUnlocked: true },
+    4: { hp: 300, reserveHp: 100, threshold: 50, reserveUnlocked: true }
+  },
+  kat: {
+    1: { hp: 100, reserveHp: 0, threshold: 0, reserveUnlocked: false },
+    2: { hp: 150, reserveHp: 50, threshold: 25, reserveUnlocked: true },
+    3: { hp: 200, reserveHp: 75, threshold: 35, reserveUnlocked: true },
+    4: { hp: 300, reserveHp: 100, threshold: 50, reserveUnlocked: true }
+  },
+  queeny: {
+    1: { hp: 100, reserveHp: 0, threshold: 0, reserveUnlocked: false },
+    2: { hp: 150, reserveHp: 50, threshold: 25, reserveUnlocked: true },
+    3: { hp: 200, reserveHp: 75, threshold: 35, reserveUnlocked: true },
+    4: { hp: 300, reserveHp: 100, threshold: 50, reserveUnlocked: true }
+  },
+  shroomy: {
+    1: { hp: 65, reserveHp: 35, threshold: 20, reserveUnlocked: true },
+    2: { hp: 110, reserveHp: 90, threshold: 25, reserveUnlocked: true },
+    3: { hp: 130, reserveHp: 70, threshold: 35, reserveUnlocked: true },
+    4: { hp: 195, reserveHp: 105, threshold: 50, reserveUnlocked: true }
+  },
+  poochi: {
+    1: { hp: 70, reserveHp: 30, threshold: 20, reserveUnlocked: true },
+    2: { hp: 120, reserveHp: 80, threshold: 25, reserveUnlocked: true },
+    3: { hp: 140, reserveHp: 60, threshold: 35, reserveUnlocked: true },
+    4: { hp: 210, reserveHp: 90, threshold: 50, reserveUnlocked: true }
+  },
+  bee: {
+    1: { hp: 70, reserveHp: 30, threshold: 20, reserveUnlocked: true },
+    2: { hp: 120, reserveHp: 80, threshold: 25, reserveUnlocked: true },
+    3: { hp: 140, reserveHp: 60, threshold: 35, reserveUnlocked: true },
+    4: { hp: 250, reserveHp: 100, threshold: 50, reserveUnlocked: true }
+  }
+};
+
+export const getCharacterLevelData = (charId, level = 1) => {
+  const key = (charId || 'chynaman').toLowerCase();
+  const matrix = CHARACTER_LEVEL_MATRIX[key] || CHARACTER_LEVEL_MATRIX.chynaman;
+  const lvl = Math.max(1, Math.min(4, Number(level) || 1));
+  return matrix[lvl] || matrix[1];
+};

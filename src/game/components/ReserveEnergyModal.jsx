@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Zap, Sparkles, Lock, Unlock, QrCode, Heart, Plus, Minus, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { getAssetUrl, CHARACTERS } from '../data/characters';
+import { getAssetUrl, CHARACTERS, CHARACTER_LEVEL_MATRIX, getCharacterLevelData } from '../data/characters';
 import { soundFX } from '../utils/audio';
 
 export default function ReserveEnergyModal({
@@ -24,6 +24,14 @@ export default function ReserveEnergyModal({
   const etCount = character?.energyTokens || 0;
   const hasEnoughET = etCount >= 2;
   const isUnlocked = Boolean(character?.reserveUnlocked);
+
+  // Official Activation Threshold from Nov 18, 2026 notes:
+  // Level 1: after -20 HP | Level 2: after -25 HP | Level 3: after -35 HP | Level 4: after -50 HP
+  const charKey = (character?.characterId || character?.id || 'chynaman').toLowerCase();
+  const currentLvl = Math.max(1, Math.min(4, Number(character?.level) || 1));
+  const levelEntry = CHARACTER_LEVEL_MATRIX?.[charKey]?.[currentLvl] || CHARACTER_LEVEL_MATRIX?.chynaman?.[currentLvl];
+  const requiredThreshold = character?.reserveThreshold !== undefined ? character.reserveThreshold : (levelEntry?.threshold || 0);
+  const hasMetThreshold = requiredThreshold <= 0 || missingHp >= requiredThreshold;
 
   // Initialize amount whenever modal opens or maxPossible changes
   useEffect(() => {
@@ -359,6 +367,17 @@ export default function ReserveEnergyModal({
                   <CheckCircle2 size={18} />
                   <span>Your character is already at maximum HP ({maxHp} HP)!</span>
                 </div>
+              ) : !hasMetThreshold ? (
+                <div style={{ background: 'rgba(239, 68, 68, 0.12)', border: '1.5px solid rgba(239, 68, 68, 0.4)', borderRadius: '10px', padding: '12px 14px', fontSize: '0.82rem', color: '#f87171', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <AlertCircle size={20} style={{ flexShrink: 0 }} />
+                  <div style={{ lineHeight: 1.4 }}>
+                    <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>Activation Threshold Not Reached</div>
+                    <span>
+                      Reserve Energy can only be activated after taking <strong>-{requiredThreshold} HP</strong> damage (Level {currentLvl} Rule: "after -{requiredThreshold} HP").
+                      Currently taken: <strong>-{missingHp} HP</strong> (needs <strong>-{requiredThreshold - missingHp} HP</strong> more).
+                    </span>
+                  </div>
+                </div>
               ) : (
                 /* Interactive Amount Selection Section */
                 <div
@@ -616,29 +635,54 @@ export default function ReserveEnergyModal({
               CLOSE
             </button>
             {isUnlocked && maxPossible > 0 && hasEnoughET && (
-              <button
-                type="button"
-                onClick={handleExecuteRecovery}
-                style={{
-                  flex: 2,
-                  padding: '12px',
-                  background: 'linear-gradient(90deg, #10b981 0%, #059669 100%)',
-                  border: 'none',
-                  color: '#fff',
-                  borderRadius: '10px',
-                  fontWeight: 'bold',
-                  fontSize: '0.92rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  boxShadow: '0 0 20px rgba(16, 185, 129, 0.5)'
-                }}
-              >
-                <Sparkles size={16} />
-                <span>CONFIRM RECOVERY (+{amount} HP)</span>
-              </button>
+              hasMetThreshold ? (
+                <button
+                  type="button"
+                  onClick={handleExecuteRecovery}
+                  style={{
+                    flex: 2,
+                    padding: '12px',
+                    background: 'linear-gradient(90deg, #10b981 0%, #059669 100%)',
+                    border: 'none',
+                    color: '#fff',
+                    borderRadius: '10px',
+                    fontWeight: 'bold',
+                    fontSize: '0.92rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    boxShadow: '0 0 20px rgba(16, 185, 129, 0.5)'
+                  }}
+                >
+                  <Sparkles size={16} />
+                  <span>CONFIRM RECOVERY (+{amount} HP)</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  style={{
+                    flex: 2,
+                    padding: '12px',
+                    background: 'rgba(239, 68, 68, 0.2)',
+                    border: '1px solid rgba(239, 68, 68, 0.4)',
+                    color: '#f87171',
+                    borderRadius: '10px',
+                    fontWeight: 'bold',
+                    fontSize: '0.85rem',
+                    cursor: 'not-allowed',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <Lock size={16} />
+                  <span>REQUIRES TAKING -{requiredThreshold} HP DAMAGE</span>
+                </button>
+              )
             )}
           </div>
         </div>
