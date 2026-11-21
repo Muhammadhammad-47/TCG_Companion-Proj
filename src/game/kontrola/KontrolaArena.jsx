@@ -6649,8 +6649,8 @@ export default function KontrolaArena() {
                             playClick();
                             setSelectedActionCard(cardObj);
                             if (isCardLocked) {
-                              if (isAttackX1Locked) {
-                                showNotice('🔒 Attack X1 is only functional if you have Character Card Moves remaining! (0 moves left)', 'warning');
+                              if (isAttackMovesLocked) {
+                                showNotice('🔒 Attack X1 and Attack X2 are only functional if you have Character Card Moves remaining! (0 moves left)', 'warning');
                               } else if (isReviveLocked) {
                                 showNotice('🔒 REVIVE can only be used when your character reaches 0 HP! (You can still discard & draw)', 'info');
                               } else if (is3PlayerLocked) {
