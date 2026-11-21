@@ -4363,8 +4363,28 @@ export default function KontrolaArena() {
   if (!gameState || gameState.status === 'waiting' || gameState.status === 'joining') {
     return (
       <div className="webgl-canvas-frame portrait-mode" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
-        {/* Leaderboard modal must live here too so it works in the lobby view */}
+        {/* Modals that must live in lobby view too */}
         <LeaderboardModal isOpen={isLeaderboardOpen} onClose={() => setIsLeaderboardOpen(false)} />
+        <CharacterUnlockModal
+          isOpen={Boolean(quotaUnlockChar)}
+          onClose={() => setQuotaUnlockChar(null)}
+          characterId={quotaUnlockChar}
+          userId={currentUser?.id}
+          userProfile={userProfile || currentUser}
+          onUnlockSuccess={() => {
+            setQuotaUnlockChar(null);
+            setLicenseVersion(v => v + 1);
+          }}
+        />
+        <StoreModal
+          isOpen={isStoreOpen}
+          onClose={() => setIsStoreOpen(false)}
+          userProfile={userProfile || currentUser}
+          initialTab={storeInitialTab}
+          onPurchaseComplete={() => {
+            setLicenseVersion(v => v + 1);
+          }}
+        />
         <DynamicScaleWrapper>
           <div className="webgl-screen menu-screen" style={{ width: '100%', height: '100%', padding: '20px 28px', boxSizing: 'border-box', overflowY: 'auto' }}>
             {/* Ambient Streaks & Card Watermarks */}

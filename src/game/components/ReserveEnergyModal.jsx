@@ -16,26 +16,28 @@ export default function ReserveEnergyModal({
   const [manualCode, setManualCode] = useState('');
   const [codeFeedback, setCodeFeedback] = useState({ text: '', type: '' });
 
-  if (!isOpen || !character) return null;
-
-  const currentHp = character.hp || 0;
-  const maxHp = character.maxHp || 100;
+  const currentHp = character?.hp || 0;
+  const maxHp = character?.maxHp || 100;
   const missingHp = Math.max(0, maxHp - currentHp);
-  const currentReserve = character.reserveHp || 0;
+  const currentReserve = character?.reserveHp || 0;
   const maxPossible = Math.min(currentReserve, missingHp);
-  const etCount = character.energyTokens || 0;
+  const etCount = character?.energyTokens || 0;
   const hasEnoughET = etCount >= 2;
-  const isUnlocked = Boolean(character.reserveUnlocked);
+  const isUnlocked = Boolean(character?.reserveUnlocked);
 
   // Initialize amount whenever modal opens or maxPossible changes
   useEffect(() => {
-    if (maxPossible > 0) {
-      setAmount(Math.min(maxPossible, Math.max(1, amount > 0 ? amount : maxPossible)));
-    } else {
-      setAmount(0);
+    if (isOpen && character) {
+      if (maxPossible > 0) {
+        setAmount(Math.min(maxPossible, Math.max(1, amount > 0 ? amount : maxPossible)));
+      } else {
+        setAmount(0);
+      }
+      setCodeFeedback({ text: '', type: '' });
     }
-    setCodeFeedback({ text: '', type: '' });
-  }, [isOpen, maxPossible, isUnlocked]);
+  }, [isOpen, maxPossible, isUnlocked, character]);
+
+  if (!isOpen || !character) return null;
 
   const handleStep = (delta) => {
     try { soundFX.playCard(); } catch {}
