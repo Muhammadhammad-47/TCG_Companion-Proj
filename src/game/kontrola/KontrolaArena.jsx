@@ -1549,6 +1549,17 @@ export default function KontrolaArena() {
     };
   }, [matchId]);
 
+  const handleLeaveRoom = () => {
+    if (matchId) {
+      broadcastLeave(matchId, playerId);
+      sessionService.clearSession(matchId, playerId);
+    }
+    setGameState(null);
+    setMatchId('');
+    setIsSpectator(false);
+    setTournamentMatchContext(null);
+  };
+
   // Quota Safeguard: Validate character and record match usage when match actually begins (roll_off or active)
   useEffect(() => {
     if (!matchId || !gameState) return;
@@ -5936,13 +5947,7 @@ export default function KontrolaArena() {
                   <button
                     onClick={() => {
                       setShowLeaveConfirm(false);
-                      broadcastLeave(matchId, playerId);
-                      setGameState(null);
-                      setMatchId('');
-                      setIsSpectator(false);
-                      setTournamentMatchContext(null);
-                      // Clear session from DB + localStorage
-                      sessionService.clearSession(matchId, playerId);
+                      handleLeaveRoom();
                     }}
                     style={{
                       padding: '8px 20px',
