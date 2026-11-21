@@ -671,6 +671,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     }
   }
 
+  const defenderChar = defenderState ? (KONTROLA_CHARACTERS[defenderState.id] || KONTROLA_CHARACTERS[defenderState.characterId] || defenderState) : null;
   const isAttackerZombie = Boolean(newAttackerState.isZombie || attackerChar?.isZombie || attackerState?.isZombie || (newAttackerState.poisonCount >= 5) || (newAttackerState.poisonCards >= 5) || (attackerState?.poisonCards >= 5));
   const isDefenderZombie = Boolean(newDefenderState?.isZombie || defenderChar?.isZombie || defenderState?.isZombie || (newDefenderState?.poisonCount >= 5) || (newDefenderState?.poisonCards >= 5) || (defenderState?.poisonCards >= 5));
 
