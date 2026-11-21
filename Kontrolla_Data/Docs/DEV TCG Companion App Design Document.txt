@@ -631,3 +631,12 @@ Engine & State Requirements:
    - Level 2 (Rare): Increased base stats and unlocks reserve recovery for 100 HP characters.
    - Level 3 (Legendary/Advanced): Expanded reserve capacity and special vitality passives.
    - Character Add-On Cards: Attachable equipment cards that unlock reserve recovery. If defeated, returns to collection.
+
+================================================================================
+ZOMBIE MODE & ELEMENTAL WEAKNESS SPECIFICATION
+================================================================================
+- Zombie Transformation: Reaching 5 Poison Cards triggers Zombie Mode (HP becomes 40, gains Venom Strike, immune to Kontrol, cannot hold Stability Crystals).
+- Lightning & Fire Weakness: When the character becomes a Zombie, they gain a Lightning and Fire weakness.
+- First Initial Attack Penalty: The Fire and Lightning weakness of -10 HP is only on the first initial attack of a Lightning or Fire attack. Lightning and Fire weakness occurs every time a successful Lightning or Fire attack is used.
+- Poison Cleansing: In addition to the weakness damage, a successful Lightning or Fire attack cleanses 1 Poison Card from the Zombie on hit.
+- Curing: If Poison Cards drop below 5 (via Antidote or Fire/Lightning cleansing), the character is restored from Zombie Mode back to their human form and pre-zombie HP.

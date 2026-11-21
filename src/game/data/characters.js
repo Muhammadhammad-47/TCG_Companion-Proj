@@ -643,10 +643,10 @@ export const ZOMBIE_PROFILE = {
   retreatTarget: 5, // Extremely slow
   defaultDP: 0, // No innate character defense
   weakness: {
-    type: 'Fire & Lightning',
+    type: 'Lightning and Fire',
     bonusAP: 10,
-    desc: 'Fire & Lightning attacks deal normal damage AND strip 1 Poison card!',
-    icon: '🔥⚡'
+    desc: 'Lightning and Fire weakness of -10 HP on the first initial attack every time a successful Lightning or Fire attack is used, and cleanses 1 Poison card!',
+    icon: '⚡🔥'
   },
   moves: [
     {

@@ -1090,25 +1090,36 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
 
       // Weakness Bonus (+10 AP) - only applies if attack was not negated/reflected by defense
       // Official Rule: When Zombie has a successful attack, an additional weakness penalty of -10 HP is placed on characters with weakness of Poison
+      // Official Rule: When character becomes a Zombie, they gain Lightning and Fire weakness (-10 HP on first initial attack every time a successful Lightning or Fire attack is used)
       if (newDefenderState && !newDefenderState.flyerNoWeakness) {
         const defCharKey = (newDefenderState.characterId || newDefenderState.id || newDefenderState.name || '').toLowerCase();
         const defWeakness = (newDefenderState.weakness || '').toLowerCase();
-        const hasPoisonWeakness = defWeakness.includes('poison') || ['chynaman', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k));
-        const hasFireWeakness = defWeakness.includes('fire') || ['shroomy', 'queeny'].some(k => defCharKey.includes(k));
+        const isZombieDef = Boolean(isDefenderZombie || newDefenderState.isZombie || (newDefenderState.poisonCount >= 5) || (newDefenderState.poisonCards >= 5));
+
+        const isFireAtk = (attackElement && attackElement.toLowerCase() === 'fire') || cardName.includes('FIRE');
+        const isLightningAtk = (attackElement && attackElement.toLowerCase() === 'lightning') || cardName.includes('LIGHTNING');
+        const isPoisonAtk = (attackElement && attackElement.toLowerCase() === 'poison') || cardName.includes('POISON');
+
+        const hasPoisonWeakness = !isZombieDef && (defWeakness.includes('poison') || ['chynaman', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k)));
+        const hasFireWeakness = isZombieDef || defWeakness.includes('fire') || ['shroomy', 'queeny'].some(k => defCharKey.includes(k));
+        const hasLightningWeakness = isZombieDef || defWeakness.includes('lightning');
 
         const matchesWeakness = (isAttackerZombie && hasPoisonWeakness) ||
-          (attackElement && attackElement.toLowerCase() === 'poison' && hasPoisonWeakness) ||
-          (attackElement && attackElement.toLowerCase() === 'fire' && hasFireWeakness) ||
+          (isPoisonAtk && hasPoisonWeakness) ||
+          (isFireAtk && hasFireWeakness) ||
+          (isLightningAtk && hasLightningWeakness) ||
           (attackElement && newDefenderState.weakness && newDefenderState.weakness.toLowerCase().includes(attackElement.toLowerCase()));
 
         if (matchesWeakness && (finalDamage > 0 || (isAttackerZombie && hasPoisonWeakness))) {
-          const bonus = newDefenderState.weaknessBonus || 10;
+          const bonus = 10;
           finalDamage += bonus;
-          if (isAttackerZombie && hasPoisonWeakness) {
+          if (isZombieDef && (isFireAtk || isLightningAtk)) {
+            log += ` 🧟⚡🔥 [ZOMBIE ${isFireAtk ? 'FIRE' : 'LIGHTNING'} WEAKNESS] ${newDefenderState.name} is in Zombie Mode and vulnerable to ${isFireAtk ? 'Fire' : 'Lightning'}! Suffered an additional -${bonus} HP weakness penalty on the initial attack!`;
+          } else if (isAttackerZombie && hasPoisonWeakness) {
             log += ` ☠️ [ZOMBIE POISON WEAKNESS] ${newDefenderState.name} has Poison weakness! Suffer -${bonus} HP additional weakness penalty from Zombie attack!`;
-          } else if (attackElement && attackElement.toLowerCase() === 'fire') {
+          } else if (isFireAtk) {
             log += ` 🔥 [FIRE WEAKNESS] ${newDefenderState.name} has Fire weakness! Additional -${bonus} HP weakness penalty applied!`;
-          } else if (attackElement && attackElement.toLowerCase() === 'poison') {
+          } else if (isPoisonAtk) {
             log += ` ☠️ [POISON WEAKNESS] ${newDefenderState.name} has Poison weakness! Additional -${bonus} HP weakness penalty applied!`;
           } else {
             log += ` 🎯 [WEAKNESS TRIGGER] ${newDefenderState.name} has ${attackElement} weakness! +${bonus} AP bonus applied!`;
@@ -1150,11 +1161,20 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           (newDefenderState.weakness && attackElement && newDefenderState.weakness.toLowerCase().includes(attackElement.toLowerCase()) ? ` + Weakness` : '') + `).`;
 
         // If Zombie is hit by Fire or Lightning -> removes 1 poison card
-        if (isDefenderZombie && ['Fire', 'Lightning'].includes(attackElement)) {
-          newDefenderState.poisonCount = Math.max(0, newDefenderState.poisonCount - 1);
-          log += ` Fire/Lightning cleansed 1 Poison card from Zombie!`;
+        let zombiePoisonCleansed = false;
+        const isZombieTarget = Boolean(isDefenderZombie || newDefenderState.isZombie || (newDefenderState.poisonCount >= 5) || (newDefenderState.poisonCards >= 5));
+        const isFireOrLightningAtk = ['Fire', 'Lightning'].includes(attackElement) || cardName.includes('FIRE') || cardName.includes('LIGHTNING');
+
+        if (isZombieTarget && isFireOrLightningAtk) {
+          newDefenderState.poisonCount = Math.max(0, (newDefenderState.poisonCount || 0) - 1);
+          zombiePoisonCleansed = true;
+          log += ` 🔥⚡ Fire/Lightning cleansed 1 Poison card from Zombie! (Poison remaining: ${newDefenderState.poisonCount})`;
           if (newDefenderState.poisonCount < 5) {
             newDefenderState.hp = newDefenderState.preZombieHp || 100;
+            newDefenderState.isZombie = false;
+            if (newDefenderState.preZombieWeakness) {
+              newDefenderState.weakness = newDefenderState.preZombieWeakness;
+            }
             log += ` 🌟 ${newDefenderState.name} was cleansed of Zombie curse and restored to human form!`;
           }
         }
@@ -1184,11 +1204,15 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           log += ` ⚡ Lightning strike successful! ${newDefenderState.name} took -${baseAP} HP and ${newAttackerState.name} receives ${extraTurnsAwarded === 1 ? 'another turn' : '2 extra turns'}!`;
 
           // LIGHTNING removes 1 poison card ONLY if defender is in Zombie Mode (5+ poison cards) per client feedback Line 90
-          if (newDefenderState.poisonCount >= 5) {
+          if (!zombiePoisonCleansed && (newDefenderState.poisonCount >= 5 || newDefenderState.isZombie)) {
             newDefenderState.poisonCount = Math.max(0, newDefenderState.poisonCount - 1);
             log += ` ⚡ Lightning cleansed 1 Poison card from Zombie!`;
             if (newDefenderState.poisonCount < 5) {
               newDefenderState.hp = newDefenderState.preZombieHp || 100;
+              newDefenderState.isZombie = false;
+              if (newDefenderState.preZombieWeakness) {
+                newDefenderState.weakness = newDefenderState.preZombieWeakness;
+              }
               log += ` 🌟 ${newDefenderState.name} was cleansed of Zombie curse and restored to human form!`;
             }
           }
@@ -1614,12 +1638,18 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   if (newDefenderState && newDefenderState.poisonCount >= 5 && !isDefenderZombie) {
     newDefenderState.preZombieHp = newDefenderState.hp;
     newDefenderState.hp = 40;
-    log += ` ⚠️ ${newDefenderState.name} reached 5 Poison cards and TRANSFORMED INTO A ZOMBIE (40 HP)!`;
+    newDefenderState.isZombie = true;
+    newDefenderState.preZombieWeakness = newDefenderState.weakness;
+    newDefenderState.weakness = 'Lightning and Fire';
+    log += ` ⚠️ ${newDefenderState.name} reached 5 Poison cards and TRANSFORMED INTO A ZOMBIE (40 HP)! Gained Lightning and Fire weakness (-10 HP on initial attacks)!`;
   }
   if (newAttackerState.poisonCount >= 5 && !isAttackerZombie) {
     newAttackerState.preZombieHp = newAttackerState.hp;
     newAttackerState.hp = 40;
-    log += ` ⚠️ ${newAttackerState.name} reached 5 Poison cards and TRANSFORMED INTO A ZOMBIE (40 HP)!`;
+    newAttackerState.isZombie = true;
+    newAttackerState.preZombieWeakness = newAttackerState.weakness;
+    newAttackerState.weakness = 'Lightning and Fire';
+    log += ` ⚠️ ${newAttackerState.name} reached 5 Poison cards and TRANSFORMED INTO A ZOMBIE (40 HP)! Gained Lightning and Fire weakness (-10 HP on initial attacks)!`;
   }
 
   // Stability Crystals: Transfer on defeat

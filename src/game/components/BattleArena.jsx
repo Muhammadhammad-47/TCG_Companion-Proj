@@ -1023,12 +1023,19 @@ export default function BattleArena({
       });
     }
 
-    // Log Elemental Weakness penalty trigger (e.g. Zombie Poison attack, Poison on Poison-weak targets, or Fire on Shroomy/Queeny)
+    // Log Elemental Weakness penalty trigger (e.g. Zombie Poison attack, Poison on Poison-weak targets, or Fire/Lightning on Zombies)
     if (result.weaknessTriggered && !result.isMiss) {
       const isZombieAtk = attacker.isZombie || (attacker.poisonCards >= 5) || (attacker.poisonCount >= 5);
-      const actionText = isZombieAtk
-        ? `☠️ [ZOMBIE POISON WEAKNESS] ${attacker.name}'s Venom Strike triggered ${defender.name}'s Poison weakness! Suffer -${result.weaknessBonus} HP additional weakness penalty!`
-        : `🎯 [WEAKNESS TRIGGER] ${defender.name} has ${result.moveElement} weakness! Suffer -${result.weaknessBonus} HP additional weakness penalty!`;
+      const isZombieDef = defender.isZombie || (defender.poisonCards >= 5) || (defender.poisonCount >= 5);
+      let actionText;
+
+      if (isZombieDef && (result.moveElement === 'Fire' || result.moveElement === 'Lightning')) {
+        actionText = `🧟⚡🔥 [ZOMBIE ${result.moveElement.toUpperCase()} WEAKNESS] ${defender.name} is in Zombie Mode and vulnerable to ${result.moveElement}! Suffered an additional -${result.weaknessBonus} HP weakness penalty on the initial attack!`;
+      } else if (isZombieAtk) {
+        actionText = `☠️ [ZOMBIE POISON WEAKNESS] ${attacker.name}'s Venom Strike triggered ${defender.name}'s Poison weakness! Suffer -${result.weaknessBonus} HP additional weakness penalty!`;
+      } else {
+        actionText = `🎯 [WEAKNESS TRIGGER] ${defender.name} has ${result.moveElement} weakness! Suffer -${result.weaknessBonus} HP additional weakness penalty!`;
+      }
 
       newLogs.push({
         turn: turnNum,

@@ -886,7 +886,7 @@ When a player has 5 Poison Cards, the dealer will give them a Zombie Mode Card. 
 * Antidote: Will stop Zombie Mode. An Antidote card can be placed only by the infected player. Antidote is used for self heal.
 * Poison: More Poison Cards can be placed on an infected player in Zombie Mode (Placement of cards can be from infected players or other players) This strategy helps the player to continue to be in Zombie Mode to avoid being killed.
 * Retreat: Zombies are super slow
-* Weakness: Lightning and Fire
+* Weakness: Lightning and Fire (The Fire and Lightning weakness of -10 HP is only on the first initial attack of a Lightning or Fire attack. Lightning and Fire weakness occurs every time a successful Lightning or Fire attack is used. Also cleanses 1 Poison card on hit.)
 
 
 When a Zombie is successful in its attack, it will inflict Poison to their opponent, which results in the defeated opponent to receive one Poison Card.

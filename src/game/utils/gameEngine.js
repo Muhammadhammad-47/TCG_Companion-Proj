@@ -99,12 +99,17 @@ export function checkZombieStatus(player) {
     p.isZombie = true;
     p.preZombieHP = Math.max(1, p.hp); // Save HP before turning
     p.hp = ZOMBIE_PROFILE.baseHP; // 40 HP
+    p.preZombieWeakness = p.weakness; // Save original weakness
+    p.weakness = { type: 'Lightning and Fire', bonusAP: 10 }; // Zombie weakness
   }
 
   // Zombie Cure (<5 Poison cards)
   if (p.isZombie && p.poisonCards < GAME_LIMITS.ZOMBIE_POISON_TRIGGER) {
     p.isZombie = false;
     p.hp = Math.min(p.maxHp || p.maxHP || 100, Math.max(10, p.preZombieHP)); // Revert to pre-zombie HP, use character's true max
+    if (p.preZombieWeakness) {
+      p.weakness = p.preZombieWeakness;
+    }
   }
 
   // Zombie Revival Rule: If Zombie HP is depleted to 0, they immediately revive
@@ -284,7 +289,11 @@ export function resolveDiceCombat({
   const hasFireWeakness = defWeakness.includes('fire') || ['shroomy', 'queeny'].some(k => defCharKey.includes(k));
 
   if (!hasflyerImmunity) {
-    if ((isAttackerZombie || moveElement === 'Poison') && hasPoisonWeakness) {
+    if (isDefenderZombie && (moveElement === 'Fire' || moveElement === 'Lightning')) {
+      // Official Rule: Lightning and Fire weakness when character becomes a Zombie (-10 HP on first initial attack)
+      weaknessTriggered = true;
+      weaknessBonus = 10;
+    } else if ((isAttackerZombie || moveElement === 'Poison') && hasPoisonWeakness && !isDefenderZombie) {
       weaknessTriggered = true;
       weaknessBonus = 10;
     } else if (moveElement === 'Fire' && hasFireWeakness) {
