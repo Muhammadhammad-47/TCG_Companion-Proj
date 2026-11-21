@@ -321,23 +321,18 @@ export const generateGiftedCharacterMoves = (charKey, totalCount = 10) => {
     const upper = atkName.toUpperCase();
     const isBlitz = upper.includes('BLITZ') || Boolean(atkData.isBlitz);
     const isKontrol = upper.includes('KONTROL') || Boolean(atkData.isKontrol);
-    const isWild = upper.includes('WILD') || Boolean(atkData.isWild);
-    const isSuper = Boolean(atkData.isSuper);
-    const rarity = (atkData.rarity || '').toUpperCase();
-    const isRareOrAbove = rarity === 'RARE' || rarity === 'SUPER RARE' || rarity === 'ULTRA RARE';
     const isPurchaseOrQR = Boolean(atkData.requiresPurchaseOrQR);
 
-    // Strictly restrict powerful cards: Blitz No Saigo, Kontrol, Wild Card, and the character's most powerful move (Rare/Super)
-    if (isBlitz || isKontrol || isWild || isSuper || isRareOrAbove || isPurchaseOrQR) {
+    // Strictly restrict: No Saigo Blitz and Kontrol is only available through digital purchase or through QRCode system
+    if (isBlitz || isKontrol || isPurchaseOrQR) {
       return;
     }
 
-    // Only allow Common and Semi-Common moves in the 10 starting cards
+    // Includes Common, Semi-Common, Rare, and Super Rare WILD CARD moves
     candidateMoves.push({
       name: atkName,
       ...atkData,
-      isSuper: false,
-      costET: atkData.costET || 1
+      costET: atkData.costET || (atkData.isSuper ? 2 : 1)
     });
   });
 
@@ -346,11 +341,23 @@ export const generateGiftedCharacterMoves = (charKey, totalCount = 10) => {
     : [{ name: 'Basic Strike', ap: 10, dice: 1, element: 'Physical', desc: 'Standard attack', rarity: 'Common', costET: 1 }];
 
   const gifted = [];
-  for (let i = 0; i < totalCount; i++) {
+
+  // Guarantee at least 1 of each candidate move (including Common, Semi-Common, Rare, and WILD CARD)
+  candidateMoves.forEach((move, idx) => {
+    if (gifted.length < totalCount) {
+      gifted.push({
+        ...move,
+        id: `ccm_${Math.random().toString(36).substring(2, 9)}_${idx}`
+      });
+    }
+  });
+
+  // Fill remaining slots up to totalCount
+  while (gifted.length < totalCount && pool.length > 0) {
     const picked = pool[Math.floor(Math.random() * pool.length)];
     gifted.push({
       ...picked,
-      id: `ccm_${Math.random().toString(36).substring(2, 9)}_${i}`
+      id: `ccm_${Math.random().toString(36).substring(2, 9)}_${gifted.length}`
     });
   }
 

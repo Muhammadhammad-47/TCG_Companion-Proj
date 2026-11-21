@@ -6894,17 +6894,21 @@ export default function KontrolaArena() {
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '180px', overflowY: 'auto' }}>
                                 {(() => {
                                   const moveCounts = {};
+                                  // Seed all moves from character attack definitions so every move (including WILD CARD) is always visible
+                                  Object.entries(myCharacter.attacks || {}).forEach(([atkName, atkData]) => {
+                                    const upper = atkName.toUpperCase();
+                                    const isSpecial = upper.includes('BLITZ') || upper.includes('KONTROL');
+                                    moveCounts[atkName] = {
+                                      ...atkData,
+                                      name: atkName,
+                                      count: isSpecial ? 1 : 0,
+                                      isSpecial
+                                    };
+                                  });
+
                                   (myCharacter.characterCardMoves || []).forEach(m => {
                                     if (!moveCounts[m.name]) moveCounts[m.name] = { ...m, count: 0 };
                                     moveCounts[m.name].count += 1;
-                                  });
-
-                                  // Also include Blitz & Kontrol if present in character's template
-                                  Object.entries(myCharacter.attacks || {}).forEach(([atkName, atkData]) => {
-                                    const upper = atkName.toUpperCase();
-                                    if ((upper.includes('BLITZ') || upper.includes('KONTROL')) && !moveCounts[atkName]) {
-                                      moveCounts[atkName] = { ...atkData, name: atkName, count: 1, isSpecial: true };
-                                    }
                                   });
 
                                   return Object.values(moveCounts).map(move => {
