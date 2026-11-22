@@ -104,19 +104,30 @@ export const CARD_VFX_CONFIG = {
   // --------------------------------------------------------------------------
   // Chynaman (Fire)
   'FIRE OF FURY PER PUNCH':   { theme: 'fire',      rim: true, shock: false, sunlight: false, embers: true,  stars: false, isFire: true,      flames: true },
+  'FIRE OF FURY':             { theme: 'fire',      rim: true, shock: false, sunlight: false, embers: true,  stars: false, isFire: true,      flames: true },
+  'FOF':                      { theme: 'fire',      rim: true, shock: false, sunlight: false, embers: true,  stars: false, isFire: true,      flames: true },
   'FIRE TIGER SOUL PUNCH':    { theme: 'fire',      rim: true, shock: true,  sunlight: false, embers: true,  stars: true,  isFire: true,      flames: true },
+  'FTSP':                     { theme: 'fire',      rim: true, shock: true,  sunlight: false, embers: true,  stars: true,  isFire: true,      flames: true },
   'GOLDEN MIC LIGHTING':      { theme: 'lightning', rim: true, shock: true,  sunlight: true,  embers: false, stars: true,  isLightning: true, lightningArcs: true },
   'GOLDEN MIC LIGHTNING':     { theme: 'lightning', rim: true, shock: true,  sunlight: true,  embers: false, stars: true,  isLightning: true, lightningArcs: true },
+  'GOLD MIC LIGHTNING':       { theme: 'lightning', rim: true, shock: true,  sunlight: true,  embers: false, stars: true,  isLightning: true, lightningArcs: true },
+  'GOLD MIC LIGHTING':        { theme: 'lightning', rim: true, shock: true,  sunlight: true,  embers: false, stars: true,  isLightning: true, lightningArcs: true },
+  'GML':                      { theme: 'lightning', rim: true, shock: true,  sunlight: true,  embers: false, stars: true,  isLightning: true, lightningArcs: true },
 
   // Bee (Lightning / Sonic Gold)
   'STING SLAP PER STING':     { theme: 'lightning', rim: true, shock: true,  sunlight: false, embers: false, stars: false, isLightning: true, lightningArcs: true },
   'PAPARAZZI STUN':           { theme: 'lightning', rim: true, shock: true,  sunlight: false, embers: false, stars: true,  isLightning: true, lightningArcs: true },
   'BEE DRONE BOMB':           { theme: 'lightning', rim: true, shock: true,  sunlight: true,  embers: false, stars: true,  isLightning: true, lightningArcs: true },
 
-  // Kiko (Sonic / Energy Gold)
+  // Kiko (Punch / Magic)
   'TAIL WHIP PER WHIP':       { theme: 'gold',    rim: true, shock: false, sunlight: false, embers: false, stars: false },
-  'MULTIPLICITY':             { theme: 'blue',    rim: true, shock: false, sunlight: false, embers: false, stars: true  },
-  'SOUL BLAST 3000':          { theme: 'gold',    rim: true, shock: true,  sunlight: true,  embers: false, stars: true  },
+  'TWPW':                     { theme: 'gold',    rim: true, shock: false, sunlight: false, embers: false, stars: false },
+  'MULTIPLICITY':             { theme: 'purple',  rim: true, shock: false, sunlight: false, embers: false, stars: true  },
+  'MULTI':                    { theme: 'purple',  rim: true, shock: false, sunlight: false, embers: false, stars: true  },
+  'SOUL BLAST 3000':          { theme: 'purple',  rim: true, shock: true,  sunlight: true,  embers: false, stars: true  },
+  'SOUL BLAST 300':           { theme: 'purple',  rim: true, shock: true,  sunlight: true,  embers: false, stars: true  },
+  'SB3000':                   { theme: 'purple',  rim: true, shock: true,  sunlight: true,  embers: false, stars: true  },
+  'SB300':                    { theme: 'purple',  rim: true, shock: true,  sunlight: true,  embers: false, stars: true  },
 
   // Katsumi (Shadow / Void / Toxic)
   'SAVAGE PAWS PER STRIKE':   { theme: 'void',    rim: true, shock: false, sunlight: false, embers: false, stars: false, isVoid: true, shadowTendrils: true },

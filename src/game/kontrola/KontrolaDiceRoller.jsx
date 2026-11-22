@@ -385,6 +385,10 @@ export default function KontrolaDiceRoller({
         weaknessTriggered = true;
         weaknessBonus = 10;
         weaknessLabel = 'LIGHTNING WEAKNESS (+10 AP)';
+      } else if (attackElem.toLowerCase() === 'magic' && isMagicWeakness) {
+        weaknessTriggered = true;
+        weaknessBonus = 10;
+        weaknessLabel = 'MAGIC WEAKNESS (+10 AP)';
       } else if ((attackElem.toLowerCase() === 'poison' || (atkChar?.poisonCount >= 5) || (atkChar?.isZombie)) && isPoisonWeakness) {
         weaknessTriggered = true;
         weaknessBonus = 10;

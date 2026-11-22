@@ -21,14 +21,20 @@ export const KONTROLA_CHARACTERS = {
     image: 'Kontrolla_Data/Graphics/WILD CARDS/CHYNA WILD CARD REG.png',
     attacks: {
       'FIRE OF FURY PER PUNCH': { ap: 5, dice: 1, element: 'Fire', costET: 1, rarity: 'Common', desc: 'Common Move. Roll 1 Die × 5 AP Fire damage.' },
+      'FIRE OF FURY': { ap: 5, dice: 1, element: 'Fire', costET: 1, rarity: 'Common', desc: 'Common Move. Roll 1 Die × 5 AP Fire damage.' },
+      'FOF': { ap: 5, dice: 1, element: 'Fire', costET: 1, rarity: 'Common', desc: 'Common Move (FOF). Roll 1 Die × 5 AP Fire damage.' },
       'FIRE TIGER SOUL PUNCH': { ap: 25, dice: 0, element: 'Fire', costET: 1, rarity: 'Semi Common', desc: 'Semi Common Move. Direct blazing strike dealing 25 AP.' },
+      'FTSP': { ap: 25, dice: 0, element: 'Fire', costET: 1, rarity: 'Semi Common', desc: 'Semi Common Move (FTSP). Direct blazing strike dealing 25 AP.' },
       'GOLDEN MIC LIGHTING': { ap: 40, dice: 0, element: 'Lightning', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move. Super Lightning strike dealing 40 AP.' },
+      'GOLDEN MIC LIGHTNING': { ap: 40, dice: 0, element: 'Lightning', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move. Super Lightning strike dealing 40 AP.' },
+      'GOLD MIC LIGHTNING': { ap: 40, dice: 0, element: 'Lightning', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move. Super Lightning strike dealing 40 AP.' },
+      'GML': { ap: 40, dice: 0, element: 'Lightning', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move (GML). Super Lightning strike dealing 40 AP.' },
       'WILD CARD': {
         isWild: true,
         rarity: 'Super Rare',
         costET: 1,
-        wildOptions: ['FIRE OF FURY PER PUNCH', 'FIRE TIGER SOUL PUNCH', 'GOLDEN MIC LIGHTING'],
-        desc: 'Super Rare Wild Card. Allows choosing only one move from: Fire of Fury per Punch, Fire Tiger Soul Punch, or Golden Mic Lighting.'
+        wildOptions: ['FIRE OF FURY PER PUNCH', 'FIRE TIGER SOUL PUNCH', 'GOLD MIC LIGHTNING'],
+        desc: 'Super Rare Wild Card. Allows choosing only one move from: Fire of Fury per Punch, Fire Tiger Soul Punch, or Gold Mic Lightning.'
       },
       'KONTROL': { ap: 0, dice: 1, element: 'Psychic', isKontrol: true, requiresPurchaseOrQR: true, desc: 'Roll 1d6 > target Mind Strength. Only available through digital purchase or QR Code system (Max 2/match, 5-turn cooldown).' },
       'SAIGO NO BLITZ': { ap: 200, dice: 0, element: 'Energy', isBlitz: true, requiresPurchaseOrQR: true, desc: 'Requires HP < 50. Sacrifice 50% HP to deal 200 AP AoE. Only available through digital purchase or QR Code system (Max 2/match).' }
@@ -83,15 +89,20 @@ export const KONTROLA_CHARACTERS = {
     themeColor: '#FBC80D',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/KIKO WILD CARD GOLD.png',
     attacks: {
-      'TAIL WHIP PER WHIP': { ap: 4, dice: 1, element: 'Physical', costET: 1, rarity: 'Common', desc: 'Common Move. Roll 1 Die × 4 AP Tail strikes.' },
-      'MULTIPLICITY': { ap: 30, dice: 0, element: 'Sonic', costET: 1, rarity: 'Semi Common', desc: 'Semi Common Move. Sonic clones strike dealing 30 AP.' },
-      'SOUL BLAST 3000': { ap: 40, dice: 0, element: 'Energy', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move. Super Soul Blast dealing 40 AP.' },
+      'TAIL WHIP PER WHIP': { ap: 4, dice: 1, element: 'Punch', costET: 1, rarity: 'Common', desc: 'Common Move. Roll 1 Die × 4 AP Tail strikes.' },
+      'TWPW': { ap: 4, dice: 1, element: 'Punch', costET: 1, rarity: 'Common', desc: 'Common Move (TWPW). Roll 1 Die × 4 AP Tail strikes.' },
+      'MULTIPLICITY': { ap: 30, dice: 0, element: 'Magic', costET: 1, rarity: 'Semi Common', desc: 'Semi Common Move. Sonic and magic clones strike dealing 30 AP.' },
+      'MULTI': { ap: 30, dice: 0, element: 'Magic', costET: 1, rarity: 'Semi Common', desc: 'Semi Common Move (MULTI). Sonic and magic clones strike dealing 30 AP.' },
+      'SOUL BLAST 3000': { ap: 40, dice: 0, element: 'Magic', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move. Super Magic Soul Blast dealing 40 AP.' },
+      'SOUL BLAST 300': { ap: 40, dice: 0, element: 'Magic', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move. Super Magic Soul Blast dealing 40 AP.' },
+      'SB3000': { ap: 40, dice: 0, element: 'Magic', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move (SB3000). Super Magic Soul Blast dealing 40 AP.' },
+      'SB300': { ap: 40, dice: 0, element: 'Magic', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move (SB300). Super Magic Soul Blast dealing 40 AP.' },
       'WILD CARD': {
         isWild: true,
         rarity: 'Super Rare',
         costET: 1,
-        wildOptions: ['TAIL WHIP PER WHIP', 'MULTIPLICITY', 'SOUL BLAST 3000'],
-        desc: 'Super Rare Wild Card. Allows choosing only one move from: Tail Whip per whip, Multiplicity, or Soul Blast 3000.'
+        wildOptions: ['TAIL WHIP PER WHIP', 'MULTIPLICITY', 'SOUL BLAST 300'],
+        desc: 'Super Rare Wild Card. Allows choosing only one move from: Tail Whip per whip, Multiplicity, or Soul Blast 300.'
       },
       'KONTROL': { ap: 0, dice: 1, element: 'Psychic', isKontrol: true, requiresPurchaseOrQR: true, desc: 'Roll 1d6 > target Mind Strength. Only available through digital purchase or QR Code system (Max 2/match, 5-turn cooldown).' },
       'SAIGO NO BLITZ': { ap: 200, dice: 0, element: 'Energy', isBlitz: true, requiresPurchaseOrQR: true, desc: 'Requires HP < 50. Sacrifice 50% HP to deal 200 AP AoE. Only available through digital purchase or QR Code system (Max 2/match).' }
@@ -1209,6 +1220,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         const isFireAtk = (attackElement && attackElement.toLowerCase().includes('fire')) || cardName.includes('FIRE');
         const isLightningAtk = (attackElement && (attackElement.toLowerCase().includes('lightning') || attackElement.toLowerCase().includes('lighting'))) || cardName.includes('LIGHTNING') || cardName.includes('LIGHTING');
         const isPoisonAtk = (attackElement && attackElement.toLowerCase().includes('poison')) || cardName.includes('POISON');
+        const isMagicAtk = (attackElement && attackElement.toLowerCase().includes('magic')) || cardName.includes('MAGIC');
         const isPoppersPerPop = (attackSelectionName || '').toUpperCase().includes('POPPERS') || (attackElement && attackElement.includes('Magic and Poison'));
 
         const hasPoisonWeakness = !isZombieDef && (defWeakness.includes('poison') || ['chynaman', 'chyna', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k)));
@@ -1237,6 +1249,9 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         } else if (isPoisonAtk && hasPoisonWeakness && isInitialAttack) {
           weaknessBonus = 10;
           weaknessReason = ` ☠️ [POISON WEAKNESS] ${newDefenderState.name} has Poison weakness! Additional -10 HP weakness penalty applied!`;
+        } else if (isMagicAtk && hasMagicWeakness && isInitialAttack) {
+          weaknessBonus = 10;
+          weaknessReason = ` ✨ [MAGIC WEAKNESS] ${newDefenderState.name} has Magic weakness! Additional -10 HP weakness penalty applied!`;
         } else if (attackElement && newDefenderState.weakness && newDefenderState.weakness.toLowerCase().includes(attackElement.toLowerCase()) && isInitialAttack) {
           weaknessBonus = 10;
           weaknessReason = ` 🎯 [WEAKNESS TRIGGER] ${newDefenderState.name} has ${attackElement} weakness! +10 AP bonus applied!`;

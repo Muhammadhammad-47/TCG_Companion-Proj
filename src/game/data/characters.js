@@ -298,8 +298,8 @@ export const CHARACTERS = {
     retreatTarget: 4,
     weakness: { type: 'Poison', bonusAP: 10, icon: '☠️' },
     traits: ['Magical Mind Shield (+1)', 'Multiplicity Clones', 'Sonic Beats'],
-    signatureMove: 'Soul Blast 3000',
-    signatureDesc: '40 AP mystical sonic blast.',
+    signatureMove: 'Soul Blast 300',
+    signatureDesc: '40 AP mystic magic blast.',
     quote: 'Tricks and tunes always conquer brute force!',
     moves: [
       {
@@ -309,7 +309,7 @@ export const CHARACTERS = {
         multiplier: 4,
         ap: 4,
         dice: 1,
-        element: 'Physical',
+        element: 'Punch',
         costET: 1,
         rarity: 'Common',
         desc: 'Common Move. Roll 1 Die × 4 AP sweeping tail strikes.'
@@ -326,7 +326,8 @@ export const CHARACTERS = {
       },
       {
         id: 'm_soul',
-        name: 'Soul Blast 3000',
+        name: 'Soul Blast 300',
+        displayName: 'Soul Blast 300',
         type: 'flat',
         baseAP: 40,
         element: 'Magic',
@@ -342,9 +343,9 @@ export const CHARACTERS = {
         type: 'wild',
         rarity: 'Super Rare',
         isWild: true,
-        wildOptions: ['Tail Whip per whip', 'Multiplicity', 'Soul Blast 3000'],
+        wildOptions: ['Tail Whip per whip', 'Multiplicity', 'Soul Blast 300'],
         costET: 1,
-        desc: 'Super Rare Wild Card. Allows choosing only one move from: Tail Whip per whip, Multiplicity, or Soul Blast 3000.'
+        desc: 'Super Rare Wild Card. Allows choosing only one move from: Tail Whip per whip, Multiplicity, or Soul Blast 300.'
       },
       {
         id: 'm_blitz',
