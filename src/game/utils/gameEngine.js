@@ -287,7 +287,7 @@ export function resolveDiceCombat({
 
   const defCharKey = (defender.characterId || defender.id || defender.name || '').toLowerCase();
   const defWeakness = (defChar.weakness?.type || defender.weakness?.type || defender.weakness || '').toLowerCase();
-  const hasPoisonWeakness = defWeakness.includes('poison') || ['chynaman', 'kiko', 'poochi', 'kat', 'katsumi', 'bee', 'queeny'].some(k => defCharKey.includes(k));
+  const hasPoisonWeakness = defWeakness.includes('poison') || ['chynaman', 'chyna', 'kiko', 'poochi', 'kat', 'katsumi', 'bee', 'queeny'].some(k => defCharKey.includes(k));
   const hasFireWeakness = defWeakness.includes('fire') || ['shroomy'].some(k => defCharKey.includes(k));
   const hasMagicWeakness = defWeakness.includes('magic') || defWeakness.includes('psychic') || defWeakness.includes('music') || ['queeny'].some(k => defCharKey.includes(k));
   const isPoppersPerPop = (characterMove?.name || '').toUpperCase().includes('POPPERS') || (moveElement && moveElement.includes('Magic and Poison'));

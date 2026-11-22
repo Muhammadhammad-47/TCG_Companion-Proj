@@ -357,7 +357,7 @@ export default function KontrolaDiceRoller({
     const defCharKey = (defChar.id || defChar.name || '').toLowerCase();
     const defWeakness = (defChar.weakness || '').toLowerCase();
     const isZombieDef = Boolean(defChar.isZombie || (defChar.poisonCount >= 5) || (defChar.poisonCards >= 5));
-    const isPoisonWeakness = !isZombieDef && (defWeakness.includes('poison') || ['chynaman', 'kiko', 'poochi', 'kat', 'katsumi', 'bee', 'queeny'].some(k => defCharKey.includes(k)));
+    const isPoisonWeakness = !isZombieDef && (defWeakness.includes('poison') || ['chynaman', 'chyna', 'kiko', 'poochi', 'kat', 'katsumi', 'bee', 'queeny'].some(k => defCharKey.includes(k)));
     const isFireWeakness = isZombieDef || defWeakness.includes('fire') || ['shroomy'].some(k => defCharKey.includes(k));
     const isLightningWeakness = isZombieDef || defWeakness.includes('lightning') || defWeakness.includes('lighting');
     const isMagicWeakness = defWeakness.includes('magic') || defWeakness.includes('psychic') || defWeakness.includes('music') || ['queeny'].some(k => defCharKey.includes(k));
