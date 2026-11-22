@@ -114,10 +114,17 @@ export const CARD_VFX_CONFIG = {
   'GOLD MIC LIGHTING':        { theme: 'lightning', rim: true, shock: true,  sunlight: true,  embers: false, stars: true,  isLightning: true, lightningArcs: true },
   'GML':                      { theme: 'lightning', rim: true, shock: true,  sunlight: true,  embers: false, stars: true,  isLightning: true, lightningArcs: true },
 
-  // Bee (Lightning / Sonic Gold)
-  'STING SLAP PER STING':     { theme: 'lightning', rim: true, shock: true,  sunlight: false, embers: false, stars: false, isLightning: true, lightningArcs: true },
-  'PAPARAZZI STUN':           { theme: 'lightning', rim: true, shock: true,  sunlight: false, embers: false, stars: true,  isLightning: true, lightningArcs: true },
-  'BEE DRONE BOMB':           { theme: 'lightning', rim: true, shock: true,  sunlight: true,  embers: false, stars: true,  isLightning: true, lightningArcs: true },
+  // Bee (Punch / Freeze Stun)
+  'STING SLAP PER SLAP':      { theme: 'gold',      rim: true, shock: true,  sunlight: false, embers: false, stars: false },
+  'STING SLAP PER STING':     { theme: 'gold',      rim: true, shock: true,  sunlight: false, embers: false, stars: false },
+  'SSPS':                     { theme: 'gold',      rim: true, shock: true,  sunlight: false, embers: false, stars: false },
+  'BEE SPPS':                 { theme: 'gold',      rim: true, shock: true,  sunlight: false, embers: false, stars: false },
+  'PAPARAZZI STUN':           { theme: 'ice',       rim: true, shock: true,  sunlight: false, embers: false, stars: true,  isIce: true,        frost: true, crystals: true },
+  'PARARAZZI STUN':           { theme: 'ice',       rim: true, shock: true,  sunlight: false, embers: false, stars: true,  isIce: true,        frost: true, crystals: true },
+  'PAP STUN':                 { theme: 'ice',       rim: true, shock: true,  sunlight: false, embers: false, stars: true,  isIce: true,        frost: true, crystals: true },
+  'PAPS':                     { theme: 'ice',       rim: true, shock: true,  sunlight: false, embers: false, stars: true,  isIce: true,        frost: true, crystals: true },
+  'BEE DRONE BOMB':           { theme: 'gold',      rim: true, shock: true,  sunlight: true,  embers: false, stars: true  },
+  'BDB':                      { theme: 'gold',      rim: true, shock: true,  sunlight: true,  embers: false, stars: true  },
 
   // Kiko (Punch / Magic)
   'TAIL WHIP PER WHIP':       { theme: 'gold',    rim: true, shock: false, sunlight: false, embers: false, stars: false },
@@ -129,10 +136,14 @@ export const CARD_VFX_CONFIG = {
   'SB3000':                   { theme: 'purple',  rim: true, shock: true,  sunlight: true,  embers: false, stars: true  },
   'SB300':                    { theme: 'purple',  rim: true, shock: true,  sunlight: true,  embers: false, stars: true  },
 
-  // Katsumi (Shadow / Void / Toxic)
-  'SAVAGE PAWS PER STRIKE':   { theme: 'void',    rim: true, shock: false, sunlight: false, embers: false, stars: false, isVoid: true, shadowTendrils: true },
+  // Katsumi (Punch / Sleep Purr)
+  'SAVAGE PAW PER STRIKE':    { theme: 'gold',    rim: true, shock: false, sunlight: false, embers: false, stars: false },
+  'SAVAGE PAWS PER STRIKE':   { theme: 'gold',    rim: true, shock: false, sunlight: false, embers: false, stars: false },
+  'KAT SPPS':                 { theme: 'gold',    rim: true, shock: false, sunlight: false, embers: false, stars: false },
   'SHADOW PURR':              { theme: 'void',    rim: true, shock: true,  sunlight: false, embers: false, stars: true,  isVoid: true, shadowTendrils: true },
-  'CLAW OF FATE':             { theme: 'void',    rim: true, shock: true,  sunlight: false, embers: false, stars: true,  isVoid: true, shadowTendrils: true },
+  'SP':                       { theme: 'void',    rim: true, shock: true,  sunlight: false, embers: false, stars: true,  isVoid: true, shadowTendrils: true },
+  'CLAW OF FATE':             { theme: 'gold',    rim: true, shock: true,  sunlight: true,  embers: false, stars: true  },
+  'COF':                      { theme: 'gold',    rim: true, shock: true,  sunlight: true,  embers: false, stars: true  },
 
   // Poochi (Magic Pink/Gold)
   'GLITTER SPARKS PER SPARK': { theme: 'gold',    rim: true, shock: false, sunlight: false, embers: false, stars: true  },

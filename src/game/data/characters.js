@@ -115,44 +115,47 @@ export const CHARACTERS = {
     retreatTarget: 3,
     weakness: { type: 'Magic & Poison', bonusAP: 10, icon: '✨☠️' },
     traits: ['High Mind Strength (5)', 'Stun & Drone Specialist', 'Fast Retreat (3+)'],
-    signatureMove: 'Pararazzi Stun',
-    signatureDesc: '25 AP strike that forces target to skip their next turn (Sleep X1).',
+    signatureMove: 'Paparazzi Stun',
+    signatureDesc: '25 AP strike that forces target to skip their next turn (You are frozen).',
     quote: 'The hive always protects its own.',
     moves: [
       {
         id: 'b_sting',
-        name: 'Sting Slap per sting',
+        name: 'Sting Slap per slap',
+        displayName: 'Sting Slap per slap',
         type: 'dice_mult',
         multiplier: 3,
         ap: 3,
         dice: 1,
-        element: 'Physical',
+        element: 'Punch',
         costET: 1,
         rarity: 'Common',
-        desc: 'Common Move. Roll 1 Die × 3 AP rapid piercing stings.'
+        desc: 'Common Move. Roll 1 Die × 3 AP rapid piercing punch slaps.'
       },
       {
         id: 'b_stun',
-        name: 'Pararazzi Stun',
+        name: 'Paparazzi Stun',
+        displayName: 'Paparazzi Stun',
         type: 'flat',
         baseAP: 25,
-        element: 'Lightning',
+        element: 'Punch',
         costET: 1,
         rarity: 'Semi Common',
         loseTurn: true,
         appliesFreeze: true,
-        desc: 'Semi Common Move. 25 AP damage. If and only if the attack is successful, the defendant loses one turn (You are frozen).'
+        desc: 'Semi Common Move. 25 AP strike. If and only if the attack is successful, the defendant is frozen and loses one turn (You are frozen).'
       },
       {
         id: 'b_bomb',
         name: 'Bee Drone Bomb',
+        displayName: 'Bee Drone Bomb',
         type: 'flat',
         baseAP: 40,
-        element: 'Physical',
+        element: 'Punch',
         costET: 2,
         isSuper: true,
         rarity: 'Rare',
-        desc: 'Rare Move. Explosive swarm blast dealing 40 AP.'
+        desc: 'Rare Move. Explosive punch swarm blast dealing 40 AP.'
       },
       {
         id: 'b_wild',
@@ -161,9 +164,9 @@ export const CHARACTERS = {
         type: 'wild',
         rarity: 'Super Rare',
         isWild: true,
-        wildOptions: ['Sting Slap per sting', 'Pararazzi Stun', 'Bee Drone Bomb'],
+        wildOptions: ['Sting Slap per slap', 'Paparazzi Stun', 'Bee Drone Bomb'],
         costET: 1,
-        desc: 'Super Rare Wild Card. Allows choosing only one move from: Sting Slap per sting, Pararazzi Stun, or Bee Drone Bomb.'
+        desc: 'Super Rare Wild Card. Allows choosing only one move from: Sting Slap per slap, Paparazzi Stun, or Bee Drone Bomb.'
       },
       {
         id: 'b_blitz',
@@ -212,38 +215,41 @@ export const CHARACTERS = {
     moves: [
       {
         id: 'k_paws',
-        name: 'Savage Paws per strike',
+        name: 'Savage Paw per Strike',
+        displayName: 'Savage Paw per Strike',
         type: 'dice_mult',
         multiplier: 5,
         ap: 5,
         dice: 1,
-        element: 'Physical',
+        element: 'Punch',
         costET: 1,
         rarity: 'Common',
-        desc: 'Common Move. Roll 1 Die × 5 AP razor claws.'
+        desc: 'Common Move. Roll 1 Die × 5 AP razor paw punch strikes.'
       },
       {
         id: 'k_purr',
         name: 'Shadow Purr',
+        displayName: 'Shadow Purr',
         type: 'flat',
         baseAP: 30,
-        element: 'Shadow',
+        element: 'Punch',
         costET: 1,
         rarity: 'Semi Common',
         healsAttacker: 20,
         appliesSleep: true,
-        desc: 'Semi Common Move. Stealth shadow strike dealing 30 AP. Heals attacker for 20 HP. If and only if the attack is successful, inflicts Sleep X1 on the defendant (You are Asleep - loses 1 turn).'
+        desc: 'Semi Common Move. Stealth punch strike dealing 30 AP. Heals attacker for 20 HP. If and only if the attack is successful, inflicts Sleep X1 on the defendant (You are Asleep - loses 1 turn).'
       },
       {
         id: 'k_fate',
         name: 'Claw of Fate',
+        displayName: 'Claw of Fate',
         type: 'flat',
         baseAP: 45,
-        element: 'Physical',
+        element: 'Punch',
         costET: 2,
         isSuper: true,
         rarity: 'Rare',
-        desc: 'Rare Move. Critical fatal slash dealing 45 AP.'
+        desc: 'Rare Move. Critical fatal punch slash dealing 45 AP.'
       },
       {
         id: 'k_wild',
@@ -252,9 +258,9 @@ export const CHARACTERS = {
         type: 'wild',
         rarity: 'Super Rare',
         isWild: true,
-        wildOptions: ['Savage Paws per strike', 'Shadow Purr', 'Claw of Fate'],
+        wildOptions: ['Savage Paw per Strike', 'Shadow Purr', 'Claw of Fate'],
         costET: 1,
-        desc: 'Super Rare Wild Card. Allows choosing only one move from: Savage Paws per strike, Shadow Purr, or Claw of Fate.'
+        desc: 'Super Rare Wild Card. Allows choosing only one move from: Savage Paw per Strike, Shadow Purr, or Claw of Fate.'
       },
       {
         id: 'k_blitz',

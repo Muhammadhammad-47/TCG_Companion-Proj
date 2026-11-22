@@ -57,16 +57,22 @@ export const KONTROLA_CHARACTERS = {
     themeColor: '#FBC80D',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/BEE WILD CARD GOLD.png',
     attacks: {
-      'STING SLAP PER STING': { ap: 3, dice: 1, element: 'Lightning', costET: 1, rarity: 'Common', desc: 'Common Move. Roll 1 Die × 3 AP Sting damage.' },
-      'PARARAZZI STUN': { ap: 25, dice: 0, element: 'Sonic', costET: 1, loseTurn: true, appliesFreeze: true, rarity: 'Semi Common', desc: 'Semi Common Move. 25 AP strike. If and only if the attack is successful, defendant is frozen (You are frozen - loses 1 turn).' },
-      'PAPARAZZI STUN': { ap: 25, dice: 0, element: 'Sonic', costET: 1, loseTurn: true, appliesFreeze: true, rarity: 'Semi Common', desc: 'Semi Common Move. 25 AP strike. If and only if the attack is successful, defendant is frozen (You are frozen - loses 1 turn).' },
-      'BEE DRONE BOMB': { ap: 40, dice: 0, element: 'Lightning', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move. Super Drone Bomb dealing 40 AP.' },
+      'STING SLAP PER SLAP': { ap: 3, dice: 1, element: 'Punch', costET: 1, rarity: 'Common', desc: 'Common Move. Roll 1 Die × 3 AP Sting damage.' },
+      'STING SLAP PER STING': { ap: 3, dice: 1, element: 'Punch', costET: 1, rarity: 'Common', desc: 'Common Move. Roll 1 Die × 3 AP Sting damage.' },
+      'SSPS': { ap: 3, dice: 1, element: 'Punch', costET: 1, rarity: 'Common', desc: 'Common Move (SSPS). Roll 1 Die × 3 AP Sting damage.' },
+      'BEE SPPS': { ap: 3, dice: 1, element: 'Punch', costET: 1, rarity: 'Common', desc: 'Common Move (BEE SPPS). Roll 1 Die × 3 AP Sting damage.' },
+      'PAPARAZZI STUN': { ap: 25, dice: 0, element: 'Punch', costET: 1, loseTurn: true, appliesFreeze: true, rarity: 'Semi Common', desc: 'Semi Common Move. 25 AP strike. If and only if the attack is successful, defendant is frozen (You are frozen - loses 1 turn).' },
+      'PARARAZZI STUN': { ap: 25, dice: 0, element: 'Punch', costET: 1, loseTurn: true, appliesFreeze: true, rarity: 'Semi Common', desc: 'Semi Common Move. 25 AP strike. If and only if the attack is successful, defendant is frozen (You are frozen - loses 1 turn).' },
+      'PAP STUN': { ap: 25, dice: 0, element: 'Punch', costET: 1, loseTurn: true, appliesFreeze: true, rarity: 'Semi Common', desc: 'Semi Common Move (PAP STUN). 25 AP strike. If and only if the attack is successful, defendant is frozen (You are frozen - loses 1 turn).' },
+      'PAPS': { ap: 25, dice: 0, element: 'Punch', costET: 1, loseTurn: true, appliesFreeze: true, rarity: 'Semi Common', desc: 'Semi Common Move (PAPS). 25 AP strike. If and only if the attack is successful, defendant is frozen (You are frozen - loses 1 turn).' },
+      'BEE DRONE BOMB': { ap: 40, dice: 0, element: 'Punch', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move. Super Drone Bomb dealing 40 AP.' },
+      'BDB': { ap: 40, dice: 0, element: 'Punch', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move (BDB). Super Drone Bomb dealing 40 AP.' },
       'WILD CARD': {
         isWild: true,
         rarity: 'Super Rare',
         costET: 1,
-        wildOptions: ['STING SLAP PER STING', 'PARARAZZI STUN', 'BEE DRONE BOMB'],
-        desc: 'Super Rare Wild Card. Allows choosing only one move from: Sting Slap per sting, Pararazzi Stun, or Bee Drone Bomb.'
+        wildOptions: ['STING SLAP PER SLAP', 'PAPARAZZI STUN', 'BEE DRONE BOMB'],
+        desc: 'Super Rare Wild Card. Allows choosing only one move from: Sting Slap per slap, Paparazzi Stun, or Bee Drone Bomb.'
       },
       'KONTROL': { ap: 0, dice: 1, element: 'Psychic', isKontrol: true, requiresPurchaseOrQR: true, desc: 'Roll 1d6 > target Mind Strength. Only available through digital purchase or QR Code system (Max 2/match, 5-turn cooldown).' },
       'SAIGO NO BLITZ': { ap: 200, dice: 0, element: 'Energy', isBlitz: true, requiresPurchaseOrQR: true, desc: 'Requires HP < 50. Sacrifice 50% HP to deal 200 AP AoE. Only available through digital purchase or QR Code system (Max 2/match).' }
@@ -125,15 +131,19 @@ export const KONTROLA_CHARACTERS = {
     themeColor: '#FBC80D',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/KAT WILD CARD GOLD.png',
     attacks: {
-      'SAVAGE PAWS PER STRIKE': { ap: 5, dice: 1, element: 'Physical', costET: 1, rarity: 'Common', desc: 'Common Move. Roll 1 Die × 5 AP Paw strikes.' },
-      'SHADOW PURR': { ap: 30, dice: 0, element: 'Shadow', costET: 1, healsAttacker: 20, appliesSleep: true, rarity: 'Semi Common', desc: 'Semi Common Move. Stealth shadow strike dealing 30 AP. Restores +20 HP to attacker. If and only if the attack is successful, inflicts Sleep X1 on defendant (You are Asleep - loses 1 turn).' },
-      'CLAW OF FATE': { ap: 45, dice: 0, element: 'Physical', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move. Critical fatal slash dealing 45 AP.' },
+      'SAVAGE PAW PER STRIKE': { ap: 5, dice: 1, element: 'Punch', costET: 1, rarity: 'Common', desc: 'Common Move. Roll 1 Die × 5 AP Paw strikes.' },
+      'SAVAGE PAWS PER STRIKE': { ap: 5, dice: 1, element: 'Punch', costET: 1, rarity: 'Common', desc: 'Common Move. Roll 1 Die × 5 AP Paw strikes.' },
+      'KAT SPPS': { ap: 5, dice: 1, element: 'Punch', costET: 1, rarity: 'Common', desc: 'Common Move (KAT SPPS). Roll 1 Die × 5 AP Paw strikes.' },
+      'SHADOW PURR': { ap: 30, dice: 0, element: 'Punch', costET: 1, healsAttacker: 20, appliesSleep: true, rarity: 'Semi Common', desc: 'Semi Common Move. Stealth punch strike dealing 30 AP. Restores +20 HP to attacker. If and only if the attack is successful, inflicts Sleep X1 on defendant (You are Asleep - loses 1 turn).' },
+      'SP': { ap: 30, dice: 0, element: 'Punch', costET: 1, healsAttacker: 20, appliesSleep: true, rarity: 'Semi Common', desc: 'Semi Common Move (SP). Stealth punch strike dealing 30 AP. Restores +20 HP to attacker. If and only if the attack is successful, inflicts Sleep X1 on defendant (You are Asleep - loses 1 turn).' },
+      'CLAW OF FATE': { ap: 45, dice: 0, element: 'Punch', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move. Critical fatal slash dealing 45 AP.' },
+      'COF': { ap: 45, dice: 0, element: 'Punch', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move (COF). Critical fatal slash dealing 45 AP.' },
       'WILD CARD': {
         isWild: true,
         rarity: 'Super Rare',
         costET: 1,
-        wildOptions: ['SAVAGE PAWS PER STRIKE', 'SHADOW PURR', 'CLAW OF FATE'],
-        desc: 'Super Rare Wild Card. Allows choosing only one move from: Savage Paws per strike, Shadow Purr, or Claw of Fate.'
+        wildOptions: ['SAVAGE PAW PER STRIKE', 'SHADOW PURR', 'CLAW OF FATE'],
+        desc: 'Super Rare Wild Card. Allows choosing only one move from: Savage Paw per Strike, Shadow Purr, or Claw of Fate.'
       },
       'KONTROL': { ap: 0, dice: 1, element: 'Psychic', isKontrol: true, requiresPurchaseOrQR: true, desc: 'Roll 1d6 > target Mind Strength. Only available through digital purchase or QR Code system (Max 2/match, 5-turn cooldown).' },
       'SAIGO NO BLITZ': { ap: 200, dice: 0, element: 'Energy', isBlitz: true, requiresPurchaseOrQR: true, desc: 'Requires HP < 50. Sacrifice 50% HP to deal 200 AP AoE. Only available through digital purchase or QR Code system (Max 2/match).' }
@@ -1424,7 +1434,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     }
 
     // Kat's Shadow Purr: Heals attacker + puts defender to sleep (Sleep X1, if and only if attack is successful)
-    const isShadowPurr = attackSelectionName && attackSelectionName.toUpperCase().replace(/\s+/g, '').includes('SHADOWPURR');
+    const isShadowPurr = attackSelectionName && (attackSelectionName.toUpperCase().replace(/\s+/g, '').includes('SHADOWPURR') || attackSelectionName.trim().toUpperCase() === 'SP');
     if (isShadowPurr && atkWin && newDefenderState) {
       newAttackerState.hp = Math.min(newAttackerState.maxHp || 100, newAttackerState.hp + 20);
       newDefenderState.sleepTurns = (newDefenderState.sleepTurns || 0) + 1;
@@ -1432,7 +1442,12 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     }
 
     // Bee's Pararazzi Stun: Defender is frozen (loses 1 turn, if and only if attack is successful)
-    const isPararazziStun = attackSelectionName && (attackSelectionName.toUpperCase().includes('PARARAZZI') || attackSelectionName.toUpperCase().includes('PAPARAZZI'));
+    const isPararazziStun = attackSelectionName && (
+      attackSelectionName.toUpperCase().includes('PARARAZZI') || 
+      attackSelectionName.toUpperCase().includes('PAPARAZZI') || 
+      attackSelectionName.toUpperCase().includes('PAP STUN') || 
+      attackSelectionName.trim().toUpperCase() === 'PAPS'
+    );
     if (isPararazziStun && atkWin && newDefenderState && !isShadowPurr) {
       newDefenderState.sleepTurns = (newDefenderState.sleepTurns || 0) + 1;
       newDefenderState.isFrozen = true;

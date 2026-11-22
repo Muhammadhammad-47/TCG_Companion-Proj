@@ -956,9 +956,9 @@ export default function BattleArena({
 
     // Log stun / sleep if applied
     if (result.sleepTurns > 0 || result.appliesStun) {
-      const moveNameUpper = (characterMove?.name || '').toUpperCase();
-      const isKatPurr = moveNameUpper.includes('SHADOW PURR');
-      const isBeeStun = moveNameUpper.includes('PARARAZZI') || moveNameUpper.includes('PAPARAZZI');
+      const moveNameUpper = (characterMove?.name || '').toUpperCase().trim();
+      const isKatPurr = moveNameUpper.includes('SHADOW PURR') || moveNameUpper === 'SP';
+      const isBeeStun = moveNameUpper.includes('PARARAZZI') || moveNameUpper.includes('PAPARAZZI') || moveNameUpper.includes('PAP STUN') || moveNameUpper === 'PAPS';
       const actionDesc = isKatPurr
         ? `😻 SHADOW PURR: Successful attack! ${defender.name}: You are Asleep (suffers Sleep X1, loses 1 turn)!`
         : isBeeStun

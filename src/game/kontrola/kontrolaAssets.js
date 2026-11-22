@@ -120,9 +120,17 @@ const REGULAR_ATTACK_CARD_MAP = {
   'GML': 'REGULAR CARDS/CHYNA GML GOLD.png',
 
   // Bee
+  'STING SLAP PER SLAP': 'REGULAR CARDS/BEE SPPS.png',
   'STING SLAP PER STING': 'REGULAR CARDS/BEE SPPS.png',
+  'STING SLAP': 'REGULAR CARDS/BEE SPPS.png',
+  'BEE SPPS': 'REGULAR CARDS/BEE SPPS.png',
+  'SSPS': 'REGULAR CARDS/BEE SPPS.png',
   'PAPARAZZI STUN': 'REGULAR CARDS/BEE PAP STUN.png',
+  'PARARAZZI STUN': 'REGULAR CARDS/BEE PAP STUN.png',
+  'PAP STUN': 'REGULAR CARDS/BEE PAP STUN.png',
+  'PAPS': 'REGULAR CARDS/BEE PAP STUN.png',
   'BEE DRONE BOMB': 'REGULAR CARDS/BEE BDB.png',
+  'BDB': 'REGULAR CARDS/BEE BDB.png',
 
   // Kiko
   'TAIL WHIP PER WHIP': 'REGULAR CARDS/KIKO TWPW GOLD.png',
@@ -135,9 +143,14 @@ const REGULAR_ATTACK_CARD_MAP = {
   'SB300': 'REGULAR CARDS/KIKO SB3000.png',
 
   // Katsumi
+  'SAVAGE PAW PER STRIKE': 'REGULAR CARDS/KAT SPPS GOLD.png',
   'SAVAGE PAWS PER STRIKE': 'REGULAR CARDS/KAT SPPS GOLD.png',
+  'SAVAGE PAW': 'REGULAR CARDS/KAT SPPS GOLD.png',
+  'KAT SPPS': 'REGULAR CARDS/KAT SPPS GOLD.png',
   'SHADOW PURR': 'REGULAR CARDS/KAT SHADOW PURR.png',
+  'SP': 'REGULAR CARDS/KAT SHADOW PURR.png',
   'CLAW OF FATE': 'REGULAR CARDS/KAT COF.png',
+  'COF': 'REGULAR CARDS/KAT COF.png',
 
   // Poochi
   'GLITTER SPARKS PER SPARK': 'REGULAR CARDS/POOCHI GSPS.png',
@@ -195,6 +208,14 @@ export const getCardGraphicUrl = (cardName, characterId = null) => {
   }
 
   // Check if it's a character combat move
+  const charKey = (characterId || '').toLowerCase();
+  if (cleanName === 'SPPS') {
+    if (charKey.includes('kat')) {
+      return `${getBaseUrl()}Kontrolla_Data/Graphics/REGULAR CARDS/KAT SPPS GOLD.png`;
+    }
+    return `${getBaseUrl()}Kontrolla_Data/Graphics/REGULAR CARDS/BEE SPPS.png`;
+  }
+
   if (REGULAR_ATTACK_CARD_MAP[cleanName]) {
     return `${getBaseUrl()}Kontrolla_Data/Graphics/${REGULAR_ATTACK_CARD_MAP[cleanName]}`;
   }
