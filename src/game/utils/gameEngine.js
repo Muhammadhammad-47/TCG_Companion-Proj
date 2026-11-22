@@ -414,11 +414,12 @@ export function resolveDiceCombat({
   // Official LIGHTNING, SLEEP & STUN Functionality (activated if and only if attack is successful):
   // LIGHTNING X1: On successful attack, defendant receives -10 HP and attacker receives another turn (1 extra turn).
   // LIGHTNING X2: On successful attack, defendant receives -20 HP and attacker receives 2 extra turns.
-  // Kat's Shadow Purr: On successful attack, defendant receives Sleep X1 (loses 1 turn) and attacker heals +20 HP.
-  // Bee's Pararazzi Stun: On successful attack, defendant receives Sleep X1 (loses 1 turn).
+  // Kat's Shadow Purr: On successful attack, defendant receives Sleep X1 (You are Asleep - loses 1 turn) and attacker heals +20 HP.
+  // Bee's Pararazzi Stun: On successful attack, defendant receives Freeze / loses 1 turn (You are frozen).
   // If attack is not successful, none of these status effects activate.
   let extraTurnsGranted = 0;
   let sleepTurns = 0;
+  let isFrozenEffect = false;
 
   if (clashWon) {
     const cardName = (actionCard?.name || '').toUpperCase();
@@ -430,19 +431,26 @@ export function resolveDiceCombat({
       extraTurnsGranted = 1;
     } else if (actionCard?.name === 'TIME MACHINE') {
       extraTurnsGranted = 1;
+    } else if (cardName.includes('FREEZE X2')) {
+      sleepTurns = 2;
+      isFrozenEffect = true;
+    } else if (cardName.includes('FREEZE X1') || cardName.includes('FREEZE')) {
+      sleepTurns = 1;
+      isFrozenEffect = true;
     } else if (cardName.includes('SLEEPY X2')) {
       sleepTurns = 2;
     } else if (cardName.includes('SLEEPY X1')) {
       sleepTurns = 1;
     }
 
-    // Kat's Shadow Purr (Semi Common): Sleep X1 on defendant if successful
+    // Kat's Shadow Purr (Semi Common): Sleep X1 on defendant if successful (You are Asleep)
     if (moveName.includes('SHADOW PURR') || characterMove?.appliesSleep) {
       sleepTurns = 1;
     }
-    // Bee's Pararazzi Stun (Semi Common): Sleep X1 / loses 1 turn on defendant if successful
-    else if (moveName.includes('PARARAZZI') || moveName.includes('PAPARAZZI') || characterMove?.loseTurn) {
+    // Bee's Pararazzi Stun (Semi Common): Freeze / loses 1 turn on defendant if successful (You are frozen)
+    else if (moveName.includes('PARARAZZI') || moveName.includes('PAPARAZZI') || characterMove?.loseTurn || characterMove?.appliesFreeze) {
       sleepTurns = 1;
+      isFrozenEffect = true;
     }
   }
 
@@ -453,6 +461,7 @@ export function resolveDiceCombat({
 
   return {
     isTie: false,
+    isFrozen: isFrozenEffect,
     attackerDice: attackerRoll,
     defenderDice: [],
     attackerDiceSum: attackerRoll.reduce((a, b) => a + b, 0),

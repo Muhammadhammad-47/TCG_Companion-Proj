@@ -960,10 +960,10 @@ export default function BattleArena({
       const isKatPurr = moveNameUpper.includes('SHADOW PURR');
       const isBeeStun = moveNameUpper.includes('PARARAZZI') || moveNameUpper.includes('PAPARAZZI');
       const actionDesc = isKatPurr
-        ? `😻 SHADOW PURR: Successful attack! ${defender.name} suffers Sleep X1 (loses 1 turn)!`
+        ? `😻 SHADOW PURR: Successful attack! ${defender.name}: You are Asleep (suffers Sleep X1, loses 1 turn)!`
         : isBeeStun
-        ? `📸 PARARAZZI STUN: Successful attack! ${defender.name} loses 1 turn (Sleep X1)!`
-        : `${defender.name} was put to sleep by ${characterMove?.name || 'attack'} (Sleep X1: loses 1 turn)!`;
+        ? `📸 PAPARAZZI STUN: Successful attack! ${defender.name}: You are frozen (loses 1 turn)!`
+        : `${defender.name}: You are Asleep (loses 1 turn)!`;
 
       newLogs.push({
         turn: turnNum,

@@ -280,24 +280,27 @@ export default function KontrolaArena() {
     const isNewTurnOrPhase = prev.turn === null || prev.turn !== currentTurn || prev.turnNumber !== currentTurnNum || prev.pendingAttackX2For !== currentAttackX2;
 
     if (isNewTurnOrPhase) {
-      // 1. Sleep Skip Announcement
-      const isSleepSkip = latestLog.includes('is asleep and skips');
+      // 1. Sleep / Frozen Skip Announcement
+      const isFrozenSkip = latestLog.includes('is frozen and skips') || latestLog.includes('You are frozen') || activeChar?.isFrozen;
+      const isSleepSkip = !isFrozenSkip && (latestLog.includes('is asleep and skips') || latestLog.includes('You are Asleep') || activeChar?.sleepTurns > 0);
 
-      // 2. Attack X2 Second Strike Announcement
-      const isSecondStrike = Boolean(currentAttackX2 && currentAttackX2 === currentTurn);
-
-      // 3. Extra Turn Announcement (Turn stays on same player when turnNumber increments, or log explicitly says extra turn)
-      const isExtraTurn = (prev.turn !== null && prev.turn === currentTurn && currentTurnNum > (prev.turnNumber || 0)) ||
-        latestLog.includes('Extra turn activated') ||
-        latestLog.includes('receives another turn') ||
-        latestLog.includes('extra turn');
-
-      if (isSleepSkip) {
+      if (isFrozenSkip) {
         setTurnBanner({
-          badge: '💤 TURN SKIPPED',
-          text: `${actorName.toUpperCase()} IS ASLEEP!`,
-          sub: latestLog,
-          detail: 'Status affliction skipped turn',
+          badge: '❄️ YOU ARE FROZEN',
+          text: isMyTurn ? 'YOU ARE FROZEN!' : `${actorName.toUpperCase()} IS FROZEN!`,
+          sub: latestLog || (isMyTurn ? 'You are frozen and skip your turn!' : `${actorName} is frozen and skips their turn!`),
+          detail: 'Frozen status skipped turn',
+          isMe: isMyTurn,
+          isFrozenSkip: true,
+          color: '#38bdf8'
+        });
+        try { soundFX.playIceShatter?.(); } catch { }
+      } else if (isSleepSkip) {
+        setTurnBanner({
+          badge: '💤 YOU ARE ASLEEP',
+          text: isMyTurn ? 'YOU ARE ASLEEP!' : `${actorName.toUpperCase()} IS ASLEEP!`,
+          sub: latestLog || (isMyTurn ? 'You are asleep and skip your turn!' : `${actorName} is asleep and skips their turn!`),
+          detail: 'Sleep status skipped turn',
           isMe: isMyTurn,
           isSleepSkip: true,
           color: '#a855f7'
@@ -1413,7 +1416,12 @@ export default function KontrolaArena() {
             spawnStatPopup(`🔥 Burn Inflicted`, 'burn');
           }
           if (sleepDelta > 0) {
-            spawnStatPopup(`💤 Put to Sleep`, 'sleep');
+            const isFreezeAction = actionName && (actionName.toUpperCase().includes('FREEZE') || actionName.toUpperCase().includes('PAPARAZZI') || actionName.toUpperCase().includes('PARARAZZI'));
+            if (isFreezeAction) {
+              spawnStatPopup(targetName === myCharacter?.name ? `❄️ You are frozen` : `❄️ ${targetName}: You are frozen`, 'freeze');
+            } else {
+              spawnStatPopup(targetName === myCharacter?.name ? `💤 You are Asleep` : `💤 ${targetName}: You are Asleep`, 'sleep');
+            }
           }
 
           // Visual shake + contextual sound effects + damage number popup
@@ -3038,19 +3046,30 @@ export default function KontrolaArena() {
           nextTurnPlayerId = livingPlayers[nextIdx] || livingPlayers[0];
         }
 
-        // Check if next player is Asleep (Sleepy X1 / X2 / Lightning X1/X2)
-        // Process each sleeping player sequentially, decrementing sleep counter and advancing turn
+        // Check if next player is Frozen or Asleep (Freeze X1 / X2 / Bee Paparazzi Stun vs Sleepy X1 / X2 / Kat Shadow Purr)
+        // Process each incapacitated player sequentially, decrementing turn counter and advancing turn
         let checkedSleepCount = 0;
-        while (updatedStates[nextTurnPlayerId]?.sleepTurns > 0 && checkedSleepCount < livingPlayers.length) {
+        while ((updatedStates[nextTurnPlayerId]?.sleepTurns > 0 || updatedStates[nextTurnPlayerId]?.freezeTurns > 0 || updatedStates[nextTurnPlayerId]?.isFrozen) && checkedSleepCount < livingPlayers.length) {
           const sleepingChar = updatedStates[nextTurnPlayerId];
-          sleepingChar.sleepTurns = Math.max(0, sleepingChar.sleepTurns - 1);
-          turnLogs.unshift(`💤 ${sleepingChar.name} is asleep and skips their turn! (${sleepingChar.sleepTurns} turn(s) remaining)`);
+          const isFrozenPlayer = Boolean(sleepingChar.isFrozen || sleepingChar.freezeTurns > 0);
 
-          // Apply poison damage tick during skipped turn so poison continues to damage sleeping targets
+          if (isFrozenPlayer) {
+            sleepingChar.freezeTurns = Math.max(0, (sleepingChar.freezeTurns || sleepingChar.sleepTurns || 1) - 1);
+            sleepingChar.sleepTurns = Math.max(0, (sleepingChar.sleepTurns || 1) - 1);
+            if (sleepingChar.freezeTurns === 0 && sleepingChar.sleepTurns === 0) {
+              sleepingChar.isFrozen = false;
+            }
+            turnLogs.unshift(`❄️ ${sleepingChar.name}: You are frozen and skip your turn! (${sleepingChar.freezeTurns || sleepingChar.sleepTurns} turn(s) remaining)`);
+          } else {
+            sleepingChar.sleepTurns = Math.max(0, sleepingChar.sleepTurns - 1);
+            turnLogs.unshift(`💤 ${sleepingChar.name}: You are Asleep and skip your turn! (${sleepingChar.sleepTurns} turn(s) remaining)`);
+          }
+
+          // Apply poison damage tick during skipped turn so poison continues to damage incapacitated targets
           if (sleepingChar.poisonCount > 0 && !sleepingChar.isDefeated) {
             const pDmg = sleepingChar.poisonCount * 10;
             sleepingChar.hp = Math.max(0, sleepingChar.hp - pDmg);
-            turnLogs.unshift(`☠️ ${sleepingChar.name} suffered -${pDmg} Poison ongoing damage while asleep (continues until treated with Antidote)! HP: ${sleepingChar.hp}`);
+            turnLogs.unshift(`☠️ ${sleepingChar.name} suffered -${pDmg} Poison ongoing damage while incapacitated (continues until treated with Antidote)! HP: ${sleepingChar.hp}`);
             if (sleepingChar.hp <= 0) {
               sleepingChar.isDefeated = true;
               turnLogs.unshift(`💀 ${sleepingChar.name} succumbed to Poison and was eliminated!`);
@@ -3061,7 +3080,7 @@ export default function KontrolaArena() {
           if (typeof sleepingChar.burnCount === 'number' && sleepingChar.burnCount > 0 && !sleepingChar.isDefeated) {
             const bDmg = sleepingChar.burnCount * 10;
             sleepingChar.hp = Math.max(0, sleepingChar.hp - bDmg);
-            turnLogs.unshift(`🔥 ${sleepingChar.name} suffered ${bDmg} Burn damage while asleep! HP: ${sleepingChar.hp}`);
+            turnLogs.unshift(`🔥 ${sleepingChar.name} suffered ${bDmg} Burn damage while incapacitated! HP: ${sleepingChar.hp}`);
             if (sleepingChar.hp <= 0) {
               sleepingChar.isDefeated = true;
               turnLogs.unshift(`💀 ${sleepingChar.name} was incinerated by Burn damage and eliminated!`);
@@ -6493,18 +6512,18 @@ export default function KontrolaArena() {
                       <span className="effect-count" style={{ color: '#ff4d00' }}>{myCharacter.burnCount}</span>
                     </div>
                   )}
-                  {(myCharacter?.sleepTurns > 0 || myCharacter?.isStunned) && (
+                  {(myCharacter?.sleepTurns > 0 || myCharacter?.isStunned) && !myCharacter?.isFrozen && (
                     <div className="effect-chip effect-lightning">
                       <Zap size={15} color="#ffe600" />
-                      <span className="effect-name" style={{ color: '#ffe600' }}>Lightning Stun</span>
+                      <span className="effect-name" style={{ color: '#ffe600' }}>You are Asleep</span>
                       <span className="effect-count" style={{ color: '#ffe600' }}>{myCharacter?.sleepTurns || 1}t</span>
                     </div>
                   )}
                   {myCharacter?.isFrozen && (
                     <div className="effect-chip effect-freeze">
                       <span style={{ fontSize: '15px' }}>❄️</span>
-                      <span className="effect-name" style={{ color: '#a5f3fc' }}>Freeze</span>
-                      <span className="effect-count" style={{ color: '#a5f3fc' }}>1t</span>
+                      <span className="effect-name" style={{ color: '#a5f3fc' }}>You are frozen</span>
+                      <span className="effect-count" style={{ color: '#a5f3fc' }}>{myCharacter?.freezeTurns || myCharacter?.sleepTurns || 1}t</span>
                     </div>
                   )}
                   {typeof myCharacter?.vampireStealTurnsLeft === 'number' && myCharacter.vampireStealTurnsLeft > 0 && (

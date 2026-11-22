@@ -52,8 +52,8 @@ export const KONTROLA_CHARACTERS = {
     image: 'Kontrolla_Data/Graphics/WILD CARDS/BEE WILD CARD GOLD.png',
     attacks: {
       'STING SLAP PER STING': { ap: 3, dice: 1, element: 'Lightning', costET: 1, rarity: 'Common', desc: 'Common Move. Roll 1 Die × 3 AP Sting damage.' },
-      'PARARAZZI STUN': { ap: 25, dice: 0, element: 'Sonic', costET: 1, loseTurn: true, appliesSleep: true, rarity: 'Semi Common', desc: 'Semi Common Move. 25 AP strike. If and only if the attack is successful, defendant loses one turn (Sleep X1).' },
-      'PAPARAZZI STUN': { ap: 25, dice: 0, element: 'Sonic', costET: 1, loseTurn: true, appliesSleep: true, rarity: 'Semi Common', desc: 'Semi Common Move. 25 AP strike. If and only if the attack is successful, defendant loses one turn (Sleep X1).' },
+      'PARARAZZI STUN': { ap: 25, dice: 0, element: 'Sonic', costET: 1, loseTurn: true, appliesFreeze: true, rarity: 'Semi Common', desc: 'Semi Common Move. 25 AP strike. If and only if the attack is successful, defendant is frozen (You are frozen - loses 1 turn).' },
+      'PAPARAZZI STUN': { ap: 25, dice: 0, element: 'Sonic', costET: 1, loseTurn: true, appliesFreeze: true, rarity: 'Semi Common', desc: 'Semi Common Move. 25 AP strike. If and only if the attack is successful, defendant is frozen (You are frozen - loses 1 turn).' },
       'BEE DRONE BOMB': { ap: 40, dice: 0, element: 'Lightning', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move. Super Drone Bomb dealing 40 AP.' },
       'WILD CARD': {
         isWild: true,
@@ -115,7 +115,7 @@ export const KONTROLA_CHARACTERS = {
     image: 'Kontrolla_Data/Graphics/WILD CARDS/KAT WILD CARD GOLD.png',
     attacks: {
       'SAVAGE PAWS PER STRIKE': { ap: 5, dice: 1, element: 'Physical', costET: 1, rarity: 'Common', desc: 'Common Move. Roll 1 Die × 5 AP Paw strikes.' },
-      'SHADOW PURR': { ap: 30, dice: 0, element: 'Shadow', costET: 1, healsAttacker: 20, appliesSleep: true, rarity: 'Semi Common', desc: 'Semi Common Move. Stealth shadow strike dealing 30 AP. Restores +20 HP to attacker. If and only if the attack is successful, inflicts Sleep X1 on defendant (loses 1 turn).' },
+      'SHADOW PURR': { ap: 30, dice: 0, element: 'Shadow', costET: 1, healsAttacker: 20, appliesSleep: true, rarity: 'Semi Common', desc: 'Semi Common Move. Stealth shadow strike dealing 30 AP. Restores +20 HP to attacker. If and only if the attack is successful, inflicts Sleep X1 on defendant (You are Asleep - loses 1 turn).' },
       'CLAW OF FATE': { ap: 45, dice: 0, element: 'Physical', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move. Critical fatal slash dealing 45 AP.' },
       'WILD CARD': {
         isWild: true,
@@ -492,9 +492,9 @@ export const ACTION_CARDS_BASIC = [
   { name: 'MISDIRECT', type: 'ATTACK', count: 6, costET: 1, desc: 'Redirect an opponent attack.' },
   { name: 'POISON X2', type: 'STATUS', count: 6, costET: 0, desc: 'Initial damage: -20 HP from Poison X2 (-30 HP against characters with Poison weakness: CHYNAMAN, Kiko, Poochi, Kat, Bee with -10 HP one-time weakness penalty). Ongoing damage: -20 HP per turn until treated with an Antidote Card. Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card.' },
   { name: 'REVIVE', type: 'HEAL', count: 6, costET: 0, desc: 'Used only when defeated. Note asks to quit or continue. If continue, card is discarded, replacement Action card re-appears, and character returns with 50% original HP.' },
-  { name: 'SLEEPY X1', type: 'OTHERS', count: 6, costET: 0, desc: 'Target falls asleep and skips 1 turn.' },
+  { name: 'SLEEPY X1', type: 'OTHERS', count: 6, costET: 0, desc: 'Target falls asleep and skips 1 turn (You are Asleep).' },
   { name: 'VISION X1', type: 'OTHERS', count: 6, costET: 0, desc: 'Target reveals Action Cards for 15s.' },
-  { name: 'FREEZE X1', type: 'STATUS', count: 6, costET: 0, desc: 'Target loses 1 turn and -2 dice penalty.' },
+  { name: 'FREEZE X1', type: 'STATUS', count: 6, costET: 0, desc: 'Target loses 1 turn and receives -2 dice penalty (You are frozen).' },
   { name: 'VITALITY GAIN V20', type: 'HEAL', count: 6, costET: 0, minLevel: 2, desc: '+20 HP or level up to Level 2 (Requires Level 2).' },
   { name: 'X-CHANGE X1', type: 'OTHERS', count: 6, costET: 0, desc: 'Exchange 1 Action Card with an opponent.' },
   { name: 'DEFENCE - COUNTER', type: 'DEFENSE', count: 1, costET: 0, desc: '0% damage taken, reflect 25% back.' },
@@ -515,13 +515,13 @@ export const ACTION_CARDS_PREMIUM = [
   { name: 'DEFENCE FULL GUARD', type: 'DEFENSE', count: 4, costET: 0, desc: 'High defense barrier.' },
   { name: 'DODGE - COUNTER', type: 'DEFENSE', count: 3, costET: 0, desc: 'Dodge and immediately counter-attack.' },
   { name: 'FIRE FLAME X2', type: 'ATTACK', count: 3, costET: 1, desc: 'On successful attack, deals -20 HP and burns opponent (-20 HP each turn until doubles are rolled) (1 ET).' },
-  { name: 'FREEZE X2', type: 'STATUS', count: 4, costET: 0, desc: 'Target loses 2 turns and receives -4 on dice roll.' },
+  { name: 'FREEZE X2', type: 'STATUS', count: 4, costET: 0, desc: 'Target loses 2 turns and receives -4 on dice roll (You are frozen).' },
   { name: 'VISION FULL', type: 'OTHERS', count: 3, costET: 0, desc: 'All players reveal Action Cards for 30s.' },
   { name: 'BACK STAB', type: 'ATTACK', count: 4, costET: 1, desc: 'Surprise rear assault.' },
   { name: 'SHIELD FIRE + 50HP', type: 'DEFENSE', count: 2, costET: 0, desc: '+50 Shield; immune to Fire damage.' },
   { name: 'SHIELD SACRED PROTECTION', type: 'DEFENSE', count: 2, costET: 0, desc: 'Sacred barrier absorbing damage.' },
   { name: 'SHIELD ADVANCE +100HP', type: 'DEFENSE', count: 1, costET: 0, desc: '+100 Advanced Shield barrier.' },
-  { name: 'SLEEPY X2', type: 'OTHERS', count: 3, costET: 0, desc: 'Target sleeps for 2 turns.' },
+  { name: 'SLEEPY X2', type: 'OTHERS', count: 3, costET: 0, desc: 'Target sleeps for 2 turns (You are Asleep).' },
   { name: 'VAMPIRE LIFE STEAL', type: 'OTHERS', count: 1, costET: 1, desc: 'Steals 1 ET and 10 HP for 3 turns.' },
   { name: 'DRAIN', type: 'ATTACK', count: 2, costET: 1, desc: 'Steals all opponent Energy Tokens.' },
   { name: 'VITALITY GAIN V30', type: 'HEAL', count: 2, costET: 0, desc: '+30 HP vitality surge.' },
@@ -1378,14 +1378,16 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     if (isShadowPurr && atkWin && newDefenderState) {
       newAttackerState.hp = Math.min(newAttackerState.maxHp || 100, newAttackerState.hp + 20);
       newDefenderState.sleepTurns = (newDefenderState.sleepTurns || 0) + 1;
-      log += ` 😻 SHADOW PURR! ${newAttackerState.name} restored +20 HP and ${newDefenderState.name} suffers Sleep X1 (loses 1 turn)!`;
+      log += ` 😻 SHADOW PURR! ${newAttackerState.name} restored +20 HP and ${newDefenderState.name}: You are Asleep (suffers Sleep X1, loses 1 turn)!`;
     }
 
-    // Bee's Pararazzi Stun: Defender loses 1 turn / Sleep X1 (if and only if attack is successful)
+    // Bee's Pararazzi Stun: Defender is frozen (loses 1 turn, if and only if attack is successful)
     const isPararazziStun = attackSelectionName && (attackSelectionName.toUpperCase().includes('PARARAZZI') || attackSelectionName.toUpperCase().includes('PAPARAZZI'));
     if (isPararazziStun && atkWin && newDefenderState && !isShadowPurr) {
       newDefenderState.sleepTurns = (newDefenderState.sleepTurns || 0) + 1;
-      log += ` 📸 PARARAZZI STUN! ${newDefenderState.name} suffers Sleep X1 and loses their next turn!`;
+      newDefenderState.isFrozen = true;
+      newDefenderState.freezeTurns = (newDefenderState.freezeTurns || 0) + 1;
+      log += ` 📸 PAPARAZZI STUN! ${newDefenderState.name}: You are frozen (loses their next turn)!`;
     }
   }
   // 4. POISON CARDS (Official Rules: Initial damage: -10 HP from Poison X1 or -20 HP from Poison X2. Additional weakness penalty: -10 HP one-time on characters with Poison weakness: CHYNAMAN, Kiko, Poochi, Kat, Bee. Ongoing damage: -10 HP/turn on Poison X1 and -20 HP/turn on Poison X2 until treated with an Antidote Card. Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card.)
@@ -1588,16 +1590,19 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   }
   // 9. SLEEPY & FREEZE CARDS
   else if (cardName.includes('SLEEPY') || cardName.includes('FREEZE')) {
+    const isFreeze = cardName.includes('FREEZE');
     const sleepRounds = cardName.includes('X2') ? 2 : 1;
-    const dicePenalty = cardName.includes('FREEZE') ? (cardName.includes('X2') ? 4 : 2) : 0;
+    const dicePenalty = isFreeze ? (cardName.includes('X2') ? 4 : 2) : 0;
 
     if (newDefenderState) {
       newDefenderState.sleepTurns = (newDefenderState.sleepTurns || 0) + sleepRounds;
-      if (dicePenalty > 0) {
+      if (isFreeze) {
+        newDefenderState.isFrozen = true;
+        newDefenderState.freezeTurns = (newDefenderState.freezeTurns || 0) + sleepRounds;
         newDefenderState.dicePenalty = (newDefenderState.dicePenalty || 0) + dicePenalty;
-        log += ` ❄️ ${cardName}! ${newDefenderState.name} loses ${sleepRounds} turn(s) and receives -${dicePenalty} on dice roll!`;
+        log += ` ❄️ ${cardName}! ${newDefenderState.name}: You are frozen (loses ${sleepRounds} turn(s) and receives -${dicePenalty} on dice roll)!`;
       } else {
-        log += ` 💤 ${cardName}! ${newDefenderState.name} falls asleep and loses ${sleepRounds} turn(s)!`;
+        log += ` 💤 ${cardName}! ${newDefenderState.name}: You are Asleep (falls asleep and loses ${sleepRounds} turn(s))!`;
       }
     }
   }

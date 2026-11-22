@@ -140,8 +140,8 @@ export const CHARACTERS = {
         costET: 1,
         rarity: 'Semi Common',
         loseTurn: true,
-        appliesSleep: true,
-        desc: 'Semi Common Move. 25 AP damage. If and only if the attack is successful, the defendant loses one turn (Sleep X1).'
+        appliesFreeze: true,
+        desc: 'Semi Common Move. 25 AP damage. If and only if the attack is successful, the defendant loses one turn (You are frozen).'
       },
       {
         id: 'b_bomb',
@@ -232,7 +232,7 @@ export const CHARACTERS = {
         rarity: 'Semi Common',
         healsAttacker: 20,
         appliesSleep: true,
-        desc: 'Semi Common Move. Stealth shadow strike dealing 30 AP. Heals attacker for 20 HP. If and only if the attack is successful, inflicts Sleep X1 on the defendant (loses 1 turn).'
+        desc: 'Semi Common Move. Stealth shadow strike dealing 30 AP. Heals attacker for 20 HP. If and only if the attack is successful, inflicts Sleep X1 on the defendant (You are Asleep - loses 1 turn).'
       },
       {
         id: 'k_fate',
