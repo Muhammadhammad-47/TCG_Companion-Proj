@@ -121,9 +121,9 @@ export default function CardVFXWrapper({
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Floor Summoning Sigil Stamp */}
+      {/* Floor Summoning Sigil Stamp (Disabled: Removed circular busy VFX per design feedback) */}
       {showSigil && (
-        <span className="summoning-sigil-stamp" />
+        null
       )}
 
       {/* Layer 1: Corner Star Flares (All 4 Corners) */}

@@ -655,8 +655,9 @@
   will-change: transform;
 }
 
-/* Floor Summoning Sigil Eruption */
+/* Floor Summoning Sigil Eruption (Disabled per design feedback - too busy inside card) */
 .summoning-sigil-stamp {
+  display: none !important;
   position: absolute;
   width: 140px;
   height: 140px;

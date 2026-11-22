@@ -903,8 +903,8 @@ export default function KontrolaDiceRoller({
             isFlashing={phase === 'resolved'}
             isClashing={isAttackerRolling || isDefenderRolling}
             enable3DTilt={true}
-            showSigil={true}
-            hasFlare={true}
+            showSigil={false}
+            hasFlare={false}
             style={{
               width: '200px',
               height: '280px',
