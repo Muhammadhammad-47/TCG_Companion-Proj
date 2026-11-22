@@ -583,7 +583,6 @@ export default function KontrolaDiceRoller({
             if (refs.isAttacker || refs.isHost) {
               if (refs.isTie) refs.handleReRoll();
               else if (refs.hasRolledMultiplier === false) refs.handleRollMultiplierDie();
-              else if (attackerDoubleOnes || defenderDoubleOnes || attackerFateCard || defenderFateCard || showRerollOption) { /* Wait for player to choose re-roll */ }
               else if (typeof refs.handleFinishCombat === 'function') refs.handleFinishCombat();
             }
           }

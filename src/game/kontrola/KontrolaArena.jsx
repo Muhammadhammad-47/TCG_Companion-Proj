@@ -806,12 +806,21 @@ export default function KontrolaArena() {
   useEffect(() => {
     let timer;
     if (gameState?.activeDefenseState) {
+      setIsProcessingAction(false); // Instantly free any pending action lock so defender can interact
       setDefenseSeconds(15);
       timer = setInterval(() => {
         setDefenseSeconds((prev) => {
           if (prev <= 1) {
             clearInterval(timer);
-            if (gameState.activeDefenseState.targetId === playerIdRef.current) {
+            // Host is authoritative: auto-resolve defense to prevent game freeze if defender is AFK or disconnected
+            if (isHostRef.current) {
+              enqueueHostAction({
+                actionType: 'DEFENSE_SELECTED',
+                actorId: gameState.activeDefenseState.targetId,
+                defenseCard: null,
+                combatId: gameState.activeDefenseState.combatId
+              });
+            } else if (gameState.activeDefenseState.targetId === playerIdRef.current) {
               handleDefenseSelect(null);
             }
             return 0;
@@ -824,16 +833,15 @@ export default function KontrolaArena() {
   }, [gameState?.activeDefenseState]);
 
   const handleDefenseSelect = (card) => {
-    if (isProcessingAction) return;
     setIsProcessingAction(true);
     playClick();
 
     console.log('[handleDefenseSelect] Defense card selected:', card?.name || 'SKIP');
 
-    const payload = { actionType: 'DEFENSE_SELECTED', defenseCard: card };
+    const payload = { actionType: 'DEFENSE_SELECTED', defenseCard: card, combatId: gameState.activeDefenseState?.combatId };
     if (isHostRef.current) enqueueHostAction(payload);
     else takeTurn(matchIdRef.current, { type: 'PLAYER_ACTION', payload });
-    setTimeout(() => setIsProcessingAction(false), 2500);
+    setTimeout(() => setIsProcessingAction(false), 600);
   };
 
 
@@ -1291,9 +1299,10 @@ export default function KontrolaArena() {
         // 8. Synchronized Dice Screen Close
         else if (event.type === 'DICE_SCREEN_CLOSE') {
           const { resolved, combatData, precalculatedRolls, senderId } = event.payload || {};
-          const cId = combatData?.combatId || (combatData?.actorId + '_' + combatData?.targetId + '_' + (combatData?.actionCard?.id || combatData?.actionCard?.name || 'combat'));
+          const cId = combatData?.combatId || ('combat_' + Date.now() + '_' + (combatData?.actorId || 'actor') + '_' + (combatData?.targetId || 'target'));
           setActiveCombat(null);
           setIsDiceRollingSync(false);
+          setIsProcessingAction(false);
           // If the event was broadcast by this client (host), it was already handled locally - DO NOT re-enqueue
           if (senderId && senderId === playerIdRef.current) {
             return;
@@ -1735,7 +1744,7 @@ export default function KontrolaArena() {
       // from the original ATTACK_DECLARED spread � no special handling needed here.
       // IMPORTANT: do NOT add an early return inside this block or combat resolution will be skipped.
       if (payload.actionType === 'RESOLVE_COMBAT') {
-        const combatId = payload.combatId || (payload.actorId + '_' + payload.targetId + '_' + (payload.actionCard?.id || payload.actionCard?.name || 'combat'));
+        const combatId = payload.combatId || ('combat_' + Date.now() + '_' + payload.actorId + '_' + payload.targetId + '_' + (payload.actionCard?.id || payload.actionCard?.name || 'combat'));
         if (combatId && executedCombatIdsRef.current.has(combatId)) {
           console.warn('[RESOLVE_COMBAT] Skipping duplicate combat resolution for ID:', combatId);
           return currentState;
@@ -3192,6 +3201,7 @@ export default function KontrolaArena() {
       };
 
       broadcastState(matchIdRef.current, nextState);
+      setIsProcessingAction(false); // Instantly unlock host actions
       if (matchWinner) {
         setWinner(matchWinner);
         soundFX.init();
@@ -3591,7 +3601,7 @@ export default function KontrolaArena() {
     } else {
       takeTurn(matchId, { type: 'PLAYER_ACTION', payload });
     }
-    setTimeout(() => setIsProcessingAction(false), 2500);
+    setTimeout(() => setIsProcessingAction(false), 600);
     setSelectedActionCard(null);
     setSelectedCharacterAttack(null);
     setSelectedWildMoveChoice(null);
@@ -3815,8 +3825,10 @@ export default function KontrolaArena() {
           return;
         }
 
+        const uniqueCombatId = `combat_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
         const clashData = {
           ...payload,
+          combatId: uniqueCombatId,
           actionType: 'ATTACK_DECLARED',
           attacker: myCharacter,
           defender: targetChar,
@@ -3846,7 +3858,7 @@ export default function KontrolaArena() {
     }
 
     setIsProcessingAction(true);
-    setTimeout(() => setIsProcessingAction(false), 2500); // Wait for SYNC_STATE
+    setTimeout(() => setIsProcessingAction(false), 600); // Fast release to avoid freezing buttons
 
     setSelectedActionCard(null);
     setSelectedCharacterAttack(null);
@@ -3891,7 +3903,7 @@ export default function KontrolaArena() {
       ...(activeCombat?.precalculatedRolls || {}),
       ...(finalRolls || {})
     };
-    const cId = activeCombat?.combatId || (activeCombat?.actorId + '_' + activeCombat?.targetId + '_' + (activeCombat?.actionCard?.id || activeCombat?.actionCard?.name || 'combat'));
+    const cId = activeCombat?.combatId || ('combat_' + Date.now() + '_' + (activeCombat?.actorId || 'actor') + '_' + (activeCombat?.targetId || 'target'));
     await broadcastUIEvent(matchId, 'dice_screen_close', {
       resolved,
       combatData: activeCombat ? { ...activeCombat, combatId: cId } : null,
@@ -3900,6 +3912,7 @@ export default function KontrolaArena() {
     });
     setActiveCombat(null);
     setIsDiceRollingSync(false);
+    setIsProcessingAction(false);
     if (resolved && isHost && activeCombat) {
       if (cId && enqueuedCombatIdsRef.current.has(cId)) {
         console.warn('[handleCloseDiceScreen] Combat already enqueued for ID:', cId);
