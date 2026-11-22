@@ -943,6 +943,11 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       baseAP = cardName.includes('X2') ? 20 : 10;
       attackElement = 'Lightning';
       log += ` [${cardName}: Elemental Lightning strike dealing ${baseAP} AP]`;
+    } else if (cardName.includes('POISON')) {
+      const isX2 = cardName.includes('X2');
+      baseAP = isX2 ? 20 : 10;
+      attackElement = 'Poison';
+      log += ` [${cardName}: Elemental Poison strike dealing ${baseAP} AP]`;
     } else if (cardName.includes('BACK STAB')) {
       baseAP = 35;
       attackElement = 'Shadow';
@@ -1415,9 +1420,10 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     const ongoingTurnDmg = isX2 ? 20 : 10;
     if (newDefenderState) {
       newDefenderState.poisonCount = (newDefenderState.poisonCount || 0) + stacks;
+      newDefenderState.justPoisoned = true; // Mark target as just infected so ongoing damage begins on subsequent turn
       const defCharKey = (newDefenderState.characterId || newDefenderState.id || newDefenderState.name || '').toLowerCase();
       const defWeakness = (newDefenderState.weakness || '').toLowerCase();
-      const hasPoisonWeakness = defWeakness.includes('poison') || ['chynaman', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k));
+      const hasPoisonWeakness = defWeakness.includes('poison') || ['chynaman', 'kiko', 'poochi', 'kat', 'katsumi', 'bee', 'queeny'].some(k => defCharKey.includes(k));
       const weaknessPenalty = hasPoisonWeakness ? (newDefenderState.weaknessBonus || 10) : 0;
       const totalInitialDamage = initialDamage + weaknessPenalty;
       newDefenderState.hp = Math.max(0, newDefenderState.hp - totalInitialDamage);

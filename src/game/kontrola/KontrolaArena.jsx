@@ -2516,6 +2516,7 @@ export default function KontrolaArena() {
           actorName: char?.name,
           logText: `🎴 ${char.name} unlocked Character Card Moves deck!`
         });
+        pendingStateRef.current = nextState;
         broadcastState(matchIdRef.current, nextState);
         return nextState;
       }
@@ -2536,6 +2537,7 @@ export default function KontrolaArena() {
           activeDefenseState: { ...payload, combatId, expiresAt: Date.now() + 15000 },
           logs: [`?? ${payload.attackerPlayerName} is attacking ${payload.defenderPlayerName}! Waiting for defender to prepare...`, ...(currentState.logs || [])]
         };
+        pendingStateRef.current = nextState;
         broadcastState(matchIdRef.current, nextState);
         return nextState;
       }
@@ -2683,6 +2685,7 @@ export default function KontrolaArena() {
             logs: tieLogs,
             // keep characterStates untouched � ET cost not applied on tie
           };
+          pendingStateRef.current = tieState;
           broadcastState(matchIdRef.current, tieState);
           return tieState;
         }
@@ -3067,12 +3070,16 @@ export default function KontrolaArena() {
 
           // Apply poison damage tick during skipped turn so poison continues to damage incapacitated targets
           if (sleepingChar.poisonCount > 0 && !sleepingChar.isDefeated) {
-            const pDmg = sleepingChar.poisonCount * 10;
-            sleepingChar.hp = Math.max(0, sleepingChar.hp - pDmg);
-            turnLogs.unshift(`☠️ ${sleepingChar.name} suffered -${pDmg} Poison ongoing damage while incapacitated (continues until treated with Antidote)! HP: ${sleepingChar.hp}`);
-            if (sleepingChar.hp <= 0) {
-              sleepingChar.isDefeated = true;
-              turnLogs.unshift(`💀 ${sleepingChar.name} succumbed to Poison and was eliminated!`);
+            if (sleepingChar.justPoisoned) {
+              sleepingChar.justPoisoned = false; // Initial hit already applied; ongoing damage begins on subsequent turn
+            } else {
+              const pDmg = sleepingChar.poisonCount * 10;
+              sleepingChar.hp = Math.max(0, sleepingChar.hp - pDmg);
+              turnLogs.unshift(`☠️ ${sleepingChar.name} suffered -${pDmg} Poison ongoing damage while incapacitated (continues until treated with Antidote)! HP: ${sleepingChar.hp}`);
+              if (sleepingChar.hp <= 0) {
+                sleepingChar.isDefeated = true;
+                turnLogs.unshift(`💀 ${sleepingChar.name} succumbed to Poison and was eliminated!`);
+              }
             }
           }
 
@@ -3104,18 +3111,24 @@ export default function KontrolaArena() {
         // Check Poison damage tick on the player starting their turn (-10 HP per turn on Poison X1, -20 HP per turn on Poison X2 until treated with an Antidote Card)
         const incomingChar = updatedStates[nextTurnPlayerId];
         if (incomingChar && incomingChar.poisonCount > 0 && !incomingChar.isDefeated) {
-          const poisonDmg = incomingChar.poisonCount * 10;
-          incomingChar.hp = Math.max(0, incomingChar.hp - poisonDmg);
-          turnLogs.unshift(`☠️ ${incomingChar.name} suffered -${poisonDmg} Poison ongoing damage (${incomingChar.poisonCount} stack${incomingChar.poisonCount > 1 ? 's' : ''}, continues until treated with Antidote)! HP: ${incomingChar.hp}`);
-          if (incomingChar.hp <= 0) {
-            incomingChar.isDefeated = true;
-            turnLogs.unshift(`💀 ${incomingChar.name} succumbed to Poison and was eliminated!`);
-            const remainingLiving = currentState.players.filter((pId) => !updatedStates[pId]?.isDefeated);
-            if (remainingLiving.length === 1) {
-              matchWinner = updatedStates[remainingLiving[0]] ? { ...updatedStates[remainingLiving[0]], playerId: remainingLiving[0] } : null;
+          if (incomingChar.justPoisoned) {
+            // Target was just infected this round; initial hit (-20 HP) was already applied.
+            // Consume the flag so ongoing damage starts on their subsequent turn.
+            incomingChar.justPoisoned = false;
+          } else {
+            const poisonDmg = incomingChar.poisonCount * 10;
+            incomingChar.hp = Math.max(0, incomingChar.hp - poisonDmg);
+            turnLogs.unshift(`☠️ ${incomingChar.name} suffered -${poisonDmg} Poison ongoing damage (${incomingChar.poisonCount} stack${incomingChar.poisonCount > 1 ? 's' : ''}, continues until treated with Antidote)! HP: ${incomingChar.hp}`);
+            if (incomingChar.hp <= 0) {
+              incomingChar.isDefeated = true;
+              turnLogs.unshift(`💀 ${incomingChar.name} succumbed to Poison and was eliminated!`);
+              const remainingLiving = currentState.players.filter((pId) => !updatedStates[pId]?.isDefeated);
+              if (remainingLiving.length === 1) {
+                matchWinner = updatedStates[remainingLiving[0]] ? { ...updatedStates[remainingLiving[0]], playerId: remainingLiving[0] } : null;
+              }
+              const dIdx = livingPlayers.indexOf(nextTurnPlayerId);
+              nextTurnPlayerId = livingPlayers[(dIdx + 1) % livingPlayers.length];
             }
-            const dIdx = livingPlayers.indexOf(nextTurnPlayerId);
-            nextTurnPlayerId = livingPlayers[(dIdx + 1) % livingPlayers.length];
           }
         }
 
@@ -3220,6 +3233,7 @@ export default function KontrolaArena() {
         winner: matchWinner
       };
 
+      pendingStateRef.current = nextState;
       broadcastState(matchIdRef.current, nextState);
       setIsProcessingAction(false); // Instantly unlock host actions
       if (matchWinner) {

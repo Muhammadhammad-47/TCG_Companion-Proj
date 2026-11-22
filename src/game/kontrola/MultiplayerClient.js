@@ -44,13 +44,13 @@ const safeSubscribe = (channel, onStatus = null) => {
 };
 
 // Reliable broadcast sender that waits for channel connection and handles retries
-const safeSend = async (channel, message, maxWaitMs = 3500) => {
+const safeSend = async (channel, message, maxWaitMs = 1200) => {
   if (!channel) return false;
   
   if (channel.state === 'joining') {
     const start = Date.now();
     while (channel.state === 'joining' && Date.now() - start < maxWaitMs) {
-      await new Promise((r) => setTimeout(r, 80));
+      await new Promise((r) => setTimeout(r, 60));
     }
   }
 
@@ -58,7 +58,7 @@ const safeSend = async (channel, message, maxWaitMs = 3500) => {
     safeSubscribe(channel);
     const start = Date.now();
     while (channel.state !== 'joined' && Date.now() - start < maxWaitMs) {
-      await new Promise((r) => setTimeout(r, 80));
+      await new Promise((r) => setTimeout(r, 60));
     }
   }
 
@@ -80,11 +80,15 @@ const safeSend = async (channel, message, maxWaitMs = 3500) => {
 export const broadcastState = async (matchId, state) => {
   if (!supabase || !channels[matchId]) return;
   
-  await safeSend(channels[matchId], {
-    type: 'broadcast',
-    event: 'sync_state',
-    payload: state
-  });
+  try {
+    await safeSend(channels[matchId], {
+      type: 'broadcast',
+      event: 'sync_state',
+      payload: state
+    });
+  } catch (err) {
+    console.warn('[Supabase] broadcastState caught error:', err);
+  }
 };
 
 export const createMatch = async (matchId, hostId, characterId = 'chynaman') => {

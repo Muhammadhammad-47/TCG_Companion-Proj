@@ -343,6 +343,8 @@ export default function KontrolaDiceRoller({
       baseAP = cardNameUpper.includes('X2') ? 20 : 10;
     } else if (cardNameUpper.includes('FIRE FLAME')) {
       baseAP = cardNameUpper.includes('X2') ? 20 : 10;
+    } else if (cardNameUpper.includes('POISON')) {
+      baseAP = cardNameUpper.includes('X2') ? 20 : 10;
     } else if (cardNameUpper.includes('BACK STAB')) {
       baseAP = 35;
     } else if (hasMultiplierDie) {
@@ -358,7 +360,7 @@ export default function KontrolaDiceRoller({
     const isFireWeakness = isZombieDef || defWeakness.includes('fire') || ['shroomy'].some(k => defCharKey.includes(k));
     const isLightningWeakness = isZombieDef || defWeakness.includes('lightning') || defWeakness.includes('lighting');
     const isMagicWeakness = defWeakness.includes('magic') || defWeakness.includes('psychic') || defWeakness.includes('music') || ['queeny'].some(k => defCharKey.includes(k));
-    const attackElem = selectedAttackInfo?.element || (cardNameUpper.includes('FIRE') ? 'Fire' : (cardNameUpper.includes('LIGHTNING') || cardNameUpper.includes('LIGHTING')) ? 'Lightning' : 'Physical');
+    const attackElem = selectedAttackInfo?.element || (cardNameUpper.includes('FIRE') ? 'Fire' : (cardNameUpper.includes('LIGHTNING') || cardNameUpper.includes('LIGHTING')) ? 'Lightning' : cardNameUpper.includes('POISON') ? 'Poison' : 'Physical');
     const isPoppers = attackNameUpper.includes('POPPERS') || (attackElem && attackElem.includes('Magic and Poison'));
     const isInitialAttack = !cardNameUpper.includes('2ND HIT') && !cardNameUpper.includes('SECOND HIT');
 

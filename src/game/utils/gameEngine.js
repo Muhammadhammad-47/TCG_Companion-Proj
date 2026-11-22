@@ -585,14 +585,18 @@ export function advanceTurn(state) {
 
       // Poison damage at start of turn (-10 HP per poison card/stack until treated with an Antidote Card)
       if (!updated.isZombie && updated.poisonCards > 0) {
-        const poisonDmg = updated.poisonCards * 10;
-        updated.hp = Math.max(0, updated.hp - poisonDmg);
-        updated.stats.damageTaken += poisonDmg;
-        updated.turnLogs = updated.turnLogs || [];
-        updated.turnLogs.unshift(`☠️ ${updated.name} suffered -${poisonDmg} Poison ongoing damage (${updated.poisonCards} Poison card(s))! Ongoing damage continues until treated with an Antidote Card. HP: ${updated.hp}`);
-        if (updated.hp <= 0) {
-          updated.isDefeated = true;
-          updated.turnLogs.unshift(`💀 ${updated.name} succumbed to Poison damage and was eliminated!`);
+        if (updated.justPoisoned) {
+          updated.justPoisoned = false; // Initial hit already applied; ongoing damage begins on subsequent turn
+        } else {
+          const poisonDmg = updated.poisonCards * 10;
+          updated.hp = Math.max(0, updated.hp - poisonDmg);
+          updated.stats.damageTaken += poisonDmg;
+          updated.turnLogs = updated.turnLogs || [];
+          updated.turnLogs.unshift(`☠️ ${updated.name} suffered -${poisonDmg} Poison ongoing damage (${updated.poisonCards} Poison card(s))! Ongoing damage continues until treated with an Antidote Card. HP: ${updated.hp}`);
+          if (updated.hp <= 0) {
+            updated.isDefeated = true;
+            updated.turnLogs.unshift(`💀 ${updated.name} succumbed to Poison damage and was eliminated!`);
+          }
         }
       }
       // Note: Active player's Fire Flame Burn is resolved interactively via the pre-turn Extinguish Modal
@@ -606,14 +610,18 @@ export function advanceTurn(state) {
       }
       // Sleeping / stunned players suffer poison ongoing damage tick during skipped turn
       if (!updated.isZombie && updated.poisonCards > 0) {
-        const poisonDmg = updated.poisonCards * 10;
-        updated.hp = Math.max(0, updated.hp - poisonDmg);
-        updated.stats.damageTaken += poisonDmg;
-        updated.turnLogs = updated.turnLogs || [];
-        updated.turnLogs.unshift(`☠️ ${updated.name} suffered -${poisonDmg} Poison ongoing damage while asleep/stunned! HP: ${updated.hp}`);
-        if (updated.hp <= 0) {
-          updated.isDefeated = true;
-          updated.turnLogs.unshift(`💀 ${updated.name} succumbed to Poison damage while asleep/stunned and was eliminated!`);
+        if (updated.justPoisoned) {
+          updated.justPoisoned = false;
+        } else {
+          const poisonDmg = updated.poisonCards * 10;
+          updated.hp = Math.max(0, updated.hp - poisonDmg);
+          updated.stats.damageTaken += poisonDmg;
+          updated.turnLogs = updated.turnLogs || [];
+          updated.turnLogs.unshift(`☠️ ${updated.name} suffered -${poisonDmg} Poison ongoing damage while asleep/stunned! HP: ${updated.hp}`);
+          if (updated.hp <= 0) {
+            updated.isDefeated = true;
+            updated.turnLogs.unshift(`💀 ${updated.name} succumbed to Poison damage while asleep/stunned and was eliminated!`);
+          }
         }
       }
       // Sleeping / stunned players suffer burn tick during skipped turn
