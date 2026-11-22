@@ -567,7 +567,7 @@ export const CHARACTERS = {
     mindAtkBonus: 2, // Psychic master: +2 to Kontrol attack roll!
     defaultDP: 10,
     retreatTarget: 4,
-    weakness: { type: 'Fire', bonusAP: 10, icon: '🔥' },
+    weakness: { type: 'Music and Poison', bonusAP: 10, icon: '🎤☠️' },
     traits: ['Psychic Kontrol Specialist (+2 Roll)', 'Siren Wave Attacks'],
     signatureMove: 'Rainbow Fan Blast',
     signatureDesc: '40 AP prism storm assault.',

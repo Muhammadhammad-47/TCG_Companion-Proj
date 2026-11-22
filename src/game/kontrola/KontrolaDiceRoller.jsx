@@ -354,22 +354,23 @@ export default function KontrolaDiceRoller({
     const defCharKey = (defChar.id || defChar.name || '').toLowerCase();
     const defWeakness = (defChar.weakness || '').toLowerCase();
     const isZombieDef = Boolean(defChar.isZombie || (defChar.poisonCount >= 5) || (defChar.poisonCards >= 5));
-    const isPoisonWeakness = !isZombieDef && (defWeakness.includes('poison') || ['chynaman', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k)));
-    const isFireWeakness = isZombieDef || defWeakness.includes('fire') || ['shroomy', 'queeny'].some(k => defCharKey.includes(k));
-    const isLightningWeakness = isZombieDef || defWeakness.includes('lightning');
-    const isMagicWeakness = defWeakness.includes('magic') || defWeakness.includes('psychic') || ['queeny'].some(k => defCharKey.includes(k));
-    const attackElem = selectedAttackInfo?.element || (cardNameUpper.includes('FIRE') ? 'Fire' : cardNameUpper.includes('LIGHTNING') ? 'Lightning' : 'Physical');
+    const isPoisonWeakness = !isZombieDef && (defWeakness.includes('poison') || ['chynaman', 'kiko', 'poochi', 'kat', 'katsumi', 'bee', 'queeny'].some(k => defCharKey.includes(k)));
+    const isFireWeakness = isZombieDef || defWeakness.includes('fire') || ['shroomy'].some(k => defCharKey.includes(k));
+    const isLightningWeakness = isZombieDef || defWeakness.includes('lightning') || defWeakness.includes('lighting');
+    const isMagicWeakness = defWeakness.includes('magic') || defWeakness.includes('psychic') || defWeakness.includes('music') || ['queeny'].some(k => defCharKey.includes(k));
+    const attackElem = selectedAttackInfo?.element || (cardNameUpper.includes('FIRE') ? 'Fire' : (cardNameUpper.includes('LIGHTNING') || cardNameUpper.includes('LIGHTING')) ? 'Lightning' : 'Physical');
     const isPoppers = attackNameUpper.includes('POPPERS') || (attackElem && attackElem.includes('Magic and Poison'));
+    const isInitialAttack = !cardNameUpper.includes('2ND HIT') && !cardNameUpper.includes('SECOND HIT');
 
     let weaknessBonus = 0;
     let weaknessTriggered = false;
     let weaknessLabel = '';
-    if (!defChar.flyerNoWeakness) {
+    if (!defChar.flyerNoWeakness && isInitialAttack) {
       if (isPoppers && (isPoisonWeakness || isMagicWeakness)) {
         weaknessTriggered = true;
         weaknessBonus = 10;
         weaknessLabel = 'POPPERS PER POP WEAKNESS (+10 AP)';
-      } else if (isZombieDef && (attackElem.toLowerCase().includes('fire') || attackElem.toLowerCase().includes('lightning'))) {
+      } else if (isZombieDef && (attackElem.toLowerCase().includes('fire') || attackElem.toLowerCase().includes('lightning') || attackElem.toLowerCase().includes('lighting'))) {
         weaknessTriggered = true;
         weaknessBonus = 10;
         weaknessLabel = `ZOMBIE ${attackElem.toUpperCase()} WEAKNESS (+10 AP)`;
@@ -377,7 +378,7 @@ export default function KontrolaDiceRoller({
         weaknessTriggered = true;
         weaknessBonus = 10;
         weaknessLabel = 'FIRE WEAKNESS (+10 AP)';
-      } else if (attackElem.toLowerCase() === 'lightning' && isLightningWeakness) {
+      } else if ((attackElem.toLowerCase() === 'lightning' || attackElem.toLowerCase() === 'lighting') && isLightningWeakness) {
         weaknessTriggered = true;
         weaknessBonus = 10;
         weaknessLabel = 'LIGHTNING WEAKNESS (+10 AP)';

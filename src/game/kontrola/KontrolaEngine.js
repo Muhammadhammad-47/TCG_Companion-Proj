@@ -169,7 +169,7 @@ export const KONTROLA_CHARACTERS = {
     reserveUnlocked: false,
     mind: 2,
     element: 'Psychic',
-    weakness: 'Fire',
+    weakness: 'Music and Poison',
     weaknessBonus: 10,
     innateDP: 10,
     retreatSpeed: 4,
@@ -742,6 +742,22 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   const isAttackerZombie = Boolean(newAttackerState.isZombie || attackerChar?.isZombie || attackerState?.isZombie || (newAttackerState.poisonCount >= 5) || (newAttackerState.poisonCards >= 5) || (attackerState?.poisonCards >= 5));
   const isDefenderZombie = Boolean(newDefenderState?.isZombie || defenderChar?.isZombie || defenderState?.isZombie || (newDefenderState?.poisonCount >= 5) || (newDefenderState?.poisonCards >= 5) || (defenderState?.poisonCards >= 5));
 
+  // Initialize Zombie weakness to Lightning and Fire if character is in Zombie state
+  if (isDefenderZombie && newDefenderState) {
+    newDefenderState.isZombie = true;
+    if (newDefenderState.weakness !== 'Lightning and Fire') {
+      if (!newDefenderState.preZombieWeakness) newDefenderState.preZombieWeakness = newDefenderState.weakness;
+      newDefenderState.weakness = 'Lightning and Fire';
+    }
+  }
+  if (isAttackerZombie && newAttackerState) {
+    newAttackerState.isZombie = true;
+    if (newAttackerState.weakness !== 'Lightning and Fire') {
+      if (!newAttackerState.preZombieWeakness) newAttackerState.preZombieWeakness = newAttackerState.weakness;
+      newAttackerState.weakness = 'Lightning and Fire';
+    }
+  }
+
   const selectedMoveUpper = (attackSelectionName || '').toUpperCase();
   const isKontrolMove = cardName.includes('KONTROL') || selectedMoveUpper.includes('KONTROL');
   const isBlitzMove = cardName.includes('BLITZ') || selectedMoveUpper.includes('BLITZ');
@@ -1173,14 +1189,15 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         const isInitialAttack = !cardName.includes('2ND HIT');
 
         const isFireAtk = (attackElement && attackElement.toLowerCase().includes('fire')) || cardName.includes('FIRE');
-        const isLightningAtk = (attackElement && attackElement.toLowerCase().includes('lightning')) || cardName.includes('LIGHTNING');
+        const isLightningAtk = (attackElement && (attackElement.toLowerCase().includes('lightning') || attackElement.toLowerCase().includes('lighting'))) || cardName.includes('LIGHTNING') || cardName.includes('LIGHTING');
         const isPoisonAtk = (attackElement && attackElement.toLowerCase().includes('poison')) || cardName.includes('POISON');
         const isPoppersPerPop = (attackSelectionName || '').toUpperCase().includes('POPPERS') || (attackElement && attackElement.includes('Magic and Poison'));
+        const isInitialAttack = !cardName.includes('2ND HIT') && !cardName.includes('SECOND HIT');
 
-        const hasPoisonWeakness = !isZombieDef && (defWeakness.includes('poison') || ['chynaman', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k)));
-        const hasFireWeakness = isZombieDef || defWeakness.includes('fire') || ['shroomy', 'queeny'].some(k => defCharKey.includes(k));
-        const hasLightningWeakness = isZombieDef || defWeakness.includes('lightning');
-        const hasMagicWeakness = defWeakness.includes('magic') || defWeakness.includes('psychic') || ['queeny'].some(k => defCharKey.includes(k));
+        const hasPoisonWeakness = !isZombieDef && (defWeakness.includes('poison') || ['chynaman', 'kiko', 'poochi', 'kat', 'katsumi', 'bee', 'queeny'].some(k => defCharKey.includes(k)));
+        const hasFireWeakness = isZombieDef || defWeakness.includes('fire') || ['shroomy'].some(k => defCharKey.includes(k));
+        const hasLightningWeakness = isZombieDef || defWeakness.includes('lightning') || defWeakness.includes('lighting');
+        const hasMagicWeakness = defWeakness.includes('magic') || defWeakness.includes('psychic') || defWeakness.includes('music') || ['queeny'].some(k => defCharKey.includes(k));
 
         let weaknessBonus = 0;
         let weaknessReason = '';
@@ -1740,7 +1757,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   }
 
   // Zombie State Transition Check
-  if (newDefenderState && newDefenderState.poisonCount >= 5 && !isDefenderZombie) {
+  if (newDefenderState && (newDefenderState.poisonCount >= 5 || newDefenderState.poisonCards >= 5) && !newDefenderState.isZombie) {
     newDefenderState.preZombieHp = newDefenderState.hp;
     newDefenderState.hp = 40;
     newDefenderState.isZombie = true;
@@ -1748,7 +1765,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     newDefenderState.weakness = 'Lightning and Fire';
     log += ` ⚠️ ${newDefenderState.name} reached 5 Poison cards and TRANSFORMED INTO A ZOMBIE (40 HP)! Gained Lightning and Fire weakness (-10 HP on initial attacks)!`;
   }
-  if (newAttackerState.poisonCount >= 5 && !isAttackerZombie) {
+  if (newAttackerState && (newAttackerState.poisonCount >= 5 || newAttackerState.poisonCards >= 5) && !newAttackerState.isZombie) {
     newAttackerState.preZombieHp = newAttackerState.hp;
     newAttackerState.hp = 40;
     newAttackerState.isZombie = true;

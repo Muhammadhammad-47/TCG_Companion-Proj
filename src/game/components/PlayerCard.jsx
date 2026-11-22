@@ -203,6 +203,9 @@ export default function PlayerCard({
             <div className="status-tag zombie-status" title="Immune to Kontrol · +10 HP regen">
               🧟 ZOMBIE · {player.poisonCards >= 8 ? '40' : player.poisonCards >= 6 ? '20' : '10'} HP
             </div>
+            <div className="status-tag weak-tag" style={{ border: '1px solid #ff4d00', color: '#ffaa00' }} title="Weak to Lightning and Fire (-10 HP on initial attacks)">
+              ⚡🔥 Lightning & Fire +10
+            </div>
             {player.poisonCards >= 8 && (
               <div className="status-tag fury-tag" title="Venom Strike +10 AP">
                 🔥 FURY +10
@@ -214,8 +217,8 @@ export default function PlayerCard({
             <div className="status-tag dp-tag" title="Defence on a 6+ roll">
               <Shield size={12} /> -{char.defaultDP} · 6+
             </div>
-            <div className="status-tag weak-tag" title={`Weak to ${char.weakness.type}`}>
-              {char.weakness.icon} {char.weakness.type} +{char.weakness.bonusAP}
+            <div className="status-tag weak-tag" title={`Weak to ${char.weakness?.type || char.weakness}`}>
+              {char.weakness?.icon || '🎯'} {char.weakness?.type || char.weakness} +{char.weakness?.bonusAP || 10}
             </div>
           </>
         )}
