@@ -296,6 +296,10 @@ export const bugReportService = {
 export function setupGlobalErrorHandlers(userId, username) {
   console.log('[bugReportService] Setting up global error handlers for:', { userId, username });
   
+  let lastReportedMessage = '';
+  let lastReportedTime = 0;
+  const DEDUPE_WINDOW_MS = 15000; // Ignore duplicate reports within 15 seconds
+
   // Capture unhandled errors
   window.addEventListener('error', (event) => {
     console.error('[Global Error Handler] Caught error:', event.error);
@@ -306,11 +310,28 @@ export function setupGlobalErrorHandlers(userId, username) {
       colno: event.colno
     });
 
+    const errorMsg = event.message || 'Unhandled error';
+
+    // React 18 error #520 is a concurrent render fallback recovery notification, not the root cause
+    if (errorMsg.includes('Minified React error #520')) {
+      console.warn('[bugReportService] Suppressing duplicate React concurrent render recovery notice (#520)');
+      return;
+    }
+
+    // Deduplicate rapid duplicate crash reports
+    const now = Date.now();
+    if (errorMsg === lastReportedMessage && (now - lastReportedTime) < DEDUPE_WINDOW_MS) {
+      console.warn('[bugReportService] Suppressing duplicate bug report within debounce window:', errorMsg);
+      return;
+    }
+    lastReportedMessage = errorMsg;
+    lastReportedTime = now;
+
     bugReportService.submitBugReport({
       userId,
       username,
       errorType: 'crash',
-      errorMessage: event.message || 'Unhandled error',
+      errorMessage: errorMsg,
       errorStack: event.error?.stack,
       pageUrl: window.location.href,
       userAgent: navigator.userAgent
@@ -326,11 +347,21 @@ export function setupGlobalErrorHandlers(userId, username) {
     console.error('[Global Promise Rejection]', event.reason);
     console.log('[Global Promise Rejection] Event details:', { reason: event.reason });
 
+    const errorMsg = `Promise rejection: ${event.reason?.message || event.reason}`;
+
+    const now = Date.now();
+    if (errorMsg === lastReportedMessage && (now - lastReportedTime) < DEDUPE_WINDOW_MS) {
+      console.warn('[bugReportService] Suppressing duplicate unhandled rejection within debounce window:', errorMsg);
+      return;
+    }
+    lastReportedMessage = errorMsg;
+    lastReportedTime = now;
+
     bugReportService.submitBugReport({
       userId,
       username,
       errorType: 'crash',
-      errorMessage: `Promise rejection: ${event.reason?.message || event.reason}`,
+      errorMessage: errorMsg,
       errorStack: event.reason?.stack,
       pageUrl: window.location.href,
       userAgent: navigator.userAgent

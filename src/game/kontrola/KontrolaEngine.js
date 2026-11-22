@@ -1232,7 +1232,10 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       // Official Rule: Shroomy "Poppers per Pop" is a Magic and Poison attack; triggers -10 HP initial weakness if defender has Poison OR Magic weakness.
       if (newDefenderState && !newDefenderState.flyerNoWeakness) {
         const defCharKey = (newDefenderState.characterId || newDefenderState.id || newDefenderState.name || '').toLowerCase();
-        const defWeakness = (newDefenderState.weakness || '').toLowerCase();
+        const rawWeakness = typeof newDefenderState.weakness === 'string'
+          ? newDefenderState.weakness
+          : (newDefenderState.weakness?.type || '');
+        const defWeakness = rawWeakness.toLowerCase();
         const isZombieDef = Boolean(isDefenderZombie || newDefenderState.isZombie || (newDefenderState.poisonCount >= 5) || (newDefenderState.poisonCards >= 5));
         const isInitialAttack = !cardName.includes('2ND HIT') && !cardName.includes('SECOND HIT');
 
@@ -1274,7 +1277,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         } else if (isMagicAtk && hasMagicWeakness && isInitialAttack) {
           weaknessBonus = 10;
           weaknessReason = ` ✨ [MAGIC WEAKNESS] ${newDefenderState.name} has Magic weakness! Additional -10 HP weakness penalty applied!`;
-        } else if (attackElement && newDefenderState.weakness && newDefenderState.weakness.toLowerCase().includes(attackElement.toLowerCase()) && isInitialAttack) {
+        } else if (attackElement && defWeakness && defWeakness.includes(attackElement.toLowerCase()) && isInitialAttack) {
           weaknessBonus = 10;
           weaknessReason = ` 🎯 [WEAKNESS TRIGGER] ${newDefenderState.name} has ${attackElement} weakness! +10 AP bonus applied!`;
         }
@@ -1318,7 +1321,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         const currentHP = Number(newDefenderState.hp) || 0;
         newDefenderState.hp = Math.max(0, currentHP - finalDamage);
         log += ` Attack lands! ${newDefenderState.name} takes ${finalDamage} damage (Base: ${baseAP} AP` +
-          (newDefenderState.weakness && attackElement && newDefenderState.weakness.toLowerCase().includes(attackElement.toLowerCase()) ? ` + Weakness` : '') + `).`;
+          (defWeakness && attackElement && defWeakness.includes(attackElement.toLowerCase()) ? ` + Weakness` : '') + `).`;
 
         // If Zombie is hit by Fire or Lightning -> removes 1 poison card
         let zombiePoisonCleansed = false;
@@ -1477,7 +1480,10 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       newDefenderState.poisonCount = (newDefenderState.poisonCount || 0) + stacks;
       newDefenderState.justPoisoned = true; // Mark target as just infected so ongoing damage begins on subsequent turn
       const defCharKey = (newDefenderState.characterId || newDefenderState.id || newDefenderState.name || '').toLowerCase();
-      const defWeakness = (newDefenderState.weakness || '').toLowerCase();
+      const rawWeakness = typeof newDefenderState.weakness === 'string'
+        ? newDefenderState.weakness
+        : (newDefenderState.weakness?.type || '');
+      const defWeakness = rawWeakness.toLowerCase();
       const hasPoisonWeakness = defWeakness.includes('poison') || ['chynaman', 'chyna', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k));
       const weaknessPenalty = hasPoisonWeakness ? (newDefenderState.weaknessBonus || 10) : 0;
       const totalInitialDamage = initialDamage + weaknessPenalty;

@@ -337,89 +337,97 @@ export default function KontrolaDiceRoller({
 
   // Real-time authoritative preview of combat math & score calculation
   const previewMath = (() => {
-    if (!atkWon) return null;
-    let baseAP = 15;
-    const cardNameUpper = (resolvedCardName || '').toUpperCase();
-    if (cardNameUpper.includes('LIGHTNING')) {
-      baseAP = cardNameUpper.includes('X2') ? 20 : 10;
-    } else if (cardNameUpper.includes('FIRE FLAME')) {
-      baseAP = cardNameUpper.includes('X2') ? 20 : 10;
-    } else if (cardNameUpper.includes('POISON')) {
-      baseAP = cardNameUpper.includes('X2') ? 20 : 10;
-    } else if (cardNameUpper.includes('BACK STAB')) {
-      baseAP = 35;
-    } else if (hasMultiplierDie) {
-      baseAP = (multiplierDie || 1) * perAp;
-    } else if (selectedAttackInfo?.ap || selectedAttackInfo?.baseAP) {
-      baseAP = Number(selectedAttackInfo.ap || selectedAttackInfo.baseAP);
-    }
-
-    const defCharKey = (defChar.id || defChar.name || '').toLowerCase();
-    const defWeakness = (defChar.weakness || '').toLowerCase();
-    const isZombieDef = Boolean(defChar.isZombie || (defChar.poisonCount >= 5) || (defChar.poisonCards >= 5));
-    const isPoisonWeakness = !isZombieDef && (defWeakness.includes('poison') || ['chynaman', 'chyna', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k)));
-    const isFireWeakness = isZombieDef || defWeakness.includes('fire') || ['shroomy', 'queeny'].some(k => defCharKey.includes(k));
-    const isLightningWeakness = isZombieDef || defWeakness.includes('lightning') || defWeakness.includes('lighting');
-    const isMagicWeakness = defWeakness.includes('magic') || ['chynaman', 'chyna', 'bee', 'poochi', 'queeny'].some(k => defCharKey.includes(k));
-    const attackElem = selectedAttackInfo?.element || (cardNameUpper.includes('FIRE') ? 'Fire' : (cardNameUpper.includes('LIGHTNING') || cardNameUpper.includes('LIGHTING')) ? 'Lightning' : cardNameUpper.includes('POISON') ? 'Poison' : 'Physical');
-    const isMagicAndPoisonAtk = (attackElem && (attackElem.includes('&') || attackElem.toLowerCase().includes('and')) && attackElem.toLowerCase().includes('magic') && attackElem.toLowerCase().includes('poison')) || 
-      attackNameUpper.includes('POPPERS') || 
-      attackNameUpper.includes('BOMBA') || 
-      attackNameUpper.includes('SNATCHER');
-    const isInitialAttack = !cardNameUpper.includes('2ND HIT') && !cardNameUpper.includes('SECOND HIT');
-
-    let weaknessBonus = 0;
-    let weaknessTriggered = false;
-    let weaknessLabel = '';
-    if (!defChar.flyerNoWeakness && isInitialAttack) {
-      if (isMagicAndPoisonAtk && (isPoisonWeakness || isMagicWeakness)) {
-        weaknessTriggered = true;
-        weaknessBonus = 10;
-        weaknessLabel = 'MAGIC & POISON WEAKNESS (+10 AP)';
-      } else if (isZombieDef && (attackElem.toLowerCase().includes('fire') || attackElem.toLowerCase().includes('lightning') || attackElem.toLowerCase().includes('lighting'))) {
-        weaknessTriggered = true;
-        weaknessBonus = 10;
-        weaknessLabel = `ZOMBIE ${attackElem.toUpperCase()} WEAKNESS (+10 AP)`;
-      } else if (attackElem.toLowerCase() === 'fire' && isFireWeakness) {
-        weaknessTriggered = true;
-        weaknessBonus = 10;
-        weaknessLabel = 'FIRE WEAKNESS (+10 AP)';
-      } else if ((attackElem.toLowerCase() === 'lightning' || attackElem.toLowerCase() === 'lighting') && isLightningWeakness) {
-        weaknessTriggered = true;
-        weaknessBonus = 10;
-        weaknessLabel = 'LIGHTNING WEAKNESS (+10 AP)';
-      } else if (attackElem.toLowerCase() === 'magic' && isMagicWeakness) {
-        weaknessTriggered = true;
-        weaknessBonus = 10;
-        weaknessLabel = 'MAGIC WEAKNESS (+10 AP)';
-      } else if ((attackElem.toLowerCase() === 'poison' || (atkChar?.poisonCount >= 5) || (atkChar?.isZombie)) && isPoisonWeakness) {
-        weaknessTriggered = true;
-        weaknessBonus = 10;
-        weaknessLabel = (atkChar?.poisonCount >= 5 || atkChar?.isZombie) ? 'ZOMBIE POISON WEAKNESS (+10 AP)' : 'POISON WEAKNESS (+10 AP)';
+    try {
+      if (!atkWon || !defChar) return null;
+      let baseAP = 15;
+      const cardNameUpper = (resolvedCardName || '').toUpperCase();
+      if (cardNameUpper.includes('LIGHTNING')) {
+        baseAP = cardNameUpper.includes('X2') ? 20 : 10;
+      } else if (cardNameUpper.includes('FIRE FLAME')) {
+        baseAP = cardNameUpper.includes('X2') ? 20 : 10;
+      } else if (cardNameUpper.includes('POISON')) {
+        baseAP = cardNameUpper.includes('X2') ? 20 : 10;
+      } else if (cardNameUpper.includes('BACK STAB')) {
+        baseAP = 35;
+      } else if (hasMultiplierDie) {
+        baseAP = (multiplierDie || 1) * perAp;
+      } else if (selectedAttackInfo?.ap || selectedAttackInfo?.baseAP) {
+        baseAP = Number(selectedAttackInfo.ap || selectedAttackInfo.baseAP);
       }
+
+      const defCharKey = (defChar?.id || defChar?.name || '').toLowerCase();
+      const rawWeakness = typeof defChar?.weakness === 'string'
+        ? defChar.weakness
+        : (defChar?.weakness?.type || '');
+      const defWeakness = rawWeakness.toLowerCase();
+      const isZombieDef = Boolean(defChar?.isZombie || (defChar?.poisonCount >= 5) || (defChar?.poisonCards >= 5));
+      const isPoisonWeakness = !isZombieDef && (defWeakness.includes('poison') || ['chynaman', 'chyna', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k)));
+      const isFireWeakness = isZombieDef || defWeakness.includes('fire') || ['shroomy', 'queeny'].some(k => defCharKey.includes(k));
+      const isLightningWeakness = isZombieDef || defWeakness.includes('lightning') || defWeakness.includes('lighting');
+      const isMagicWeakness = defWeakness.includes('magic') || ['chynaman', 'chyna', 'bee', 'poochi', 'queeny'].some(k => defCharKey.includes(k));
+      const attackElem = selectedAttackInfo?.element || (cardNameUpper.includes('FIRE') ? 'Fire' : (cardNameUpper.includes('LIGHTNING') || cardNameUpper.includes('LIGHTING')) ? 'Lightning' : cardNameUpper.includes('POISON') ? 'Poison' : 'Physical');
+      const isMagicAndPoisonAtk = (attackElem && (attackElem.includes('&') || attackElem.toLowerCase().includes('and')) && attackElem.toLowerCase().includes('magic') && attackElem.toLowerCase().includes('poison')) || 
+        attackNameUpper.includes('POPPERS') || 
+        attackNameUpper.includes('BOMBA') || 
+        attackNameUpper.includes('SNATCHER');
+      const isInitialAttack = !cardNameUpper.includes('2ND HIT') && !cardNameUpper.includes('SECOND HIT');
+
+      let weaknessBonus = 0;
+      let weaknessTriggered = false;
+      let weaknessLabel = '';
+      if (!defChar?.flyerNoWeakness && isInitialAttack) {
+        if (isMagicAndPoisonAtk && (isPoisonWeakness || isMagicWeakness)) {
+          weaknessTriggered = true;
+          weaknessBonus = 10;
+          weaknessLabel = 'MAGIC & POISON WEAKNESS (+10 AP)';
+        } else if (isZombieDef && (attackElem.toLowerCase().includes('fire') || attackElem.toLowerCase().includes('lightning') || attackElem.toLowerCase().includes('lighting'))) {
+          weaknessTriggered = true;
+          weaknessBonus = 10;
+          weaknessLabel = `ZOMBIE ${attackElem.toUpperCase()} WEAKNESS (+10 AP)`;
+        } else if (attackElem.toLowerCase() === 'fire' && isFireWeakness) {
+          weaknessTriggered = true;
+          weaknessBonus = 10;
+          weaknessLabel = 'FIRE WEAKNESS (+10 AP)';
+        } else if ((attackElem.toLowerCase() === 'lightning' || attackElem.toLowerCase() === 'lighting') && isLightningWeakness) {
+          weaknessTriggered = true;
+          weaknessBonus = 10;
+          weaknessLabel = 'LIGHTNING WEAKNESS (+10 AP)';
+        } else if (attackElem.toLowerCase() === 'magic' && isMagicWeakness) {
+          weaknessTriggered = true;
+          weaknessBonus = 10;
+          weaknessLabel = 'MAGIC WEAKNESS (+10 AP)';
+        } else if ((attackElem.toLowerCase() === 'poison' || (atkChar?.poisonCount >= 5) || (atkChar?.isZombie)) && isPoisonWeakness) {
+          weaknessTriggered = true;
+          weaknessBonus = 10;
+          weaknessLabel = (atkChar?.poisonCount >= 5 || atkChar?.isZombie) ? 'ZOMBIE POISON WEAKNESS (+10 AP)' : 'POISON WEAKNESS (+10 AP)';
+        }
+      }
+
+      const totalOffensiveAP = baseAP + weaknessBonus;
+      const defRolled6Plus = defSum >= 6;
+      const innateDP = (defRolled6Plus && !activeDefenseCard) ? 10 : 0;
+      const damageAfterDP = Math.max(0, totalOffensiveAP - innateDP);
+      const currentShield = defChar?.shield || 0;
+      const shieldAbsorbed = Math.min(currentShield, damageAfterDP);
+      const netHPDamage = Math.max(0, damageAfterDP - shieldAbsorbed);
+      const newDefenderHP = Math.max(0, (defChar?.hp ?? 100) - netHPDamage);
+
+      return {
+        baseAP,
+        weaknessTriggered,
+        weaknessBonus,
+        weaknessLabel,
+        totalOffensiveAP,
+        defRolled6Plus,
+        innateDP,
+        shieldAbsorbed,
+        netHPDamage,
+        newDefenderHP
+      };
+    } catch (err) {
+      console.warn('[KontrolaDiceRoller] Error computing previewMath:', err);
+      return null;
     }
-
-    const totalOffensiveAP = baseAP + weaknessBonus;
-    const defRolled6Plus = defSum >= 6;
-    const innateDP = (defRolled6Plus && !activeDefenseCard) ? 10 : 0;
-    const damageAfterDP = Math.max(0, totalOffensiveAP - innateDP);
-    const currentShield = defChar.shield || 0;
-    const shieldAbsorbed = Math.min(currentShield, damageAfterDP);
-    const netHPDamage = Math.max(0, damageAfterDP - shieldAbsorbed);
-    const newDefenderHP = Math.max(0, (defChar.hp || 100) - netHPDamage);
-
-    return {
-      baseAP,
-      weaknessTriggered,
-      weaknessBonus,
-      weaknessLabel,
-      totalOffensiveAP,
-      defRolled6Plus,
-      innateDP,
-      shieldAbsorbed,
-      netHPDamage,
-      newDefenderHP
-    };
   })();
 
   const handleFinishCombat = () => {
@@ -1120,14 +1128,14 @@ export default function KontrolaDiceRoller({
                     }}
                   >
                     <img
-                      src={getCardGraphicUrl(typeof activeDefenseCard === 'string' ? activeDefenseCard : activeDefenseCard.name)}
+                      src={getCardGraphicUrl(typeof activeDefenseCard === 'string' ? activeDefenseCard : (activeDefenseCard?.name || ''))}
                       alt="Defense Card"
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
                   </CardVFXWrapper>
                   <div style={{ fontSize: '0.82rem', fontWeight: 'bold', color: 'var(--neon-cyan)', background: 'rgba(0, 240, 255, 0.12)', border: '1px solid rgba(0, 240, 255, 0.4)', borderRadius: '6px', padding: '3px 8px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                     <Shield size={14} />
-                    <span>DEFENSE: {typeof activeDefenseCard === 'string' ? activeDefenseCard : activeDefenseCard.name}</span>
+                    <span>DEFENSE: {typeof activeDefenseCard === 'string' ? activeDefenseCard : (activeDefenseCard?.name || '')}</span>
                   </div>
                 </div>
               )}
@@ -1449,7 +1457,7 @@ export default function KontrolaDiceRoller({
                       ? '⚔️ DEFENCE - COUNTER: 0% Damage Taken & Reflects 25% Back to Attacker!'
                       : defCardName.includes('BOOMERANG')
                       ? '🪃 BOOMERANG FULL: Reflects 100% Back on Defense Victory & Opponent Skips Turn!'
-                      : `🛡️ DEFENSE CARD: ${typeof activeDefenseCard === 'string' ? activeDefenseCard : activeDefenseCard.name} is active!`}
+                      : `🛡️ DEFENSE CARD: ${typeof activeDefenseCard === 'string' ? activeDefenseCard : (activeDefenseCard?.name || '')} is active!`}
                   </span>
                 </div>
               )}
