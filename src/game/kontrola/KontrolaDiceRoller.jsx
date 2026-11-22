@@ -362,17 +362,20 @@ export default function KontrolaDiceRoller({
     const isLightningWeakness = isZombieDef || defWeakness.includes('lightning') || defWeakness.includes('lighting');
     const isMagicWeakness = defWeakness.includes('magic') || ['chynaman', 'chyna', 'bee', 'poochi', 'queeny'].some(k => defCharKey.includes(k));
     const attackElem = selectedAttackInfo?.element || (cardNameUpper.includes('FIRE') ? 'Fire' : (cardNameUpper.includes('LIGHTNING') || cardNameUpper.includes('LIGHTING')) ? 'Lightning' : cardNameUpper.includes('POISON') ? 'Poison' : 'Physical');
-    const isPoppers = attackNameUpper.includes('POPPERS') || (attackElem && attackElem.includes('Magic and Poison'));
+    const isMagicAndPoisonAtk = (attackElem && (attackElem.includes('&') || attackElem.toLowerCase().includes('and')) && attackElem.toLowerCase().includes('magic') && attackElem.toLowerCase().includes('poison')) || 
+      attackNameUpper.includes('POPPERS') || 
+      attackNameUpper.includes('BOMBA') || 
+      attackNameUpper.includes('SNATCHER');
     const isInitialAttack = !cardNameUpper.includes('2ND HIT') && !cardNameUpper.includes('SECOND HIT');
 
     let weaknessBonus = 0;
     let weaknessTriggered = false;
     let weaknessLabel = '';
     if (!defChar.flyerNoWeakness && isInitialAttack) {
-      if (isPoppers && (isPoisonWeakness || isMagicWeakness)) {
+      if (isMagicAndPoisonAtk && (isPoisonWeakness || isMagicWeakness)) {
         weaknessTriggered = true;
         weaknessBonus = 10;
-        weaknessLabel = 'POPPERS PER POP WEAKNESS (+10 AP)';
+        weaknessLabel = 'MAGIC & POISON WEAKNESS (+10 AP)';
       } else if (isZombieDef && (attackElem.toLowerCase().includes('fire') || attackElem.toLowerCase().includes('lightning') || attackElem.toLowerCase().includes('lighting'))) {
         weaknessTriggered = true;
         weaknessBonus = 10;

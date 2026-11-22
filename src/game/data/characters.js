@@ -402,35 +402,38 @@ export const CHARACTERS = {
       {
         id: 's_pop',
         name: 'Poppers per pop',
+        displayName: 'Poppers per pop',
         type: 'dice_mult',
         multiplier: 4,
         ap: 4,
         dice: 1,
-        element: 'Magic and Poison',
+        element: 'Magic & Poison',
         costET: 1,
         rarity: 'Common',
-        desc: 'Common Move. Magic and Poison attack. Roll 1 Die × 4 AP. Triggers -10 HP weakness against characters with Poison or Magic weakness.'
+        desc: 'Common Move. Magic & Poison attack. Roll 1 Die × 4 AP. Triggers -10 HP weakness against characters with Poison or Magic weakness.'
       },
       {
         id: 's_bomba',
         name: 'MS Bomba',
+        displayName: 'MS Bomba',
         type: 'flat',
         baseAP: 40,
-        element: 'Nature',
+        element: 'Magic & Poison',
         costET: 2,
         rarity: 'Semi Common',
-        desc: 'Semi Common Move. Massive explosive fungal burst dealing 40 AP.'
+        desc: 'Semi Common Move. Massive explosive Magic & Poison fungal burst dealing 40 AP. Triggers -10 HP weakness against characters with Poison or Magic weakness.'
       },
       {
         id: 's_snatcher',
         name: 'Soul Snatcher',
+        displayName: 'Soul Snatcher',
         type: 'flat',
         baseAP: 50,
-        element: 'Magic',
+        element: 'Magic & Poison',
         costET: 2,
         isSuper: true,
         rarity: 'Rare',
-        desc: 'Rare Move. High potency mystic spore extraction dealing 50 AP.'
+        desc: 'Rare Move. High potency mystic Magic & Poison spore extraction dealing 50 AP. Triggers -10 HP weakness against characters with Poison or Magic weakness.'
       },
       {
         id: 's_wild',
@@ -491,7 +494,8 @@ export const CHARACTERS = {
     moves: [
       {
         id: 'p_sparks',
-        name: 'Glitter Sparks per spark',
+        name: 'Glitter Sparks per Spark',
+        displayName: 'Glitter Sparks per Spark',
         type: 'dice_mult',
         multiplier: 4,
         ap: 4,
@@ -499,29 +503,31 @@ export const CHARACTERS = {
         element: 'Magic',
         costET: 1,
         rarity: 'Common',
-        desc: 'Common Move. Roll 1 Die × 4 AP shimmering sparks.'
+        desc: 'Common Move. Magic attack. Roll 1 Die × 4 AP shimmering sparks.'
       },
       {
         id: 'p_lasso',
         name: 'Lasso of Truth',
+        displayName: 'Lasso of Truth',
         type: 'flat',
         baseAP: 25,
         revealCards: true,
         element: 'Magic',
         costET: 1,
         rarity: 'Semi Common',
-        desc: 'Semi Common Move. 25 AP strike. If and only if the attack is successful, inflicts Vision X1 on the defendant (target reveals Action Cards).'
+        desc: 'Semi Common Move. 25 AP Magic strike. If and only if the attack is successful, inflicts Vision X1 on the defendant (target reveals Action Cards).'
       },
       {
         id: 'p_burst',
         name: 'Glitter Burst',
+        displayName: 'Glitter Burst',
         type: 'flat',
         baseAP: 35,
         element: 'Magic',
         costET: 2,
         isSuper: true,
         rarity: 'Rare',
-        desc: 'Rare Move. Radiant glitter super burst dealing 35 AP.'
+        desc: 'Rare Move. Radiant Magic glitter super burst dealing 35 AP.'
       },
       {
         id: 'p_wild',
@@ -530,9 +536,9 @@ export const CHARACTERS = {
         type: 'wild',
         rarity: 'Super Rare',
         isWild: true,
-        wildOptions: ['Glitter Sparks per spark', 'Lasso of Truth', 'Glitter Burst'],
+        wildOptions: ['Glitter Sparks per Spark', 'Lasso of Truth', 'Glitter Burst'],
         costET: 1,
-        desc: 'Super Rare Wild Card. Allows choosing only one move from: Glitter Sparks per spark, Lasso of Truth, or Glitter Burst.'
+        desc: 'Super Rare Wild Card. Allows choosing only one move from: Glitter Sparks per Spark, Lasso of Truth, or Glitter Burst.'
       },
       {
         id: 'p_blitz',

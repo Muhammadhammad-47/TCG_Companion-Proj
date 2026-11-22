@@ -167,8 +167,11 @@ export const KONTROLA_CHARACTERS = {
     image: 'Kontrolla_Data/Graphics/WILD CARDS/POOCHI WILD CARD GOLD.png',
     attacks: {
       'GLITTER SPARKS PER SPARK': { ap: 4, dice: 1, element: 'Magic', costET: 1, rarity: 'Common', desc: 'Common Move. Roll 1 Die × 4 AP Glitter sparks.' },
+      'GSPS': { ap: 4, dice: 1, element: 'Magic', costET: 1, rarity: 'Common', desc: 'Common Move (GSPS). Roll 1 Die × 4 AP Glitter sparks.' },
       'LASSO OF TRUTH': { ap: 25, dice: 0, element: 'Magic', costET: 1, revealCards: true, rarity: 'Semi Common', desc: 'Semi Common Move. 25 AP strike. If and only if the attack is successful, inflicts Vision X1 on defendant (reveals Action Cards).' },
+      'LOT': { ap: 25, dice: 0, element: 'Magic', costET: 1, revealCards: true, rarity: 'Semi Common', desc: 'Semi Common Move (LOT). 25 AP strike. If and only if the attack is successful, inflicts Vision X1 on defendant (reveals Action Cards).' },
       'GLITTER BURST': { ap: 35, dice: 0, element: 'Magic', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move. Magical glitter explosion dealing 35 AP.' },
+      'GB': { ap: 35, dice: 0, element: 'Magic', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move (GB). Magical glitter explosion dealing 35 AP.' },
       'WILD CARD': {
         isWild: true,
         rarity: 'Super Rare',
@@ -228,9 +231,12 @@ export const KONTROLA_CHARACTERS = {
     themeColor: '#39ff14',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/SHROOMY WILD CARD GOLD.png',
     attacks: {
-      'POPPERS PER POP': { ap: 4, dice: 1, multiplier: 4, element: 'Magic and Poison', costET: 1, rarity: 'Common', desc: 'Common Move. Magic and Poison attack. Roll 1 Die × 4 AP spore bursts. Triggers -10 HP weakness against characters with Poison or Magic weakness.' },
-      'MS BOMBA': { ap: 40, dice: 0, element: 'Fire', costET: 2, rarity: 'Semi Common', desc: 'Semi Common Move. Explosive spore bomb dealing 40 AP.' },
-      'SOUL SNATCHER': { ap: 50, dice: 0, element: 'Dark', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move. Super Soul Snatcher dealing 50 AP.' },
+      'POPPERS PER POP': { ap: 4, dice: 1, multiplier: 4, element: 'Magic & Poison', costET: 1, rarity: 'Common', desc: 'Common Move. Magic & Poison attack. Roll 1 Die × 4 AP spore bursts. Triggers -10 HP weakness against characters with Poison or Magic weakness.' },
+      'PPP': { ap: 4, dice: 1, multiplier: 4, element: 'Magic & Poison', costET: 1, rarity: 'Common', desc: 'Common Move (PPP). Magic & Poison attack. Roll 1 Die × 4 AP spore bursts.' },
+      'MS BOMBA': { ap: 40, dice: 0, element: 'Magic & Poison', costET: 2, rarity: 'Semi Common', desc: 'Semi Common Move. Massive explosive Magic & Poison fungal burst dealing 40 AP. Triggers -10 HP weakness against characters with Poison or Magic weakness.' },
+      'MS B': { ap: 40, dice: 0, element: 'Magic & Poison', costET: 2, rarity: 'Semi Common', desc: 'Semi Common Move (MS B). Massive explosive Magic & Poison fungal burst dealing 40 AP.' },
+      'SOUL SNATCHER': { ap: 50, dice: 0, element: 'Magic & Poison', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move. Super Magic & Poison Soul Snatcher dealing 50 AP. Triggers -10 HP weakness against characters with Poison or Magic weakness.' },
+      'SS': { ap: 50, dice: 0, element: 'Magic & Poison', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move (SS). Super Magic & Poison Soul Snatcher dealing 50 AP.' },
       'WILD CARD': {
         isWild: true,
         rarity: 'Super Rare',
@@ -1231,7 +1237,10 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         const isLightningAtk = (attackElement && (attackElement.toLowerCase().includes('lightning') || attackElement.toLowerCase().includes('lighting'))) || cardName.includes('LIGHTNING') || cardName.includes('LIGHTING');
         const isPoisonAtk = (attackElement && attackElement.toLowerCase().includes('poison')) || cardName.includes('POISON');
         const isMagicAtk = (attackElement && attackElement.toLowerCase().includes('magic')) || cardName.includes('MAGIC');
-        const isPoppersPerPop = (attackSelectionName || '').toUpperCase().includes('POPPERS') || (attackElement && attackElement.includes('Magic and Poison'));
+        const isMagicAndPoisonAtk = (attackElement && (attackElement.includes('&') || attackElement.toLowerCase().includes('and')) && attackElement.toLowerCase().includes('magic') && attackElement.toLowerCase().includes('poison')) || 
+          (attackSelectionName || '').toUpperCase().includes('POPPERS') || 
+          (attackSelectionName || '').toUpperCase().includes('BOMBA') || 
+          (attackSelectionName || '').toUpperCase().includes('SNATCHER');
 
         const hasPoisonWeakness = !isZombieDef && (defWeakness.includes('poison') || ['chynaman', 'chyna', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k)));
         const hasFireWeakness = isZombieDef || defWeakness.includes('fire') || ['shroomy', 'queeny'].some(k => defCharKey.includes(k));
@@ -1241,9 +1250,9 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         let weaknessBonus = 0;
         let weaknessReason = '';
 
-        if (isPoppersPerPop && (hasPoisonWeakness || hasMagicWeakness) && isInitialAttack) {
+        if (isMagicAndPoisonAtk && (hasPoisonWeakness || hasMagicWeakness) && isInitialAttack) {
           weaknessBonus = 10;
-          weaknessReason = ` 🍄☠️✨ [POPPERS PER POP WEAKNESS] ${newDefenderState.name} is vulnerable to ${hasPoisonWeakness ? 'Poison' : 'Magic'}! Suffer -10 HP initial weakness penalty!`;
+          weaknessReason = ` 🍄☠️✨ [MAGIC & POISON WEAKNESS] ${newDefenderState.name} is vulnerable to ${hasPoisonWeakness ? 'Poison' : 'Magic'}! Suffer -10 HP initial weakness penalty!`;
         } else if (isZombieDef && (isFireAtk || isLightningAtk) && isInitialAttack) {
           weaknessBonus = 10;
           weaknessReason = ` 🧟⚡🔥 [ZOMBIE ${isFireAtk ? 'FIRE' : 'LIGHTNING'} WEAKNESS] ${newDefenderState.name} is in Zombie Mode and vulnerable to ${isFireAtk ? 'Fire' : 'Lightning'}! Suffered an additional -10 HP weakness penalty on the initial attack!`;

@@ -154,18 +154,27 @@ const REGULAR_ATTACK_CARD_MAP = {
 
   // Poochi
   'GLITTER SPARKS PER SPARK': 'REGULAR CARDS/POOCHI GSPS.png',
+  'GSPS': 'REGULAR CARDS/POOCHI GSPS.png',
   'LASSO OF TRUTH': 'REGULAR CARDS/POOCHI LOT.png',
+  'LOT': 'REGULAR CARDS/POOCHI LOT.png',
   'GLITTER BURST': 'REGULAR CARDS/POOCHI GB.png',
+  'GB': 'REGULAR CARDS/POOCHI GB.png',
 
   // Queeny
   'HAIR WHIP PER WHIP': 'REGULAR CARDS/QUEENY HWPW.png',
+  'HWPW': 'REGULAR CARDS/QUEENY HWPW.png',
   'SIREN BLAST': 'REGULAR CARDS/QUEENY SB.png',
+  'SB': 'REGULAR CARDS/QUEENY SB.png',
   'RAINBOW FAN BLAST': 'REGULAR CARDS/QUEENY RFB.png',
+  'RFB': 'REGULAR CARDS/QUEENY RFB.png',
 
   // Shroomy
   'POPPERS PER POP': 'REGULAR CARDS/SHROOMY PPP.png',
+  'PPP': 'REGULAR CARDS/SHROOMY PPP.png',
   'MS BOMBA': 'REGULAR CARDS/SHROOMY MS B.png',
-  'SOUL SNATCHER': 'REGULAR CARDS/SHROOMY SOUL SNATCHER.png'
+  'MS B': 'REGULAR CARDS/SHROOMY MS B.png',
+  'SOUL SNATCHER': 'REGULAR CARDS/SHROOMY SOUL SNATCHER.png',
+  'SS': 'REGULAR CARDS/SHROOMY SOUL SNATCHER.png'
 };
 
 // WILD CARDS
@@ -213,6 +222,12 @@ export const getCardGraphicUrl = (cardName, characterId = null) => {
     if (charKey.includes('kat')) {
       return `${getBaseUrl()}Kontrolla_Data/Graphics/REGULAR CARDS/KAT SPPS GOLD.png`;
     }
+    return `${getBaseUrl()}Kontrolla_Data/Graphics/REGULAR CARDS/BEE SPPS.png`;
+  }
+  if (cleanName === 'SB' && charKey.includes('kiko')) {
+    return `${getBaseUrl()}Kontrolla_Data/Graphics/REGULAR CARDS/KIKO SB3000.png`;
+  }
+  if (cleanName === 'SS' && !charKey.includes('shroomy') && charKey.includes('bee')) {
     return `${getBaseUrl()}Kontrolla_Data/Graphics/REGULAR CARDS/BEE SPPS.png`;
   }
 

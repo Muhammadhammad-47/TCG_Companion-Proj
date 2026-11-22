@@ -146,16 +146,27 @@ export const CARD_VFX_CONFIG = {
   'COF':                      { theme: 'gold',    rim: true, shock: true,  sunlight: true,  embers: false, stars: true  },
 
   // Poochi (Magic Pink/Gold)
-  'GLITTER SPARKS PER SPARK': { theme: 'gold',    rim: true, shock: false, sunlight: false, embers: false, stars: true  },
+  'GLITTER SPARKS PER SPARK': { theme: 'purple',  rim: true, shock: false, sunlight: false, embers: false, stars: true  },
+  'GSPS':                     { theme: 'purple',  rim: true, shock: false, sunlight: false, embers: false, stars: true  },
   'LASSO OF TRUTH':           { theme: 'gold',    rim: true, shock: true,  sunlight: false, embers: false, stars: true  },
-  'GLITTER BURST':            { theme: 'gold',    rim: true, shock: true,  sunlight: true,  embers: false, stars: true  },
+  'LOT':                      { theme: 'gold',    rim: true, shock: true,  sunlight: false, embers: false, stars: true  },
+  'GLITTER BURST':            { theme: 'purple',  rim: true, shock: true,  sunlight: true,  embers: false, stars: true  },
+  'GB':                       { theme: 'purple',  rim: true, shock: true,  sunlight: true,  embers: false, stars: true  },
 
   // Queeny (Psychic / Empress Void)
   'HAIR WHIP PER WHIP':       { theme: 'void',    rim: true, shock: false, sunlight: false, embers: false, stars: false, isVoid: true, shadowTendrils: true },
+  'HWPW':                     { theme: 'void',    rim: true, shock: false, sunlight: false, embers: false, stars: false, isVoid: true, shadowTendrils: true },
   'SIREN BLAST':              { theme: 'void',    rim: true, shock: true,  sunlight: false, embers: false, stars: true,  isVoid: true, shadowTendrils: true },
   'RAINBOW FAN BLAST':        { theme: 'gold',    rim: true, shock: true,  sunlight: true,  embers: false, stars: true  },
+  'RFB':                      { theme: 'gold',    rim: true, shock: true,  sunlight: true,  embers: false, stars: true  },
 
-  // Shroomy (Nature / Spore Green / Toxic / Shield)
+  // Shroomy (Magic & Poison / Spores / Toxic)
+  'POPPERS PER POP':          { theme: 'poison',  rim: true, shock: false, sunlight: false, embers: true,  stars: true,  isPoison: true, smoke: true },
+  'PPP':                      { theme: 'poison',  rim: true, shock: false, sunlight: false, embers: true,  stars: true,  isPoison: true, smoke: true },
+  'MS BOMBA':                 { theme: 'poison',  rim: true, shock: true,  sunlight: false, embers: true,  stars: true,  isPoison: true, smoke: true },
+  'MS B':                     { theme: 'poison',  rim: true, shock: true,  sunlight: false, embers: true,  stars: true,  isPoison: true, smoke: true },
+  'SOUL SNATCHER':            { theme: 'poison',  rim: true, shock: true,  sunlight: false, embers: true,  stars: true,  isPoison: true, smoke: true },
+  'SS':                       { theme: 'poison',  rim: true, shock: true,  sunlight: false, embers: true,  stars: true,  isPoison: true, smoke: true },
   'SPORE BURST':              { theme: 'poison',  rim: true, shock: false, sunlight: false, embers: true,  stars: false, isPoison: true, smoke: true },
   'MUSHROOM SHIELD':          { theme: 'shield',  rim: true, shock: false, sunlight: false, embers: false, stars: true,  isShield: true, hexBarrier: true },
   'ALCHEMICAL TOXIN':         { theme: 'poison',  rim: true, shock: true,  sunlight: false, embers: true,  stars: true,  isPoison: true, smoke: true },
