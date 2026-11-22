@@ -1046,8 +1046,8 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       const charKey = attackerChar?.id || attackerState?.id || 'chynaman';
       const template = KONTROLA_CHARACTERS[charKey] || Object.values(KONTROLA_CHARACTERS).find(c => c.name?.toLowerCase() === attackerChar?.name?.toLowerCase());
       const selectedUpper = (attackSelectionName || '').toUpperCase();
-      const atk = attackerChar?.attacks?.[attackSelectionName] 
-        || template?.attacks?.[attackSelectionName] 
+      const atk = attackerChar?.attacks?.[attackSelectionName]
+        || template?.attacks?.[attackSelectionName]
         || Object.entries(attackerChar?.attacks || {}).find(([k]) => k.toUpperCase() === selectedUpper)?.[1]
         || Object.entries(template?.attacks || {}).find(([k]) => k.toUpperCase() === selectedUpper)?.[1]
         || (attackerChar?.characterCardMoves || []).find(m => (m.name || '').toUpperCase() === selectedUpper);
@@ -1240,9 +1240,9 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         const isLightningAtk = (attackElement && (attackElement.toLowerCase().includes('lightning') || attackElement.toLowerCase().includes('lighting'))) || cardName.includes('LIGHTNING') || cardName.includes('LIGHTING');
         const isPoisonAtk = (attackElement && attackElement.toLowerCase().includes('poison')) || cardName.includes('POISON');
         const isMagicAtk = (attackElement && attackElement.toLowerCase().includes('magic')) || cardName.includes('MAGIC');
-        const isMagicAndPoisonAtk = (attackElement && (attackElement.includes('&') || attackElement.toLowerCase().includes('and')) && attackElement.toLowerCase().includes('magic') && attackElement.toLowerCase().includes('poison')) || 
-          (attackSelectionName || '').toUpperCase().includes('POPPERS') || 
-          (attackSelectionName || '').toUpperCase().includes('BOMBA') || 
+        const isMagicAndPoisonAtk = (attackElement && (attackElement.includes('&') || attackElement.toLowerCase().includes('and')) && attackElement.toLowerCase().includes('magic') && attackElement.toLowerCase().includes('poison')) ||
+          (attackSelectionName || '').toUpperCase().includes('POPPERS') ||
+          (attackSelectionName || '').toUpperCase().includes('BOMBA') ||
           (attackSelectionName || '').toUpperCase().includes('SNATCHER');
 
         const hasPoisonWeakness = !isZombieDef && (defWeakness.includes('poison') || ['chynaman', 'chyna', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k)));
@@ -1455,9 +1455,9 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
 
     // Bee's Pararazzi Stun: Defender is frozen (loses 1 turn, if and only if attack is successful)
     const isPararazziStun = attackSelectionName && (
-      attackSelectionName.toUpperCase().includes('PARARAZZI') || 
-      attackSelectionName.toUpperCase().includes('PAPARAZZI') || 
-      attackSelectionName.toUpperCase().includes('PAP STUN') || 
+      attackSelectionName.toUpperCase().includes('PARARAZZI') ||
+      attackSelectionName.toUpperCase().includes('PAPARAZZI') ||
+      attackSelectionName.toUpperCase().includes('PAP STUN') ||
       attackSelectionName.trim().toUpperCase() === 'PAPS'
     );
     if (isPararazziStun && atkWin && newDefenderState && !isShadowPurr) {
