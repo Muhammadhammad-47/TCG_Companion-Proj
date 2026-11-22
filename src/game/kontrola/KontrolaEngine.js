@@ -473,7 +473,7 @@ export const generatePurchasedCharacterMoves = (charKey, totalCount = 15) => {
 // 100-Card Basic Blueprint from Action Cards % - Sheet1.csv
 export const ACTION_CARDS_BASIC = [
   { name: 'ATTACK X1', type: 'ATTACK', count: 21, costET: 1, desc: 'Standard combat attack. An Attack X1 is only functional if the player has Character Card Moves. Strictly allows only 1 turn regardless of whether the attack is successful or not.' },
-  { name: 'POISON X1', type: 'STATUS', count: 17, costET: 0, desc: 'Initial damage: -10 HP from Poison X1 (-20 HP against characters with Poison weakness: CHYNAMAN, Kiko, Poochi, Kat, Bee with -10 HP one-time weakness penalty). Ongoing damage: -10 HP per turn until treated with an Antidote Card. Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card.' },
+  { name: 'POISON X1', type: 'STATUS', count: 17, costET: 0, desc: 'Initial damage: -10 HP from Poison X1 (-20 HP against characters with Poison weakness: CHYNAMAN aka CHYNA, KIKO, Poochi, Kat, Bee with -10 HP one-time weakness penalty). Ongoing damage: -10 HP per turn until treated with an Antidote Card. Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card.' },
   { name: 'DEFENCE - BASIC', type: 'DEFENSE', count: 7, costET: 0, desc: 'Reduces incoming damage by 25%.' },
   { name: 'ANTIDOTE X1', type: 'HEAL', count: 7, costET: 0, desc: 'Removes 1 Poison card.' },
   { name: 'HEAL H10', type: 'HEAL', count: 6, costET: 0, desc: 'Restores +10 HP.' },
@@ -490,7 +490,7 @@ export const ACTION_CARDS_BASIC = [
   { name: 'HEAL H20', type: 'HEAL', count: 6, costET: 0, desc: 'Restores +20 HP.' },
   { name: 'LIGHTNING X2', type: 'ATTACK', count: 6, costET: 2, desc: 'On successful attack, defendant receives -20 HP and attacker receives 2 extra turns. Cleanses 1 Poison from Zombie. If not successful, nothing happens.' },
   { name: 'MISDIRECT', type: 'ATTACK', count: 6, costET: 1, desc: 'Redirect an opponent attack.' },
-  { name: 'POISON X2', type: 'STATUS', count: 6, costET: 0, desc: 'Initial damage: -20 HP from Poison X2 (-30 HP against characters with Poison weakness: CHYNAMAN, Kiko, Poochi, Kat, Bee with -10 HP one-time weakness penalty). Ongoing damage: -20 HP per turn until treated with an Antidote Card. Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card.' },
+  { name: 'POISON X2', type: 'STATUS', count: 6, costET: 0, desc: 'Initial damage: -20 HP from Poison X2 (-30 HP against characters with Poison weakness: CHYNAMAN aka CHYNA, KIKO, Poochi, Kat, Bee with -10 HP one-time weakness penalty). Ongoing damage: -20 HP per turn until treated with an Antidote Card. Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card.' },
   { name: 'REVIVE', type: 'HEAL', count: 6, costET: 0, desc: 'Used only when defeated. Note asks to quit or continue. If continue, card is discarded, replacement Action card re-appears, and character returns with 50% original HP.' },
   { name: 'SLEEPY X1', type: 'OTHERS', count: 6, costET: 0, desc: 'Target falls asleep and skips 1 turn (You are Asleep).' },
   { name: 'VISION X1', type: 'OTHERS', count: 6, costET: 0, desc: 'Target reveals Action Cards for 15s.' },
