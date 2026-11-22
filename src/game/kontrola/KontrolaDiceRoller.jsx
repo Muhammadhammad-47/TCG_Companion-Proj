@@ -329,7 +329,8 @@ export default function KontrolaDiceRoller({
     )
   );
   const perAp = Number(selectedAttackInfo?.ap || selectedAttackInfo?.multiplier || selectedAttackInfo?.baseAP || 4);
-  const activeDefenseCard = combatData?.defenseCard || precalculatedRolls?.defenseCard || null;
+  const rawDefenseCard = combatData?.defenseCard || precalculatedRolls?.defenseCard || null;
+  const activeDefenseCard = (rawDefenseCard && rawDefenseCard !== 'SKIP' && rawDefenseCard !== 'none') ? rawDefenseCard : null;
   const defCardName = activeDefenseCard ? (typeof activeDefenseCard === 'string' ? activeDefenseCard : (activeDefenseCard.name || '')).toUpperCase() : '';
 
   const [isApplyingResult, setIsApplyingResult] = useState(false);
@@ -434,7 +435,7 @@ export default function KontrolaDiceRoller({
       attackerRoll: { rolls: finalAtkRolls, total: finalAtkTotal },
       defenderRoll: { rolls: finalDefRolls, total: finalDefTotal },
       dRoll: hasMultiplierDie ? { rolls: [multiplierDie || 1], total: (multiplierDie || 1) } : undefined,
-      defenseCard: combatData?.defenseCard || precalculatedRolls?.defenseCard || null
+      defenseCard: activeDefenseCard
     };
     if (typeof onCombatComplete === 'function') {
       onCombatComplete(finalRolls);
@@ -959,7 +960,7 @@ export default function KontrolaDiceRoller({
               textAlign: 'center'
             }}
           >
-            Initiated by <strong style={{ color: '#fff' }}>{atkChar.name}</strong>
+            Initiated by <strong style={{ color: '#fff' }}>{atkChar?.name || 'Attacker'}</strong>
           </div>
         </div>
 
@@ -999,7 +1000,7 @@ export default function KontrolaDiceRoller({
                 }}
               >
                 <Swords size={20} />
-                <span>{atkChar.name} (Attacker)</span>
+                <span>{atkChar?.name || 'Attacker'} (Attacker)</span>
               </div>
               {atkPenalty > 0 && (
                 <div style={{ fontSize: '0.82rem', fontWeight: 'bold', color: 'var(--neon-cyan)', background: 'rgba(0, 240, 255, 0.12)', border: '1px solid rgba(0, 240, 255, 0.4)', borderRadius: '6px', padding: '3px 8px', marginBottom: '10px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
@@ -1087,7 +1088,7 @@ export default function KontrolaDiceRoller({
                 }}
               >
                 <Shield size={20} />
-                <span>{defChar.name} (Defender)</span>
+                <span>{defChar?.name || 'Defender'} (Defender)</span>
               </div>
               {defPenalty > 0 && (
                 <div style={{ fontSize: '0.82rem', fontWeight: 'bold', color: 'var(--neon-cyan)', background: 'rgba(0, 240, 255, 0.12)', border: '1px solid rgba(0, 240, 255, 0.4)', borderRadius: '6px', padding: '3px 8px', marginBottom: '10px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
@@ -1225,7 +1226,7 @@ export default function KontrolaDiceRoller({
                       }}
                     >
                       <Swords size={22} />
-                      <span>⚔️ WAITING FOR {atkChar.name.toUpperCase()} TO ROLL ATTACK DICE...</span>
+                      <span>⚔️ WAITING FOR {(atkChar?.name || 'ATTACKER').toUpperCase()} TO ROLL ATTACK DICE...</span>
                     </div>
                     {isDefender && hasRetreatCard && onExecuteRetreat && (
                       <button
@@ -1327,7 +1328,7 @@ export default function KontrolaDiceRoller({
                       }}
                     >
                       <Shield size={22} />
-                      <span>⚡ Attacker rolled {atkSum}! Waiting for {defChar.name} to roll defense...</span>
+                      <span>⚡ Attacker rolled {atkSum}! Waiting for {defChar?.name || 'Defender'} to roll defense...</span>
                     </div>
                     {isAttacker && hasRetreatCard && onExecuteRetreat && (
                       <button
@@ -1466,8 +1467,8 @@ export default function KontrolaDiceRoller({
                 >
                   <Sparkles size={18} />
                   <span>
-                    {attackerFateCard && !defenderFateCard && `${atkChar.name} ROLLED DOUBLES! You may re-roll or accept your roll.`}
-                    {defenderFateCard && !attackerFateCard && `${defChar.name} ROLLED DOUBLES! You may re-roll or accept your roll.`}
+                    {attackerFateCard && !defenderFateCard && `${atkChar?.name || 'Attacker'} ROLLED DOUBLES! You may re-roll or accept your roll.`}
+                    {defenderFateCard && !attackerFateCard && `${defChar?.name || 'Defender'} ROLLED DOUBLES! You may re-roll or accept your roll.`}
                     {defenderFateCard && attackerFateCard && `BOTH PLAYERS ROLLED DOUBLES! Eligible to re-roll or accept roll.`}
                   </span>
                 </div>
@@ -1605,7 +1606,7 @@ export default function KontrolaDiceRoller({
                               }}
                             >
                               <RotateCcw size={20} />
-                              <span>🔄 RE-ROLL ATTACKER ({atkChar.name})</span>
+                              <span>🔄 RE-ROLL ATTACKER ({atkChar?.name || 'Attacker'})</span>
                             </button>
                           )}
                           {(defenderDoubleOnes || defenderFateCard) && (
@@ -1629,7 +1630,7 @@ export default function KontrolaDiceRoller({
                               }}
                             >
                               <RotateCcw size={20} />
-                              <span>🔄 RE-ROLL DEFENDER ({defChar.name})</span>
+                              <span>🔄 RE-ROLL DEFENDER ({defChar?.name || 'Defender'})</span>
                             </button>
                           )}
                           {((attackerDoubleOnes && defenderDoubleOnes) || (attackerFateCard && defenderFateCard)) && (

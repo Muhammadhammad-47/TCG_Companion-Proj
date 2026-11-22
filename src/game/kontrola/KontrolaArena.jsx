@@ -2534,8 +2534,8 @@ export default function KontrolaArena() {
         const combatId = payload.combatId || ('combat_' + Date.now() + '_' + payload.actorId + '_' + payload.targetId);
         const nextState = {
           ...currentState,
-          activeDefenseState: { ...payload, combatId, expiresAt: Date.now() + 15000 },
-          logs: [`?? ${payload.attackerPlayerName} is attacking ${payload.defenderPlayerName}! Waiting for defender to prepare...`, ...(currentState.logs || [])]
+          activeDefenseState: { ...payload, combatId, defenseCard: null, expiresAt: Date.now() + 15000 },
+          logs: [`⚔️ ${payload.attackerPlayerName} is attacking ${payload.defenderPlayerName}! Waiting for defender to prepare...`, ...(currentState.logs || [])]
         };
         pendingStateRef.current = nextState;
         broadcastState(matchIdRef.current, nextState);
@@ -3937,6 +3937,9 @@ export default function KontrolaArena() {
       ...(activeCombat?.precalculatedRolls || {}),
       ...(finalRolls || {})
     };
+    if (!activeCombat?.defenseCard && !finalRolls?.defenseCard) {
+      rollsToApply.defenseCard = null;
+    }
     const cId = activeCombat?.combatId || ('combat_' + Date.now() + '_' + (activeCombat?.actorId || 'actor') + '_' + (activeCombat?.targetId || 'target'));
     await broadcastUIEvent(matchId, 'dice_screen_close', {
       resolved,

@@ -687,54 +687,67 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   // Process Defender's Played Card (if any) during Preparation Window
   const defCard = precalculatedRolls?.defenseCard;
   let wasImmuneFire = false;
-  if (defCard && newDefenderState) {
-    const dName = (typeof defCard === 'string' ? defCard : (defCard?.name || '')).toUpperCase();
-    log += ` [Defender played ${typeof defCard === 'string' ? defCard : (defCard?.name || 'Defense Card')}]`;
-    // 1. SHIELD CARDS (Shield Basic +25HP, Shield Advance +100HP, Shield Sacred Protection, Shield Fire +50HP)
-    if (dName.includes('SHIELD')) {
-      let gain = 25;
-      if (dName.includes('100HP') || dName.includes('ADVANCE') || dName.includes('SACRED')) gain = 100;
-      else if (dName.includes('50HP') || dName.includes('FIRE')) gain = 50;
-      else if (dName.includes('25') || dName.includes('BASIC')) {
-        gain = 25;
-        newDefenderState.hasBasicShield = true;
+  if (newDefenderState) {
+    if (!defCard) {
+      // Defender selected NO defense card (or skipped defense)
+      // Strictly clear any residual reactive defense flags on defender so traps/counters never trigger falsely
+      newDefenderState.hasCounter = false;
+      newDefenderState.hasBoomerang = false;
+      newDefenderState.hasDodge = false;
+      newDefenderState.hasDefendBasic = false;
+      newDefenderState.hasBasicShield = false;
+      newDefenderState.hasMisdirect = false;
+      newDefenderState.dodgeCardName = null;
+      newDefenderState.flyerNoWeakness = false;
+    } else {
+      const dName = (typeof defCard === 'string' ? defCard : (defCard?.name || '')).toUpperCase();
+      log += ` [Defender played ${typeof defCard === 'string' ? defCard : (defCard?.name || 'Defense Card')}]`;
+      // 1. SHIELD CARDS (Shield Basic +25HP, Shield Advance +100HP, Shield Sacred Protection, Shield Fire +50HP)
+      if (dName.includes('SHIELD')) {
+        let gain = 25;
+        if (dName.includes('100HP') || dName.includes('ADVANCE') || dName.includes('SACRED')) gain = 100;
+        else if (dName.includes('50HP') || dName.includes('FIRE')) gain = 50;
+        else if (dName.includes('25') || dName.includes('BASIC')) {
+          gain = 25;
+          newDefenderState.hasBasicShield = true;
+        }
+        else if (dName.includes('20')) gain = 20;
+
+        newDefenderState.shield = (newDefenderState.shield || 0) + gain;
+        log += ` 🛡️ Shield active! +${gain} barrier points.`;
+
+        // SHIELD FIRE grants fire immunity for this hit
+        if (dName.includes('FIRE')) newDefenderState.immuneFire = true;
+      } else if (dName.includes('BOOMERANG')) {
+        newDefenderState.hasBoomerang = true;
+        log += ` 🪃 Boomerang Trap set! (Will reflect 100% on clash defense win).`;
+      } else if (dName.includes('DEFENCE') && dName.includes('COUNTER')) {
+        newDefenderState.hasCounter = true;
+        log += ` ⚔️ DEFENCE - COUNTER active! (0% damage taken, reflect 25% back to attacker).`;
+      } else if (dName.includes('DODGE')) {
+        newDefenderState.hasDodge = true;
+        newDefenderState.dodgeCardName = typeof defCard === 'string' ? defCard : (defCard?.name || 'DODGE - BASIC');
+        log += ` 💨 ${newDefenderState.dodgeCardName} prepared!`;
+      } else if (dName.includes('FULL GUARD')) {
+        newDefenderState.shield = (newDefenderState.shield || 0) + 50;
+        log += ` 🛡️ Defense Full Guard active! +50 shield barrier.`;
+      } else if (dName.includes('+DEFENCE') || dName.startsWith('+DEF') || dName.includes(' D20') || dName.includes(' D15') || dName.includes(' D10') || dName.includes(' D5')) {
+        let bonus = 20;
+        if (dName.includes('D5')) bonus = 5;
+        else if (dName.includes('D10')) bonus = 10;
+        else if (dName.includes('D15')) bonus = 15;
+        else if (dName.includes('D20')) bonus = 20;
+
+        newDefenderState.shield = (newDefenderState.shield || 0) + bonus;
+        log += ` 🛡️ +DEFENCE active! +${bonus} shield barrier.`;
+      } else if (dName.includes('DEFENCE') && dName.includes('BASIC')) {
+        newDefenderState.hasDefendBasic = true;
+        log += ` 🛡️ DEFENCE BASIC active! Incoming damage will be reduced by 25%.`;
+      } else if (dName.includes('ANIME EXPRESS') || dName.includes('FLYER')) {
+        // ANIME EXPRESS TV: No Weakness Shield for one turn
+        newDefenderState.flyerNoWeakness = true;
+        log += ` 📺 ANIME EXPRESS TV played! ${newDefenderState.name} is immune to weaknesses for this turn!`;
       }
-      else if (dName.includes('20')) gain = 20;
-
-      newDefenderState.shield = (newDefenderState.shield || 0) + gain;
-      log += ` 🛡️ Shield active! +${gain} barrier points.`;
-
-      // SHIELD FIRE grants fire immunity for this hit
-      if (dName.includes('FIRE')) newDefenderState.immuneFire = true;
-    } else if (dName.includes('BOOMERANG')) {
-      newDefenderState.hasBoomerang = true;
-      log += ` 🪃 Boomerang Trap set! (Will reflect 100% on clash defense win).`;
-    } else if (dName.includes('DEFENCE') && dName.includes('COUNTER')) {
-      newDefenderState.hasCounter = true;
-      log += ` ⚔️ DEFENCE - COUNTER active! (0% damage taken, reflect 25% back to attacker).`;
-    } else if (dName.includes('DODGE')) {
-      newDefenderState.hasDodge = true;
-      newDefenderState.dodgeCardName = typeof defCard === 'string' ? defCard : (defCard?.name || 'DODGE - BASIC');
-      log += ` 💨 ${newDefenderState.dodgeCardName} prepared!`;
-    } else if (dName.includes('FULL GUARD')) {
-      newDefenderState.shield = (newDefenderState.shield || 0) + 50;
-      log += ` 🛡️ Defense Full Guard active! +50 shield barrier.`;
-    } else if (dName.includes('+DEFENCE') || dName.startsWith('+DEF') || dName.includes(' D20') || dName.includes(' D15') || dName.includes(' D10') || dName.includes(' D5')) {
-      let bonus = 20;
-      if (dName.includes('D5')) bonus = 5;
-      else if (dName.includes('D10')) bonus = 10;
-      else if (dName.includes('D15')) bonus = 15;
-      else if (dName.includes('D20')) bonus = 20;
-
-      newDefenderState.shield = (newDefenderState.shield || 0) + bonus;
-      log += ` 🛡️ +DEFENCE active! +${bonus} shield barrier.`;
-    } else if (dName.includes('DEFENCE') && dName.includes('BASIC')) {
-      newDefenderState.hasDefendBasic = true;
-      log += ` 🛡️ DEFENCE BASIC active! Incoming damage will be reduced by 25%.`;
-    } else if (dName.includes('ANIME EXPRESS') || dName.includes('FLYER')) {
-      // ANIME EXPRESS TV: No Weakness Shield for one turn
-      newDefenderState.flyerNoWeakness = true;
-      log += ` 📺 ANIME EXPRESS TV played! ${newDefenderState.name} is immune to weaknesses for this turn!`;
     }
   }
 
@@ -1167,15 +1180,15 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
             log += ` ❌ DODGE - BASIC failed clash! Attack increased by 25% (+${penalty} AP penalty)!`;
           }
           newDefenderState.hasDodge = false;
-        } else if (newDefenderState.hasBoomerang) {
+        } else if (defCard && newDefenderState.hasBoomerang) {
           // Attacker won the clash: defender's defense failed, Boomerang trap breaks
           log += ` 🪃 BOOMERANG FAILED! ${newDefenderState.name} lost the clash. Defense failed, taking incoming damage.`;
           newDefenderState.hasBoomerang = false;
-        } else if (newDefenderState.hasCounter) {
+        } else if (defCard && newDefenderState.hasCounter) {
           // Attacker won the clash: DEFENCE - COUNTER defense failed, takes full damage
           log += ` ⚔️ DEFENCE - COUNTER FAILED! ${newDefenderState.name} lost the clash. Defense failed, taking incoming damage.`;
           newDefenderState.hasCounter = false;
-        } else if (newDefenderState.hasDefendBasic) {
+        } else if (defCard && newDefenderState.hasDefendBasic) {
           const absorb = Math.floor(finalDamage * 0.25);
           log += ` 🛡️ DEFENSIVE GUARD TRIGGERED! Damage reduced by 25% (${absorb} AP).`;
           finalDamage = Math.max(0, finalDamage - absorb);
@@ -1340,14 +1353,14 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       }
     } else {
       // DEFENCE - COUNTER: If defender played DEFENCE - COUNTER and won clash
-      if (newDefenderState?.hasCounter) {
+      if (defCard && newDefenderState?.hasCounter) {
         const reflectDmg = Math.floor(baseAP * 0.25);
         newAttackerState.hp = Math.max(0, newAttackerState.hp - reflectDmg);
         log += ` ⚔️ DEFENCE - COUNTER TRIGGERED! 0% damage taken, reflected ${reflectDmg} AP back to ${newAttackerState.name}!`;
         newDefenderState.hasCounter = false;
       }
       // BOOMERANG: Defender won clash / successful defense -> reflects 100% attack damage back and attacker loses next turn
-      if (newDefenderState?.hasBoomerang) {
+      if (defCard && newDefenderState?.hasBoomerang) {
         log += ` 🪃 BOOMERANG SUCCESS! ${newDefenderState.name} defended successfully and reflected 100% of the attack (${baseAP} AP) back to ${newAttackerState.name}! ${newAttackerState.name} loses their next turn!`;
         newAttackerState.hp = Math.max(0, newAttackerState.hp - baseAP);
         newAttackerState.sleepTurns = (newAttackerState.sleepTurns || 0) + 1;
@@ -1355,7 +1368,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         boomerangReflected = true;
       }
       // DODGE CARDS: Defender won clash -> evades all damage
-      if (newDefenderState?.hasDodge) {
+      if (defCard && newDefenderState?.hasDodge) {
         const dodgeCardName = (newDefenderState.dodgeCardName || 'DODGE').toUpperCase();
         if (dodgeCardName.includes('COUNTER')) {
           log += ` 💨 DODGE - COUNTER SUCCESS! ${newDefenderState.name} avoided all damage and counter-attacks immediately!`;
@@ -1789,6 +1802,17 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       newDefenderState.crystals = Math.max(0, newDefenderState.crystals - 1);
       log += ` 🔷 ${newAttackerState.name} claimed 1 Stability Crystal from defeated ${newDefenderState.name}!`;
     }
+  }
+
+  // Final cleanup of transient battle defense flags so they never leak into future clashes or turns
+  if (newDefenderState) {
+    newDefenderState.hasBoomerang = false;
+    newDefenderState.hasCounter = false;
+    newDefenderState.hasDefendBasic = false;
+    newDefenderState.hasDodge = false;
+    newDefenderState.hasMisdirect = false;
+    newDefenderState.dodgeCardName = null;
+    newDefenderState.flyerNoWeakness = false;
   }
 
   return {
