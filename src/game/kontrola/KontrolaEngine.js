@@ -1305,6 +1305,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         // If Attacker was Zombie Venom Strike -> Defender gains 1 Poison Card
         if (isAttackerZombie && !isDefenderZombie) {
           newDefenderState.poisonCount = (newDefenderState.poisonCount || 0) + 1;
+          newDefenderState.justPoisoned = true;
           log += ` Venom Strike infected ${newDefenderState.name} with 1 Poison card!`;
         }
 
