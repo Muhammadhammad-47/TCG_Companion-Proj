@@ -191,17 +191,21 @@ const WILD_CARD_MAP = {
 
 export const getCardGraphicUrl = (cardName, characterId = null) => {
   if (!cardName) return '';
-  const cleanName = cardName.trim().toUpperCase();
+  const rawName = typeof cardName === 'object' && cardName !== null ? (cardName.name || cardName.id || '') : cardName;
+  if (!rawName || typeof rawName !== 'string') return '';
+  const cleanName = rawName.trim().toUpperCase();
 
   // Check if it's Blitz
   if (cleanName.includes('BLITZ') || cleanName.includes('SAIGO')) {
-    const blitzPath = BLITZ_CARD_MAP[characterId?.toLowerCase()] || BLITZ_CARD_MAP.chyna;
+    const rawCharId = typeof characterId === 'object' && characterId !== null ? (characterId.id || characterId.characterId || '') : characterId;
+    const blitzPath = BLITZ_CARD_MAP[rawCharId?.toLowerCase()] || BLITZ_CARD_MAP.chyna;
     return `${getBaseUrl()}Kontrolla_Data/Graphics/${blitzPath}`;
   }
 
   // Check if it's Kontrol
   if (cleanName.includes('KONTROL')) {
-    const kontrolPath = KONTROL_CARD_MAP[characterId?.toLowerCase()] || KONTROL_CARD_MAP.chyna;
+    const rawCharId = typeof characterId === 'object' && characterId !== null ? (characterId.id || characterId.characterId || '') : characterId;
+    const kontrolPath = KONTROL_CARD_MAP[rawCharId?.toLowerCase()] || KONTROL_CARD_MAP.chyna;
     return `${getBaseUrl()}Kontrolla_Data/Graphics/${kontrolPath}`;
   }
 
@@ -217,7 +221,8 @@ export const getCardGraphicUrl = (cardName, characterId = null) => {
   }
 
   // Check if it's a character combat move
-  const charKey = (characterId || '').toLowerCase();
+  const rawCharId = typeof characterId === 'object' && characterId !== null ? (characterId.id || characterId.characterId || '') : characterId;
+  const charKey = (rawCharId || '').toLowerCase();
   if (cleanName === 'SPPS') {
     if (charKey.includes('kat')) {
       return `${getBaseUrl()}Kontrolla_Data/Graphics/REGULAR CARDS/KAT SPPS GOLD.png`;
@@ -241,7 +246,9 @@ export const getCardGraphicUrl = (cardName, characterId = null) => {
 
 export const getCharacterAttackGraphicUrl = (attackName) => {
   if (!attackName) return '';
-  const cleanName = attackName.trim().toUpperCase();
+  const rawName = typeof attackName === 'object' && attackName !== null ? (attackName.name || attackName.id || '') : attackName;
+  if (!rawName || typeof rawName !== 'string') return '';
+  const cleanName = rawName.trim().toUpperCase();
   const rel = REGULAR_ATTACK_CARD_MAP[cleanName];
   if (rel) {
     return `${getBaseUrl()}Kontrolla_Data/Graphics/${rel}`;
@@ -250,6 +257,7 @@ export const getCharacterAttackGraphicUrl = (attackName) => {
 };
 
 export const getWildCardGraphicUrl = (characterId) => {
-  const rel = WILD_CARD_MAP[characterId?.toLowerCase()] || WILD_CARD_MAP.chyna;
+  const rawId = typeof characterId === 'object' && characterId !== null ? (characterId.id || characterId.characterId || '') : characterId;
+  const rel = WILD_CARD_MAP[rawId?.toLowerCase()] || WILD_CARD_MAP.chyna;
   return `${getBaseUrl()}Kontrolla_Data/Graphics/${rel}`;
 };

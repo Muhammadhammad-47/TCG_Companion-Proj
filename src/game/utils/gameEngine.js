@@ -286,7 +286,10 @@ export function resolveDiceCombat({
   const hasflyerImmunity = defender?.flyerNoWeakness || false;
 
   const defCharKey = (defender.characterId || defender.id || defender.name || '').toLowerCase();
-  const defWeakness = (defChar.weakness?.type || defender.weakness?.type || defender.weakness || '').toLowerCase();
+  const rawWeakness = typeof defChar.weakness === 'string'
+    ? defChar.weakness
+    : (defChar.weakness?.type || (typeof defender.weakness === 'string' ? defender.weakness : (defender.weakness?.type || '')));
+  const defWeakness = String(rawWeakness || '').toLowerCase();
   const hasPoisonWeakness = defWeakness.includes('poison') || ['chynaman', 'chyna', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k));
   const hasFireWeakness = defWeakness.includes('fire') || ['shroomy', 'queeny'].some(k => defCharKey.includes(k));
   const hasMagicWeakness = defWeakness.includes('magic') || ['chynaman', 'chyna', 'bee', 'poochi', 'queeny'].some(k => defCharKey.includes(k));
@@ -308,18 +311,18 @@ export function resolveDiceCombat({
       weaknessTriggered = true;
       weaknessBonus = 10;
     } else if (defChar.weakness && moveElement) {
-      const wType = defChar.weakness.type.toLowerCase();
-      const mElem = moveElement.toLowerCase();
+      const wType = typeof defChar.weakness === 'string' ? defChar.weakness.toLowerCase() : (defChar.weakness?.type || '').toLowerCase();
+      const mElem = String(moveElement).toLowerCase();
 
       if (wType.includes(mElem) || (mElem === 'fire' && wType.includes('fire')) || (mElem === 'lightning' && wType.includes('lightning')) || (mElem === 'poison' && wType.includes('poison'))) {
         weaknessTriggered = true;
-        weaknessBonus = defChar.weakness.bonusAP || 10;
+        weaknessBonus = defChar.weakness?.bonusAP || 10;
       }
     }
   } else if (hasflyerImmunity && defChar.weakness && moveElement) {
     // Log that weakness was blocked by FLYER card
-    const wType = defChar.weakness.type.toLowerCase();
-    const mElem = moveElement.toLowerCase();
+    const wType = typeof defChar.weakness === 'string' ? defChar.weakness.toLowerCase() : (defChar.weakness?.type || '').toLowerCase();
+    const mElem = String(moveElement).toLowerCase();
     if (wType.includes(mElem) || (mElem === 'fire' && wType.includes('fire')) || (mElem === 'lightning' && wType.includes('lightning')) || (mElem === 'poison' && wType.includes('poison'))) {
       // Would be weakness, but FLYER immunity blocks it
     }

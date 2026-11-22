@@ -1144,7 +1144,10 @@ export default function BattleArena({
 
           // Check Poison Weakness on defender (CHYNAMAN, Kiko, Poochi, Kat, Bee)
           const defChar = CHARACTERS[updated.characterId] || {};
-          const defWeakness = (defChar.weakness?.type || updated.weakness?.type || updated.weakness || '').toLowerCase();
+          const rawWeakness = typeof defChar.weakness === 'string'
+            ? defChar.weakness
+            : (defChar.weakness?.type || (typeof updated.weakness === 'string' ? updated.weakness : (updated.weakness?.type || '')));
+          const defWeakness = String(rawWeakness || '').toLowerCase();
           const defCharKey = (updated.characterId || updated.id || updated.name || '').toLowerCase();
           const hasPoisonWeakness = defWeakness.includes('poison') || ['chynaman', 'chyna', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k));
           const weaknessPenalty = hasPoisonWeakness ? 10 : 0;

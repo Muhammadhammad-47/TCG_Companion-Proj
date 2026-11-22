@@ -188,7 +188,8 @@ export const CARD_VFX_CONFIG = {
 // Fallback resolver with intelligent fuzzy matching for any variant
 export function getCardVFXConfig(cardName = '') {
   if (!cardName) return { theme: 'blue', rim: true, shock: false, sunlight: false, embers: false, stars: false };
-  const upper = String(cardName).trim().toUpperCase();
+  const rawName = typeof cardName === 'object' && cardName !== null ? (cardName.name || cardName.id || '') : cardName;
+  const upper = String(rawName || '').trim().toUpperCase();
 
   // 1. Direct map check
   if (CARD_VFX_CONFIG[upper]) return CARD_VFX_CONFIG[upper];
