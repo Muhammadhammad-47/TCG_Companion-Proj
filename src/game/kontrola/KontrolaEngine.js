@@ -200,9 +200,12 @@ export const KONTROLA_CHARACTERS = {
     themeColor: '#FBC80D',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/QUEENY WILD CARD GOLD.png',
     attacks: {
-      'HAIR WHIP PER WHIP': { ap: 4, dice: 1, element: 'Physical', costET: 1, rarity: 'Common', desc: 'Common Move. Roll 1 Die × 4 AP Hair whip strikes.' },
-      'SIREN BLAST': { ap: 30, dice: 0, element: 'Psychic', costET: 1, rarity: 'Semi Common', desc: 'Semi Common Move. Hypnotic siren wave dealing 30 AP.' },
-      'RAINBOW FAN BLAST': { ap: 40, dice: 0, element: 'Psychic', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move. Prism energy fan storm dealing 40 AP.' },
+      'HAIR WHIP PER WHIP': { ap: 4, dice: 1, element: 'Magic', costET: 1, rarity: 'Common', desc: 'Common Move. Roll 1 Die × 4 AP Hair whip strikes.' },
+      'HWPW': { ap: 4, dice: 1, element: 'Magic', costET: 1, rarity: 'Common', desc: 'Common Move (HWPW). Roll 1 Die × 4 AP Hair whip strikes.' },
+      'SIREN BLAST': { ap: 30, dice: 0, element: 'Magic', costET: 1, rarity: 'Semi Common', desc: 'Semi Common Move. Hypnotic magical siren wave dealing 30 AP.' },
+      'SB': { ap: 30, dice: 0, element: 'Magic', costET: 1, rarity: 'Semi Common', desc: 'Semi Common Move (SB). Hypnotic magical siren wave dealing 30 AP.' },
+      'RAINBOW FAN BLAST': { ap: 40, dice: 0, element: 'Magic', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move. Prism magical fan storm dealing 40 AP.' },
+      'RFB': { ap: 40, dice: 0, element: 'Magic', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move (RFB). Prism magical fan storm dealing 40 AP.' },
       'WILD CARD': {
         isWild: true,
         rarity: 'Super Rare',

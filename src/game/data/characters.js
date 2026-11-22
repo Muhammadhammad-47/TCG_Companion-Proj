@@ -589,35 +589,38 @@ export const CHARACTERS = {
       {
         id: 'q_whip',
         name: 'Hair Whip per whip',
+        displayName: 'Hair Whip per whip',
         type: 'dice_mult',
         multiplier: 4,
         ap: 4,
         dice: 1,
-        element: 'Physical',
+        element: 'Magic',
         costET: 1,
         rarity: 'Common',
-        desc: 'Common Move. Roll 1 Die × 4 AP psychic hair slashes.'
+        desc: 'Common Move. Magic attack. Roll 1 Die × 4 AP hair slashes.'
       },
       {
         id: 'q_siren',
         name: 'Siren Blast',
+        displayName: 'Siren Blast',
         type: 'flat',
         baseAP: 30,
         element: 'Magic',
         costET: 1,
         rarity: 'Semi Common',
-        desc: 'Semi Common Move. Sonic psychic screech dealing 30 AP.'
+        desc: 'Semi Common Move. Sonic magical siren screech dealing 30 AP.'
       },
       {
         id: 'q_fan',
         name: 'Rainbow Fan Blast',
+        displayName: 'Rainbow Fan Blast',
         type: 'flat',
         baseAP: 40,
         element: 'Magic',
         costET: 2,
         isSuper: true,
         rarity: 'Rare',
-        desc: 'Rare Move. Prism energy fan storm dealing 40 AP.'
+        desc: 'Rare Move. Prism magical energy fan storm dealing 40 AP.'
       },
       {
         id: 'q_wild',

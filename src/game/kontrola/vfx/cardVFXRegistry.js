@@ -153,12 +153,13 @@ export const CARD_VFX_CONFIG = {
   'GLITTER BURST':            { theme: 'purple',  rim: true, shock: true,  sunlight: true,  embers: false, stars: true  },
   'GB':                       { theme: 'purple',  rim: true, shock: true,  sunlight: true,  embers: false, stars: true  },
 
-  // Queeny (Psychic / Empress Void)
-  'HAIR WHIP PER WHIP':       { theme: 'void',    rim: true, shock: false, sunlight: false, embers: false, stars: false, isVoid: true, shadowTendrils: true },
-  'HWPW':                     { theme: 'void',    rim: true, shock: false, sunlight: false, embers: false, stars: false, isVoid: true, shadowTendrils: true },
-  'SIREN BLAST':              { theme: 'void',    rim: true, shock: true,  sunlight: false, embers: false, stars: true,  isVoid: true, shadowTendrils: true },
-  'RAINBOW FAN BLAST':        { theme: 'gold',    rim: true, shock: true,  sunlight: true,  embers: false, stars: true  },
-  'RFB':                      { theme: 'gold',    rim: true, shock: true,  sunlight: true,  embers: false, stars: true  },
+  // Queeny (Magic / Empress Purple)
+  'HAIR WHIP PER WHIP':       { theme: 'purple',  rim: true, shock: false, sunlight: false, embers: false, stars: true  },
+  'HWPW':                     { theme: 'purple',  rim: true, shock: false, sunlight: false, embers: false, stars: true  },
+  'SIREN BLAST':              { theme: 'purple',  rim: true, shock: true,  sunlight: false, embers: false, stars: true  },
+  'SB':                       { theme: 'purple',  rim: true, shock: true,  sunlight: false, embers: false, stars: true  },
+  'RAINBOW FAN BLAST':        { theme: 'purple',  rim: true, shock: true,  sunlight: true,  embers: false, stars: true  },
+  'RFB':                      { theme: 'purple',  rim: true, shock: true,  sunlight: true,  embers: false, stars: true  },
 
   // Shroomy (Magic & Poison / Spores / Toxic)
   'POPPERS PER POP':          { theme: 'poison',  rim: true, shock: false, sunlight: false, embers: true,  stars: true,  isPoison: true, smoke: true },
