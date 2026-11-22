@@ -357,10 +357,10 @@ export default function KontrolaDiceRoller({
     const defCharKey = (defChar.id || defChar.name || '').toLowerCase();
     const defWeakness = (defChar.weakness || '').toLowerCase();
     const isZombieDef = Boolean(defChar.isZombie || (defChar.poisonCount >= 5) || (defChar.poisonCards >= 5));
-    const isPoisonWeakness = !isZombieDef && (defWeakness.includes('poison') || ['chynaman', 'chyna', 'kiko', 'poochi', 'kat', 'katsumi', 'bee', 'queeny'].some(k => defCharKey.includes(k)));
-    const isFireWeakness = isZombieDef || defWeakness.includes('fire') || ['shroomy'].some(k => defCharKey.includes(k));
+    const isPoisonWeakness = !isZombieDef && (defWeakness.includes('poison') || ['chynaman', 'chyna', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k)));
+    const isFireWeakness = isZombieDef || defWeakness.includes('fire') || ['shroomy', 'queeny'].some(k => defCharKey.includes(k));
     const isLightningWeakness = isZombieDef || defWeakness.includes('lightning') || defWeakness.includes('lighting');
-    const isMagicWeakness = defWeakness.includes('magic') || defWeakness.includes('psychic') || defWeakness.includes('music') || ['queeny'].some(k => defCharKey.includes(k));
+    const isMagicWeakness = defWeakness.includes('magic') || ['chynaman', 'chyna', 'bee', 'poochi', 'queeny'].some(k => defCharKey.includes(k));
     const attackElem = selectedAttackInfo?.element || (cardNameUpper.includes('FIRE') ? 'Fire' : (cardNameUpper.includes('LIGHTNING') || cardNameUpper.includes('LIGHTING')) ? 'Lightning' : cardNameUpper.includes('POISON') ? 'Poison' : 'Physical');
     const isPoppers = attackNameUpper.includes('POPPERS') || (attackElem && attackElem.includes('Magic and Poison'));
     const isInitialAttack = !cardNameUpper.includes('2ND HIT') && !cardNameUpper.includes('SECOND HIT');

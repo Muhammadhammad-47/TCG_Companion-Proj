@@ -13,7 +13,7 @@ export const KONTROLA_CHARACTERS = {
     reserveUnlocked: false,
     mind: 4,
     element: 'Fire',
-    weakness: 'Poison',
+    weakness: 'Magic & Poison',
     weaknessBonus: 10,
     innateDP: 10,
     retreatSpeed: 3,
@@ -44,7 +44,7 @@ export const KONTROLA_CHARACTERS = {
     reserveUnlocked: true,
     mind: 5,
     element: 'Lightning',
-    weakness: 'Poison',
+    weakness: 'Magic & Poison',
     weaknessBonus: 10,
     innateDP: 10,
     retreatSpeed: 3,
@@ -138,7 +138,7 @@ export const KONTROLA_CHARACTERS = {
     reserveUnlocked: true,
     mind: 2,
     element: 'Magic',
-    weakness: 'Poison',
+    weakness: 'Magic & Poison',
     weaknessBonus: 10,
     innateDP: 10,
     retreatSpeed: 1,
@@ -169,7 +169,7 @@ export const KONTROLA_CHARACTERS = {
     reserveUnlocked: false,
     mind: 2,
     element: 'Psychic',
-    weakness: 'Music and Poison',
+    weakness: 'Magic & Fire',
     weaknessBonus: 10,
     innateDP: 10,
     retreatSpeed: 4,
@@ -1211,10 +1211,10 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         const isPoisonAtk = (attackElement && attackElement.toLowerCase().includes('poison')) || cardName.includes('POISON');
         const isPoppersPerPop = (attackSelectionName || '').toUpperCase().includes('POPPERS') || (attackElement && attackElement.includes('Magic and Poison'));
 
-        const hasPoisonWeakness = !isZombieDef && (defWeakness.includes('poison') || ['chynaman', 'chyna', 'kiko', 'poochi', 'kat', 'katsumi', 'bee', 'queeny'].some(k => defCharKey.includes(k)));
-        const hasFireWeakness = isZombieDef || defWeakness.includes('fire') || ['shroomy'].some(k => defCharKey.includes(k));
+        const hasPoisonWeakness = !isZombieDef && (defWeakness.includes('poison') || ['chynaman', 'chyna', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k)));
+        const hasFireWeakness = isZombieDef || defWeakness.includes('fire') || ['shroomy', 'queeny'].some(k => defCharKey.includes(k));
         const hasLightningWeakness = isZombieDef || defWeakness.includes('lightning') || defWeakness.includes('lighting');
-        const hasMagicWeakness = defWeakness.includes('magic') || defWeakness.includes('psychic') || defWeakness.includes('music') || ['queeny'].some(k => defCharKey.includes(k));
+        const hasMagicWeakness = defWeakness.includes('magic') || ['chynaman', 'chyna', 'bee', 'poochi', 'queeny'].some(k => defCharKey.includes(k));
 
         let weaknessBonus = 0;
         let weaknessReason = '';
@@ -1436,7 +1436,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       newDefenderState.justPoisoned = true; // Mark target as just infected so ongoing damage begins on subsequent turn
       const defCharKey = (newDefenderState.characterId || newDefenderState.id || newDefenderState.name || '').toLowerCase();
       const defWeakness = (newDefenderState.weakness || '').toLowerCase();
-      const hasPoisonWeakness = defWeakness.includes('poison') || ['chynaman', 'chyna', 'kiko', 'poochi', 'kat', 'katsumi', 'bee', 'queeny'].some(k => defCharKey.includes(k));
+      const hasPoisonWeakness = defWeakness.includes('poison') || ['chynaman', 'chyna', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k));
       const weaknessPenalty = hasPoisonWeakness ? (newDefenderState.weaknessBonus || 10) : 0;
       const totalInitialDamage = initialDamage + weaknessPenalty;
       newDefenderState.hp = Math.max(0, newDefenderState.hp - totalInitialDamage);

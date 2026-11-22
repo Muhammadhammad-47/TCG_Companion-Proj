@@ -840,7 +840,7 @@ export default function CardActionModal({
                             <div>
                               <strong style={{ fontSize: '0.82rem', color: '#fff', display: 'block' }}>{target.name}</strong>
                               <span style={{ fontSize: '0.72rem', color: 'var(--neon-gold)' }}>{target.hp} HP</span>
-                              {isPoisonAction && ['chynaman', 'chyna', 'kiko', 'poochi', 'kat', 'katsumi', 'bee', 'queeny'].some(k => (target.characterId || target.name || '').toLowerCase().includes(k)) && (
+                              {isPoisonAction && ['chynaman', 'chyna', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => (target.characterId || target.name || '').toLowerCase().includes(k)) && (
                                 <span style={{ display: 'block', fontSize: '0.68rem', color: '#ff4444', fontWeight: 'bold' }}>☠️ -10 HP Weakness</span>
                               )}
                             </div>

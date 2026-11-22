@@ -1142,11 +1142,11 @@ export default function BattleArena({
           const initialDmg = isX2 ? 20 : 10;
           const ongoingTurnDmg = isX2 ? 20 : 10;
 
-          // Check Poison Weakness on defender (CHYNAMAN, Kiko, Poochi, Kat, Bee, Queeny)
+          // Check Poison Weakness on defender (CHYNAMAN, Kiko, Poochi, Kat, Bee)
           const defChar = CHARACTERS[updated.characterId] || {};
           const defWeakness = (defChar.weakness?.type || updated.weakness?.type || updated.weakness || '').toLowerCase();
           const defCharKey = (updated.characterId || updated.id || updated.name || '').toLowerCase();
-          const hasPoisonWeakness = defWeakness.includes('poison') || ['chynaman', 'chyna', 'kiko', 'poochi', 'kat', 'katsumi', 'bee', 'queeny'].some(k => defCharKey.includes(k));
+          const hasPoisonWeakness = defWeakness.includes('poison') || ['chynaman', 'chyna', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k));
           const weaknessPenalty = hasPoisonWeakness ? 10 : 0;
           const totalInitialDmg = initialDmg + weaknessPenalty;
 
