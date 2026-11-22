@@ -289,9 +289,15 @@ export function resolveDiceCombat({
   const defWeakness = (defChar.weakness?.type || defender.weakness?.type || defender.weakness || '').toLowerCase();
   const hasPoisonWeakness = defWeakness.includes('poison') || ['chynaman', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k));
   const hasFireWeakness = defWeakness.includes('fire') || ['shroomy', 'queeny'].some(k => defCharKey.includes(k));
+  const hasMagicWeakness = defWeakness.includes('magic') || defWeakness.includes('psychic') || ['queeny'].some(k => defCharKey.includes(k));
+  const isPoppersPerPop = (characterMove?.name || '').toUpperCase().includes('POPPERS') || (moveElement && moveElement.includes('Magic and Poison'));
 
   if (!hasflyerImmunity) {
-    if (isDefenderZombie && (moveElement === 'Fire' || moveElement === 'Lightning')) {
+    if (isPoppersPerPop && (hasPoisonWeakness || hasMagicWeakness)) {
+      // Official Rule: Shroomy "Poppers per pop" is Magic and Poison; triggers -10 HP initial weakness on targets with Poison or Magic weakness
+      weaknessTriggered = true;
+      weaknessBonus = 10;
+    } else if (isDefenderZombie && (moveElement === 'Fire' || moveElement === 'Lightning')) {
       // Official Rule: Lightning and Fire weakness when character becomes a Zombie (-10 HP on first initial attack)
       weaknessTriggered = true;
       weaknessBonus = 10;

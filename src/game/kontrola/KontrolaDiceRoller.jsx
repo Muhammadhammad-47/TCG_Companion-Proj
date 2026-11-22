@@ -314,8 +314,21 @@ export default function KontrolaDiceRoller({
   // Robust attack info lookup with character template fallback
   const charKey = atkChar?.id || combatData?.attackerId || combatData?.actorId || 'chynaman';
   const charTemplate = KONTROLA_CHARACTERS[charKey] || Object.values(KONTROLA_CHARACTERS).find(c => c.name?.toLowerCase() === atkChar?.name?.toLowerCase());
-  const selectedAttackInfo = atkChar?.attacks?.[attackSelectionName] || charTemplate?.attacks?.[attackSelectionName] || (atkChar?.characterCardMoves || []).find(m => m.name === attackSelectionName);
-  const hasMultiplierDie = Boolean(selectedAttackInfo && selectedAttackInfo.dice > 0);
+  const attackNameUpper = (attackSelectionName || '').toUpperCase();
+  const selectedAttackInfo = atkChar?.attacks?.[attackSelectionName] 
+    || charTemplate?.attacks?.[attackSelectionName] 
+    || Object.entries(atkChar?.attacks || {}).find(([k]) => k.toUpperCase() === attackNameUpper)?.[1]
+    || Object.entries(charTemplate?.attacks || {}).find(([k]) => k.toUpperCase() === attackNameUpper)?.[1]
+    || (atkChar?.characterCardMoves || []).find(m => (m.name || '').toUpperCase() === attackNameUpper);
+  const hasMultiplierDie = Boolean(
+    selectedAttackInfo && (
+      selectedAttackInfo.dice > 0 || 
+      selectedAttackInfo.type === 'dice_mult' || 
+      Boolean(selectedAttackInfo.multiplier) ||
+      attackNameUpper.includes(' PER ')
+    )
+  );
+  const perAp = Number(selectedAttackInfo?.ap || selectedAttackInfo?.multiplier || selectedAttackInfo?.baseAP || 4);
   const activeDefenseCard = combatData?.defenseCard || precalculatedRolls?.defenseCard || null;
   const defCardName = activeDefenseCard ? (typeof activeDefenseCard === 'string' ? activeDefenseCard : (activeDefenseCard.name || '')).toUpperCase() : '';
 
@@ -333,25 +346,41 @@ export default function KontrolaDiceRoller({
     } else if (cardNameUpper.includes('BACK STAB')) {
       baseAP = 35;
     } else if (hasMultiplierDie) {
-      baseAP = (multiplierDie || 1) * (selectedAttackInfo?.ap || 5);
-    } else if (selectedAttackInfo?.ap) {
-      baseAP = selectedAttackInfo.ap;
+      baseAP = (multiplierDie || 1) * perAp;
+    } else if (selectedAttackInfo?.ap || selectedAttackInfo?.baseAP) {
+      baseAP = Number(selectedAttackInfo.ap || selectedAttackInfo.baseAP);
     }
 
     const defCharKey = (defChar.id || defChar.name || '').toLowerCase();
     const defWeakness = (defChar.weakness || '').toLowerCase();
-    const isPoisonWeakness = defWeakness.includes('poison') || ['chynaman', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k));
-    const isFireWeakness = defWeakness.includes('fire') || ['shroomy', 'queeny'].some(k => defCharKey.includes(k));
+    const isZombieDef = Boolean(defChar.isZombie || (defChar.poisonCount >= 5) || (defChar.poisonCards >= 5));
+    const isPoisonWeakness = !isZombieDef && (defWeakness.includes('poison') || ['chynaman', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k)));
+    const isFireWeakness = isZombieDef || defWeakness.includes('fire') || ['shroomy', 'queeny'].some(k => defCharKey.includes(k));
+    const isLightningWeakness = isZombieDef || defWeakness.includes('lightning');
+    const isMagicWeakness = defWeakness.includes('magic') || defWeakness.includes('psychic') || ['queeny'].some(k => defCharKey.includes(k));
     const attackElem = selectedAttackInfo?.element || (cardNameUpper.includes('FIRE') ? 'Fire' : cardNameUpper.includes('LIGHTNING') ? 'Lightning' : 'Physical');
+    const isPoppers = attackNameUpper.includes('POPPERS') || (attackElem && attackElem.includes('Magic and Poison'));
 
     let weaknessBonus = 0;
     let weaknessTriggered = false;
     let weaknessLabel = '';
     if (!defChar.flyerNoWeakness) {
-      if (attackElem.toLowerCase() === 'fire' && isFireWeakness) {
+      if (isPoppers && (isPoisonWeakness || isMagicWeakness)) {
+        weaknessTriggered = true;
+        weaknessBonus = 10;
+        weaknessLabel = 'POPPERS PER POP WEAKNESS (+10 AP)';
+      } else if (isZombieDef && (attackElem.toLowerCase().includes('fire') || attackElem.toLowerCase().includes('lightning'))) {
+        weaknessTriggered = true;
+        weaknessBonus = 10;
+        weaknessLabel = `ZOMBIE ${attackElem.toUpperCase()} WEAKNESS (+10 AP)`;
+      } else if (attackElem.toLowerCase() === 'fire' && isFireWeakness) {
         weaknessTriggered = true;
         weaknessBonus = 10;
         weaknessLabel = 'FIRE WEAKNESS (+10 AP)';
+      } else if (attackElem.toLowerCase() === 'lightning' && isLightningWeakness) {
+        weaknessTriggered = true;
+        weaknessBonus = 10;
+        weaknessLabel = 'LIGHTNING WEAKNESS (+10 AP)';
       } else if ((attackElem.toLowerCase() === 'poison' || (atkChar?.poisonCount >= 5) || (atkChar?.isZombie)) && isPoisonWeakness) {
         weaknessTriggered = true;
         weaknessBonus = 10;
@@ -401,7 +430,7 @@ export default function KontrolaDiceRoller({
     const finalRolls = {
       attackerRoll: { rolls: finalAtkRolls, total: finalAtkTotal },
       defenderRoll: { rolls: finalDefRolls, total: finalDefTotal },
-      dRoll: hasMultiplierDie ? { rolls: [multiplierDie], total: multiplierDie } : undefined,
+      dRoll: hasMultiplierDie ? { rolls: [multiplierDie || 1], total: (multiplierDie || 1) } : undefined,
       defenseCard: combatData?.defenseCard || precalculatedRolls?.defenseCard || null
     };
     if (typeof onCombatComplete === 'function') {
@@ -1463,11 +1492,11 @@ export default function KontrolaDiceRoller({
                     <CanvasPipDie value={multiplierDie} theme="red" isRolling={isRollingMultiplier} size={54} />
                                         <div style={{ textAlign: 'left' }}>
                       {(() => {
-                        const perAp = selectedAttackInfo.ap;
-                        const total = multiplierDie * perAp;
+                        const movePerAp = Number(selectedAttackInfo?.ap || selectedAttackInfo?.multiplier || selectedAttackInfo?.baseAP || 4);
+                        const total = (multiplierDie || 1) * movePerAp;
                         return (
                           <div style={{ fontSize: '1rem', color: '#fff' }}>
-                            Roll: <strong>{multiplierDie}</strong> × {perAp} AP = <strong style={{ color: '#39ff14' }}>{total} Total AP</strong>
+                            Roll: <strong>{multiplierDie || 1}</strong> × {movePerAp} AP = <strong style={{ color: '#39ff14' }}>{total} Total AP</strong>
                           </div>
                         );
                       })()}

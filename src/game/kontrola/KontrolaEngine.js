@@ -207,7 +207,7 @@ export const KONTROLA_CHARACTERS = {
     themeColor: '#39ff14',
     image: 'Kontrolla_Data/Graphics/WILD CARDS/SHROOMY WILD CARD GOLD.png',
     attacks: {
-      'POPPERS PER POP': { ap: 4, dice: 1, element: 'Nature', costET: 1, rarity: 'Common', desc: 'Common Move. Roll 1 Die × 4 AP Spore poppers.' },
+      'POPPERS PER POP': { ap: 4, dice: 1, multiplier: 4, element: 'Magic and Poison', costET: 1, rarity: 'Common', desc: 'Common Move. Magic and Poison attack. Roll 1 Die × 4 AP spore bursts. Triggers -10 HP weakness against characters with Poison or Magic weakness.' },
       'MS BOMBA': { ap: 40, dice: 0, element: 'Fire', costET: 2, rarity: 'Semi Common', desc: 'Semi Common Move. Explosive spore bomb dealing 40 AP.' },
       'SOUL SNATCHER': { ap: 50, dice: 0, element: 'Dark', costET: 2, isSuper: true, rarity: 'Rare', desc: 'Rare Move. Super Soul Snatcher dealing 50 AP.' },
       'WILD CARD': {
@@ -981,15 +981,22 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     } else if (attackSelectionName) {
       const charKey = attackerChar?.id || attackerState?.id || 'chynaman';
       const template = KONTROLA_CHARACTERS[charKey] || Object.values(KONTROLA_CHARACTERS).find(c => c.name?.toLowerCase() === attackerChar?.name?.toLowerCase());
-      const atk = attackerChar?.attacks?.[attackSelectionName] || template?.attacks?.[attackSelectionName] || (attackerChar?.characterCardMoves || []).find(m => m.name === attackSelectionName);
+      const selectedUpper = (attackSelectionName || '').toUpperCase();
+      const atk = attackerChar?.attacks?.[attackSelectionName] 
+        || template?.attacks?.[attackSelectionName] 
+        || Object.entries(attackerChar?.attacks || {}).find(([k]) => k.toUpperCase() === selectedUpper)?.[1]
+        || Object.entries(template?.attacks || {}).find(([k]) => k.toUpperCase() === selectedUpper)?.[1]
+        || (attackerChar?.characterCardMoves || []).find(m => (m.name || '').toUpperCase() === selectedUpper);
       if (atk) {
         attackElement = atk.element || 'Physical';
-        if (atk.dice > 0) {
-          const multiplier = atk.ap;
-          baseAP = (dRoll?.total || 1) * multiplier;
-          log += ` [${attackSelectionName}: ${dRoll?.total || 1} × ${multiplier} AP = ${baseAP} AP]`;
+        const isDiceMult = atk.dice > 0 || atk.type === 'dice_mult' || selectedUpper.includes(' PER ');
+        if (isDiceMult) {
+          const multiplier = Number(atk.ap || atk.multiplier || atk.baseAP || 4);
+          const multRoll = (dRoll?.total && Number(dRoll.total) > 0) ? Number(dRoll.total) : (Number(attackerRoll?.rolls?.[0]) || 1);
+          baseAP = multRoll * multiplier;
+          log += ` [${attackSelectionName}: ${multRoll} × ${multiplier} AP = ${baseAP} AP]`;
         } else {
-          baseAP = atk.ap;
+          baseAP = Number(atk.ap || atk.baseAP || 25);
         }
       }
     }
@@ -1158,39 +1165,52 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       // Weakness Bonus (+10 AP) - only applies if attack was not negated/reflected by defense
       // Official Rule: When Zombie has a successful attack, an additional weakness penalty of -10 HP is placed on characters with weakness of Poison
       // Official Rule: When character becomes a Zombie, they gain Lightning and Fire weakness (-10 HP on first initial attack every time a successful Lightning or Fire attack is used)
+      // Official Rule: Shroomy "Poppers per Pop" is a Magic and Poison attack; triggers -10 HP initial weakness if defender has Poison OR Magic weakness.
       if (newDefenderState && !newDefenderState.flyerNoWeakness) {
         const defCharKey = (newDefenderState.characterId || newDefenderState.id || newDefenderState.name || '').toLowerCase();
         const defWeakness = (newDefenderState.weakness || '').toLowerCase();
         const isZombieDef = Boolean(isDefenderZombie || newDefenderState.isZombie || (newDefenderState.poisonCount >= 5) || (newDefenderState.poisonCards >= 5));
+        const isInitialAttack = !cardName.includes('2ND HIT');
 
-        const isFireAtk = (attackElement && attackElement.toLowerCase() === 'fire') || cardName.includes('FIRE');
-        const isLightningAtk = (attackElement && attackElement.toLowerCase() === 'lightning') || cardName.includes('LIGHTNING');
-        const isPoisonAtk = (attackElement && attackElement.toLowerCase() === 'poison') || cardName.includes('POISON');
+        const isFireAtk = (attackElement && attackElement.toLowerCase().includes('fire')) || cardName.includes('FIRE');
+        const isLightningAtk = (attackElement && attackElement.toLowerCase().includes('lightning')) || cardName.includes('LIGHTNING');
+        const isPoisonAtk = (attackElement && attackElement.toLowerCase().includes('poison')) || cardName.includes('POISON');
+        const isPoppersPerPop = (attackSelectionName || '').toUpperCase().includes('POPPERS') || (attackElement && attackElement.includes('Magic and Poison'));
 
         const hasPoisonWeakness = !isZombieDef && (defWeakness.includes('poison') || ['chynaman', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k)));
         const hasFireWeakness = isZombieDef || defWeakness.includes('fire') || ['shroomy', 'queeny'].some(k => defCharKey.includes(k));
         const hasLightningWeakness = isZombieDef || defWeakness.includes('lightning');
+        const hasMagicWeakness = defWeakness.includes('magic') || defWeakness.includes('psychic') || ['queeny'].some(k => defCharKey.includes(k));
 
-        const matchesWeakness = (isAttackerZombie && hasPoisonWeakness) ||
-          (isPoisonAtk && hasPoisonWeakness) ||
-          (isFireAtk && hasFireWeakness) ||
-          (isLightningAtk && hasLightningWeakness) ||
-          (attackElement && newDefenderState.weakness && newDefenderState.weakness.toLowerCase().includes(attackElement.toLowerCase()));
+        let weaknessBonus = 0;
+        let weaknessReason = '';
 
-        if (matchesWeakness && (finalDamage > 0 || (isAttackerZombie && hasPoisonWeakness))) {
-          const bonus = 10;
-          finalDamage += bonus;
-          if (isZombieDef && (isFireAtk || isLightningAtk)) {
-            log += ` 🧟⚡🔥 [ZOMBIE ${isFireAtk ? 'FIRE' : 'LIGHTNING'} WEAKNESS] ${newDefenderState.name} is in Zombie Mode and vulnerable to ${isFireAtk ? 'Fire' : 'Lightning'}! Suffered an additional -${bonus} HP weakness penalty on the initial attack!`;
-          } else if (isAttackerZombie && hasPoisonWeakness) {
-            log += ` ☠️ [ZOMBIE POISON WEAKNESS] ${newDefenderState.name} has Poison weakness! Suffer -${bonus} HP additional weakness penalty from Zombie attack!`;
-          } else if (isFireAtk) {
-            log += ` 🔥 [FIRE WEAKNESS] ${newDefenderState.name} has Fire weakness! Additional -${bonus} HP weakness penalty applied!`;
-          } else if (isPoisonAtk) {
-            log += ` ☠️ [POISON WEAKNESS] ${newDefenderState.name} has Poison weakness! Additional -${bonus} HP weakness penalty applied!`;
-          } else {
-            log += ` 🎯 [WEAKNESS TRIGGER] ${newDefenderState.name} has ${attackElement} weakness! +${bonus} AP bonus applied!`;
-          }
+        if (isPoppersPerPop && (hasPoisonWeakness || hasMagicWeakness) && isInitialAttack) {
+          weaknessBonus = 10;
+          weaknessReason = ` 🍄☠️✨ [POPPERS PER POP WEAKNESS] ${newDefenderState.name} is vulnerable to ${hasPoisonWeakness ? 'Poison' : 'Magic'}! Suffer -10 HP initial weakness penalty!`;
+        } else if (isZombieDef && (isFireAtk || isLightningAtk) && isInitialAttack) {
+          weaknessBonus = 10;
+          weaknessReason = ` 🧟⚡🔥 [ZOMBIE ${isFireAtk ? 'FIRE' : 'LIGHTNING'} WEAKNESS] ${newDefenderState.name} is in Zombie Mode and vulnerable to ${isFireAtk ? 'Fire' : 'Lightning'}! Suffered an additional -10 HP weakness penalty on the initial attack!`;
+        } else if (isAttackerZombie && hasPoisonWeakness && isInitialAttack) {
+          weaknessBonus = 10;
+          weaknessReason = ` ☠️ [ZOMBIE POISON WEAKNESS] ${newDefenderState.name} has Poison weakness! Suffer -10 HP additional weakness penalty from Zombie attack!`;
+        } else if (isFireAtk && hasFireWeakness && isInitialAttack) {
+          weaknessBonus = 10;
+          weaknessReason = ` 🔥 [FIRE WEAKNESS] ${newDefenderState.name} has Fire weakness! Additional -10 HP weakness penalty applied!`;
+        } else if (isLightningAtk && hasLightningWeakness && isInitialAttack) {
+          weaknessBonus = 10;
+          weaknessReason = ` ⚡ [LIGHTNING WEAKNESS] ${newDefenderState.name} has Lightning weakness! Additional -10 HP weakness penalty applied!`;
+        } else if (isPoisonAtk && hasPoisonWeakness && isInitialAttack) {
+          weaknessBonus = 10;
+          weaknessReason = ` ☠️ [POISON WEAKNESS] ${newDefenderState.name} has Poison weakness! Additional -10 HP weakness penalty applied!`;
+        } else if (attackElement && newDefenderState.weakness && newDefenderState.weakness.toLowerCase().includes(attackElement.toLowerCase()) && isInitialAttack) {
+          weaknessBonus = 10;
+          weaknessReason = ` 🎯 [WEAKNESS TRIGGER] ${newDefenderState.name} has ${attackElement} weakness! +10 AP bonus applied!`;
+        }
+
+        if (weaknessBonus > 0 && (finalDamage > 0 || (isAttackerZombie && hasPoisonWeakness))) {
+          finalDamage += weaknessBonus;
+          log += weaknessReason;
         }
       }
 
@@ -1223,7 +1243,9 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
 
       // Apply damage to defender
       if (newDefenderState) {
-        newDefenderState.hp = Math.max(0, newDefenderState.hp - finalDamage);
+        finalDamage = isNaN(finalDamage) ? 0 : Math.max(0, finalDamage);
+        const currentHP = Number(newDefenderState.hp) || 0;
+        newDefenderState.hp = Math.max(0, currentHP - finalDamage);
         log += ` Attack lands! ${newDefenderState.name} takes ${finalDamage} damage (Base: ${baseAP} AP` +
           (newDefenderState.weakness && attackElement && newDefenderState.weakness.toLowerCase().includes(attackElement.toLowerCase()) ? ` + Weakness` : '') + `).`;
 

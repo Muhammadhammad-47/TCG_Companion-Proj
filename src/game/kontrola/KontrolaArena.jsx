@@ -2757,16 +2757,16 @@ export default function KontrolaArena() {
         let healDelta = 0;
         let atkDmgDealt = 0;
         if (playedCardType === 'ATTACK') {
-          const prevDefHP = (currentState.characterStates?.[targetId]?.hp) ?? 0;
-          const newDefHP = newDefenderState?.hp ?? 0;
+          const prevDefHP = Number(currentState.characterStates?.[targetId]?.hp) || 0;
+          const newDefHP = Number(newDefenderState?.hp) || 0;
           dmgDealt = Math.max(0, prevDefHP - newDefHP);
 
-          const prevAtkHP = (currentState.characterStates?.[actorId]?.hp) ?? 0;
-          const newAtkHP = newAttackerState?.hp ?? 0;
+          const prevAtkHP = Number(currentState.characterStates?.[actorId]?.hp) || 0;
+          const newAtkHP = Number(newAttackerState?.hp) || 0;
           atkDmgDealt = Math.max(0, prevAtkHP - newAtkHP);
         } else if (playedCardType === 'HEAL') {
-          const prevAtkHP = (currentState.characterStates?.[actorId]?.hp) ?? 0;
-          const newAtkHP = newAttackerState?.hp ?? 0;
+          const prevAtkHP = Number(currentState.characterStates?.[actorId]?.hp) || 0;
+          const newAtkHP = Number(newAttackerState?.hp) || 0;
           healDelta = Math.max(0, newAtkHP - prevAtkHP);
         }
 
@@ -3169,8 +3169,9 @@ export default function KontrolaArena() {
       if (!isPass && getSafeCardType(actionCard) === 'ATTACK') {
         let totalTurnDmg = 0;
         if (targetId && targetId !== 'ALL' && newDefenderState) {
-          const prevDefHP = (currentState.characterStates?.[targetId]?.hp) ?? 0;
-          totalTurnDmg = Math.max(0, prevDefHP - newDefenderState.hp);
+          const prevDefHP = Number(currentState.characterStates?.[targetId]?.hp) || 0;
+          const curDefHP = Number(newDefenderState.hp) || 0;
+          totalTurnDmg = Math.max(0, prevDefHP - curDefHP);
         } else if (targetId === 'ALL' && resolved.aoeDamage) {
           // Calculate split damage per defender for AoE attacks
           const activeDefenders = currentState.players.filter(pId =>
