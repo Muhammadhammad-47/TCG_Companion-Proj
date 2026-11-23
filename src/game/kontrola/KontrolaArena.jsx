@@ -9,7 +9,11 @@ import {
 import { DynamicScaleWrapper } from '../../components/DynamicScaleWrapper';
 import { soundFX } from '../utils/audio';
 import { getAssetUrl, CHARACTER_LEVEL_MATRIX, getCharacterLevelData } from '../data/characters';
-import { KONTROLA_CHARACTERS, KONTROLA_ACTION_CARDS, generateDeck, dealInitialHands, generateGiftedCharacterMoves, generatePurchasedCharacterMoves, resolveTurn, rollDice, executeReserveRecovery } from './KontrolaEngine';
+import { KONTROLA_CHARACTERS, KONTROLA_ACTION_CARDS, generateDeck, dealInitialHands, generateGiftedCharacterMoves, generatePurchasedCharacterMoves, resolveTurn, rollDice, executeReserveRecovery, createExileRelationship } from './KontrolaEngine';
+import ReviveOfferModal from '../components/ReviveOfferModal';
+import RelationshipSelectModal from '../components/RelationshipSelectModal';
+import EmpireMandateBanner from '../components/EmpireMandateBanner';
+import MasterCommandModal from '../components/MasterCommandModal';
 import {
   createMatch, joinMatch, subscribeToMatch, requestJoin, takeTurn, broadcastState,
   advertiseRoom, closeRoom, subscribeToGlobalLobby, broadcastLeave, requestSync,
@@ -453,6 +457,10 @@ export default function KontrolaArena() {
   const [xChangeModalData, setXChangeModalData] = useState(null); // { xChangeType, attackerHand, defenderHand, defenderName, targetId, actorId }
   const [soulAllianceTradeData, setSoulAllianceTradeData] = useState(null); // { allyId, allyName }
   const [pendingRevivePrompt, setPendingRevivePrompt] = useState(null); // { playerId, playerName, maxHp }
+  // Mechanics of Exiles & The Empire Era States (Nov 21, 2026)
+  const [reviveOfferData, setReviveOfferData] = useState(null); // { providerId, providerName, exileId, exileName }
+  const [relationshipModalData, setRelationshipModalData] = useState(null); // { providerId, exileId, isProvider, providerName, exileName }
+  const [isMasterCommandOpen, setIsMasterCommandOpen] = useState(false);
   // Burn Extinguish State (Nov 5 Update)
   const [hasAttemptedExtinguishThisTurn, setHasAttemptedExtinguishThisTurn] = useState(false);
   const [isExtinguishRolling, setIsExtinguishRolling] = useState(false);
@@ -1500,6 +1508,46 @@ export default function KontrolaArena() {
             }
           }
         }
+        else if (event.type === 'EXILE_REVIVE_OFFER') {
+          const offer = event.payload; // { providerId, providerName, exileId, exileName }
+          if (offer && offer.exileId === playerIdRef.current) {
+            setReviveOfferData(offer);
+            soundFX.init?.();
+            soundFX.playPowerUp?.();
+          }
+        }
+        else if (event.type === 'EXILE_REVIVE_RESPONSE') {
+          const { providerId, exileId, accepted, exileName, providerName } = event.payload || {};
+          if (providerId === playerIdRef.current) {
+            if (accepted) {
+              showNotice(`✨ ${exileName || 'Exile'} accepted your Revive Offer! Select relationship status.`, 'info');
+              setRelationshipModalData({
+                providerId,
+                exileId,
+                isProvider: true,
+                providerName,
+                exileName
+              });
+            } else {
+              showNotice(`${exileName || 'Exile'} declined your Revive offer.`, 'warning');
+            }
+          }
+        }
+        else if (event.type === 'EXILE_RELATIONSHIP_SELECT') {
+          const data = event.payload; // { providerId, exileId, providerName, exileName }
+          if (data && (data.exileId === playerIdRef.current || data.providerId === playerIdRef.current)) {
+            setRelationshipModalData({
+              ...data,
+              isProvider: data.providerId === playerIdRef.current
+            });
+          }
+        }
+        else if (event.type === 'EXILE_RELATIONSHIP_ESTABLISHED') {
+          const { relType, providerName, exileName } = event.payload || {};
+          showNotice(`👑 Relationship Established: ${providerName} & ${exileName} are now ${relType}!`, 'info');
+          setRelationshipModalData(null);
+          setReviveOfferData(null);
+        }
         // 12. Player Disconnected (Presence)
         else if (event.type === 'PLAYER_DISCONNECTED' || event.type === 'PLAYER_PRESENCE_AWAY') {
           // PLAYER_PRESENCE_AWAY = Supabase Presence leave (fires on tab switch, minimize, brief network drop)
@@ -2230,6 +2278,208 @@ export default function KontrolaArena() {
           turn: nextTurn,
           winner: matchWinner,
           logs: [`💀 ${currentState.characterStates?.[victimId]?.name || 'Player'} opted to quit and was eliminated!`, ...(currentState.logs || [])]
+        };
+        broadcastState(matchIdRef.current, nextState);
+        return nextState;
+      }
+
+      // ==============================================================
+      // MECHANICS OF EXILES & THE EMPIRE ERA (Nov 21, 2026)
+      // ==============================================================
+      if (payload.actionType === 'OFFER_EXILE_REVIVE') {
+        const { providerId, providerName, exileId, exileName } = payload;
+        broadcastUIEvent(matchIdRef.current, 'EXILE_REVIVE_OFFER', {
+          providerId,
+          providerName,
+          exileId,
+          exileName
+        });
+        return currentState;
+      }
+
+      if (payload.actionType === 'ACCEPT_EXILE_REVIVE') {
+        const { providerId, exileId } = payload;
+        const providerChar = currentState.characterStates?.[providerId];
+        const exileChar = currentState.characterStates?.[exileId];
+        if (!providerChar || !exileChar) return currentState;
+
+        // Consume REVIVE from provider's hand and draw replacement card
+        const providerHand = [...(currentState.hands?.[providerId] || [])];
+        const reviveIdx = findSafeCardIndex(providerHand, 'REVIVE') !== -1
+          ? findSafeCardIndex(providerHand, 'REVIVE')
+          : providerHand.findIndex(c => getSafeCardName(c).includes('REVIVE'));
+        let nextDeck = currentState.deck ? [...currentState.deck] : [];
+        if (reviveIdx !== -1) {
+          providerHand.splice(reviveIdx, 1);
+          if (nextDeck.length === 0) {
+            nextDeck = generateDeck(currentState.isPremium, currentState.players?.length || 2);
+          }
+          if (nextDeck.length > 0) {
+            providerHand.push(nextDeck.shift());
+          }
+        }
+
+        // Restore Exile to 50% HP (or minimum 50 HP)
+        const baseOriginalHP = exileChar.baseHP || exileChar.maxHp || 100;
+        const restoredHp = Math.max(50, Math.floor(baseOriginalHP * 0.5));
+        const updatedExile = {
+          ...exileChar,
+          hp: restoredHp,
+          isDefeated: false,
+          isExile: true,
+          canBeRevivedAsExile: false
+        };
+
+        const nextState = {
+          ...currentState,
+          deck: nextDeck,
+          winner: null, // Clear any premature game-over since match resumes with Exile
+          hands: {
+            ...(currentState.hands || {}),
+            [providerId]: providerHand
+          },
+          characterStates: {
+            ...currentState.characterStates,
+            [exileId]: updatedExile
+          },
+          logs: [
+            `✨ [EXILE REVIVED] ${providerChar.name} revived ${exileChar.name} as an Exile! HP restored to ${restoredHp}. Negotiating relationship...`,
+            ...(currentState.logs || [])
+          ]
+        };
+
+        broadcastState(matchIdRef.current, nextState);
+        broadcastUIEvent(matchIdRef.current, 'EXILE_RELATIONSHIP_SELECT', {
+          providerId,
+          exileId,
+          providerName: providerChar.name,
+          exileName: exileChar.name
+        });
+        return nextState;
+      }
+
+      if (payload.actionType === 'SET_EXILE_RELATIONSHIP') {
+        const { providerId, exileId, relType, options } = payload;
+        const providerChar = currentState.characterStates?.[providerId];
+        const exileChar = currentState.characterStates?.[exileId];
+        if (!providerChar || !exileChar) return currentState;
+
+        const { updatedProvider, updatedExile } = createExileRelationship(providerChar, exileChar, relType, options);
+
+        const nextState = {
+          ...currentState,
+          characterStates: {
+            ...currentState.characterStates,
+            [providerId]: updatedProvider,
+            [exileId]: updatedExile
+          },
+          logs: [
+            `👑 [EMPIRE ERA] Diplomatic status established: ${providerChar.name} & ${exileChar.name} are now ${relType}!`,
+            ...(currentState.logs || [])
+          ]
+        };
+
+        broadcastState(matchIdRef.current, nextState);
+        broadcastUIEvent(matchIdRef.current, 'EXILE_RELATIONSHIP_ESTABLISHED', {
+          providerId,
+          exileId,
+          relType,
+          providerName: providerChar.name,
+          exileName: exileChar.name
+        });
+        return nextState;
+      }
+
+      if (payload.actionType === 'ISSUE_MASTER_COMMAND') {
+        const { masterId, servantId, commandType, targetPlayerId, bountyET } = payload;
+        const servantChar = currentState.characterStates?.[servantId];
+        const masterChar = currentState.characterStates?.[masterId];
+        if (!servantChar) return currentState;
+
+        const updatedServant = {
+          ...servantChar,
+          masterMandate: {
+            commandType,
+            targetPlayerId,
+            bountyET: bountyET || 1,
+            issuedTurn: currentState.turnNumber || 1
+          }
+        };
+
+        const nextState = {
+          ...currentState,
+          characterStates: {
+            ...currentState.characterStates,
+            [servantId]: updatedServant
+          },
+          logs: [
+            `📜 [MASTER MANDATE] Master ${masterChar?.name || 'Master'} ordered Servant ${servantChar.name} to ${commandType}! Bounty: +${bountyET || 1} ET.`,
+            ...(currentState.logs || [])
+          ]
+        };
+        broadcastState(matchIdRef.current, nextState);
+        return nextState;
+      }
+
+      if (payload.actionType === 'BREAK_ALLIANCE_MANUAL') {
+        const { breakerId } = payload;
+        const breakerChar = currentState.characterStates?.[breakerId];
+        if (!breakerChar) return currentState;
+
+        const partnerId = breakerChar.relationshipPartnerId || breakerChar.alliancePartnerId;
+        const partnerChar = partnerId ? currentState.characterStates?.[partnerId] : null;
+
+        // Breaking alliance without ABANDON or BACK STAB inflicts -40 HP penalty
+        const nextHp = Math.max(0, (breakerChar.hp || 0) - 40);
+        const isDefeated = nextHp <= 0;
+
+        const updatedBreaker = {
+          ...breakerChar,
+          hp: nextHp,
+          isDefeated: isDefeated,
+          relationshipType: 'INDEPENDENT',
+          relationshipPartnerId: null,
+          allianceId: null,
+          alliancePartnerId: null,
+          isMaster: false,
+          isServant: false,
+          masterId: null,
+          servantId: null,
+          masterMandate: null,
+          mercenaryTurnsRemaining: 0,
+          mercenaryContract: null
+        };
+
+        const updatedPartner = partnerChar ? {
+          ...partnerChar,
+          relationshipType: 'INDEPENDENT',
+          relationshipPartnerId: null,
+          allianceId: null,
+          alliancePartnerId: null,
+          isMaster: false,
+          isServant: false,
+          masterId: null,
+          servantId: null,
+          masterMandate: null,
+          mercenaryTurnsRemaining: 0,
+          mercenaryContract: null
+        } : null;
+
+        const nextCharStates = {
+          ...currentState.characterStates,
+          [breakerId]: updatedBreaker
+        };
+        if (partnerId && updatedPartner) {
+          nextCharStates[partnerId] = updatedPartner;
+        }
+
+        const nextState = {
+          ...currentState,
+          characterStates: nextCharStates,
+          logs: [
+            `💔 [ALLIANCE BROKEN] ${breakerChar.name} broke agreement without proper Action Card! Suffered -40 HP PENALTY! (Remaining HP: ${nextHp})`,
+            ...(currentState.logs || [])
+          ]
         };
         broadcastState(matchIdRef.current, nextState);
         return nextState;
@@ -3132,6 +3382,28 @@ export default function KontrolaArena() {
           }
         }
 
+        // Mechanics of Exiles: Mercenary contract expiration (3 turns)
+        if (!grantExtraTurn && updatedStates[actorId]?.relationshipType === 'MERCENARY') {
+          const rem = Math.max(0, (updatedStates[actorId].mercenaryTurnsRemaining || 3) - 1);
+          updatedStates[actorId].mercenaryTurnsRemaining = rem;
+          if (rem === 0) {
+            updatedStates[actorId].relationshipType = 'INDEPENDENT';
+            const employerId = updatedStates[actorId].relationshipPartnerId;
+            updatedStates[actorId].relationshipPartnerId = null;
+            if (employerId && updatedStates[employerId]) {
+              updatedStates[employerId].relationshipType = 'INDEPENDENT';
+              updatedStates[employerId].relationshipPartnerId = null;
+            }
+            turnLogs.unshift(`💰 [MERCENARY CONTRACT EXPIRED] ${updatedStates[actorId].name}'s 3-turn mercenary contract has expired! Reverted to INDEPENDENT.`);
+          }
+        }
+
+        // Mechanics of Exiles: Servant extra Energy Token on turn start
+        if (incomingChar && (incomingChar.isServant || incomingChar.relationshipType === 'SERVANT') && !incomingChar.isDefeated) {
+          incomingChar.energyTokens = Math.min(10, (incomingChar.energyTokens || 0) + 1);
+          turnLogs.unshift(`⚡ [SERVANT STIPEND] ${incomingChar.name} received +1 Energy Token from Master servitude parameters!`);
+        }
+
         // Note: Burn damage is resolved via the interactive Extinguish Roll prompt before the active player's move per Nov 5 specification.
         // Check Vampire drain effect (-10 HP, -1 ET per turn for 3 turns)
         if (incomingChar && typeof incomingChar.vampireStealTurnsLeft === 'number' && incomingChar.vampireStealTurnsLeft > 0 && !incomingChar.isDefeated) {
@@ -3791,11 +4063,31 @@ export default function KontrolaArena() {
       return;
     }
 
+    const isReviveExile = cardName.includes('REVIVE') && (myCharacter?.hp || 0) > 0;
     const needsTarget = ['POISON', 'SLEEPY', 'FREEZE', 'KONTROL', 'SOUL ALLIANCE', 'DRAIN', 'VAMPIRE'].some(kw => cardName.includes(kw)) ||
+      isReviveExile ||
       (cardName.includes('X-CHANGE') && !cardName.includes('FULL')) ||
       (cardName.includes('VISION') && !cardName.includes('FULL'));
     if (needsTarget && !selectedTargetId) {
-      showNotice('Please select a target player first!', 'warning');
+      showNotice(isReviveExile ? 'Please select a defeated player / Exile to revive!' : 'Please select a target player first!', 'warning');
+      return;
+    }
+
+    if (isReviveExile) {
+      const targetChar = gameState.characterStates?.[selectedTargetId];
+      const exileOffer = {
+        actionType: 'OFFER_EXILE_REVIVE',
+        providerId: playerId,
+        providerName: myCharacter?.name || playerName || 'Player',
+        exileId: selectedTargetId,
+        exileName: targetChar?.name || 'Exile Player'
+      };
+      if (isHost) enqueueHostAction(exileOffer);
+      else takeTurn(matchId, { type: 'PLAYER_ACTION', payload: exileOffer });
+      broadcastUIEvent(matchId, 'EXILE_REVIVE_OFFER', exileOffer);
+      showNotice(`✨ Revive Offer sent to ${targetChar?.name || 'Exile'}! Waiting for their decision...`, 'info');
+      setSelectedActionCard(null);
+      setSelectedTargetId(null);
       return;
     }
 
@@ -4377,6 +4669,61 @@ export default function KontrolaArena() {
       takeTurn(matchIdRef.current, { type: 'PLAYER_ACTION', payload });
     }
     setSoulAllianceTradeData(null);
+  };
+
+  // Mechanics of Exiles & The Empire Era Handlers
+  const handleSelectRelationship = (relType, options = {}) => {
+    if (!relationshipModalData) return;
+    const payload = {
+      actionType: 'SET_EXILE_RELATIONSHIP',
+      providerId: relationshipModalData.providerId,
+      exileId: relationshipModalData.exileId,
+      relType,
+      options
+    };
+    if (isHostRef.current) enqueueHostAction(payload);
+    else takeTurn(matchIdRef.current, { type: 'PLAYER_ACTION', payload });
+    setRelationshipModalData(null);
+  };
+
+  const handleAcceptReviveOffer = () => {
+    if (!reviveOfferData) return;
+    const payload = {
+      actionType: 'ACCEPT_EXILE_REVIVE',
+      providerId: reviveOfferData.providerId,
+      providerName: reviveOfferData.providerName,
+      exileId: playerId,
+      exileName: myCharacter?.name || playerName
+    };
+    if (isHostRef.current) enqueueHostAction(payload);
+    else takeTurn(matchIdRef.current, { type: 'PLAYER_ACTION', payload });
+    broadcastUIEvent(matchIdRef.current, 'EXILE_REVIVE_RESPONSE', { ...payload, accepted: true });
+    setReviveOfferData(null);
+  };
+
+  const handleDeclineReviveOffer = () => {
+    if (!reviveOfferData) return;
+    broadcastUIEvent(matchIdRef.current, 'EXILE_REVIVE_RESPONSE', {
+      providerId: reviveOfferData.providerId,
+      exileId: playerId,
+      accepted: false,
+      exileName: myCharacter?.name || playerName,
+      providerName: reviveOfferData.providerName
+    });
+    setReviveOfferData(null);
+  };
+
+  const handleIssueMasterCommand = (commandData) => {
+    const payload = {
+      actionType: 'ISSUE_MASTER_COMMAND',
+      masterId: playerId,
+      servantId: myCharacter?.servantId || myCharacter?.relationshipPartnerId,
+      ...commandData
+    };
+    if (isHostRef.current) enqueueHostAction(payload);
+    else takeTurn(matchIdRef.current, { type: 'PLAYER_ACTION', payload });
+    setIsMasterCommandOpen(false);
+    showNotice(`📜 Master command issued to servant!`, 'success');
   };
 
   // ==========================================
@@ -5867,6 +6214,27 @@ export default function KontrolaArena() {
             onClearTurnBanner={() => setTurnBanner(null)}
           />
 
+          {/* Empire Era Mandate & Relationship Banner */}
+          {myCharacter?.relationshipType && myCharacter.relationshipType !== 'INDEPENDENT' && (
+            <div style={{ position: 'relative', zIndex: 100, marginBottom: '8px' }}>
+              <EmpireMandateBanner
+                relationshipType={myCharacter.relationshipType}
+                partnerName={myCharacter.relationshipPartnerName || gameState?.characterStates?.[myCharacter.relationshipPartnerId]?.name || 'Partner'}
+                partnerId={myCharacter.relationshipPartnerId}
+                isMaster={myCharacter.isMaster}
+                isServant={myCharacter.isServant}
+                mercenaryTurnsRemaining={myCharacter.mercenaryTurnsRemaining}
+                mandate={myCharacter.masterMandate}
+                onOpenMasterCommands={() => setIsMasterCommandOpen(true)}
+                onBreakAgreement={() => {
+                  const payload = { actionType: 'BREAK_ALLIANCE_MANUAL', breakerId: playerId };
+                  if (isHostRef.current) enqueueHostAction(payload);
+                  else takeTurn(matchIdRef.current, { type: 'PLAYER_ACTION', payload });
+                }}
+              />
+            </div>
+          )}
+
           {/* Floating Damage / Heal Number Popups */}
           {damagePopups.map((popup) => (
             <div
@@ -6686,7 +7054,8 @@ export default function KontrolaArena() {
                     const isV30Locked = upperCardName.includes('VITALITY') && upperCardName.includes('V30') && pLevel < 3;
                     const isV40Locked = upperCardName.includes('VITALITY') && upperCardName.includes('V40') && pLevel < 4;
                     const is3PlayerLocked = (upperCardName.includes('BACK STAB') || upperCardName.includes('SOUL ALLIANCE') || upperCardName.includes('ABANDON') || upperCardName.includes('MISDIRECT')) && (gameState?.players?.length || 2) <= 2;
-                    const isReviveLocked = upperCardName.includes('REVIVE') && (myCharacter?.hp || 0) > 0;
+                    const hasDefeatedOpponent = (gameState?.players || []).some(pId => pId !== playerId && (gameState?.characterStates?.[pId]?.isDefeated || (gameState?.characterStates?.[pId]?.hp || 0) <= 0));
+                    const isReviveLocked = upperCardName.includes('REVIVE') && (myCharacter?.hp || 0) > 0 && !hasDefeatedOpponent;
                     const isAttackMovesLocked = (upperCardName.startsWith('ATTACK X1') || upperCardName.startsWith('ATTACK X2') || upperCardName === 'ATTACK X1' || upperCardName === 'ATTACK X2') && (myCharacter?.characterCardMoves?.length || 0) === 0;
                     const isCardLocked = isV20Locked || isV30Locked || isV40Locked || is3PlayerLocked || isReviveLocked || isAttackMovesLocked;
                     const reqLvl = isV20Locked ? 2 : isV30Locked ? 3 : isV40Locked ? 4 : null;
@@ -6711,7 +7080,7 @@ export default function KontrolaArena() {
                               if (isAttackMovesLocked) {
                                 showNotice('🔒 Attack X1 and Attack X2 are only functional if you have Character Card Moves remaining! (0 moves left)', 'warning');
                               } else if (isReviveLocked) {
-                                showNotice('🔒 REVIVE can only be used when your character reaches 0 HP! (You can still discard & draw)', 'info');
+                                showNotice('🔒 REVIVE can be used at 0 HP or when an opponent is defeated as an Exile! (You can still discard & draw)', 'info');
                               } else if (is3PlayerLocked) {
                                 if (upperCardName.includes('MISDIRECT')) {
                                   showNotice('⚠️ Valid only with more than two players! Requires 3+ players. (You can still discard & draw)', 'info');
@@ -6813,7 +7182,7 @@ export default function KontrolaArena() {
               {/* Target & Move Selection Panel */}
               {selectedActionCard && !isSpectator && (
                 ((selectedActionCard.type === 'ATTACK' || getSafeCardName(selectedActionCard).toUpperCase().includes('BACK STAB')) && !['BOOMERANG'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw))) ||
-                ['POISON', 'SLEEPY', 'FREEZE', 'X-CHANGE', 'KONTROL', 'SOUL ALLIANCE', 'DRAIN', 'VAMPIRE'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw)) ||
+                ['POISON', 'SLEEPY', 'FREEZE', 'X-CHANGE', 'KONTROL', 'SOUL ALLIANCE', 'DRAIN', 'VAMPIRE', 'REVIVE'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw)) ||
                 (getSafeCardName(selectedActionCard).toUpperCase().includes('VISION') && !getSafeCardName(selectedActionCard).toUpperCase().includes('FULL'))
               ) && (
                   <div className="arena-panel" style={{ background: 'rgba(20, 10, 20, 0.95)', border: '1.5px solid var(--neon-crimson)', padding: '12px' }}>
@@ -6841,46 +7210,84 @@ export default function KontrolaArena() {
                           {getSafeCardName(selectedActionCard)}
                         </div>
                         <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.6)' }}>
-                          Action Staged  Choose target opponent below
+                          {getSafeCardName(selectedActionCard).toUpperCase().includes('REVIVE')
+                            ? 'Action Staged — Select defeated Exile to revive'
+                            : 'Action Staged — Choose target opponent below'}
                         </div>
                       </div>
                     </div>
 
                     <div className="panel-title-bar" style={{ marginBottom: '8px' }}>
-                      <span className="panel-kicker" style={{ color: 'var(--neon-crimson)' }}>1. SELECT TARGET</span>
+                      <span className="panel-kicker" style={{ color: 'var(--neon-crimson)' }}>
+                        {getSafeCardName(selectedActionCard).toUpperCase().includes('REVIVE') ? '1. SELECT DEFEATED EXILE' : '1. SELECT TARGET'}
+                      </span>
                     </div>
 
                     <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', flexWrap: 'wrap' }}>
-                      {(getSafeCardName(selectedActionCard).toUpperCase().includes('POISON') ? [...opponents, playerId] : opponents).map((oId) => {
-                        const oChar = gameState.characterStates?.[oId];
-                        if (!oChar || oChar.isDefeated) return null;
-                        const isSelectedTarget = selectedTargetId === oId;
+                      {(() => {
+                        const isReviveCard = getSafeCardName(selectedActionCard).toUpperCase().includes('REVIVE');
+                        if (isReviveCard) {
+                          const defeatedExiles = (gameState?.players || []).filter(pId => pId !== playerId && (gameState?.characterStates?.[pId]?.isDefeated || (gameState?.characterStates?.[pId]?.hp || 0) <= 0));
+                          if (defeatedExiles.length === 0) {
+                            return <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', padding: '8px' }}>No defeated players available to revive.</div>;
+                          }
+                          return defeatedExiles.map((oId) => {
+                            const oChar = gameState?.characterStates?.[oId];
+                            const isSelectedTarget = selectedTargetId === oId;
+                            return (
+                              <button
+                                key={oId}
+                                onClick={() => { playClick(); setSelectedTargetId(oId); }}
+                                style={{
+                                  flex: '1 1 45%',
+                                  background: isSelectedTarget ? 'rgba(57, 255, 20, 0.3)' : 'rgba(0, 0, 0, 0.55)',
+                                  border: isSelectedTarget ? '1.5px solid #39ff14' : '1px solid rgba(255, 255, 255, 0.12)',
+                                  color: isSelectedTarget ? '#39ff14' : '#fff',
+                                  borderRadius: '8px',
+                                  padding: '8px',
+                                  cursor: 'pointer',
+                                  textAlign: 'left'
+                                }}
+                              >
+                                <div style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>✨ {oChar?.name || 'Exile'}</div>
+                                <div style={{ fontSize: '0.72rem', color: '#ff4444' }}>Defeated (0 HP) — Offer Revive</div>
+                              </button>
+                            );
+                          });
+                        }
 
-                        return (
-                          <button
-                            key={oId}
-                            onClick={() => {
-                              playClick();
-                              setSelectedTargetId(oId);
-                            }}
-                            style={{
-                              flex: '1 1 45%',
-                              background: isSelectedTarget ? 'rgba(237, 30, 36, 0.3)' : 'rgba(0, 0, 0, 0.55)',
-                              border: isSelectedTarget ? '1.5px solid var(--neon-crimson)' : '1px solid rgba(255, 255, 255, 0.12)',
-                              color: isSelectedTarget ? 'var(--neon-crimson)' : '#fff',
-                              borderRadius: '8px',
-                              padding: '8px',
-                              cursor: 'pointer',
-                              textAlign: 'center',
-                              fontSize: '0.78rem',
-                              fontWeight: 'bold'
-                            }}
-                          >
-                            <div>{oChar.name}</div>
-                            <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>{oChar.hp} HP</div>
-                          </button>
-                        );
-                      })}
+                        const targetPool = getSafeCardName(selectedActionCard).toUpperCase().includes('POISON') ? [...opponents, playerId] : opponents;
+                        return targetPool.map((oId) => {
+                          const oChar = gameState.characterStates?.[oId];
+                          if (!oChar || oChar.isDefeated) return null;
+                          const isSelectedTarget = selectedTargetId === oId;
+
+                          return (
+                            <button
+                              key={oId}
+                              onClick={() => {
+                                playClick();
+                                setSelectedTargetId(oId);
+                              }}
+                              style={{
+                                flex: '1 1 45%',
+                                background: isSelectedTarget ? 'rgba(237, 30, 36, 0.3)' : 'rgba(0, 0, 0, 0.55)',
+                                border: isSelectedTarget ? '1.5px solid var(--neon-crimson)' : '1px solid rgba(255, 255, 255, 0.12)',
+                                color: isSelectedTarget ? 'var(--neon-crimson)' : '#fff',
+                                borderRadius: '8px',
+                                padding: '8px',
+                                cursor: 'pointer',
+                                textAlign: 'center',
+                                fontSize: '0.78rem',
+                                fontWeight: 'bold'
+                              }}
+                            >
+                              <div>{oChar.name}</div>
+                              <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>{oChar.hp} HP</div>
+                            </button>
+                          );
+                        });
+                      })()}
                     </div>
 
                     {(selectedActionCard?.type === 'ATTACK' || getSafeCardName(selectedActionCard).toUpperCase().includes('BACK STAB')) && !['LIGHTNING', 'FIRE FLAME', 'VAMPIRE', 'DRAIN', 'BACK STAB', 'BOOMERANG', 'MISDIRECT', 'BLITZ'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw)) && (
@@ -7467,6 +7874,32 @@ export default function KontrolaArena() {
               onCancel={() => setSoulAllianceTradeData(null)}
             />
           )}
+
+          {/* Mechanics of Exiles & The Empire Era Modals (Nov 21, 2026) */}
+          <ReviveOfferModal
+            isOpen={Boolean(reviveOfferData)}
+            providerName={reviveOfferData?.providerName}
+            exileName={myCharacter?.name || playerName}
+            onAccept={handleAcceptReviveOffer}
+            onDecline={handleDeclineReviveOffer}
+          />
+
+          <RelationshipSelectModal
+            isOpen={Boolean(relationshipModalData)}
+            partnerName={relationshipModalData?.isProvider ? relationshipModalData?.exileName : relationshipModalData?.providerName}
+            partnerRole={relationshipModalData?.isProvider ? 'Exile' : 'Reviver'}
+            isProvider={Boolean(relationshipModalData?.isProvider)}
+            onSelectRelationship={handleSelectRelationship}
+            onCancel={() => setRelationshipModalData(null)}
+          />
+
+          <MasterCommandModal
+            isOpen={isMasterCommandOpen}
+            servantName={gameState?.characterStates?.[myCharacter?.servantId || myCharacter?.relationshipPartnerId]?.name || 'Servant'}
+            opponents={opponents.map(id => ({ id, name: gameState?.characterStates?.[id]?.name || 'Enemy', hp: gameState?.characterStates?.[id]?.hp || 0 }))}
+            onIssueCommand={handleIssueMasterCommand}
+            onClose={() => setIsMasterCommandOpen(false)}
+          />
 
           {/* REVIVE Prompt Modal */}
           {pendingRevivePrompt && (

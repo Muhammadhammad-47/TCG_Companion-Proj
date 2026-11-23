@@ -510,7 +510,7 @@ export const ACTION_CARDS_BASIC = [
   { name: 'LIGHTNING X1', type: 'ATTACK', count: 6, costET: 1, desc: 'On successful attack, defendant receives -10 HP and attacker receives another turn. If not successful, nothing happens.' },
   { name: 'RETREAT', type: 'TACTICAL', count: 6, costET: 0, desc: 'Disengage or forfeit combat. Only appears if held in Action Deck. Attacker can retreat before/after roll (before Defender rolls). Defender can retreat before rolling.' },
   { name: 'SHIELD BASIC +25 HP', type: 'DEFENSE', count: 6, costET: 0, desc: 'Grants +25 Shield barrier points.' },
-  { name: 'SOUL ALLIANCE', type: 'OTHERS', count: 6, costET: 0, desc: 'Forge a Soul Alliance or NSA (Non-Sovereign Alliance) with another player (3+ players only). Neither can attack each other. Breaking without Abandon or Back Stab inflicts -40 HP.' },
+  { name: 'SOUL ALLIANCE', type: 'OTHERS', count: 6, costET: 0, desc: 'Forge an alliance with another player.' },
   { name: 'VITALITY GAIN V10', type: 'HEAL', count: 6, costET: 0, desc: '+10 HP or prepare to Level Up.' },
   { name: 'HEAL H30', type: 'HEAL', count: 6, costET: 0, desc: 'Restores +30 HP.' },
   { name: 'HEAL H40', type: 'HEAL', count: 6, costET: 0, desc: 'Restores +40 HP.' },
@@ -521,7 +521,7 @@ export const ACTION_CARDS_BASIC = [
   { name: 'LIGHTNING X2', type: 'ATTACK', count: 6, costET: 2, desc: 'On successful attack, defendant receives -20 HP and attacker receives 2 extra turns. Cleanses 1 Poison from Zombie. If not successful, nothing happens.' },
   { name: 'MISDIRECT', type: 'ATTACK', count: 6, costET: 1, desc: 'Redirect an opponent attack.' },
   { name: 'POISON X2', type: 'STATUS', count: 6, costET: 0, desc: 'Initial damage: -20 HP from Poison X2 (-30 HP against characters with Poison weakness: CHYNAMAN aka CHYNA, KIKO, Poochi, Kat, Bee with -10 HP one-time weakness penalty). Ongoing damage: -20 HP per turn until treated with an Antidote Card. Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card.' },
-  { name: 'REVIVE', type: 'HEAL', count: 6, costET: 0, desc: 'Brings a defeated player back to life at 50% HP. Can revive oneself or revive an Exile to negotiate an Empire Era relationship (Independent, NSA Alliance, Servant Master/Slave, or 3-Turn Mercenary).' },
+  { name: 'REVIVE', type: 'HEAL', count: 6, costET: 0, desc: 'Used only when defeated. Note asks to quit or continue. If continue, card is discarded, replacement Action card re-appears, and character returns with 50% original HP.' },
   { name: 'SLEEPY X1', type: 'OTHERS', count: 6, costET: 0, desc: 'Target falls asleep and skips 1 turn (You are Asleep).' },
   { name: 'VISION X1', type: 'OTHERS', count: 6, costET: 0, desc: 'Target reveals Action Cards for 15s.' },
   { name: 'FREEZE X1', type: 'STATUS', count: 6, costET: 0, desc: 'Target loses 1 turn and receives -2 dice penalty (You are frozen).' },
@@ -531,7 +531,7 @@ export const ACTION_CARDS_BASIC = [
   { name: 'FIRE FLAME X1', type: 'ATTACK', count: 1, costET: 1, desc: 'On successful attack, deals -10 HP and burns opponent (-10 HP each turn until doubles are rolled) (1 ET).' },
   { name: 'HEAL CLEANSE+RESTORE', type: 'HEAL', count: 1, costET: 0, desc: 'Cleanses all poison and restores +20 HP.' },
   { name: 'TIME MACHINE', type: 'OTHERS', count: 1, costET: 0, desc: 'Receive another turn immediately.' },
-  { name: 'ABANDON', type: 'OTHERS', count: 1, costET: 0, desc: 'Using an Abandon Card allows you to break your alliance without receiving the -40 HP penalty. Breaking without Abandon or Back Stab inflicts a -40 HP penalty.' },
+  { name: 'ABANDON', type: 'OTHERS', count: 1, costET: 0, desc: 'Abandon your ally in combat.' },
   { name: 'DODGE - BASIC', type: 'DEFENSE', count: 1, costET: 0, desc: 'Evade all incoming attack damage.' }
 ];
 
@@ -994,39 +994,60 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     } else if (cardName.includes('BACK STAB')) {
       baseAP = 35;
       attackElement = 'Shadow';
-      if (newAttackerState.allianceId && newAttackerState.allianceId === newDefenderState?.id) {
+      const isBetrayal = (newAttackerState.allianceId && newAttackerState.allianceId === newDefenderState?.id) ||
+                         (newAttackerState.relationshipPartnerId && newAttackerState.relationshipPartnerId === newDefenderState?.id);
+      if (isBetrayal) {
+        const oldRelType = newAttackerState.relationshipType || 'ALLIANCE';
         newAttackerState.allianceId = null;
         newAttackerState.canTradeWithAlliance = false;
+        newAttackerState.relationshipType = 'INDEPENDENT';
+        newAttackerState.relationshipPartnerId = null;
+        newAttackerState.relationshipRole = null;
         if (newDefenderState) {
           newDefenderState.allianceId = null;
           newDefenderState.canTradeWithAlliance = false;
+          newDefenderState.relationshipType = 'INDEPENDENT';
+          newDefenderState.relationshipPartnerId = null;
+          newDefenderState.relationshipRole = null;
         }
-        log += ` 🗡️ BACK STAB BETRAYAL! ${newAttackerState.name} betrayed their Soul Alliance with ${newDefenderState?.name || 'their ally'} and ambushed them! (Evaded -40 HP penalty with BACK STAB)`;
+        log += ` 🗡️ BACK STAB BETRAYAL! ${newAttackerState.name} terminated their ${oldRelType} with ${newDefenderState?.name || 'their partner'} and launched an ambush! (Evaded -40 HP penalty with BACK STAB)`;
       } else {
         log += ` 🗡️ [BACK STAB: Shadow ambush dealing ${baseAP} AP]`;
       }
-    } else if (newAttackerState.allianceId && newDefenderState && newAttackerState.allianceId === newDefenderState.id) {
-      // Breaking alliance by attacking ally without a BACK STAB card
+    } else if (
+      (newAttackerState.allianceId && newDefenderState && newAttackerState.allianceId === newDefenderState.id) ||
+      (newAttackerState.relationshipPartnerId && newDefenderState && newAttackerState.relationshipPartnerId === newDefenderState.id && ['ALLIANCE', 'SERVANT', 'MERCENARY'].includes(newAttackerState.relationshipType))
+    ) {
+      // Breaking alliance/servitude by attacking ally/master without a BACK STAB or ABANDON card
       const playerHand = newAttackerState.actionCardsHand || gameState?.hands?.[newAttackerState.id] || [];
-      const hasBackStabCard = playerHand.some(c => {
+      const hasProperCard = playerHand.some(c => {
         const cName = (typeof c === 'string' ? c : (c?.name || c?.id || '')).toUpperCase();
-        return cName.includes('BACK STAB') || cName.includes('BACKSTAB');
+        return cName.includes('BACK STAB') || cName.includes('BACKSTAB') || cName.includes('ABANDON');
       });
 
+      const oldRelType = newAttackerState.relationshipType || 'ALLIANCE';
       newAttackerState.allianceId = null;
       newAttackerState.canTradeWithAlliance = false;
-      newDefenderState.allianceId = null;
-      newDefenderState.canTradeWithAlliance = false;
+      newAttackerState.relationshipType = 'INDEPENDENT';
+      newAttackerState.relationshipPartnerId = null;
+      newAttackerState.relationshipRole = null;
+      if (newDefenderState) {
+        newDefenderState.allianceId = null;
+        newDefenderState.canTradeWithAlliance = false;
+        newDefenderState.relationshipType = 'INDEPENDENT';
+        newDefenderState.relationshipPartnerId = null;
+        newDefenderState.relationshipRole = null;
+      }
 
-      if (!hasBackStabCard) {
+      if (!hasProperCard) {
         newAttackerState.hp = Math.max(0, newAttackerState.hp - 40);
-        log += ` 💔 ALLIANCE BROKEN! ${newAttackerState.name} broke their alliance without a BACK STAB card and suffered a -40 HP penalty! (HP: ${newAttackerState.hp})`;
+        log += ` 💔 ${oldRelType} BROKEN! ${newAttackerState.name} attacked their ${oldRelType} partner without an ABANDON or BACK STAB card and suffered a -40 HP penalty! (HP: ${newAttackerState.hp})`;
         if (newAttackerState.hp <= 0) {
           newAttackerState.isDefeated = true;
-          log += ` 💀 ${newAttackerState.name} succumbed to the alliance betrayal penalty and was eliminated!`;
+          log += ` 💀 ${newAttackerState.name} succumbed to the betrayal penalty and was eliminated!`;
         }
       } else {
-        log += ` 🗡️ ${newAttackerState.name} broke their alliance with a BACK STAB card in hand, evading the -40 HP penalty!`;
+        log += ` 🗡️ ${newAttackerState.name} broke their ${oldRelType} with an authorized Action Card in hand, evading the -40 HP penalty!`;
       }
     } else if (cardName.includes('FIRE FLAME')) {
       const isX2 = cardName.includes('X2');
@@ -1790,37 +1811,31 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       log += ` 🤝 Soul Alliance formed between ${newAttackerState.name} and ${newDefenderState.name}! Energy Tokens and REVIVE cards can now be traded.`;
     }
   } else if (cardName === 'ABANDON') {
-    // Official Rule: If a player breaks their alliance without having a back stab card, the leaving player will suffer a -40 HP penalty.
-    const playerHand = newAttackerState.actionCardsHand || gameState?.hands?.[newAttackerState.id] || [];
-    const hasBackStabCard = playerHand.some(c => {
-      const cName = (typeof c === 'string' ? c : (c?.name || c?.id || '')).toUpperCase();
-      return cName.includes('BACK STAB') || cName.includes('BACKSTAB');
-    });
-
-    const allyId = newAttackerState.allianceId;
+    // Official Rule (Nov 21 Spec): Using an Abandon Card allows you to break your alliance/servitude without receiving a -40 HP penalty.
+    const partnerId = newAttackerState.allianceId || newAttackerState.relationshipPartnerId;
+    const oldRelType = newAttackerState.relationshipType || 'ALLIANCE';
     newAttackerState.allianceId = null;
-    newAttackerState.canTradeWithAlliance = false;  // Disable trading
+    newAttackerState.canTradeWithAlliance = false;
+    newAttackerState.relationshipType = 'INDEPENDENT';
+    newAttackerState.relationshipPartnerId = null;
+    newAttackerState.relationshipRole = null;
 
-    if (newDefenderState && (newDefenderState.id === allyId || newDefenderState.allianceId === newAttackerState.id)) {
+    if (newDefenderState && (newDefenderState.id === partnerId || newDefenderState.allianceId === newAttackerState.id || newDefenderState.relationshipPartnerId === newAttackerState.id)) {
       newDefenderState.allianceId = null;
       newDefenderState.canTradeWithAlliance = false;
+      newDefenderState.relationshipType = 'INDEPENDENT';
+      newDefenderState.relationshipPartnerId = null;
+      newDefenderState.relationshipRole = null;
     }
-    if (allyId && gameState?.characterStates?.[allyId]) {
-      gameState.characterStates[allyId].allianceId = null;
-      gameState.characterStates[allyId].canTradeWithAlliance = false;
+    if (partnerId && gameState?.characterStates?.[partnerId]) {
+      gameState.characterStates[partnerId].allianceId = null;
+      gameState.characterStates[partnerId].canTradeWithAlliance = false;
+      gameState.characterStates[partnerId].relationshipType = 'INDEPENDENT';
+      gameState.characterStates[partnerId].relationshipPartnerId = null;
+      gameState.characterStates[partnerId].relationshipRole = null;
     }
 
-    if (!hasBackStabCard) {
-      const penalty = 40;
-      newAttackerState.hp = Math.max(0, newAttackerState.hp - penalty);
-      log += ` 💔 ${newAttackerState.name} abandoned their alliance without a BACK STAB card and suffered a -${penalty} HP penalty! (HP: ${newAttackerState.hp})`;
-      if (newAttackerState.hp <= 0) {
-        newAttackerState.isDefeated = true;
-        log += ` 💀 ${newAttackerState.name} succumbed to the alliance abandonment penalty and was eliminated!`;
-      }
-    } else {
-      log += ` 🗡️ ${newAttackerState.name} abandoned their alliance with a BACK STAB card in hand, evading the -40 HP penalty!`;
-    }
+    log += ` 🕊️ ABANDON CARD PLAYED! ${newAttackerState.name} dissolved their ${oldRelType} peacefully! (Clean breakup, NO -40 HP penalty).`;
   }
 
   // Zombie State Transition Check
@@ -1841,11 +1856,30 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     log += ` ⚠️ ${newAttackerState.name} reached 5 Poison cards and TRANSFORMED INTO A ZOMBIE (40 HP)! Gained Lightning and Fire weakness (-10 HP on initial attacks)!`;
   }
 
-  // Stability Crystals: Transfer on defeat
+  // Stability Crystals: Transfer on defeat (Spoils of War & Empire Era World Sovereign mechanics)
   if (newDefenderState && newDefenderState.hp <= 0 && !newDefenderState.isDefeated) {
     newDefenderState.isDefeated = true;
-    // Transfer 1 crystal from defeated player to attacker
-    if (newDefenderState.crystals > 0) {
+    newDefenderState.isExile = true; // Player enters the Exile pool
+    newDefenderState.canBeRevivedAsExile = true;
+
+    if (newDefenderState.crystals >= 3 || newDefenderState.isSovereign) {
+      // Official Rule: Player who stabilized world through 3 crystals defeated in battle -> properties transfer as Spoils of War!
+      const spoils = newDefenderState.crystals || 3;
+      newAttackerState.crystals = (newAttackerState.crystals || 0) + spoils;
+      newDefenderState.crystals = 0;
+      newDefenderState.isSovereign = false;
+      newAttackerState.isSovereign = true;
+
+      const wasSlaveRebellion = (newAttackerState.relationshipRole === 'SLAVE' && newAttackerState.relationshipPartnerId === newDefenderState.id);
+      if (wasSlaveRebellion) {
+        log += ` 👑⚔️ SLAVE REBELLION VICTORY & SPOILS OF WAR! Exile ${newAttackerState.name} defeated their Master ${newDefenderState.name} and claimed the Throne and all ${spoils} Stability Crystals!`;
+        newAttackerState.relationshipType = 'INDEPENDENT';
+        newAttackerState.relationshipRole = null;
+        newAttackerState.relationshipPartnerId = null;
+      } else {
+        log += ` 👑 SPOILS OF WAR! ${newAttackerState.name} defeated Sovereign ${newDefenderState.name} and claimed all ${spoils} Stability Crystals and the Throne of the World!`;
+      }
+    } else if (newDefenderState.crystals > 0) {
       newAttackerState.crystals = (newAttackerState.crystals || 0) + 1;
       newDefenderState.crystals = Math.max(0, newDefenderState.crystals - 1);
       log += ` 🔷 ${newAttackerState.name} claimed 1 Stability Crystal from defeated ${newDefenderState.name}!`;
@@ -1876,5 +1910,109 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     aoeDamage,
     aoeSplitDamage: aoeSplitDamage || false // Flag for 1vAll damage splitting
   };
+};
+
+/**
+ * Creates or updates diplomatic relationship between Revive Provider and Exile
+ * @param {Object} providerState Character state of provider
+ * @param {Object} exileState Character state of exile
+ * @param {'INDEPENDENT' | 'ALLIANCE' | 'SERVANT' | 'MERCENARY'} relType
+ * @param {Object} options { task, reward, bounty }
+ */
+export const createExileRelationship = (providerState, exileState, relType = 'INDEPENDENT', options = {}) => {
+  const provider = { ...providerState };
+  const exile = {
+    ...exileState,
+    isExile: true,
+    isDefeated: false
+  };
+
+  if (relType === 'INDEPENDENT') {
+    return {
+      provider: {
+        ...provider,
+        allianceId: provider.allianceId === exile.id ? null : provider.allianceId
+      },
+      exile: {
+        ...exile,
+        relationshipType: 'INDEPENDENT',
+        relationshipPartnerId: null,
+        relationshipRole: null,
+        allianceId: null
+      }
+    };
+  }
+
+  if (relType === 'ALLIANCE') {
+    return {
+      provider: {
+        ...provider,
+        allianceId: exile.id,
+        relationshipType: 'ALLIANCE',
+        relationshipPartnerId: exile.id,
+        relationshipRole: 'ALLY',
+        canTradeWithAlliance: true
+      },
+      exile: {
+        ...exile,
+        allianceId: provider.id,
+        relationshipType: 'ALLIANCE',
+        relationshipPartnerId: provider.id,
+        relationshipRole: 'ALLY',
+        canTradeWithAlliance: true
+      }
+    };
+  }
+
+  if (relType === 'SERVANT') {
+    return {
+      provider: {
+        ...provider,
+        allianceId: exile.id,
+        relationshipType: 'SERVANT',
+        relationshipPartnerId: exile.id,
+        relationshipRole: 'MASTER',
+        canTradeWithAlliance: true
+      },
+      exile: {
+        ...exile,
+        allianceId: provider.id,
+        relationshipType: 'SERVANT',
+        relationshipPartnerId: provider.id,
+        relationshipRole: 'SLAVE',
+        canTradeWithAlliance: true,
+        activeTask: options.task || 'Defend or attack targets commanded by Master',
+        taskReward: options.reward || '+1 Energy Token on turn start'
+      }
+    };
+  }
+
+  if (relType === 'MERCENARY') {
+    return {
+      provider: {
+        ...provider,
+        allianceId: exile.id,
+        relationshipType: 'MERCENARY',
+        relationshipPartnerId: exile.id,
+        relationshipRole: 'EMPLOYER',
+        canTradeWithAlliance: true,
+        contractTurns: 3,
+        escrowBounty: options.bounty || { et: 2 }
+      },
+      exile: {
+        ...exile,
+        allianceId: provider.id,
+        relationshipType: 'MERCENARY',
+        relationshipPartnerId: provider.id,
+        relationshipRole: 'MERCENARY',
+        canTradeWithAlliance: true,
+        contractTurns: 3,
+        contractTask: options.task || 'Contract active: 3 turns',
+        escrowBounty: options.bounty || { et: 2 }
+      }
+    };
+  }
+
+  return { provider, exile };
 };
 

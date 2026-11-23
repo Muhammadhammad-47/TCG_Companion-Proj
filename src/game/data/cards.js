@@ -157,7 +157,7 @@ export const ACTION_CARDS = [
     costET: 0,
     icon: '💀',
     color: '#2df6ff',
-    desc: 'Brings a defeated player back to life at 50% HP. Can be played on oneself or provided to an Exile to negotiate an Empire Era relationship (Independent, NSA Alliance, Servant Master/Slave, or 3-Turn Mercenary). (0 ET)'
+    desc: 'Used only when defeated or dies. Quit or continue note pops up: if continue, card is discarded, Action card re-appears, returns at 50% HP. (0 ET)'
   },
   {
     id: 'backstab',
@@ -166,7 +166,7 @@ export const ACTION_CARDS = [
     costET: 1,
     icon: '🗡️',
     color: '#ff3b6b',
-    desc: 'Using a Back Stab Card allows you to break your alliance without receiving the -40 HP Penalty, and allows you to attack your ex-ally immediately after the breakup (must pair Attack Card + Character Card Move + Lightning/Fire/Poison attack card). Bypasses defense (25 AP). (1 ET)'
+    desc: 'Bypass defenses. Deals 25 AP. Only works in 3+ player matches. Allows a player to break their alliance without suffering the -40 HP penalty. (1 ET)'
   },
   {
     id: 'soul_alliance',
@@ -175,7 +175,7 @@ export const ACTION_CARDS = [
     costET: 0,
     icon: '🤝',
     color: '#00f0ff',
-    desc: 'Forge a Soul Alliance or NSA (Non-Sovereign Alliance) with another player (3+ players only). Neither can attack each other. Breaking alliance without an Abandon or Back Stab card inflicts a -40 HP penalty. (0 ET)'
+    desc: 'Forge a Secret Soul Alliance with another player (3+ players only). Trade ET and REVIVE cards. (0 ET)'
   },
   {
     id: 'abandon',
@@ -184,7 +184,7 @@ export const ACTION_CARDS = [
     costET: 0,
     icon: '💔',
     color: '#ff2a6d',
-    desc: 'Using an Abandon Card allows you to break your alliance without receiving the -40 HP penalty. If a player breaks an alliance without an Abandon or Back Stab Card, they receive a -40 HP penalty. (0 ET)'
+    desc: 'Abandon your ally in combat (3+ players only). If a player breaks their alliance without having a back stab card, the leaving player will suffer a -40 HP penalty. (0 ET)'
   },
   {
     id: 'vitality_v10',

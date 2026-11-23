@@ -267,8 +267,23 @@ export function resolveDiceCombat({
     else if (actionCard.id === 'atk_x2') rawAP = 40;
     else if (actionCard.id === 'atk_x1') rawAP = 25;
     else rawAP = 20;
+  } else if (isBackStab || actionCard?.id === 'backstab' || actionCard?.name === 'BACK STAB') {
+    rawAP = 35;
   } else {
     rawAP = 25;
+  }
+
+  // Alliance Breach Check (Nov 21 Spec: Attacking ally without BACK STAB or ABANDON inflicts -40 HP penalty)
+  const isAllied = (attacker.allianceId && attacker.allianceId === defender.id) ||
+                   (attacker.relationshipPartnerId && attacker.relationshipPartnerId === defender.id);
+  let alliancePenaltyDmg = 0;
+  let allianceBroken = false;
+  if (isAllied) {
+    const isBackStabAtk = Boolean(isBackStab || actionCard?.id === 'backstab' || (actionCard?.name || '').includes('BACK STAB'));
+    allianceBroken = true;
+    if (!isBackStabAtk) {
+      alliancePenaltyDmg = 40;
+    }
   }
 
   rawAP += amplifyBonus + (attacker.buffAP || 0);
@@ -495,7 +510,9 @@ export function resolveDiceCombat({
     moveElement,
     isAttackSuccessful: totalOffensiveAP > 0,
     isMiss: !clashWon,
-    isBackStab
+    isBackStab,
+    allianceBroken,
+    alliancePenaltyDmg
   };
 }
 

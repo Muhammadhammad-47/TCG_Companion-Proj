@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { CHARACTERS, ZOMBIE_PROFILE, getAssetUrl, CHARACTER_LEVEL_MATRIX, getCharacterLevelData } from '../data/characters';
 import { ACTION_CARDS, GAME_LIMITS } from '../data/cards';
 import { resolveDiceCombat, advanceTurn, checkZombieStatus, drawRandomCards } from '../utils/gameEngine';
-import { tradeWithAlly, generatePurchasedCharacterMoves } from '../kontrola/KontrolaEngine';
+import { tradeWithAlly, generatePurchasedCharacterMoves, createExileRelationship } from '../kontrola/KontrolaEngine';
 import { soundFX } from '../utils/audio';
 import { createGameRoom, updateGameRoom } from '../../services/roomService';
 import WinnerModal from './WinnerModal';
@@ -21,6 +21,10 @@ import CardZoneModal from './CardZoneModal';
 import ZombieBanner from './ZombieBanner';
 import LocalMatchChatModal from './LocalMatchChatModal';
 import ReviveModal from './ReviveModal';
+import ReviveOfferModal from './ReviveOfferModal';
+import RelationshipSelectModal from './RelationshipSelectModal';
+import EmpireMandateBanner from './EmpireMandateBanner';
+import MasterCommandModal from './MasterCommandModal';
 import XChangeModal from './XChangeModal';
 import SoulAllianceTradeModal from './SoulAllianceTradeModal';
 import SecretAllianceInviteModal from './SecretAllianceInviteModal';
@@ -171,6 +175,11 @@ export default function BattleArena({
   const [floatingDamage, setFloatingDamage] = useState(null); // { targetId, text, type }
   const [turnAnnouncement, setTurnAnnouncement] = useState(null);
   const [isShaking, setIsShaking] = useState(false);
+
+  // Mechanics of Exiles & The Empire Era States (Nov 21, 2026)
+  const [reviveOfferData, setReviveOfferData] = useState(null);
+  const [relationshipModalData, setRelationshipModalData] = useState(null);
+  const [isMasterCommandOpen, setIsMasterCommandOpen] = useState(false);
 
   const players = gameState?.players || [];
   const activeIdx = gameState?.activePlayerIndex || 0;
@@ -807,12 +816,19 @@ export default function BattleArena({
         let attackerAllianceId = p.allianceId;
         let attackerAlliedWith = p.alliedWith;
 
-        // If player breaks alliance with defender without having a BACK STAB card, suffer -40 HP
-        if (p.alliedWith && p.alliedWith === defender.id) {
-          const hasBackStab = (actionCard?.name || '').toUpperCase().includes('BACK STAB') || (actionCard?.id === 'backstab') || (p.actionCardsHand || []).some(c => (c.name || c.id || '').toUpperCase().includes('BACK STAB'));
+        // If player breaks alliance/servitude with defender without having a BACK STAB or ABANDON card, suffer -40 HP
+        let attackerRelType = p.relationshipType;
+        let attackerPartnerId = p.relationshipPartnerId;
+        let attackerRole = p.relationshipRole;
+        if ((p.alliedWith && p.alliedWith === defender.id) || (p.relationshipPartnerId && p.relationshipPartnerId === defender.id)) {
+          const hasBackStab = (actionCard?.name || '').toUpperCase().includes('BACK STAB') || (actionCard?.id === 'backstab');
+          const hasProperCard = hasBackStab || (p.actionCardsHand || []).some(c => (c.name || c.id || '').toUpperCase().includes('ABANDON') || (c.name || c.id || '').toUpperCase().includes('BACK STAB'));
           attackerAllianceId = null;
           attackerAlliedWith = null;
-          if (!hasBackStab) {
+          attackerRelType = 'INDEPENDENT';
+          attackerPartnerId = null;
+          attackerRole = null;
+          if (!hasProperCard) {
             attackerHP = Math.max(0, attackerHP - 40);
           }
         }
@@ -820,8 +836,12 @@ export default function BattleArena({
         return {
           ...p,
           hp: attackerHP,
+          isDefeated: attackerHP === 0 ? true : p.isDefeated,
           allianceId: attackerAllianceId,
           alliedWith: attackerAlliedWith,
+          relationshipType: attackerRelType,
+          relationshipPartnerId: attackerPartnerId,
+          relationshipRole: attackerRole,
           energyTokens: Math.max(0, p.energyTokens - totalET) + stolenET,
           extraTurns,
           characterCardMoves: updatedCharMoves,
@@ -844,14 +864,25 @@ export default function BattleArena({
 
         let defAllianceId = p.allianceId;
         let defAlliedWith = p.alliedWith;
-        if (p.alliedWith && p.alliedWith === attacker.id) {
+        let defRelType = p.relationshipType;
+        let defPartnerId = p.relationshipPartnerId;
+        let defRole = p.relationshipRole;
+        if ((p.alliedWith && p.alliedWith === attacker.id) || (p.relationshipPartnerId && p.relationshipPartnerId === attacker.id)) {
           defAllianceId = null;
           defAlliedWith = null;
+          defRelType = 'INDEPENDENT';
+          defPartnerId = null;
+          defRole = null;
         }
 
         let nextPlayerObj = {
           ...p,
           hp: Math.max(0, nextRawHP - stolenHP),
+          allianceId: defAllianceId,
+          alliedWith: defAlliedWith,
+          relationshipType: defRelType,
+          relationshipPartnerId: defPartnerId,
+          relationshipRole: defRole,
           energyTokens: Math.max(0, (p.energyTokens || 0) - stolenET),
           shield: result.newShield,
           poisonCards: nextPoison,
@@ -904,19 +935,32 @@ export default function BattleArena({
       return;
     }
 
-    // Normal crystal transfer (no split needed - single attacker situation or 2 player game)
+    // Normal crystal transfer (Spoils of War if defender stabilized world with 3 crystals)
     const finalPlayers = updatedPlayers.map(p => {
       if (defenderDefeated) {
+        const isSovereignDefeat = (defender.crystals >= 3 || defender.isSovereign);
+        const spoils = isSovereignDefeat ? (defender.crystals || 3) : 1;
+
         if (p.id === defender.id) {
-          return { ...p, crystals: Math.max(0, p.crystals - 1) };
+          return {
+            ...p,
+            crystals: Math.max(0, p.crystals - spoils),
+            isSovereign: false,
+            isExile: true,
+            canBeRevivedAsExile: true
+          };
         }
         if (p.id === attacker.id) {
-          const newCrystals = p.crystals + 1;
+          const newCrystals = p.crystals + spoils;
           didTransferCrystal = true;
           if (newCrystals >= 3) {
             crystalWinner = p;
           }
-          return { ...p, crystals: newCrystals };
+          return {
+            ...p,
+            crystals: newCrystals,
+            isSovereign: newCrystals >= 3
+          };
         }
       }
       return p;
@@ -1214,32 +1258,25 @@ export default function BattleArena({
           logText = `${updated.name} used ${cardName}!`;
           logAmount = `+${vitAmount} Max HP, Lv.${updated.level}`;
         } else if (type === 'abandon') {
-          const playerHand = sourcePlayer.actionCardsHand || [];
-          const hasBackStab = playerHand.some(c => (c.name || c.id || '').toUpperCase().includes('BACK STAB') || (c.name || c.id || '').toUpperCase().includes('BACKSTAB'));
-
           updated.allianceId = null;
           updated.alliedWith = null;
+          updated.relationshipType = 'INDEPENDENT';
+          updated.relationshipPartnerId = null;
+          updated.relationshipRole = null;
 
-          if (!hasBackStab) {
-            updated.hp = Math.max(0, updated.hp - 40);
-            soundFX.playDamage();
-            logText = `💔 ${updated.name} broke their alliance without a BACK STAB card and suffered -40 HP penalty!`;
-            logAmount = `-40 HP`;
-            if (updated.hp === 0) {
-              updated.isDefeated = true;
-            }
-          } else {
-            soundFX.playCard();
-            logText = `🗡️ ${updated.name} broke their alliance with a BACK STAB card in hand, evading the -40 HP penalty!`;
-            logAmount = `Alliance Broken`;
-          }
+          soundFX.playCard();
+          logText = `🕊️ ${updated.name} played ABANDON CARD! Dissolved alliance peacefully with NO -40 HP penalty!`;
+          logAmount = `Alliance Broken`;
         }
       }
 
       // If abandon card was played, also clear ally's alliance state
-      if (type === 'abandon' && (p.id === sourcePlayer.alliedWith || p.alliedWith === sourcePlayerId)) {
+      if (type === 'abandon' && (p.id === sourcePlayer.alliedWith || p.alliedWith === sourcePlayerId || p.relationshipPartnerId === sourcePlayerId)) {
         updated.allianceId = null;
         updated.alliedWith = null;
+        updated.relationshipType = 'INDEPENDENT';
+        updated.relationshipPartnerId = null;
+        updated.relationshipRole = null;
       }
 
       return checkZombieStatus(updated);
@@ -1990,6 +2027,62 @@ export default function BattleArena({
                 ENTER THE HORDE
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Empire Era Mandate Banner */}
+        {activePlayer?.relationshipType && activePlayer.relationshipType !== 'INDEPENDENT' && (
+          <div style={{ position: 'relative', zIndex: 100, marginBottom: '8px', padding: '0 12px' }}>
+            <EmpireMandateBanner
+              relationshipType={activePlayer.relationshipType}
+              partnerName={activePlayer.relationshipPartnerName || (players.find(p => p.id === activePlayer.relationshipPartnerId)?.name) || 'Partner'}
+              partnerId={activePlayer.relationshipPartnerId}
+              isMaster={activePlayer.isMaster}
+              isServant={activePlayer.isServant}
+              mercenaryTurnsRemaining={activePlayer.mercenaryTurnsRemaining}
+              mandate={activePlayer.masterMandate}
+              onOpenMasterCommands={() => setIsMasterCommandOpen(true)}
+              onBreakAgreement={() => {
+                const nextHp = Math.max(0, (activePlayer.hp || 0) - 40);
+                const isDef = nextHp <= 0;
+                setGameState(prev => {
+                  const updatedPlayers = prev.players.map(p => {
+                    if (p.id === activePlayer.id) {
+                      return {
+                        ...p,
+                        hp: nextHp,
+                        isDefeated: isDef,
+                        relationshipType: 'INDEPENDENT',
+                        relationshipPartnerId: null,
+                        allianceId: null,
+                        alliancePartnerId: null,
+                        isMaster: false,
+                        isServant: false,
+                        masterMandate: null
+                      };
+                    }
+                    if (p.id === activePlayer.relationshipPartnerId) {
+                      return {
+                        ...p,
+                        relationshipType: 'INDEPENDENT',
+                        relationshipPartnerId: null,
+                        allianceId: null,
+                        alliancePartnerId: null,
+                        isMaster: false,
+                        isServant: false,
+                        masterMandate: null
+                      };
+                    }
+                    return p;
+                  });
+                  return {
+                    ...prev,
+                    players: updatedPlayers,
+                    history: [`💔 [ALLIANCE BROKEN] ${activePlayer.name} broke alliance without ABANDON or BACK STAB! Suffered -40 HP penalty!`, ...(prev.history || [])]
+                  };
+                });
+              }}
+            />
           </div>
         )}
 
@@ -3498,6 +3591,90 @@ export default function BattleArena({
           playerEnergyTokens={tradeModalData.playerEnergyTokens}
           onTrade={handleTradeConfirm}
           onCancel={handleTradeCancel}
+        />
+
+        {/* Mechanics of Exiles & The Empire Era Modals (Nov 21, 2026) */}
+        <ReviveOfferModal
+          isOpen={Boolean(reviveOfferData)}
+          providerName={reviveOfferData?.providerName}
+          exileName={activePlayer?.name}
+          onAccept={() => {
+            if (!reviveOfferData) return;
+            setGameState(prev => {
+              const updatedPlayers = prev.players.map(p => {
+                if (p.id === activePlayer.id) {
+                  return { ...p, hp: Math.max(50, Math.floor((p.maxHp || 100) * 0.5)), isDefeated: false, isExile: true };
+                }
+                return p;
+              });
+              return {
+                ...prev,
+                players: updatedPlayers,
+                history: [`✨ [EXILE REVIVED] ${reviveOfferData.providerName} revived ${activePlayer.name} as an Exile!`, ...(prev.history || [])]
+              };
+            });
+            setReviveOfferData(null);
+            setRelationshipModalData({
+              providerId: reviveOfferData.providerId,
+              exileId: activePlayer.id,
+              isProvider: false,
+              providerName: reviveOfferData.providerName,
+              exileName: activePlayer.name
+            });
+          }}
+          onDecline={() => setReviveOfferData(null)}
+        />
+
+        <RelationshipSelectModal
+          isOpen={Boolean(relationshipModalData)}
+          partnerName={relationshipModalData?.isProvider ? relationshipModalData?.exileName : relationshipModalData?.providerName}
+          partnerRole={relationshipModalData?.isProvider ? 'Exile' : 'Reviver'}
+          isProvider={Boolean(relationshipModalData?.isProvider)}
+          onSelectRelationship={(relType, options = {}) => {
+            if (!relationshipModalData) return;
+            const { providerId, exileId } = relationshipModalData;
+            setGameState(prev => {
+              const pChar = prev.players.find(p => p.id === providerId);
+              const eChar = prev.players.find(p => p.id === exileId);
+              if (!pChar || !eChar) return prev;
+              const { updatedProvider, updatedExile } = createExileRelationship(pChar, eChar, relType, options);
+              const updatedPlayers = prev.players.map(p => {
+                if (p.id === providerId) return updatedProvider;
+                if (p.id === exileId) return updatedExile;
+                return p;
+              });
+              return {
+                ...prev,
+                players: updatedPlayers,
+                history: [`👑 [EMPIRE ERA] Status established: ${pChar.name} & ${eChar.name} are now ${relType}!`, ...(prev.history || [])]
+              };
+            });
+            setRelationshipModalData(null);
+          }}
+          onCancel={() => setRelationshipModalData(null)}
+        />
+
+        <MasterCommandModal
+          isOpen={isMasterCommandOpen}
+          servantName={players.find(p => p.id === activePlayer?.servantId || p.id === activePlayer?.relationshipPartnerId)?.name || 'Servant'}
+          opponents={nonDefeatedOpponents.map(p => ({ id: p.id, name: p.name, hp: p.hp }))}
+          onIssueCommand={(cmdData) => {
+            setGameState(prev => {
+              const updatedPlayers = prev.players.map(p => {
+                if (p.id === activePlayer.servantId || p.id === activePlayer.relationshipPartnerId) {
+                  return { ...p, masterMandate: { ...cmdData, issuedTurn: prev.turnNumber || 1 } };
+                }
+                return p;
+              });
+              return {
+                ...prev,
+                players: updatedPlayers,
+                history: [`📜 [MASTER MANDATE] ${activePlayer.name} ordered servant to ${cmdData.commandType}!`, ...(prev.history || [])]
+              };
+            });
+            setIsMasterCommandOpen(false);
+          }}
+          onClose={() => setIsMasterCommandOpen(false)}
         />
 
         {/* Level Requirement Modal */}
