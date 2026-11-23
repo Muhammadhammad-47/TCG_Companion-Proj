@@ -1,4 +1,5 @@
 $files = @(
+    "src/components/AdminCharacterManager.jsx",
     "src/components/CharacterUnlockModal.jsx",
     "src/components/ProfileSettingsModal.jsx",
     "src/components/StoreModal.jsx",
