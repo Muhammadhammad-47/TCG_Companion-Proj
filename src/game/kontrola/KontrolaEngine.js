@@ -510,7 +510,7 @@ export const ACTION_CARDS_BASIC = [
   { name: 'LIGHTNING X1', type: 'ATTACK', count: 6, costET: 1, desc: 'On successful attack, defendant receives -10 HP and attacker receives another turn. If not successful, nothing happens.' },
   { name: 'RETREAT', type: 'TACTICAL', count: 6, costET: 0, desc: 'Disengage or forfeit combat. Only appears if held in Action Deck. Attacker can retreat before/after roll (before Defender rolls). Defender can retreat before rolling.' },
   { name: 'SHIELD BASIC +25 HP', type: 'DEFENSE', count: 6, costET: 0, desc: 'Grants +25 Shield barrier points.' },
-  { name: 'SOUL ALLIANCE', type: 'OTHERS', count: 6, costET: 0, desc: 'Forge an alliance with another player.' },
+  { name: 'SOUL ALLIANCE', type: 'OTHERS', count: 6, costET: 0, desc: 'Forge a Soul Alliance or NSA (Non-Sovereign Alliance) with another player (3+ players only). Neither can attack each other. Breaking without Abandon or Back Stab inflicts -40 HP.' },
   { name: 'VITALITY GAIN V10', type: 'HEAL', count: 6, costET: 0, desc: '+10 HP or prepare to Level Up.' },
   { name: 'HEAL H30', type: 'HEAL', count: 6, costET: 0, desc: 'Restores +30 HP.' },
   { name: 'HEAL H40', type: 'HEAL', count: 6, costET: 0, desc: 'Restores +40 HP.' },
@@ -521,7 +521,7 @@ export const ACTION_CARDS_BASIC = [
   { name: 'LIGHTNING X2', type: 'ATTACK', count: 6, costET: 2, desc: 'On successful attack, defendant receives -20 HP and attacker receives 2 extra turns. Cleanses 1 Poison from Zombie. If not successful, nothing happens.' },
   { name: 'MISDIRECT', type: 'ATTACK', count: 6, costET: 1, desc: 'Redirect an opponent attack.' },
   { name: 'POISON X2', type: 'STATUS', count: 6, costET: 0, desc: 'Initial damage: -20 HP from Poison X2 (-30 HP against characters with Poison weakness: CHYNAMAN aka CHYNA, KIKO, Poochi, Kat, Bee with -10 HP one-time weakness penalty). Ongoing damage: -20 HP per turn until treated with an Antidote Card. Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card.' },
-  { name: 'REVIVE', type: 'HEAL', count: 6, costET: 0, desc: 'Used only when defeated. Note asks to quit or continue. If continue, card is discarded, replacement Action card re-appears, and character returns with 50% original HP.' },
+  { name: 'REVIVE', type: 'HEAL', count: 6, costET: 0, desc: 'Brings a defeated player back to life at 50% HP. Can revive oneself or revive an Exile to negotiate an Empire Era relationship (Independent, NSA Alliance, Servant Master/Slave, or 3-Turn Mercenary).' },
   { name: 'SLEEPY X1', type: 'OTHERS', count: 6, costET: 0, desc: 'Target falls asleep and skips 1 turn (You are Asleep).' },
   { name: 'VISION X1', type: 'OTHERS', count: 6, costET: 0, desc: 'Target reveals Action Cards for 15s.' },
   { name: 'FREEZE X1', type: 'STATUS', count: 6, costET: 0, desc: 'Target loses 1 turn and receives -2 dice penalty (You are frozen).' },
@@ -531,7 +531,7 @@ export const ACTION_CARDS_BASIC = [
   { name: 'FIRE FLAME X1', type: 'ATTACK', count: 1, costET: 1, desc: 'On successful attack, deals -10 HP and burns opponent (-10 HP each turn until doubles are rolled) (1 ET).' },
   { name: 'HEAL CLEANSE+RESTORE', type: 'HEAL', count: 1, costET: 0, desc: 'Cleanses all poison and restores +20 HP.' },
   { name: 'TIME MACHINE', type: 'OTHERS', count: 1, costET: 0, desc: 'Receive another turn immediately.' },
-  { name: 'ABANDON', type: 'OTHERS', count: 1, costET: 0, desc: 'Abandon your ally in combat.' },
+  { name: 'ABANDON', type: 'OTHERS', count: 1, costET: 0, desc: 'Using an Abandon Card allows you to break your alliance without receiving the -40 HP penalty. Breaking without Abandon or Back Stab inflicts a -40 HP penalty.' },
   { name: 'DODGE - BASIC', type: 'DEFENSE', count: 1, costET: 0, desc: 'Evade all incoming attack damage.' }
 ];
 

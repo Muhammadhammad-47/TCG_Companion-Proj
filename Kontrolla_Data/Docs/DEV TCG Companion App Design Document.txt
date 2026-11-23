@@ -676,3 +676,36 @@ ZOMBIE MODE & ELEMENTAL WEAKNESS SPECIFICATION
 - First Initial Attack Penalty: The Fire and Lightning weakness of -10 HP is only on the first initial attack of a Lightning or Fire attack. Lightning and Fire weakness occurs every time a successful Lightning or Fire attack is used.
 - Poison Cleansing: In addition to the weakness damage, a successful Lightning or Fire attack cleanses 1 Poison Card from the Zombie on hit.
 - Curing: If Poison Cards drop below 5 (via Antidote or Fire/Lightning cleansing), the character is restored from Zombie Mode back to their human form and pre-zombie HP.
+
+
+================================================================================
+MECHANICS OF EXILES & THE EMPIRE ERA
+Nov 21, 2026
+================================================================================
+
+What is an Exile?
+An Exile is a player who was recently defeated, has no world, or people left to go back to. The Exile is revived through a Revive Action Card provided by another player still in the game.
+
+Once the Revive Card is accepted by the Exile. There will be options for their relationship. These options will show up on the Exile’s screen and the Revive provider’s screen. Here are the relationship options.
+
+Status:
+1. Independent - No allegiance - Stays this way until changed through Soul Alliance Card
+2. Alliance - NSA (Non-Sovereign Alliance: Both players agree to work together. Neither can attack the other. Both remain independent players. They can attack the same enemies. Either player can terminate the alliance using the Abandon Card or Back Stab Card . If a player breaks the alliance without the proper Action Card - Abandon Card or Back Stab Card, the player breaking the alliance will receive a penalty of -40 HP) - Stays this way until changed through Soul Alliance Card
+3. Servant - Master/Slave - Stays this way until change. (Screens will pop up to do the task like defend against a common enemy or attack a common enemy. Stating the task and the reward for it. Screens will pop up whenever the Master summons the Slave. Maybe they can set parameters like receive an extra energy token on every turn.) A broken agreement will cause the Exile to receive -40 HP without the proper Action Card.
+4. Mercenary - Paid Contracts - 3 turns. (Once this is chosen. A screen will pop up to ask the Exile to do a join and what it is worth. Once the task is complete the client will pay the Exile or give an or a couple of Action Cards. Whatever was agreed upon before the task at hand.)
+
+The exile will continue their turn as usual, being able to use Energy Tokens, Energy Reserve, Action Cards, Character Card Moves, etc.
+
+When a player who has stabilized their world through gathering 3 Energy Stability Crystals is defeated in battle. Their world is not lost, but all properties are transferred to the winning player aka Spoils of War.
+
+Example - An Exile can be strong enough to defeat their Master when in Servant Mode. The Exile then becomes the ruler of that world and the defeated player is either out of the game or can be brought back in as an Exile.
+
+***Exile and other players can communicate privately to each other to devise a plan to go against a common enemy or create a rebellion through the chat system we have already created.***
+
+IMPORTANT NOTES (Covering the Mechanics of Abandon and Back Stab Card)
+
+What card can I use to break an alliance without receiving the -40 HP penalty?
+Using an Abandon Card or a Back Stab Card will allow you to break your alliance without receiving a -40 HP Penalty.
+
+What is the difference between an Abandon and Back Stab card?
+Abandon Card allows you to break your alliance without receiving the -40 HP penalty. The Back Stab allows you to do the same thing, but also allows you to attack your ex-ally immediately after the breakup. However, the player must have an Attack Card paired with a Character Card Move & Lightning/Fire/ Poison attack card.
