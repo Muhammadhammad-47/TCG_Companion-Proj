@@ -86,7 +86,11 @@ export default function CharacterCardModal({ characterId, onClose }) {
               
               <div style={{ marginBottom: '12px', background: 'rgba(0,0,0,0.4)', padding: '12px', borderRadius: '8px' }}>
                 <div style={{ fontSize: '0.75rem', color: charData.themeColor, fontWeight: 'bold', marginBottom: '4px' }}>WEAKNESS</div>
-                <div style={{ fontSize: '0.9rem' }}>{charData.weakness.icon} {charData.weakness.type} (+{charData.weakness.bonusAP} AP)</div>
+                <div style={{ fontSize: '0.9rem' }}>
+                  {typeof charData?.weakness === 'object' && charData?.weakness !== null
+                    ? `${charData.weakness.icon || '🎯'} ${charData.weakness.type || 'None'} (+${charData.weakness.bonusAP || 10} AP)`
+                    : (charData?.weakness ? `🎯 ${charData.weakness}` : 'None')}
+                </div>
               </div>
 
               <div style={{ background: 'rgba(0,0,0,0.4)', padding: '12px', borderRadius: '8px' }}>

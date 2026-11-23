@@ -217,9 +217,11 @@ export default function PlayerCard({
             <div className="status-tag dp-tag" title="Defence on a 6+ roll">
               <Shield size={12} /> -{char.defaultDP} · 6+
             </div>
-            <div className="status-tag weak-tag" title={`Weak to ${char.weakness?.type || char.weakness}`}>
-              {char.weakness?.icon || '🎯'} {char.weakness?.type || char.weakness} +{char.weakness?.bonusAP || 10}
-            </div>
+            {char.weakness && (
+              <div className="status-tag weak-tag" title={`Weak to ${typeof char.weakness === 'object' ? (char.weakness.type || '') : char.weakness}`}>
+                {typeof char.weakness === 'object' ? (char.weakness.icon || '🎯') : '🎯'} {typeof char.weakness === 'object' ? (char.weakness.type || '') : char.weakness} +{typeof char.weakness === 'object' ? (char.weakness.bonusAP || 10) : 10}
+              </div>
+            )}
           </>
         )}
 
