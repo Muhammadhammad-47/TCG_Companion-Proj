@@ -1351,7 +1351,8 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       // This is only activated when the player rolls a total of six or higher from two dices, even if the player loses the battle"
       const defenderRolled6Plus = (defenderRoll?.total || 0) >= 6;
       let innateAbsorb = 0;
-      if (defenderRolled6Plus && !defCard && finalDamage > 0) {
+      const isPoisonAttackCard = cardName.includes('POISON') || (attackElement && attackElement.toLowerCase().includes('poison')) || isAttackerZombie;
+      if (defenderRolled6Plus && !defCard && finalDamage > 0 && !isPoisonAttackCard) {
         innateAbsorb = Math.min(10, finalDamage);
         finalDamage = Math.max(0, finalDamage - innateAbsorb);
         log += ` 🛡️ Innate Basic Defense: Defender rolled ${defenderRoll?.total || 0} (≥6), reducing incoming attack power by ${innateAbsorb} AP!`;
@@ -1361,10 +1362,12 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       // Official Rule: "SHIELD BASIC + 25HP - Prevents all damage except poison and fire"
       let shieldAbsorbed = 0;
       const isFireAttack = (attackElement && attackElement.toLowerCase().includes('fire')) || cardName.includes('FIRE');
-      const isPoisonAttack = (attackElement && attackElement.toLowerCase().includes('poison')) || cardName.includes('POISON') || isAttackerZombie;
+      const isPoisonAttack = isPoisonAttackCard;
       if (newDefenderState?.shield > 0 && finalDamage > 0) {
         if (newDefenderState.hasBasicShield && (isFireAttack || isPoisonAttack)) {
           log += ` 🛡️🚫 SHIELD BASIC cannot block ${isFireAttack ? 'Fire' : 'Poison'} damage! ${isFireAttack ? 'Fire' : 'Poison'} bypasses basic shield!`;
+        } else if (isPoisonAttack) {
+          log += ` 🛡️🚫 Poison damage bypasses shield!`;
         } else {
           shieldAbsorbed = Math.min(newDefenderState.shield, finalDamage);
           newDefenderState.shield -= shieldAbsorbed;
@@ -1405,6 +1408,15 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           newDefenderState.poisonCount = (newDefenderState.poisonCount || 0) + 1;
           newDefenderState.justPoisoned = true;
           log += ` Venom Strike infected ${newDefenderState.name} with 1 Poison card!`;
+        }
+
+        // If attack was POISON X1 or POISON X2 -> Defender gains poison stacks & marked justPoisoned
+        if (cardName.includes('POISON')) {
+          const isX2 = cardName.includes('X2');
+          const stacks = isX2 ? 2 : 1;
+          newDefenderState.poisonCount = (newDefenderState.poisonCount || 0) + stacks;
+          newDefenderState.justPoisoned = true;
+          log += ` ☠️ Poison strike infected ${newDefenderState.name} with ${stacks} Poison card(s)! Ongoing damage starts on their next turn.`;
         }
 
         // Apply Burn Status if Fire Flame X1 or X2 (only if not immune to Fire)

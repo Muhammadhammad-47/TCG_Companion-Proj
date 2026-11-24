@@ -312,7 +312,8 @@ export default function KontrolaDiceRoller({
   const defWon = hasAttackerRolled && hasDefenderRolled && !isTie && defSum > atkSum;
 
   // Robust attack info lookup with character template fallback
-  const charKey = atkChar?.id || combatData?.attackerId || combatData?.actorId || 'chynaman';
+  const rawCharKey = atkChar?.characterId || atkChar?.id || combatData?.attackerId || combatData?.actorId || 'chynaman';
+  const charKey = String(rawCharKey).toLowerCase();
   const charTemplate = KONTROLA_CHARACTERS[charKey] || Object.values(KONTROLA_CHARACTERS).find(c => c.name?.toLowerCase() === atkChar?.name?.toLowerCase());
   const attackNameUpper = (attackSelectionName || '').toUpperCase();
   const selectedAttackInfo = atkChar?.attacks?.[attackSelectionName] 
@@ -321,12 +322,14 @@ export default function KontrolaDiceRoller({
     || Object.entries(charTemplate?.attacks || {}).find(([k]) => k.toUpperCase() === attackNameUpper)?.[1]
     || (atkChar?.characterCardMoves || []).find(m => (m.name || '').toUpperCase() === attackNameUpper);
   const hasMultiplierDie = Boolean(
-    selectedAttackInfo && (
+    (selectedAttackInfo && (
       selectedAttackInfo.dice > 0 || 
       selectedAttackInfo.type === 'dice_mult' || 
       Boolean(selectedAttackInfo.multiplier) ||
       attackNameUpper.includes(' PER ')
-    )
+    )) ||
+    attackNameUpper.includes(' PER ') ||
+    attackNameUpper.includes('POPPERS')
   );
   const perAp = Number(selectedAttackInfo?.ap || selectedAttackInfo?.multiplier || selectedAttackInfo?.baseAP || 4);
   const rawDefenseCard = combatData?.defenseCard || precalculatedRolls?.defenseCard || null;
@@ -341,11 +344,12 @@ export default function KontrolaDiceRoller({
       if (!atkWon || !defChar) return null;
       let baseAP = 15;
       const cardNameUpper = (resolvedCardName || '').toUpperCase();
+      const isPoisonCard = cardNameUpper.includes('POISON');
       if (cardNameUpper.includes('LIGHTNING')) {
         baseAP = cardNameUpper.includes('X2') ? 20 : 10;
       } else if (cardNameUpper.includes('FIRE FLAME')) {
         baseAP = cardNameUpper.includes('X2') ? 20 : 10;
-      } else if (cardNameUpper.includes('POISON')) {
+      } else if (isPoisonCard) {
         baseAP = cardNameUpper.includes('X2') ? 20 : 10;
       } else if (cardNameUpper.includes('BACK STAB')) {
         baseAP = 35;
@@ -365,7 +369,7 @@ export default function KontrolaDiceRoller({
       const isFireWeakness = isZombieDef || defWeakness.includes('fire') || ['shroomy', 'queeny'].some(k => defCharKey.includes(k));
       const isLightningWeakness = isZombieDef || defWeakness.includes('lightning') || defWeakness.includes('lighting');
       const isMagicWeakness = defWeakness.includes('magic') || ['chynaman', 'chyna', 'bee', 'poochi', 'pooch', 'queeny'].some(k => defCharKey.includes(k));
-      const attackElem = selectedAttackInfo?.element || (cardNameUpper.includes('FIRE') ? 'Fire' : (cardNameUpper.includes('LIGHTNING') || cardNameUpper.includes('LIGHTING')) ? 'Lightning' : cardNameUpper.includes('POISON') ? 'Poison' : 'Physical');
+      const attackElem = selectedAttackInfo?.element || (cardNameUpper.includes('FIRE') ? 'Fire' : (cardNameUpper.includes('LIGHTNING') || cardNameUpper.includes('LIGHTING')) ? 'Lightning' : isPoisonCard ? 'Poison' : 'Physical');
       const isMagicAndPoisonAtk = (attackElem && (attackElem.includes('&') || attackElem.toLowerCase().includes('and')) && attackElem.toLowerCase().includes('magic') && attackElem.toLowerCase().includes('poison')) || 
         attackNameUpper.includes('POPPERS') || 
         attackNameUpper.includes('BOMBA') || 
@@ -405,10 +409,10 @@ export default function KontrolaDiceRoller({
 
       const totalOffensiveAP = baseAP + weaknessBonus;
       const defRolled6Plus = defSum >= 6;
-      const innateDP = (defRolled6Plus && !activeDefenseCard) ? 10 : 0;
+      const innateDP = (defRolled6Plus && !activeDefenseCard && !isPoisonCard) ? 10 : 0;
       const damageAfterDP = Math.max(0, totalOffensiveAP - innateDP);
       const currentShield = defChar?.shield || 0;
-      const shieldAbsorbed = Math.min(currentShield, damageAfterDP);
+      const shieldAbsorbed = isPoisonCard ? 0 : Math.min(currentShield, damageAfterDP);
       const netHPDamage = Math.max(0, damageAfterDP - shieldAbsorbed);
       const newDefenderHP = Math.max(0, (defChar?.hp ?? 100) - netHPDamage);
 

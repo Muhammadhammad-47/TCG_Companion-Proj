@@ -886,6 +886,7 @@ export default function BattleArena({
           energyTokens: Math.max(0, (p.energyTokens || 0) - stolenET),
           shield: result.newShield,
           poisonCards: nextPoison,
+          justPoisoned: targetPoisonChange > 0 ? true : p.justPoisoned,
           burnCount: nextBurn,
           allianceId: defAllianceId,
           alliedWith: defAlliedWith,
@@ -1138,7 +1139,7 @@ export default function BattleArena({
   };
 
   // Instant card effect (Heal, Shield, Antidote, Poison, Amplify, VITALITY)
-  const handleApplyInstantEffect = ({ type, sourcePlayerId, targetPlayerId, costET = 0, amount = 0, amplifyChoice = null, cardName = null, playedInstanceId }) => {
+  const handleApplyInstantEffect = ({ type, sourcePlayerId, targetPlayerId, costET = 0, amount = 0, amplifyChoice = null, cardName = null, playedInstanceId, actionCardId = null }) => {
     pushStateSnapshot();
     setShowCardActionModal(false);
     setShowCardZoneModal(false);

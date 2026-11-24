@@ -41,8 +41,17 @@ export default function CardActionModal({
   const currentAction = (activePlayer.actionCardsHand || []).find(c => c.instanceId === selectedInstanceId);
   const currentMove = availableMoves.find(m => m.id === selectedMoveId) || availableMoves[0];
 
-  const isAttackPlay = currentAction?.category === 'Attack' || isZombie;
-  const totalETCost = isAttackPlay ? (currentMove?.costET || 0) : (currentAction?.costET || 0);
+  const isAttackAction = Boolean(
+    currentAction?.category === 'Attack' ||
+    currentAction?.type === 'ATTACK' ||
+    currentAction?.id === 'atk_x1' ||
+    currentAction?.id === 'atk_x2' ||
+    (currentAction?.name || '').toUpperCase().includes('ATTACK') ||
+    currentAction?.id === 'backstab' ||
+    (currentAction?.name || '').toUpperCase().includes('BACK STAB')
+  );
+  const isAttackPlay = isAttackAction || isZombie;
+  const totalETCost = isAttackPlay ? ((currentAction?.costET || 0) + (currentMove?.costET || 0)) : (currentAction?.costET || 0);
 
   const selectableTargets = allPlayers.filter(p => {
     if (p.isDefeated) return false;
@@ -532,7 +541,7 @@ export default function CardActionModal({
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span style={{ fontSize: '1.3rem' }}>{card.icon}</span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            {card.category === 'Attack' && (
+                            {(card.category === 'Attack' || card.type === 'ATTACK') && (
                               <span style={{
                                 fontSize: '0.65rem',
                                 background: 'rgba(237, 30, 36, 0.2)',
@@ -545,7 +554,7 @@ export default function CardActionModal({
                                 ⚔️ ATTACK
                               </span>
                             )}
-                            {card.category === 'Defense' && (
+                            {(card.category === 'Defense' || card.type === 'DEFENSE') && (
                               <span style={{
                                 fontSize: '0.65rem',
                                 background: 'rgba(0, 240, 255, 0.15)',
@@ -558,7 +567,7 @@ export default function CardActionModal({
                                 🛡️ DEFENSE
                               </span>
                             )}
-                            {card.category === 'Vitality' && (
+                            {(card.category === 'Vitality' || card.type === 'VITALITY' || card.type === 'HEAL') && (
                               <span style={{
                                 fontSize: '0.65rem',
                                 background: 'rgba(57, 255, 20, 0.15)',
@@ -670,7 +679,7 @@ export default function CardActionModal({
                 )}
 
                 {/* Character Move Selection (For Attacks) */}
-                {(currentAction?.category === 'Attack' || isZombie) && currentAction?.type !== 'VITALITY' && (
+                {(isAttackPlay || currentAction?.category === 'Attack' || currentAction?.type === 'ATTACK' || isZombie) && currentAction?.type !== 'VITALITY' && (
                   <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                       <div style={{ fontSize: '0.82rem', color: 'var(--neon-pink)', fontWeight: 'bold' }}>
@@ -844,7 +853,7 @@ export default function CardActionModal({
                 )}
 
                 {/* Target Opponent Selection */}
-                {(currentAction?.category === 'Attack' || currentAction?.id === 'poison_card' || currentAction?.id === 'poison_x1' || currentAction?.id === 'poison_x2' || currentAction?.name?.includes('POISON') || isZombie) && currentAction?.type !== 'VITALITY' && (
+                {(isAttackPlay || currentAction?.category === 'Attack' || currentAction?.type === 'ATTACK' || currentAction?.id === 'poison_card' || currentAction?.id === 'poison_x1' || currentAction?.id === 'poison_x2' || currentAction?.name?.includes('POISON') || isZombie) && currentAction?.type !== 'VITALITY' && (
                   <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px' }}>
                     <div style={{ fontSize: '0.82rem', color: 'var(--neon-gold)', fontWeight: 'bold', marginBottom: '8px' }}>
                       3. SELECT TARGET OPPONENT

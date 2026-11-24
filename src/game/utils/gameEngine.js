@@ -350,7 +350,8 @@ export function resolveDiceCombat({
   // 3. Defender 6+ Defense Rule (2 Gold Dice sum >= 6 from Clash)
   // +DEFENCE Card Priority: Priority 1 applies if defender wins clash
   let defenseActivated = clashDefSum >= 6;
-  let innateDP = defenseActivated ? (defChar.defaultDP || 0) + (defender.buffDP || 0) : 0;
+  const isPoisonAttackCard = (moveElement && moveElement.toLowerCase().includes('poison')) || (actionCard?.name || '').includes('POISON') || (actionCard?.id || '').includes('poison') || isAttackerZombie;
+  let innateDP = (defenseActivated && !isPoisonAttackCard) ? (defChar.defaultDP || 0) + (defender.buffDP || 0) : 0;
   let defenseCardBonus = 0;
 
   // Apply +DEFENCE card bonus only if defender wins clash OR has 6+ defense
@@ -377,14 +378,13 @@ export function resolveDiceCombat({
   let netHPDamage = damageAfterDP;
   let absorbedByShield = 0;
 
-  // BACK STAB bypasses shield
-  if (isBackStab) {
+  // BACK STAB and Poison bypass shield
+  const isFire = (moveElement && moveElement.toLowerCase().includes('fire')) || (actionCard?.name || '').includes('FIRE');
+  const isPoison = isPoisonAttackCard;
+  if (isBackStab || isPoison) {
     absorbedByShield = 0;
-    // No shield reduction for BACK STAB
   } else if (currentShield > 0) {
     // Official Rule: "SHIELD BASIC + 25HP - Prevents all damage except poison and fire"
-    const isFire = (moveElement && moveElement.toLowerCase().includes('fire')) || (actionCard?.name || '').includes('FIRE');
-    const isPoison = (moveElement && moveElement.toLowerCase().includes('poison')) || (actionCard?.name || '').includes('POISON') || isAttackerZombie;
     if (defender.hasBasicShield && (isFire || isPoison)) {
       absorbedByShield = 0;
     } else if (currentShield >= netHPDamage) {

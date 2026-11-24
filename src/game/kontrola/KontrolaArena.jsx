@@ -4005,230 +4005,236 @@ export default function KontrolaArena() {
   // PLAY ACTION & SYNCHRONIZED COMBAT CLASH
   // ==========================================
   const playTurn = async () => {
-    console.log('[playTurn] Starting with state:', {
-      isProcessingAction,
-      isMyTurn,
-      isSpectator,
-      selectedActionCard: selectedActionCard?.name,
-      selectedCharacterAttack,
-      selectedTargetId,
-      myCharacterName: myCharacter?.name
-    });
+    try {
+      console.log('[playTurn] Starting with state:', {
+        isProcessingAction,
+        isMyTurn,
+        isSpectator,
+        selectedActionCard: selectedActionCard?.name,
+        selectedCharacterAttack,
+        selectedTargetId,
+        myCharacterName: myCharacter?.name
+      });
 
-    playClick();
-    if (isProcessingAction) {
-      console.log('[playTurn] BLOCKED: isProcessingAction is true');
-      return;
-    }
-    if (isSpectator) {
-      showNotice('Spectator mode: you are observing this match.', 'info');
-      return;
-    }
-    if (!isMyTurn) {
-      showNotice("It's not your turn! Please wait for the current player.", 'warning');
-      return;
-    }
-    if (!selectedActionCard) {
-      showNotice('Please select an Action Card from your hand first.', 'warning');
-      return;
-    }
-
-    const cardName = getSafeCardName(selectedActionCard).toUpperCase();
-    const isTrap = cardName.includes('BOOMERANG');
-    const isDrain = cardName.includes('DRAIN');
-    const isBackStab = cardName.includes('BACK STAB');
-    const isFullXChange = cardName.includes('X-CHANGE') && cardName.includes('FULL');
-    const isAttack = (selectedActionCard.type === 'ATTACK' || isBackStab || isDrain) && !isTrap;
-    const isAoE = cardName.includes('BLITZ') || (selectedCharacterAttack && selectedCharacterAttack.includes('BLITZ')) || isFullXChange;
-    const isLightning = cardName.includes('LIGHTNING');
-    const isFire = cardName.includes('FIRE');
-    const isVampire = cardName.includes('VAMPIRE');
-    const isMisdirect = cardName.includes('MISDIRECT');
-
-    console.log('[playTurn] Card type analysis:', {
-      cardName,
-      cardType: selectedActionCard.type,
-      isAttack,
-      isAoE,
-      isLightning,
-      isFire,
-      isVampire,
-      isBackStab,
-      isDrain,
-      isTrap
-    });
-
-    // Level check for Vitality Gain cards (V20 -> Level 2, V30 -> Level 3, V40 -> Level 4)
-    const currentVLevel = myCharacter?.level || 1;
-    if (cardName.includes('V20') && currentVLevel < 2) {
-      showNotice('Only available in level 2! Vitality Gain V20 requires reaching 150 HP (Level 2).', 'warning');
-      return;
-    }
-    if (cardName.includes('V30') && currentVLevel < 3) {
-      showNotice('Only available in level 3! Vitality Gain V30 requires reaching 200 HP (Level 3).', 'warning');
-      return;
-    }
-    if (cardName.includes('V40') && currentVLevel < 4) {
-      showNotice('Only available in level 4! Vitality Gain V40 requires reaching Level 4.', 'warning');
-      return;
-    }
-
-    // Attack X1 and Attack X2 are only functional if the player has Character Card Moves
-    const isAttackMovesPlay = cardName === 'ATTACK X1' || cardName.startsWith('ATTACK X1') || cardName === 'ATTACK X2' || cardName.startsWith('ATTACK X2');
-    const playerCharMoves = myCharacter?.characterCardMoves || [];
-    if (isAttackMovesPlay && playerCharMoves.length === 0) {
-      showNotice('⚠️ Attack X1 & Attack X2 are only functional if you have Character Card Moves remaining! (0 moves left. Scan physical QR code or purchase moves from store).', 'warning');
-      return;
-    }
-
-    if (isAttack && !isAoE && !selectedTargetId) {
-      console.log('[playTurn] VALIDATION FAILED: Attack requires target');
-      showNotice('Please select a target opponent player first!', 'warning');
-      return; // Must select target
-    }
-
-    // 3+ Player check for Soul Alliance, Abandon, Back Stab & Misdirect
-    const is3PlayerOnly = cardName.includes('BACK STAB') || cardName.includes('SOUL ALLIANCE') || cardName.includes('ABANDON') || cardName.includes('MISDIRECT');
-    const totalMatchPlayers = (gameState?.players?.length) || 2;
-    if (is3PlayerOnly && totalMatchPlayers <= 2) {
-      if (cardName.includes('MISDIRECT')) {
-        showNotice('⚠️ Valid only with more than two players! Requires 3+ players. (You can still discard & draw)', 'warning');
-      } else {
-        showNotice('⚠️ Only available in 3+ player matches! Cannot be played in a 1-on-1 duel.', 'warning');
+      playClick();
+      if (isProcessingAction) {
+        console.log('[playTurn] BLOCKED: isProcessingAction is true');
+        return;
       }
-      return;
-    }
+      if (isSpectator) {
+        showNotice('Spectator mode: you are observing this match.', 'info');
+        return;
+      }
+      if (!isMyTurn) {
+        showNotice("It's not your turn! Please wait for the current player.", 'warning');
+        return;
+      }
+      if (!selectedActionCard) {
+        showNotice('Please select an Action Card from your hand first.', 'warning');
+        return;
+      }
 
-    const isReviveExile = cardName.includes('REVIVE') && (myCharacter?.hp || 0) > 0;
-    const needsTarget = ['POISON', 'SLEEPY', 'FREEZE', 'KONTROL', 'SOUL ALLIANCE', 'DRAIN', 'VAMPIRE'].some(kw => cardName.includes(kw)) ||
-      isReviveExile ||
-      (cardName.includes('X-CHANGE') && !cardName.includes('FULL')) ||
-      (cardName.includes('VISION') && !cardName.includes('FULL'));
-    if (needsTarget && !selectedTargetId) {
-      showNotice(isReviveExile ? 'Please select a defeated player / Exile to revive!' : 'Please select a target player first!', 'warning');
-      return;
-    }
+      const activeMatchId = matchIdRef.current || matchId;
+      const cardName = getSafeCardName(selectedActionCard).toUpperCase();
+      const isTrap = cardName.includes('BOOMERANG');
+      const isDrain = cardName.includes('DRAIN');
+      const isBackStab = cardName.includes('BACK STAB');
+      const isFullXChange = cardName.includes('X-CHANGE') && cardName.includes('FULL');
+      const isAttack = (selectedActionCard.type === 'ATTACK' || isBackStab || isDrain) && !isTrap;
+      const isAoE = cardName.includes('BLITZ') || (selectedCharacterAttack && selectedCharacterAttack.includes('BLITZ')) || isFullXChange;
+      const isLightning = cardName.includes('LIGHTNING');
+      const isFire = cardName.includes('FIRE');
+      const isVampire = cardName.includes('VAMPIRE');
+      const isMisdirect = cardName.includes('MISDIRECT');
 
-    if (isReviveExile) {
-      const targetChar = gameState.characterStates?.[selectedTargetId];
-      const exileOffer = {
-        actionType: 'OFFER_EXILE_REVIVE',
-        providerId: playerId,
-        providerName: myCharacter?.name || playerName || 'Player',
-        exileId: selectedTargetId,
-        exileName: targetChar?.name || 'Exile Player'
-      };
-      if (isHost) enqueueHostAction(exileOffer);
-      else takeTurn(matchId, { type: 'PLAYER_ACTION', payload: exileOffer });
-      broadcastUIEvent(matchId, 'EXILE_REVIVE_OFFER', exileOffer);
-      showNotice(`✨ Revive Offer sent to ${targetChar?.name || 'Exile'}! Waiting for their decision...`, 'info');
-      setSelectedActionCard(null);
-      setSelectedTargetId(null);
-      return;
-    }
+      console.log('[playTurn] Card type analysis:', {
+        cardName,
+        cardType: selectedActionCard.type,
+        isAttack,
+        isAoE,
+        isLightning,
+        isFire,
+        isVampire,
+        isBackStab,
+        isDrain,
+        isTrap
+      });
 
-    if (isAttack && !isAoE && !isLightning && !isFire && !isVampire && !isMisdirect && !isDrain && !selectedCharacterAttack) {
-      console.log('[playTurn] VALIDATION FAILED: Attack requires character move selection');
-      showNotice('Please select a character attack move to strike with!', 'warning');
-      return;
-    }
+      // Level check for Vitality Gain cards (V20 -> Level 2, V30 -> Level 3, V40 -> Level 4)
+      const currentVLevel = myCharacter?.level || 1;
+      if (cardName.includes('V20') && currentVLevel < 2) {
+        showNotice('Only available in level 2! Vitality Gain V20 requires reaching 150 HP (Level 2).', 'warning');
+        return;
+      }
+      if (cardName.includes('V30') && currentVLevel < 3) {
+        showNotice('Only available in level 3! Vitality Gain V30 requires reaching 200 HP (Level 3).', 'warning');
+        return;
+      }
+      if (cardName.includes('V40') && currentVLevel < 4) {
+        showNotice('Only available in level 4! Vitality Gain V40 requires reaching Level 4.', 'warning');
+        return;
+      }
 
-    const effectiveAttackSelection = (selectedCharacterAttack === 'WILD CARD' || (selectedCharacterAttack || '').toUpperCase().includes('WILD'))
-      ? (selectedWildMoveChoice || Object.keys(myCharacter?.attacks || {})[0] || selectedCharacterAttack)
-      : selectedCharacterAttack;
+      // Attack X1 and Attack X2 are only functional if the player has Character Card Moves
+      const isAttackMovesPlay = cardName === 'ATTACK X1' || cardName.startsWith('ATTACK X1') || cardName === 'ATTACK X2' || cardName.startsWith('ATTACK X2');
+      const playerCharMoves = myCharacter?.characterCardMoves || [];
+      if (isAttackMovesPlay && playerCharMoves.length === 0) {
+        showNotice('⚠️ Attack X1 & Attack X2 are only functional if you have Character Card Moves remaining! (0 moves left. Scan physical QR code or purchase moves from store).', 'warning');
+        return;
+      }
 
-    const uniqueActionId = `act_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-    const payload = {
-      actionId: uniqueActionId,
-      actorId: playerId,
-      actionCard: selectedActionCard,
-      attackSelectionName: (isLightning || isFire || isVampire || isMisdirect || isDrain) ? null : effectiveAttackSelection,
-      targetId: isAoE ? 'ALL' : selectedTargetId
-    };
+      if (isAttack && !isAoE && !selectedTargetId) {
+        console.log('[playTurn] VALIDATION FAILED: Attack requires target');
+        showNotice('Please select a target opponent player first!', 'warning');
+        return; // Must select target
+      }
 
-    console.log('[playTurn] Payload created:', payload);
-
-    if (currentUser?.id) {
-      cosmeticsService.recordCardPlayed(currentUser.id);
-    }
-
-    if (isAttack) {
-      if (isAoE) {
-        // Synthesize valid defender object for AoE so 3D Dice screen never crashes on undefined target
-        const targetChar = (selectedTargetId && gameState.characterStates[selectedTargetId]) ? gameState.characterStates[selectedTargetId] : {
-          id: 'ALL',
-          name: 'ALL OPPONENTS',
-          image: 'Kontrolla_Data/Graphics/CARDS/SHIELD ADVANCE +100HP CARD.png',
-          themeColor: '#FF9900',
-          mind: 3
-        };
-        const precalculatedRolls = {};
-        const clashData = {
-          ...payload,
-          attacker: myCharacter,
-          defender: targetChar,
-          attackerId: playerId,
-          attackerPlayerName: myCharacter?.name || playerName || 'Attacker',
-          defenderPlayerName: 'ALL OPPONENTS',
-          precalculatedRolls,
-          attackerPlayerId: playerId,
-          defenderPlayerId: 'ALL'
-        };
-        console.log('[playTurn] AoE Attack - Opening dice screen immediately');
-        await broadcastUIEvent(matchId, 'dice_screen_open', clashData);
-        setActiveCombat(clashData);
-        setIsDiceRollingSync(false);
-      } else {
-        const targetChar = gameState.characterStates[selectedTargetId];
-        if (!targetChar) {
-          console.error('[playTurn] ERROR: Target character not found in gameState!', {
-            selectedTargetId,
-            availableCharacters: Object.keys(gameState.characterStates || {})
-          });
-          showNotice('Target player not found in game state!', 'error');
-          return;
+      // 3+ Player check for Soul Alliance, Abandon, Back Stab & Misdirect
+      const is3PlayerOnly = cardName.includes('BACK STAB') || cardName.includes('SOUL ALLIANCE') || cardName.includes('ABANDON') || cardName.includes('MISDIRECT');
+      const totalMatchPlayers = (gameState?.players?.length) || 2;
+      if (is3PlayerOnly && totalMatchPlayers <= 2) {
+        if (cardName.includes('MISDIRECT')) {
+          showNotice('⚠️ Valid only with more than two players! Requires 3+ players. (You can still discard & draw)', 'warning');
+        } else {
+          showNotice('⚠️ Only available in 3+ player matches! Cannot be played in a 1-on-1 duel.', 'warning');
         }
+        return;
+      }
 
-        const uniqueCombatId = `combat_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-        const clashData = {
-          ...payload,
-          combatId: uniqueCombatId,
-          actionType: 'ATTACK_DECLARED',
-          attacker: myCharacter,
-          defender: targetChar,
-          attackerId: playerId,
-          attackerPlayerName: myCharacter?.name || playerName || 'Attacker',
-          defenderPlayerName: targetChar?.name || 'Defender'
+      const isReviveExile = cardName.includes('REVIVE') && (myCharacter?.hp || 0) > 0;
+      const needsTarget = ['POISON', 'SLEEPY', 'FREEZE', 'KONTROL', 'SOUL ALLIANCE', 'DRAIN', 'VAMPIRE'].some(kw => cardName.includes(kw)) ||
+        isReviveExile ||
+        (cardName.includes('X-CHANGE') && !cardName.includes('FULL')) ||
+        (cardName.includes('VISION') && !cardName.includes('FULL'));
+      if (needsTarget && !selectedTargetId) {
+        showNotice(isReviveExile ? 'Please select a defeated player / Exile to revive!' : 'Please select a target player first!', 'warning');
+        return;
+      }
+
+      if (isReviveExile) {
+        const targetChar = gameState.characterStates?.[selectedTargetId];
+        const exileOffer = {
+          actionType: 'OFFER_EXILE_REVIVE',
+          providerId: playerId,
+          providerName: myCharacter?.name || playerName || 'Player',
+          exileId: selectedTargetId,
+          exileName: targetChar?.name || 'Exile Player'
         };
-
-        console.log('[playTurn] Regular Attack - Broadcasting ATTACK_DECLARED:', {
-          attackerName: clashData.attackerPlayerName,
-          defenderName: clashData.defenderPlayerName,
-          actionCard: clashData.actionCard.name,
-          attackSelectionName: clashData.attackSelectionName,
-          isHost
-        });
-
-        if (isHost) enqueueHostAction(clashData);
-        else takeTurn(matchId, { type: 'PLAYER_ACTION', payload: clashData });
+        if (isHost) enqueueHostAction(exileOffer);
+        else takeTurn(activeMatchId, { type: 'PLAYER_ACTION', payload: exileOffer });
+        broadcastUIEvent(activeMatchId, 'EXILE_REVIVE_OFFER', exileOffer);
+        showNotice(`✨ Revive Offer sent to ${targetChar?.name || 'Exile'}! Waiting for their decision...`, 'info');
+        setSelectedActionCard(null);
+        setSelectedTargetId(null);
+        return;
       }
-    } else {
-      console.log('[playTurn] Non-attack card - Resolving immediately');
-      if (isHost) {
-        enqueueHostAction(payload);
+
+      if (isAttack && !isAoE && !isLightning && !isFire && !isVampire && !isMisdirect && !isDrain && !selectedCharacterAttack) {
+        console.log('[playTurn] VALIDATION FAILED: Attack requires character move selection');
+        showNotice('Please select a character attack move to strike with!', 'warning');
+        return;
+      }
+
+      const effectiveAttackSelection = (selectedCharacterAttack === 'WILD CARD' || (selectedCharacterAttack || '').toUpperCase().includes('WILD'))
+        ? (selectedWildMoveChoice || Object.keys(myCharacter?.attacks || {})[0] || selectedCharacterAttack)
+        : selectedCharacterAttack;
+
+      const uniqueActionId = `act_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      const payload = {
+        actionId: uniqueActionId,
+        actorId: playerId,
+        actionCard: selectedActionCard,
+        attackSelectionName: (isLightning || isFire || isVampire || isMisdirect || isDrain) ? null : effectiveAttackSelection,
+        targetId: isAoE ? 'ALL' : selectedTargetId
+      };
+
+      console.log('[playTurn] Payload created:', payload);
+
+      if (currentUser?.id) {
+        cosmeticsService.recordCardPlayed(currentUser.id);
+      }
+
+      if (isAttack) {
+        if (isAoE) {
+          // Synthesize valid defender object for AoE so 3D Dice screen never crashes on undefined target
+          const targetChar = (selectedTargetId && gameState.characterStates[selectedTargetId]) ? gameState.characterStates[selectedTargetId] : {
+            id: 'ALL',
+            name: 'ALL OPPONENTS',
+            image: 'Kontrolla_Data/Graphics/CARDS/SHIELD ADVANCE +100HP CARD.png',
+            themeColor: '#FF9900',
+            mind: 3
+          };
+          const precalculatedRolls = {};
+          const clashData = {
+            ...payload,
+            attacker: myCharacter,
+            defender: targetChar,
+            attackerId: playerId,
+            attackerPlayerName: myCharacter?.name || playerName || 'Attacker',
+            defenderPlayerName: 'ALL OPPONENTS',
+            precalculatedRolls,
+            attackerPlayerId: playerId,
+            defenderPlayerId: 'ALL'
+          };
+          console.log('[playTurn] AoE Attack - Opening dice screen immediately');
+          await broadcastUIEvent(activeMatchId, 'dice_screen_open', clashData);
+          setActiveCombat(clashData);
+          setIsDiceRollingSync(false);
+        } else {
+          const targetChar = gameState.characterStates[selectedTargetId];
+          if (!targetChar) {
+            console.error('[playTurn] ERROR: Target character not found in gameState!', {
+              selectedTargetId,
+              availableCharacters: Object.keys(gameState.characterStates || {})
+            });
+            showNotice('Target player not found in game state!', 'error');
+            return;
+          }
+
+          const uniqueCombatId = `combat_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+          const clashData = {
+            ...payload,
+            combatId: uniqueCombatId,
+            actionType: 'ATTACK_DECLARED',
+            attacker: myCharacter,
+            defender: targetChar,
+            attackerId: playerId,
+            attackerPlayerName: myCharacter?.name || playerName || 'Attacker',
+            defenderPlayerName: targetChar?.name || 'Defender'
+          };
+
+          console.log('[playTurn] Regular Attack - Broadcasting ATTACK_DECLARED:', {
+            attackerName: clashData.attackerPlayerName,
+            defenderName: clashData.defenderPlayerName,
+            actionCard: clashData.actionCard.name,
+            attackSelectionName: clashData.attackSelectionName,
+            isHost
+          });
+
+          if (isHost) enqueueHostAction(clashData);
+          else takeTurn(activeMatchId, { type: 'PLAYER_ACTION', payload: clashData });
+        }
       } else {
-        takeTurn(matchId, { type: 'PLAYER_ACTION', payload });
+        console.log('[playTurn] Non-attack card - Resolving immediately');
+        if (isHost) {
+          enqueueHostAction(payload);
+        } else {
+          takeTurn(activeMatchId, { type: 'PLAYER_ACTION', payload });
+        }
       }
+
+      setIsProcessingAction(true);
+      setTimeout(() => setIsProcessingAction(false), 1200); // 1.2s debounce to avoid duplicate action spamming during server latency
+
+      setSelectedActionCard(null);
+      setSelectedCharacterAttack(null);
+      setSelectedTargetId(null);
+
+      console.log('[playTurn] Action sent, state cleared, processing lock set for 1.2s');
+    } catch (err) {
+      console.error('[playTurn] Error executing turn:', err);
+      setIsProcessingAction(false);
     }
-
-    setIsProcessingAction(true);
-    setTimeout(() => setIsProcessingAction(false), 1200); // 1.2s debounce to avoid duplicate action spamming during server latency
-
-    setSelectedActionCard(null);
-    setSelectedCharacterAttack(null);
-    setSelectedTargetId(null);
-
-    console.log('[playTurn] Action sent, state cleared, processing lock set for 2.5s');
   };
 
   // Triggered when attacker rolls the authentic pip dice (or re-rolls on tie)
@@ -8885,7 +8891,11 @@ export default function KontrolaArena() {
           {/* SYNCHRONIZED AUTHENTIC PIP DICE COMBAT CLASH MODAL */}
           {activeCombat && (
             <KontrolaDiceRoller
-              combatData={activeCombat}
+              combatData={{
+                ...activeCombat,
+                attacker: gameState?.characterStates?.[activeCombat.actorId || activeCombat.attackerPlayerId] || activeCombat.attacker,
+                defender: (activeCombat.targetId && activeCombat.targetId !== 'ALL' ? gameState?.characterStates?.[activeCombat.targetId] : null) || gameState?.characterStates?.[activeCombat.defenderPlayerId] || activeCombat.defender
+              }}
               precalculatedRolls={activeCombat.precalculatedRolls}
               isAttacker={activeCombat.attackerPlayerId === playerId}
               isDefender={

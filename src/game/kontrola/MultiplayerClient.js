@@ -241,82 +241,106 @@ export const subscribeToMatch = (matchId, callback, onSubscribe = null, playerId
 
 export const requestJoin = async (matchId, joinData) => {
   if (!supabase) return;
-  let channel = channels[matchId];
-  if (!channel) {
-    let waitCount = 0;
-    while (!channels[matchId] && waitCount < 20) {
-      await new Promise(r => setTimeout(r, 50));
-      waitCount++;
+  try {
+    let channel = channels[matchId];
+    if (!channel) {
+      let waitCount = 0;
+      while (!channels[matchId] && waitCount < 20) {
+        await new Promise(r => setTimeout(r, 50));
+        waitCount++;
+      }
+      channel = channels[matchId];
     }
-    channel = channels[matchId];
+    if (!channel) return;
+    const payload = typeof joinData === 'object' ? joinData : { playerId: joinData };
+    await safeSend(channel, {
+      type: 'broadcast',
+      event: 'player_joined',
+      payload
+    });
+  } catch (err) {
+    console.warn('[Supabase] requestJoin error:', err);
   }
-  if (!channel) return;
-  const payload = typeof joinData === 'object' ? joinData : { playerId: joinData };
-  await safeSend(channel, {
-    type: 'broadcast',
-    event: 'player_joined',
-    payload
-  });
 };
 
 export const rejectJoin = async (matchId, playerId, reason = 'ROOM_LOCKED') => {
   if (!channels[matchId]) return;
-  await safeSend(channels[matchId], {
-    type: 'broadcast',
-    event: 'join_rejected',
-    payload: { playerId, reason }
-  });
+  try {
+    await safeSend(channels[matchId], {
+      type: 'broadcast',
+      event: 'join_rejected',
+      payload: { playerId, reason }
+    });
+  } catch (err) {
+    console.warn('[Supabase] rejectJoin error:', err);
+  }
 };
 
 export const requestSync = async (matchId, playerId) => {
   if (!supabase) return;
-  let channel = channels[matchId];
-  if (!channel) {
-    let waitCount = 0;
-    while (!channels[matchId] && waitCount < 20) {
-      await new Promise(r => setTimeout(r, 50));
-      waitCount++;
+  try {
+    let channel = channels[matchId];
+    if (!channel) {
+      let waitCount = 0;
+      while (!channels[matchId] && waitCount < 20) {
+        await new Promise(r => setTimeout(r, 50));
+        waitCount++;
+      }
+      channel = channels[matchId];
     }
-    channel = channels[matchId];
+    if (!channel) return;
+    await safeSend(channel, {
+      type: 'broadcast',
+      event: 'request_sync',
+      payload: { requesterId: playerId }
+    });
+  } catch (err) {
+    console.warn('[Supabase] requestSync error:', err);
   }
-  if (!channel) return;
-  await safeSend(channel, {
-    type: 'broadcast',
-    event: 'request_sync',
-    payload: { requesterId: playerId }
-  });
 };
 
 export const broadcastRollOffAnimation = async (matchId, data) => {
   if (!channels[matchId]) return;
-  await safeSend(channels[matchId], {
-    type: 'broadcast',
-    event: 'roll_off_animation',
-    payload: data
-  });
+  try {
+    await safeSend(channels[matchId], {
+      type: 'broadcast',
+      event: 'roll_off_animation',
+      payload: data
+    });
+  } catch (err) {
+    console.warn('[Supabase] broadcastRollOffAnimation error:', err);
+  }
 };
 
 export const broadcastActionEffect = async (matchId, effectData) => {
   if (!channels[matchId]) return;
-  await safeSend(channels[matchId], {
-    type: 'broadcast',
-    event: 'action_effect',
-    payload: effectData
-  });
+  try {
+    await safeSend(channels[matchId], {
+      type: 'broadcast',
+      event: 'action_effect',
+      payload: effectData
+    });
+  } catch (err) {
+    console.warn('[Supabase] broadcastActionEffect error:', err);
+  }
 };
 
 export const broadcastDiceScreen = async (matchId, action, data = {}) => {
   if (!channels[matchId]) return;
-  const eventName =
-    action === 'open' ? 'dice_screen_open' :
-    action === 'close' ? 'dice_screen_close' :
-    'dice_screen_rolled';
+  try {
+    const eventName =
+      action === 'open' ? 'dice_screen_open' :
+      action === 'close' ? 'dice_screen_close' :
+      'dice_screen_rolled';
 
-  await safeSend(channels[matchId], {
-    type: 'broadcast',
-    event: eventName,
-    payload: data
-  });
+    await safeSend(channels[matchId], {
+      type: 'broadcast',
+      event: eventName,
+      payload: data
+    });
+  } catch (err) {
+    console.warn('[Supabase] broadcastDiceScreen error:', err);
+  }
 };
 
 export const broadcastChatMessage = async (matchId, chatData) => {
@@ -401,24 +425,32 @@ const getGlobalLobbyChannel = () => {
 
 export const advertiseRoom = async (roomData) => {
   if (!supabase) return;
-  const channel = getGlobalLobbyChannel();
-  if (!channel) return;
-  await safeSend(channel, {
-    type: 'broadcast',
-    event: 'room_advertised',
-    payload: { ...roomData, timestamp: Date.now() }
-  });
+  try {
+    const channel = getGlobalLobbyChannel();
+    if (!channel) return;
+    await safeSend(channel, {
+      type: 'broadcast',
+      event: 'room_advertised',
+      payload: { ...roomData, timestamp: Date.now() }
+    });
+  } catch (err) {
+    console.warn('[Supabase] advertiseRoom error:', err);
+  }
 };
 
 export const closeRoom = async (roomCode) => {
   if (!supabase) return;
-  const channel = getGlobalLobbyChannel();
-  if (!channel) return;
-  await safeSend(channel, {
-    type: 'broadcast',
-    event: 'room_closed',
-    payload: { roomCode, timestamp: Date.now() }
-  });
+  try {
+    const channel = getGlobalLobbyChannel();
+    if (!channel) return;
+    await safeSend(channel, {
+      type: 'broadcast',
+      event: 'room_closed',
+      payload: { roomCode, timestamp: Date.now() }
+    });
+  } catch (err) {
+    console.warn('[Supabase] closeRoom error:', err);
+  }
 };
 
 export const subscribeToGlobalLobby = (callback) => {
