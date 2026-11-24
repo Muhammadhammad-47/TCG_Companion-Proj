@@ -7607,7 +7607,7 @@ export default function KontrolaArena() {
                       const isSelMoveLocked = isSelBlitzLocked || isSelKontrolLocked;
 
                       const isCtaDisabled = !isMyTurn || !selectedActionCard || isCtaCardLocked || isSelMoveLocked || (
-                        selectedActionCard.type === 'ATTACK' &&
+                        getSafeCardType(selectedActionCard) === 'ATTACK' &&
                         !['BLITZ', 'LIGHTNING', 'FIRE FLAME', 'VAMPIRE', 'DRAIN', 'BACK STAB', 'BOOMERANG', 'MISDIRECT'].some(kw => selCardUpper.includes(kw)) &&
                         (!selectedCharacterAttack || !selectedTargetId)
                       ) || (selCardUpper.includes('BACK STAB') && !selectedTargetId) ||
@@ -7628,7 +7628,7 @@ export default function KontrolaArena() {
                         ? ('⚠️ REQUIRES 3+ PLAYERS')
                         : isSelMoveLocked
                         ? '⚠️ MOVE LOCKED'
-                        : selectedActionCard?.type === 'ATTACK'
+                        : getSafeCardType(selectedActionCard) === 'ATTACK'
                         ? 'ROLL COMBAT CLASH'
                         : 'PLAY ACTION CARD';
 
