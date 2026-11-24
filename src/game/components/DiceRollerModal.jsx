@@ -30,7 +30,7 @@ export default function DiceRollerModal({ combatData, onCombatComplete, onClose,
   const attackerHasRetreat = checkPlayerHasRetreat(attacker);
   const defenderHasRetreat = checkPlayerHasRetreat(defender);
 
-  const isMultiplier = characterMove?.type === 'dice_mult';
+  const isMultiplier = Boolean(characterMove && (characterMove.type === 'dice_mult' || characterMove.dice > 0 || (characterMove.name || '').toUpperCase().includes(' PER ') || Boolean(characterMove.multiplier)));
 
   const [phase, setPhase] = useState('clash'); // 'clash' | 'clash_summary' | 'multiplier' | 'result'
   const [hasAttackerRolled, setHasAttackerRolled] = useState(false);

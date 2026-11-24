@@ -637,6 +637,7 @@ export default function KontrolaArena() {
   const prevTurnRef = useRef(null);
   const enqueuedCombatIdsRef = useRef(new Set());
   const executedCombatIdsRef = useRef(new Set());
+  const executedActionIdsRef = useRef(new Set());
 
   // Persistent refs to prevent WebSocket reconnection loops on state changes
   const gameStateRef = useRef(gameState);
@@ -1814,6 +1815,15 @@ export default function KontrolaArena() {
       const precalculatedRolls = payload.actionType === 'RESOLVE_COMBAT'
         ? { ...(payload.precalculatedRolls || {}), ...(precalculatedRollsParam || {}) }
         : precalculatedRollsParam;
+
+      // De-duplicate non-combat actions (e.g. Poison X1, Vitality, Boomerang) during server latency
+      if (payload.actionId && !payload.actionType) {
+        if (executedActionIdsRef.current.has(payload.actionId)) {
+          console.warn('[executeActionResolution] Skipping duplicate action resolution for actionId:', payload.actionId);
+          return currentState;
+        }
+        executedActionIdsRef.current.add(payload.actionId);
+      }
 
       // RESOLVE_COMBAT: falls through to the generic resolution block at the bottom of this function.
       // The payload already carries actorId, actionCard, targetId, attackSelectionName, and precalculatedRolls
@@ -4122,7 +4132,9 @@ export default function KontrolaArena() {
       ? (selectedWildMoveChoice || Object.keys(myCharacter?.attacks || {})[0] || selectedCharacterAttack)
       : selectedCharacterAttack;
 
+    const uniqueActionId = `act_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const payload = {
+      actionId: uniqueActionId,
       actorId: playerId,
       actionCard: selectedActionCard,
       attackSelectionName: (isLightning || isFire || isVampire || isBackStab || isMisdirect || isDrain) ? null : effectiveAttackSelection,
@@ -4205,7 +4217,7 @@ export default function KontrolaArena() {
     }
 
     setIsProcessingAction(true);
-    setTimeout(() => setIsProcessingAction(false), 600); // Fast release to avoid freezing buttons
+    setTimeout(() => setIsProcessingAction(false), 1200); // 1.2s debounce to avoid duplicate action spamming during server latency
 
     setSelectedActionCard(null);
     setSelectedCharacterAttack(null);

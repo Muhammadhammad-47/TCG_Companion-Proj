@@ -321,49 +321,69 @@ export const broadcastDiceScreen = async (matchId, action, data = {}) => {
 
 export const broadcastChatMessage = async (matchId, chatData) => {
   if (!channels[matchId]) return;
-  await safeSend(channels[matchId], {
-    type: 'broadcast',
-    event: 'chat_message',
-    payload: chatData
-  });
+  try {
+    await safeSend(channels[matchId], {
+      type: 'broadcast',
+      event: 'chat_message',
+      payload: chatData
+    });
+  } catch (err) {
+    console.warn('[Supabase] broadcastChatMessage error:', err);
+  }
 };
 
 export const broadcastTaunt = async (matchId, tauntData) => {
   if (!channels[matchId]) return;
-  await safeSend(channels[matchId], {
-    type: 'broadcast',
-    event: 'player_taunt',
-    payload: tauntData
-  });
+  try {
+    await safeSend(channels[matchId], {
+      type: 'broadcast',
+      event: 'player_taunt',
+      payload: tauntData
+    });
+  } catch (err) {
+    console.warn('[Supabase] broadcastTaunt error:', err);
+  }
 };
 
 export const broadcastLeave = async (matchId, playerId) => {
   if (!channels[matchId]) return;
-  await safeSend(channels[matchId], {
-    type: 'broadcast',
-    event: 'player_left',
-    payload: { playerId }
-  });
+  try {
+    await safeSend(channels[matchId], {
+      type: 'broadcast',
+      event: 'player_left',
+      payload: { playerId }
+    });
+  } catch (err) {
+    console.warn('[Supabase] broadcastLeave error:', err);
+  }
 };
 
 export const broadcastAction = async (matchId, eventName, payload) => {
   if (!channels[matchId]) return;
-  await safeSend(channels[matchId], {
-    type: 'broadcast',
-    event: eventName,
-    payload
-  });
+  try {
+    await safeSend(channels[matchId], {
+      type: 'broadcast',
+      event: eventName,
+      payload
+    });
+  } catch (err) {
+    console.warn(`[Supabase] broadcastAction (${eventName}) caught error:`, err);
+  }
 };
 
 export const broadcastUIEvent = broadcastAction;
 
 export const takeTurn = async (matchId, action) => {
   if (!channels[matchId]) return;
-  await safeSend(channels[matchId], {
-    type: 'broadcast',
-    event: 'player_action',
-    payload: action
-  });
+  try {
+    await safeSend(channels[matchId], {
+      type: 'broadcast',
+      event: 'player_action',
+      payload: action
+    });
+  } catch (err) {
+    console.warn('[Supabase] takeTurn caught error:', err);
+  }
 };
 
 // Global Lobby Broadcasts (ephemeral)

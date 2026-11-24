@@ -247,9 +247,10 @@ export function resolveDiceCombat({
     // Official Zombie Mode rule: Mindless zombies can only use Venom Strike (15 AP base)
     rawAP = 15;
   } else if (characterMove) {
-    if (characterMove.type === 'dice_mult') {
+    const isDiceMult = characterMove.type === 'dice_mult' || characterMove.dice > 0 || (characterMove.name || '').toUpperCase().includes(' PER ') || Boolean(characterMove.multiplier);
+    if (isDiceMult) {
       // Base multiplier from character move (e.g., "Fire of Fury" = 5)
-      let charMultiplier = characterMove.multiplier || 4;
+      let charMultiplier = characterMove.multiplier || characterMove.ap || characterMove.baseAP || 5;
       
       // ATTACK X2 doubles the multiplier (ATTACK X1 = ×10 AP, ATTACK X2 = ×20 AP)
       // Check if actionCard is ATTACK X2 to apply the doubling bonus
@@ -257,9 +258,10 @@ export function resolveDiceCombat({
         charMultiplier = charMultiplier * 2;
       }
       
-      rawAP = multiplierRoll * charMultiplier;
+      const mRoll = (multiplierRoll && multiplierRoll > 0) ? multiplierRoll : (attackerRoll?.[0] || 1);
+      rawAP = mRoll * charMultiplier;
     } else {
-      rawAP = characterMove.baseAP || 25;
+      rawAP = characterMove.baseAP || characterMove.ap || 25;
     }
   } else if (actionCard) {
     if (actionCard.id === 'lightning_x2' || actionCard.name === 'LIGHTNING X2' || actionCard.id === 'fire_flame_x2' || actionCard.name === 'FIRE FLAME X2' || actionCard.id === 'poison_x2' || actionCard.name === 'POISON X2') rawAP = 20;
@@ -308,7 +310,7 @@ export function resolveDiceCombat({
   const hasPoisonWeakness = defWeakness.includes('poison') || ['chynaman', 'chyna', 'kiko', 'pooch', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k));
   const hasFireWeakness = defWeakness.includes('fire') || ['shroomy', 'queeny'].some(k => defCharKey.includes(k));
   const hasMagicWeakness = defWeakness.includes('magic') || ['chynaman', 'chyna', 'bee', 'pooch', 'poochi', 'queeny'].some(k => defCharKey.includes(k));
-  const isPoppersPerPop = (characterMove?.name || '').toUpperCase().includes('POPPERS') || (moveElement && moveElement.includes('Magic and Poison'));
+  const isPoppersPerPop = (characterMove?.name || '').toUpperCase().includes('POPPERS') || (moveElement && (moveElement.toLowerCase().includes('magic') && moveElement.toLowerCase().includes('poison')));
 
   if (!hasflyerImmunity) {
     if (isPoppersPerPop && (hasPoisonWeakness || hasMagicWeakness)) {
@@ -381,8 +383,8 @@ export function resolveDiceCombat({
     // No shield reduction for BACK STAB
   } else if (currentShield > 0) {
     // Official Rule: "SHIELD BASIC + 25HP - Prevents all damage except poison and fire"
-    const isFire = moveElement === 'Fire' || (actionCard?.name || '').includes('FIRE');
-    const isPoison = moveElement === 'Poison' || (actionCard?.name || '').includes('POISON') || isAttackerZombie;
+    const isFire = (moveElement && moveElement.toLowerCase().includes('fire')) || (actionCard?.name || '').includes('FIRE');
+    const isPoison = (moveElement && moveElement.toLowerCase().includes('poison')) || (actionCard?.name || '').includes('POISON') || isAttackerZombie;
     if (defender.hasBasicShield && (isFire || isPoison)) {
       absorbedByShield = 0;
     } else if (currentShield >= netHPDamage) {

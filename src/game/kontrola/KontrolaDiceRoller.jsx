@@ -432,6 +432,10 @@ export default function KontrolaDiceRoller({
 
   const handleFinishCombat = () => {
     if (isApplyingResult) return;
+    if (atkWon && hasMultiplierDie && !hasRolledMultiplier && !isRollingMultiplier) {
+      handleRollMultiplierDie();
+      return;
+    }
     setIsApplyingResult(true);
 
     const finalAtkRolls = activeAtkDice 
@@ -446,10 +450,11 @@ export default function KontrolaDiceRoller({
       || [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
     const finalDefTotal = finalDefRolls[0] + finalDefRolls[1];
 
+    const finalMultDie = hasMultiplierDie ? (multiplierDie || (Math.floor(Math.random() * 6) + 1)) : undefined;
     const finalRolls = {
       attackerRoll: { rolls: finalAtkRolls, total: finalAtkTotal },
       defenderRoll: { rolls: finalDefRolls, total: finalDefTotal },
-      dRoll: hasMultiplierDie ? { rolls: [multiplierDie || 1], total: (multiplierDie || 1) } : undefined,
+      dRoll: hasMultiplierDie ? { rolls: [finalMultDie], total: finalMultDie } : undefined,
       defenseCard: activeDefenseCard
     };
     if (typeof onCombatComplete === 'function') {

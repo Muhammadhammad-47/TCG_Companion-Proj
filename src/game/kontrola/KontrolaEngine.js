@@ -1111,10 +1111,10 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         || (attackerChar?.characterCardMoves || []).find(m => (m.name || '').toUpperCase() === selectedUpper);
       if (atk) {
         attackElement = atk.element || 'Physical';
-        const isDiceMult = atk.dice > 0 || atk.type === 'dice_mult' || selectedUpper.includes(' PER ');
+        const isDiceMult = atk.dice > 0 || atk.type === 'dice_mult' || selectedUpper.includes(' PER ') || Boolean(atk.multiplier);
         if (isDiceMult) {
-          const multiplier = Number(atk.ap || atk.multiplier || atk.baseAP || 4);
-          const multRoll = (dRoll?.total && Number(dRoll.total) > 0) ? Number(dRoll.total) : (Number(attackerRoll?.rolls?.[0]) || 1);
+          const multiplier = Number(atk.ap || atk.multiplier || atk.baseAP || 5);
+          const multRoll = (dRoll?.total && Number(dRoll.total) > 0) ? Number(dRoll.total) : (Number(attackerRoll?.rolls?.[0]) || (Math.floor(Math.random() * 6) + 1));
           baseAP = multRoll * multiplier;
           log += ` [${attackSelectionName}: ${multRoll} × ${multiplier} AP = ${baseAP} AP]`;
         } else {
@@ -1360,8 +1360,8 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       // 2. Shield Absorption: Absorbs penetrating damage before HP is reduced
       // Official Rule: "SHIELD BASIC + 25HP - Prevents all damage except poison and fire"
       let shieldAbsorbed = 0;
-      const isFireAttack = (attackElement === 'Fire') || cardName.includes('FIRE');
-      const isPoisonAttack = (attackElement === 'Poison') || cardName.includes('POISON') || isAttackerZombie;
+      const isFireAttack = (attackElement && attackElement.toLowerCase().includes('fire')) || cardName.includes('FIRE');
+      const isPoisonAttack = (attackElement && attackElement.toLowerCase().includes('poison')) || cardName.includes('POISON') || isAttackerZombie;
       if (newDefenderState?.shield > 0 && finalDamage > 0) {
         if (newDefenderState.hasBasicShield && (isFireAttack || isPoisonAttack)) {
           log += ` 🛡️🚫 SHIELD BASIC cannot block ${isFireAttack ? 'Fire' : 'Poison'} damage! ${isFireAttack ? 'Fire' : 'Poison'} bypasses basic shield!`;
@@ -1540,7 +1540,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       newDefenderState.poisonCount = (newDefenderState.poisonCount || 0) + stacks;
       newDefenderState.justPoisoned = true; // Mark target as just infected so ongoing damage begins on subsequent turn
       const hasPoisonWeak = hasPoisonWeakness(newDefenderState);
-      const weaknessPenalty = hasPoisonWeak ? (newDefenderState.weaknessBonus || 10) : 0;
+      const weaknessPenalty = hasPoisonWeak ? 10 : 0;
       const totalInitialDamage = initialDamage + weaknessPenalty;
       newDefenderState.hp = Math.max(0, newDefenderState.hp - totalInitialDamage);
       if (newDefenderState.hp <= 0) {
