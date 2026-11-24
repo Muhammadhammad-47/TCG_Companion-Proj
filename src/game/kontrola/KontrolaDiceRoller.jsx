@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { soundFX } from '../utils/audio';
 import { Dices, Shield, Swords, Check, Zap, X, Sparkles, AlertCircle, Clock, Eye, RotateCcw } from 'lucide-react';
 import { getCardGraphicUrl, getCharacterAttackGraphicUrl } from './kontrolaAssets';
-import { KONTROLA_CHARACTERS } from './KontrolaEngine';
+import { KONTROLA_CHARACTERS, isValidDefenseCard } from './KontrolaEngine';
 import CardVFXWrapper from './vfx/CardVFXWrapper';
 
 // Helper to draw authentic dice face texture matching ThreeDiceArena.jsx exactly
@@ -330,7 +330,7 @@ export default function KontrolaDiceRoller({
   );
   const perAp = Number(selectedAttackInfo?.ap || selectedAttackInfo?.multiplier || selectedAttackInfo?.baseAP || 4);
   const rawDefenseCard = combatData?.defenseCard || precalculatedRolls?.defenseCard || null;
-  const activeDefenseCard = (rawDefenseCard && rawDefenseCard !== 'SKIP' && rawDefenseCard !== 'none') ? rawDefenseCard : null;
+  const activeDefenseCard = isValidDefenseCard(rawDefenseCard) ? rawDefenseCard : null;
   const defCardName = activeDefenseCard ? (typeof activeDefenseCard === 'string' ? activeDefenseCard : (activeDefenseCard.name || '')).toUpperCase() : '';
 
   const [isApplyingResult, setIsApplyingResult] = useState(false);
@@ -1450,14 +1450,38 @@ export default function KontrolaDiceRoller({
 
               {/* Active Defense Card Outcome Banner */}
               {activeDefenseCard && (
-                <div style={{ margin: '0 auto 16px auto', padding: '8px 18px', borderRadius: '10px', background: 'rgba(0, 240, 255, 0.15)', border: '1px solid var(--neon-cyan)', color: 'var(--neon-cyan)', fontWeight: 'bold', fontSize: '0.92rem', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{
+                  margin: '0 auto 16px auto',
+                  padding: '8px 18px',
+                  borderRadius: '10px',
+                  background: atkWon ? 'rgba(237, 30, 36, 0.15)' : 'rgba(0, 240, 255, 0.15)',
+                  border: `1px solid ${atkWon ? 'rgba(237, 30, 36, 0.6)' : 'var(--neon-cyan)'}`,
+                  color: atkWon ? '#ff6677' : 'var(--neon-cyan)',
+                  fontWeight: 'bold',
+                  fontSize: '0.92rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
                   <Shield size={16} />
                   <span>
-                    {defCardName.includes('COUNTER')
-                      ? '⚔️ DEFENCE - COUNTER: 0% Damage Taken & Reflects 25% Back to Attacker!'
-                      : defCardName.includes('BOOMERANG')
-                      ? '🪃 BOOMERANG FULL: Reflects 100% Back on Defense Victory & Opponent Skips Turn!'
-                      : `🛡️ DEFENSE CARD: ${typeof activeDefenseCard === 'string' ? activeDefenseCard : (activeDefenseCard?.name || '')} is active!`}
+                    {atkWon ? (
+                      defCardName.includes('COUNTER')
+                        ? '⚔️ DEFENCE - COUNTER BROKEN: Attacker won clash! Counter failed, taking incoming damage.'
+                        : defCardName.includes('BOOMERANG')
+                        ? '🪃 BOOMERANG BROKEN: Attacker won clash! Defense failed, taking incoming damage.'
+                        : defCardName.includes('DODGE')
+                        ? '💨 DODGE FAILED: Attacker won clash! Evade failed, taking incoming damage.'
+                        : `🛡️ DEFENSE CARD: ${typeof activeDefenseCard === 'string' ? activeDefenseCard : (activeDefenseCard?.name || '')} active.`
+                    ) : (
+                      defCardName.includes('COUNTER')
+                        ? '⚔️ DEFENCE - COUNTER TRIGGERED: 0% Damage Taken & Reflects 25% Back to Attacker!'
+                        : defCardName.includes('BOOMERANG')
+                        ? '🪃 BOOMERANG SUCCESS: Reflects 100% Back on Defense Victory & Opponent Skips Turn!'
+                        : defCardName.includes('DODGE')
+                        ? '💨 DODGE SUCCESS: Evaded incoming damage!'
+                        : `🛡️ DEFENSE CARD: ${typeof activeDefenseCard === 'string' ? activeDefenseCard : (activeDefenseCard?.name || '')} is active!`
+                    )}
                   </span>
                 </div>
               )}

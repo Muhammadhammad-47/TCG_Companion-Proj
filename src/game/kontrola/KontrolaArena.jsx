@@ -9,7 +9,7 @@ import {
 import { DynamicScaleWrapper } from '../../components/DynamicScaleWrapper';
 import { soundFX } from '../utils/audio';
 import { getAssetUrl, CHARACTER_LEVEL_MATRIX, getCharacterLevelData } from '../data/characters';
-import { KONTROLA_CHARACTERS, KONTROLA_ACTION_CARDS, generateDeck, dealInitialHands, generateGiftedCharacterMoves, generatePurchasedCharacterMoves, resolveTurn, rollDice, executeReserveRecovery, createExileRelationship } from './KontrolaEngine';
+import { KONTROLA_CHARACTERS, KONTROLA_ACTION_CARDS, generateDeck, dealInitialHands, generateGiftedCharacterMoves, generatePurchasedCharacterMoves, resolveTurn, rollDice, executeReserveRecovery, createExileRelationship, isValidDefenseCard } from './KontrolaEngine';
 import ReviveOfferModal from '../components/ReviveOfferModal';
 import RelationshipSelectModal from '../components/RelationshipSelectModal';
 import EmpireMandateBanner from '../components/EmpireMandateBanner';
@@ -857,9 +857,10 @@ export default function KontrolaArena() {
     setIsProcessingAction(true);
     playClick();
 
-    console.log('[handleDefenseSelect] Defense card selected:', card?.name || 'SKIP');
+    const safeDefenseCard = isValidDefenseCard(card) ? card : null;
+    console.log('[handleDefenseSelect] Defense card selected:', safeDefenseCard ? (safeDefenseCard?.name || safeDefenseCard) : 'SKIP');
 
-    const payload = { actionType: 'DEFENSE_SELECTED', defenseCard: card, combatId: gameState.activeDefenseState?.combatId };
+    const payload = { actionType: 'DEFENSE_SELECTED', defenseCard: safeDefenseCard, combatId: gameState.activeDefenseState?.combatId };
     if (isHostRef.current) enqueueHostAction(payload);
     else takeTurn(matchIdRef.current, { type: 'PLAYER_ACTION', payload });
     setTimeout(() => setIsProcessingAction(false), 600);
@@ -1270,7 +1271,7 @@ export default function KontrolaArena() {
             actionCard: actionCard,
             attackSelectionName: attackSelectionName,
             actionType: event.payload?.actionType || 'RESOLVE_COMBAT',
-            defenseCard: event.payload?.defenseCard || null,
+            defenseCard: isValidDefenseCard(event.payload?.defenseCard) ? event.payload.defenseCard : null,
 
             // Rolls
             precalculatedRolls: event.payload?.precalculatedRolls || {}
@@ -1299,7 +1300,10 @@ export default function KontrolaArena() {
           if (event.payload?.isReroll) {
             // Preserve defenseCard when re-rolling on a tie — only reset the dice rolls
             setActiveCombat((prev) => {
-              const kept = { defenseCard: prev?.precalculatedRolls?.defenseCard ?? null };
+              const prevDef = isValidDefenseCard(prev?.precalculatedRolls?.defenseCard)
+                ? prev.precalculatedRolls.defenseCard
+                : (isValidDefenseCard(prev?.defenseCard) ? prev.defenseCard : null);
+              const kept = { defenseCard: prevDef };
               return prev ? { ...prev, precalculatedRolls: kept } : prev;
             });
             setIsDiceRollingSync(false);
@@ -1336,9 +1340,15 @@ export default function KontrolaArena() {
           // If a non-host client finished combat, the host must execute RESOLVE_COMBAT
           if (resolved && isHostRef.current && combatData) {
             if (cId) enqueuedCombatIdsRef.current.add(cId);
+            const safeDefenseCard = isValidDefenseCard(precalculatedRolls?.defenseCard)
+              ? precalculatedRolls.defenseCard
+              : (isValidDefenseCard(combatData?.defenseCard)
+                ? combatData.defenseCard
+                : (isValidDefenseCard(activeCombat?.defenseCard) ? activeCombat.defenseCard : null));
             const mergedRolls = {
               ...(activeCombat?.precalculatedRolls || {}),
-              ...(precalculatedRolls || {})
+              ...(precalculatedRolls || {}),
+              defenseCard: safeDefenseCard
             };
             enqueueHostAction({ ...combatData, combatId: cId, actionType: 'RESOLVE_COMBAT' }, mergedRolls);
           }
@@ -2811,8 +2821,9 @@ export default function KontrolaArena() {
 
         // defenseCard goes into precalculatedRolls so the engine can read it
         // via precalculatedRolls?.defenseCard (null when defender skipped)
+        const safeDefCard = isValidDefenseCard(payload.defenseCard) ? payload.defenseCard : null;
         const precalculatedRolls = {
-          defenseCard: payload.defenseCard ?? null
+          defenseCard: safeDefCard
         };
 
         // CRITICAL: Retrieve the actual character objects from characterStates
@@ -2848,7 +2859,7 @@ export default function KontrolaArena() {
           attacker: attackerChar,
           defender: defenderChar,
           precalculatedRolls,
-          defenseCard: payload.defenseCard ?? null
+          defenseCard: safeDefCard
         };
 
         console.log('[DEFENSE_SELECTED] Created activeCombat:', {
@@ -3141,7 +3152,7 @@ export default function KontrolaArena() {
 
       // Also discard the defender's card if they played one during the preparation window
       let defenderDiscarded = false;
-      if (precalculatedRolls?.defenseCard) {
+      if (precalculatedRolls?.defenseCard && isValidDefenseCard(precalculatedRolls.defenseCard)) {
         const defCardIdx = findSafeCardIndex(newDefenderHand, precalculatedRolls.defenseCard);
         if (defCardIdx !== -1) {
           newDefenderHand.splice(defCardIdx, 1);
@@ -4222,7 +4233,7 @@ export default function KontrolaArena() {
     } else if (isReroll) {
       // Preserve defenseCard when re-rolling on a tie — only reset the dice rolls
       setActiveCombat((prev) => {
-        const kept = { defenseCard: prev?.precalculatedRolls?.defenseCard ?? null };
+        const kept = { defenseCard: isValidDefenseCard(prev?.precalculatedRolls?.defenseCard) ? prev.precalculatedRolls.defenseCard : (isValidDefenseCard(prev?.defenseCard) ? prev.defenseCard : null) };
         return prev ? { ...prev, precalculatedRolls: kept } : prev;
       });
       await broadcastUIEvent(matchId, 'dice_screen_rolled', { timestamp: Date.now(), isReroll: true });
@@ -4235,13 +4246,14 @@ export default function KontrolaArena() {
 
   // Triggered when dice screen is closed or finished
   const handleCloseDiceScreen = async (resolved = false, finalRolls = null) => {
+    const validDefCard = (finalRolls && isValidDefenseCard(finalRolls.defenseCard))
+      ? finalRolls.defenseCard
+      : (isValidDefenseCard(activeCombat?.defenseCard) ? activeCombat.defenseCard : null);
     const rollsToApply = {
       ...(activeCombat?.precalculatedRolls || {}),
-      ...(finalRolls || {})
+      ...(finalRolls || {}),
+      defenseCard: validDefCard
     };
-    if (!activeCombat?.defenseCard && !finalRolls?.defenseCard) {
-      rollsToApply.defenseCard = null;
-    }
     const cId = activeCombat?.combatId || ('combat_' + Date.now() + '_' + (activeCombat?.actorId || 'actor') + '_' + (activeCombat?.targetId || 'target'));
     await broadcastUIEvent(matchId, 'dice_screen_close', {
       resolved,

@@ -626,6 +626,23 @@ export const tradeWithAlly = (traderState, recipientState, tradeData) => {
   return { success: false, log: 'Invalid trade type.' };
 };
 
+// Validates whether an action card is an actual defense card (guards against null, 'SKIP', 'none', empty objects)
+export const isValidDefenseCard = (card) => {
+  if (!card) return false;
+  if (typeof card === 'string') {
+    const s = card.trim().toUpperCase();
+    if (!s || s === 'NONE' || s === 'SKIP' || s === 'NULL' || s === 'UNDEFINED' || s === '[OBJECT OBJECT]') return false;
+    return ['SHIELD', 'DEFENCE', 'DEFENSE', 'BOOMERANG', 'DODGE', '+DEF', 'ANIME EXPRESS', 'FLYER', 'MISDIRECT'].some(kw => s.includes(kw));
+  }
+  if (typeof card === 'object') {
+    const name = (card.name || card.id || card.title || '').trim().toUpperCase();
+    if (!name || name === 'NONE' || name === 'SKIP' || name === 'NULL' || name === 'UNDEFINED') return false;
+    if (card.type && (card.type.toUpperCase() === 'DEFENSE' || card.type.toUpperCase() === 'DEFENCE')) return true;
+    return ['SHIELD', 'DEFENCE', 'DEFENSE', 'BOOMERANG', 'DODGE', '+DEF', 'ANIME EXPRESS', 'FLYER', 'MISDIRECT'].some(kw => name.includes(kw));
+  }
+  return false;
+};
+
 export const generateDeck = (isPremium = false, playerCount = 2) => {
   const baseBlueprint = isPremium ? ACTION_CARDS_PREMIUM : ACTION_CARDS_BASIC;
   // Per official rules: SOUL ALLIANCE is only available in 3+ player matches.
@@ -715,7 +732,8 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   const dRoll = precalculatedRolls?.dRoll || rollDice(1);
 
   // Process Defender's Played Card (if any) during Preparation Window
-  const defCard = precalculatedRolls?.defenseCard;
+  const hasValidDefCard = isValidDefenseCard(precalculatedRolls?.defenseCard);
+  const defCard = hasValidDefCard ? precalculatedRolls.defenseCard : null;
   let wasImmuneFire = false;
   if (newDefenderState) {
     if (!defCard) {
@@ -729,6 +747,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       newDefenderState.hasMisdirect = false;
       newDefenderState.dodgeCardName = null;
       newDefenderState.flyerNoWeakness = false;
+      newDefenderState.immuneFire = false;
     } else {
       const dName = (typeof defCard === 'string' ? defCard : (defCard?.name || '')).toUpperCase();
       log += ` [Defender played ${typeof defCard === 'string' ? defCard : (defCard?.name || 'Defense Card')}]`;
@@ -1181,8 +1200,8 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         }
       }
 
-      // TRAP CONSUMPTION
-      if (newDefenderState && finalDamage > 0) {
+      // TRAP CONSUMPTION (Only triggers if defender actually played an active valid defense card)
+      if (newDefenderState && finalDamage > 0 && defCard) {
         // SHIELD FIRE immunity: if defender played SHIELD FIRE, fire attacks deal 0 damage & no burn
         if (newDefenderState.immuneFire && (cardName.includes('FIRE') || attackElement === 'Fire')) {
           log += ` 🔥🚫 SHIELD FIRE IMMUNITY! ${newDefenderState.name} is immune to Fire damage this hit!`;
@@ -1231,15 +1250,15 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
             log += ` ❌ DODGE - BASIC failed clash! Attack increased by 25% (+${penalty} AP penalty)!`;
           }
           newDefenderState.hasDodge = false;
-        } else if (defCard && newDefenderState.hasBoomerang) {
+        } else if (newDefenderState.hasBoomerang) {
           // Attacker won the clash: defender's defense failed, Boomerang trap breaks
           log += ` 🪃 BOOMERANG FAILED! ${newDefenderState.name} lost the clash. Defense failed, taking incoming damage.`;
           newDefenderState.hasBoomerang = false;
-        } else if (defCard && newDefenderState.hasCounter) {
+        } else if (newDefenderState.hasCounter) {
           // Attacker won the clash: DEFENCE - COUNTER defense failed, takes full damage
           log += ` ⚔️ DEFENCE - COUNTER FAILED! ${newDefenderState.name} lost the clash. Defense failed, taking incoming damage.`;
           newDefenderState.hasCounter = false;
-        } else if (defCard && newDefenderState.hasDefendBasic) {
+        } else if (newDefenderState.hasDefendBasic) {
           const absorb = Math.floor(finalDamage * 0.25);
           log += ` 🛡️ DEFENSIVE GUARD TRIGGERED! Damage reduced by 25% (${absorb} AP).`;
           finalDamage = Math.max(0, finalDamage - absorb);
@@ -1457,6 +1476,8 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       newDefenderState.hasMisdirect = false;
       newDefenderState.immuneFire = false;
       newDefenderState.hasBasicShield = false;
+      newDefenderState.dodgeCardName = null;
+      newDefenderState.flyerNoWeakness = false;
     }
 
     // Extinguish Burn on Doubles (Official Rule: Player continues to burn until doubles are rolled)
