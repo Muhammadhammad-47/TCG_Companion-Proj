@@ -890,7 +890,9 @@ export default function BattleArena({
           allianceId: defAllianceId,
           alliedWith: defAlliedWith,
           isStunned: hasSleep ? false : (result.appliesStun ? true : p.isStunned),
-          sleepTurns: newSleepTurns,
+          sleepTurns: result.isFrozen ? 0 : newSleepTurns,
+          isFrozen: result.isFrozen ? true : (hasSleep ? false : p.isFrozen),
+          freezeTurns: result.isFrozen ? (result.sleepTurns || 1) : (hasSleep ? 0 : (p.freezeTurns || 0)),
           revealCards: result.revealCards ? true : p.revealCards,
           stats: {
             ...p.stats,
@@ -998,23 +1000,28 @@ export default function BattleArena({
       });
     }
 
-    // Log stun / sleep if applied
-    if (result.sleepTurns > 0 || result.appliesStun) {
+    // Log stun / sleep / freeze if applied
+    if (result.sleepTurns > 0 || result.appliesStun || result.isFrozen) {
       const moveNameUpper = (characterMove?.name || '').toUpperCase().trim();
+      const cardNameUpper = (actionCard?.name || '').toUpperCase().trim();
       const isKatPurr = moveNameUpper.includes('SHADOW PURR') || moveNameUpper === 'SP';
       const isBeeStun = moveNameUpper.includes('PARARAZZI') || moveNameUpper.includes('PAPARAZZI') || moveNameUpper.includes('PAP STUN') || moveNameUpper === 'PAPS';
-      const actionDesc = isKatPurr
+      const isFreezeCard = result.isFrozen || cardNameUpper.includes('FREEZE');
+
+      const actionDesc = (isFreezeCard || isBeeStun)
+        ? (isBeeStun
+            ? `📸 PAPARAZZI STUN: Successful attack! ${defender.name}: You are frozen (loses 1 turn)!`
+            : `❄️ ${cardNameUpper || 'FREEZE'}: Successful attack! ${defender.name}: You are frozen (loses ${result.sleepTurns || 1} turn(s))!`)
+        : isKatPurr
         ? `😻 SHADOW PURR: Successful attack! ${defender.name}: You are Asleep (suffers Sleep X1, loses 1 turn)!`
-        : isBeeStun
-        ? `📸 PAPARAZZI STUN: Successful attack! ${defender.name}: You are frozen (loses 1 turn)!`
-        : `${defender.name}: You are Asleep (loses 1 turn)!`;
+        : `💤 ${cardNameUpper || 'SLEEPY'}: Successful attack! ${defender.name}: You are Asleep (loses ${result.sleepTurns || 1} turn(s))!`;
 
       newLogs.push({
         turn: turnNum,
         actor: attacker.name,
         action: actionDesc,
-        type: 'stun',
-        amount: 'Loses 1 turn'
+        type: (isFreezeCard || isBeeStun) ? 'freeze' : 'stun',
+        amount: `Loses ${result.sleepTurns || 1} turn(s)`
       });
     }
 
@@ -2334,7 +2341,7 @@ export default function BattleArena({
                     style={{ cursor: 'default' }}
                   >
                     <span style={{ fontSize: '15px' }}>❄️</span>
-                    <span className="effect-name" style={{ color: '#a5f3fc' }}>Freeze</span>
+                    <span className="effect-name" style={{ color: '#a5f3fc' }}>You are frozen</span>
                     <span className="effect-count" style={{ color: '#a5f3fc' }}>1t</span>
                   </div>
                 )}

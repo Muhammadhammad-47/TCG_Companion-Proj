@@ -137,8 +137,8 @@ export const RULES_KNOWLEDGE = [
   {
     topic: 'FREEZE Card & Dice Penalty Rules',
     keywords: ['freeze', 'freeze x1', 'freeze x2', 'dice penalty', 'freeze penalty', '-4 on dice roll', 'lose 2 turns', 'frozen'],
-    shortAnswer: 'FREEZE X2 causes chosen opponent to lose 2 turns AND receive a -4 penalty on their dice roll during the combat clash! FREEZE X1 causes target to lose 1 turn and -2 dice penalty.',
-    details: 'Official FREEZE Card Rules (Nov 5 Update):\n- FREEZE X2: The chosen opponent loses 2 turns and receives a -4 penalty on their dice roll during the combat clash.\n- FREEZE X1: The chosen opponent loses 1 turn and receives a -2 penalty on their dice roll.\n- The dice penalty directly reduces the opponent\'s clash roll total, leveling the battlefield against powerful attackers.'
+    shortAnswer: 'FREEZE X2 causes chosen opponent to lose 2 turns AND receive a -4 penalty on their dice roll during the combat clash! FREEZE X1 causes target to lose 1 turn and -2 dice penalty. Both cards announce "You are frozen".',
+    details: 'Official FREEZE Card Rules (Nov 5 Update):\n- FREEZE X2: The chosen opponent loses 2 turns and receives a -4 penalty on their dice roll during the combat clash (Announces: "You are frozen").\n- FREEZE X1: The chosen opponent loses 1 turn and receives a -2 penalty on their dice roll (Announces: "You are frozen").\n- Bee\'s Paparazzi Stun also freezes the target and announces "You are frozen".\n- "You are Asleep" is reserved strictly for Sleepy X1, Sleepy X2, and Kat\'s Shadow Purr Character Card Move.'
   },
   {
     topic: 'DRAIN Card & Misdirect 2-Player Rules',

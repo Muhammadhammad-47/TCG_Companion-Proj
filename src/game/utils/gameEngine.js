@@ -459,13 +459,16 @@ export function resolveDiceCombat({
       isFrozenEffect = true;
     } else if (cardName.includes('SLEEPY X2')) {
       sleepTurns = 2;
+      isFrozenEffect = false;
     } else if (cardName.includes('SLEEPY X1')) {
       sleepTurns = 1;
+      isFrozenEffect = false;
     }
 
     // Kat's Shadow Purr (Semi Common): Sleep X1 on defendant if successful (You are Asleep)
     if (moveName.includes('SHADOW PURR') || characterMove?.appliesSleep) {
       sleepTurns = 1;
+      isFrozenEffect = false;
     }
     // Bee's Pararazzi Stun (Semi Common): Freeze / loses 1 turn on defendant if successful (You are frozen)
     else if (moveName.includes('PARARAZZI') || moveName.includes('PAPARAZZI') || characterMove?.loseTurn || characterMove?.appliesFreeze) {
@@ -561,7 +564,7 @@ export function advanceTurn(state) {
     if (candidate.isDefeated) continue;
 
     // Stunned or sleep-turned player forfeits their turn; status is consumed
-    if ((candidate.isStunned || (candidate.sleepTurns && candidate.sleepTurns > 0)) && !stunnedSkips.includes(nextIndex)) {
+    if ((candidate.isStunned || candidate.isFrozen || (candidate.freezeTurns && candidate.freezeTurns > 0) || (candidate.sleepTurns && candidate.sleepTurns > 0)) && !stunnedSkips.includes(nextIndex)) {
       stunnedSkips.push(nextIndex);
       continue;
     }
@@ -626,9 +629,17 @@ export function advanceTurn(state) {
 
     if (stunnedSkips.includes(idx)) {
       updated.isStunned = false;
-      // Also decrement sleepTurns counter
-      if (updated.sleepTurns && updated.sleepTurns > 0) {
+      const isFrozenCandidate = Boolean(updated.isFrozen || (updated.freezeTurns && updated.freezeTurns > 0));
+      if (isFrozenCandidate) {
+        if (updated.freezeTurns && updated.freezeTurns > 0) updated.freezeTurns -= 1;
+        if (!updated.freezeTurns || updated.freezeTurns <= 0) updated.isFrozen = false;
+        updated.sleepTurns = 0;
+        updated.turnLogs = updated.turnLogs || [];
+        updated.turnLogs.unshift(`❄️ ${updated.name}: You are frozen and skip your turn!`);
+      } else if (updated.sleepTurns && updated.sleepTurns > 0) {
         updated.sleepTurns -= 1;
+        updated.turnLogs = updated.turnLogs || [];
+        updated.turnLogs.unshift(`💤 ${updated.name}: You are Asleep and skip your turn!`);
       }
       // Sleeping / stunned players suffer poison ongoing damage tick during skipped turn
       if (!updated.isZombie && updated.poisonCards > 0) {

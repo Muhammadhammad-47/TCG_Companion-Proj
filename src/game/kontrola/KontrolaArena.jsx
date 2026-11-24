@@ -285,8 +285,8 @@ export default function KontrolaArena() {
 
     if (isNewTurnOrPhase) {
       // 1. Sleep / Frozen Skip Announcement
-      const isFrozenSkip = latestLog.includes('is frozen and skips') || latestLog.includes('You are frozen') || activeChar?.isFrozen;
-      const isSleepSkip = !isFrozenSkip && (latestLog.includes('is asleep and skips') || latestLog.includes('You are Asleep') || activeChar?.sleepTurns > 0);
+      const isFrozenSkip = latestLog.includes('is frozen') || latestLog.includes('You are frozen') || Boolean(activeChar?.isFrozen || ((activeChar?.freezeTurns ?? 0) > 0));
+      const isSleepSkip = !isFrozenSkip && (latestLog.includes('is asleep') || latestLog.includes('You are Asleep') || Boolean((activeChar?.sleepTurns ?? 0) > 0));
 
       // 2. Attack X2 Second Strike Announcement
       const isSecondStrike = Boolean(currentAttackX2 && currentAttackX2 === currentTurn);
@@ -302,7 +302,7 @@ export default function KontrolaArena() {
         setTurnBanner({
           badge: '❄️ YOU ARE FROZEN',
           text: isMyTurn ? 'YOU ARE FROZEN!' : `${actorName.toUpperCase()} IS FROZEN!`,
-          sub: latestLog || (isMyTurn ? 'You are frozen and skip your turn!' : `${actorName} is frozen and skips their turn!`),
+          sub: isMyTurn ? 'You are frozen and skip your turn!' : `${actorName}: You are frozen and skips their turn!`,
           detail: 'Frozen status skipped turn',
           isMe: isMyTurn,
           isFrozenSkip: true,
@@ -313,7 +313,7 @@ export default function KontrolaArena() {
         setTurnBanner({
           badge: '💤 YOU ARE ASLEEP',
           text: isMyTurn ? 'YOU ARE ASLEEP!' : `${actorName.toUpperCase()} IS ASLEEP!`,
-          sub: latestLog || (isMyTurn ? 'You are asleep and skip your turn!' : `${actorName} is asleep and skips their turn!`),
+          sub: isMyTurn ? 'You are asleep and skip your turn!' : `${actorName}: You are Asleep and skips their turn!`,
           detail: 'Sleep status skipped turn',
           isMe: isMyTurn,
           isSleepSkip: true,
@@ -1402,7 +1402,7 @@ export default function KontrolaArena() {
             actionType, actionName, actorName, targetName,
             dmgDealt = 0, atkDmgDealt = 0, healDelta = 0,
             shieldDelta = 0, atkShieldDelta = 0,
-            poisonDelta = 0, burnDelta = 0, sleepDelta = 0,
+            poisonDelta = 0, burnDelta = 0, sleepDelta = 0, freezeDelta = 0,
             isMiss = false, logText,
             visionData, triggerXChange, triggerRevivePrompt
           } = event.payload || {};
@@ -1444,8 +1444,8 @@ export default function KontrolaArena() {
           if (burnDelta > 0) {
             spawnStatPopup(`🔥 Burn Inflicted`, 'burn');
           }
-          if (sleepDelta > 0) {
-            const isFreezeAction = actionName && (actionName.toUpperCase().includes('FREEZE') || actionName.toUpperCase().includes('PAPARAZZI') || actionName.toUpperCase().includes('PARARAZZI'));
+          if (freezeDelta > 0 || sleepDelta > 0) {
+            const isFreezeAction = (freezeDelta > 0) || (actionName && (actionName.toUpperCase().includes('FREEZE') || actionName.toUpperCase().includes('PAPARAZZI') || actionName.toUpperCase().includes('PARARAZZI') || actionName.toUpperCase().includes('PAP STUN') || actionName.toUpperCase() === 'PAPS'));
             if (isFreezeAction) {
               spawnStatPopup(targetName === myCharacter?.name ? `❄️ You are frozen` : `❄️ ${targetName}: You are frozen`, 'freeze');
             } else {
@@ -3082,6 +3082,10 @@ export default function KontrolaArena() {
         const newDefSleep = newDefenderState?.sleepTurns || 0;
         const sleepDelta = newDefSleep - prevDefSleep;
 
+        const prevDefFreeze = (currentState.characterStates?.[targetId]?.freezeTurns || 0) + (currentState.characterStates?.[targetId]?.isFrozen ? 1 : 0);
+        const newDefFreeze = (newDefenderState?.freezeTurns || 0) + (newDefenderState?.isFrozen ? 1 : 0);
+        const freezeDelta = newDefFreeze - prevDefFreeze;
+
         const isMiss = playedCardType === 'ATTACK' && Boolean(resolved.isMiss || (!resolved.isSuccessfulAttack && !resolved.atkWin));
 
         let triggerXChange = null;
@@ -3137,6 +3141,7 @@ export default function KontrolaArena() {
           poisonDelta,
           burnDelta,
           sleepDelta,
+          freezeDelta,
           isMiss,
           logText: resolved.log,
           visionData,
@@ -3335,15 +3340,15 @@ export default function KontrolaArena() {
         let checkedSleepCount = 0;
         while ((updatedStates[nextTurnPlayerId]?.sleepTurns > 0 || updatedStates[nextTurnPlayerId]?.freezeTurns > 0 || updatedStates[nextTurnPlayerId]?.isFrozen) && checkedSleepCount < livingPlayers.length) {
           const sleepingChar = updatedStates[nextTurnPlayerId];
-          const isFrozenPlayer = Boolean(sleepingChar.isFrozen || sleepingChar.freezeTurns > 0);
+          const isFrozenPlayer = Boolean(sleepingChar.isFrozen || (sleepingChar.freezeTurns > 0));
 
           if (isFrozenPlayer) {
-            sleepingChar.freezeTurns = Math.max(0, (sleepingChar.freezeTurns || sleepingChar.sleepTurns || 1) - 1);
-            sleepingChar.sleepTurns = Math.max(0, (sleepingChar.sleepTurns || 1) - 1);
-            if (sleepingChar.freezeTurns === 0 && sleepingChar.sleepTurns === 0) {
+            sleepingChar.freezeTurns = Math.max(0, (sleepingChar.freezeTurns || 1) - 1);
+            sleepingChar.sleepTurns = 0;
+            if (sleepingChar.freezeTurns === 0) {
               sleepingChar.isFrozen = false;
             }
-            turnLogs.unshift(`❄️ ${sleepingChar.name}: You are frozen and skip your turn! (${sleepingChar.freezeTurns || sleepingChar.sleepTurns} turn(s) remaining)`);
+            turnLogs.unshift(`❄️ ${sleepingChar.name}: You are frozen and skip your turn! (${sleepingChar.freezeTurns} turn(s) remaining)`);
           } else {
             sleepingChar.sleepTurns = Math.max(0, sleepingChar.sleepTurns - 1);
             turnLogs.unshift(`💤 ${sleepingChar.name}: You are Asleep and skip your turn! (${sleepingChar.sleepTurns} turn(s) remaining)`);
@@ -6932,18 +6937,18 @@ export default function KontrolaArena() {
                       <span className="effect-count" style={{ color: '#ff4d00' }}>{myCharacter.burnCount}</span>
                     </div>
                   )}
-                  {(myCharacter?.sleepTurns > 0 || myCharacter?.isStunned) && !myCharacter?.isFrozen && (
+                  {(myCharacter?.sleepTurns > 0 || myCharacter?.isStunned) && !myCharacter?.isFrozen && !(myCharacter?.freezeTurns > 0) && (
                     <div className="effect-chip effect-lightning">
                       <Zap size={15} color="#ffe600" />
                       <span className="effect-name" style={{ color: '#ffe600' }}>You are Asleep</span>
                       <span className="effect-count" style={{ color: '#ffe600' }}>{myCharacter?.sleepTurns || 1}t</span>
                     </div>
                   )}
-                  {myCharacter?.isFrozen && (
+                  {(myCharacter?.isFrozen || (myCharacter?.freezeTurns > 0)) && (
                     <div className="effect-chip effect-freeze">
                       <span style={{ fontSize: '15px' }}>❄️</span>
                       <span className="effect-name" style={{ color: '#a5f3fc' }}>You are frozen</span>
-                      <span className="effect-count" style={{ color: '#a5f3fc' }}>{myCharacter?.freezeTurns || myCharacter?.sleepTurns || 1}t</span>
+                      <span className="effect-count" style={{ color: '#a5f3fc' }}>{myCharacter?.freezeTurns || 1}t</span>
                     </div>
                   )}
                   {typeof myCharacter?.vampireStealTurnsLeft === 'number' && myCharacter.vampireStealTurnsLeft > 0 && (

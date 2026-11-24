@@ -1524,7 +1524,6 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       attackSelectionName.trim().toUpperCase() === 'PAPS'
     );
     if (isPararazziStun && atkWin && newDefenderState && !isShadowPurr) {
-      newDefenderState.sleepTurns = (newDefenderState.sleepTurns || 0) + 1;
       newDefenderState.isFrozen = true;
       newDefenderState.freezeTurns = (newDefenderState.freezeTurns || 0) + 1;
       log += ` 📸 PAPARAZZI STUN! ${newDefenderState.name}: You are frozen (loses their next turn)!`;
@@ -1734,13 +1733,13 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     const dicePenalty = isFreeze ? (cardName.includes('X2') ? 4 : 2) : 0;
 
     if (newDefenderState) {
-      newDefenderState.sleepTurns = (newDefenderState.sleepTurns || 0) + sleepRounds;
       if (isFreeze) {
         newDefenderState.isFrozen = true;
         newDefenderState.freezeTurns = (newDefenderState.freezeTurns || 0) + sleepRounds;
         newDefenderState.dicePenalty = (newDefenderState.dicePenalty || 0) + dicePenalty;
         log += ` ❄️ ${cardName}! ${newDefenderState.name}: You are frozen (loses ${sleepRounds} turn(s) and receives -${dicePenalty} on dice roll)!`;
       } else {
+        newDefenderState.sleepTurns = (newDefenderState.sleepTurns || 0) + sleepRounds;
         log += ` 💤 ${cardName}! ${newDefenderState.name}: You are Asleep (falls asleep and loses ${sleepRounds} turn(s))!`;
       }
     }
