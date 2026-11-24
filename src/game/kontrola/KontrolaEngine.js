@@ -1187,7 +1187,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         if (newDefenderState) {
           newDefenderState.shield = 0; // Bypass shield
           newDefenderState.hasDefendBasic = false; // Bypass basic defense
-          finalDamage = 25; // High damage attack (2.5x normal attack)
+          finalDamage = Math.max(35, baseAP || 25);
           log += ` ⚔️ BACK STAB hit! Bypassed all defenses for ${finalDamage} AP damage!`;
         }
       } else if (cardName === 'VAMPIRE LIFE STEAL') {
