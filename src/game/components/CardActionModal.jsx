@@ -99,7 +99,7 @@ export default function CardActionModal({
       || selectableTargets[0];
 
     // Handle Attacks
-    if (currentAction.category === 'Attack' || isZombie) {
+    if (currentAction.category === 'Attack' || currentAction.type === 'ATTACK' || isZombie || currentAction.id === 'backstab' || (currentAction.name || '').toUpperCase().includes('BACK STAB')) {
       // CHECK VITALITY LEVEL REQUIREMENTS (before initiating attack)
       if (currentAction.name && currentAction.name.includes('VITALITY')) {
         const currentLevel = activePlayer.level || 1;
@@ -141,7 +141,7 @@ export default function CardActionModal({
         characterMove: resolvedMove,
         amplifyBonus: amplifyChoice === 'ap' ? 20 : 0,
         playerCount: allPlayers.length,
-        isBackStab: currentAction.id === 'backstab'
+        isBackStab: currentAction.id === 'backstab' || (currentAction.name || '').toUpperCase().includes('BACK STAB')
       });
       setAwaitingPhysicalPlacement(true);
       return;

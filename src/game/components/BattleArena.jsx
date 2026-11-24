@@ -1098,7 +1098,7 @@ export default function BattleArena({
     }
 
     // Check if alliance was broken in combat
-    if (attacker.alliedWith && attacker.alliedWith === defender.id) {
+    if ((attacker.alliedWith && attacker.alliedWith === defender.id) || (attacker.relationshipPartnerId && attacker.relationshipPartnerId === defender.id)) {
       const hasProperCard = (actionCard?.name || '').toUpperCase().includes('BACK STAB') || (actionCard?.id === 'backstab') || (attacker.actionCardsHand || []).some(c => (c.name || c.id || '').toUpperCase().includes('BACK STAB') || (c.name || c.id || '').toUpperCase().includes('ABANDON'));
       if (!hasProperCard) {
         newLogs.push({
