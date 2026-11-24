@@ -3038,7 +3038,7 @@ export default function KontrolaArena() {
         let dmgDealt = 0;
         let healDelta = 0;
         let atkDmgDealt = 0;
-        if (playedCardType === 'ATTACK') {
+        if (playedCardType === 'ATTACK' || playedCardType === 'STATUS' || playedCardName.includes('POISON') || playedCardName.includes('FREEZE') || playedCardName.includes('BURN')) {
           const prevDefHP = Number(currentState.characterStates?.[targetId]?.hp) || 0;
           const newDefHP = Number(newDefenderState?.hp) || 0;
           dmgDealt = Math.max(0, prevDefHP - newDefHP);
@@ -5291,11 +5291,12 @@ export default function KontrolaArena() {
                                 {currentWarrior.title}
                               </span>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.76rem', color: 'rgba(255,255,255,0.7)', marginTop: '2px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.76rem', color: 'rgba(255,255,255,0.7)', marginTop: '2px', flexWrap: 'wrap' }}>
                               <span>Element: <strong style={{ color: '#fff' }}>{elementIcons[currentWarrior.element]} {currentWarrior.element}</strong></span>
                               <span>HP: <strong style={{ color: '#34d399' }}>{currentWarrior.hp || 100}</strong></span>
                               <span>Innate DP: <strong style={{ color: '#60a5fa' }}>{currentWarrior.innateDP || 10}</strong></span>
                               <span>Mind: <strong style={{ color: '#c084fc' }}>{currentWarrior.mind || 4}</strong></span>
+                              <span>Weakness: <strong style={{ color: currentWarrior.weakness ? '#f87171' : 'rgba(255,255,255,0.7)' }}>{currentWarrior.weakness ? `${currentWarrior.weakness} (-10 HP)` : 'None'}</strong></span>
                             </div>
                           </div>
                         </div>

@@ -305,9 +305,9 @@ export function resolveDiceCombat({
     ? defChar.weakness
     : (defChar.weakness?.type || (typeof defender.weakness === 'string' ? defender.weakness : (defender.weakness?.type || '')));
   const defWeakness = String(rawWeakness || '').toLowerCase();
-  const hasPoisonWeakness = defWeakness.includes('poison') || ['chynaman', 'chyna', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k));
+  const hasPoisonWeakness = defWeakness.includes('poison') || ['chynaman', 'chyna', 'kiko', 'pooch', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k));
   const hasFireWeakness = defWeakness.includes('fire') || ['shroomy', 'queeny'].some(k => defCharKey.includes(k));
-  const hasMagicWeakness = defWeakness.includes('magic') || ['chynaman', 'chyna', 'bee', 'poochi', 'queeny'].some(k => defCharKey.includes(k));
+  const hasMagicWeakness = defWeakness.includes('magic') || ['chynaman', 'chyna', 'bee', 'pooch', 'poochi', 'queeny'].some(k => defCharKey.includes(k));
   const isPoppersPerPop = (characterMove?.name || '').toUpperCase().includes('POPPERS') || (moveElement && moveElement.includes('Magic and Poison'));
 
   if (!hasflyerImmunity) {

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { soundFX } from '../utils/audio';
 import { Dices, Shield, Swords, Check, Zap, X, Sparkles, AlertCircle, Clock, Eye, RotateCcw } from 'lucide-react';
 import { getCardGraphicUrl, getCharacterAttackGraphicUrl } from './kontrolaAssets';
-import { KONTROLA_CHARACTERS, isValidDefenseCard } from './KontrolaEngine';
+import { KONTROLA_CHARACTERS, isValidDefenseCard, hasPoisonWeakness } from './KontrolaEngine';
 import CardVFXWrapper from './vfx/CardVFXWrapper';
 
 // Helper to draw authentic dice face texture matching ThreeDiceArena.jsx exactly
@@ -361,10 +361,10 @@ export default function KontrolaDiceRoller({
         : (defChar?.weakness?.type || '');
       const defWeakness = rawWeakness.toLowerCase();
       const isZombieDef = Boolean(defChar?.isZombie || (defChar?.poisonCount >= 5) || (defChar?.poisonCards >= 5));
-      const isPoisonWeakness = !isZombieDef && (defWeakness.includes('poison') || ['chynaman', 'chyna', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k)));
+      const isPoisonWeakness = hasPoisonWeakness(defChar);
       const isFireWeakness = isZombieDef || defWeakness.includes('fire') || ['shroomy', 'queeny'].some(k => defCharKey.includes(k));
       const isLightningWeakness = isZombieDef || defWeakness.includes('lightning') || defWeakness.includes('lighting');
-      const isMagicWeakness = defWeakness.includes('magic') || ['chynaman', 'chyna', 'bee', 'poochi', 'queeny'].some(k => defCharKey.includes(k));
+      const isMagicWeakness = defWeakness.includes('magic') || ['chynaman', 'chyna', 'bee', 'poochi', 'pooch', 'queeny'].some(k => defCharKey.includes(k));
       const attackElem = selectedAttackInfo?.element || (cardNameUpper.includes('FIRE') ? 'Fire' : (cardNameUpper.includes('LIGHTNING') || cardNameUpper.includes('LIGHTING')) ? 'Lightning' : cardNameUpper.includes('POISON') ? 'Poison' : 'Physical');
       const isMagicAndPoisonAtk = (attackElem && (attackElem.includes('&') || attackElem.toLowerCase().includes('and')) && attackElem.toLowerCase().includes('magic') && attackElem.toLowerCase().includes('poison')) || 
         attackNameUpper.includes('POPPERS') || 

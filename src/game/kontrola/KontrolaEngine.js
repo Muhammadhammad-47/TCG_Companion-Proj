@@ -503,7 +503,7 @@ export const generatePurchasedCharacterMoves = (charKey, totalCount = 15) => {
 // 100-Card Basic Blueprint from Action Cards % - Sheet1.csv
 export const ACTION_CARDS_BASIC = [
   { name: 'ATTACK X1', type: 'ATTACK', count: 21, costET: 1, desc: 'Standard combat attack. An Attack X1 is only functional if the player has Character Card Moves. Strictly allows only 1 turn regardless of whether the attack is successful or not.' },
-  { name: 'POISON X1', type: 'STATUS', count: 17, costET: 0, desc: 'Initial damage: -10 HP from Poison X1 (-20 HP against characters with Poison weakness: CHYNAMAN aka CHYNA, KIKO, Poochi, Kat, Bee with -10 HP one-time weakness penalty). Ongoing damage: -10 HP per turn until treated with an Antidote Card. Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card.' },
+  { name: 'POISON X1', type: 'STATUS', count: 17, costET: 0, desc: 'Initial damage: -10 HP from Poison X1 (-20 HP against characters with Poison weakness: CHYNAMAN aka CHYNA, KIKO, Kat, Bee, Pooch with -10 HP one-time weakness penalty). Ongoing damage: -10 HP per turn until treated with an Antidote Card. Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card.' },
   { name: 'DEFENCE - BASIC', type: 'DEFENSE', count: 7, costET: 0, desc: 'Reduces incoming damage by 25%.' },
   { name: 'ANTIDOTE X1', type: 'HEAL', count: 7, costET: 0, desc: 'Removes 1 Poison card.' },
   { name: 'HEAL H10', type: 'HEAL', count: 6, costET: 0, desc: 'Restores +10 HP.' },
@@ -520,7 +520,7 @@ export const ACTION_CARDS_BASIC = [
   { name: 'HEAL H20', type: 'HEAL', count: 6, costET: 0, desc: 'Restores +20 HP.' },
   { name: 'LIGHTNING X2', type: 'ATTACK', count: 6, costET: 2, desc: 'On successful attack, defendant receives -20 HP and attacker receives 2 extra turns. Cleanses 1 Poison from Zombie. If not successful, nothing happens.' },
   { name: 'MISDIRECT', type: 'ATTACK', count: 6, costET: 1, desc: 'Redirect an opponent attack.' },
-  { name: 'POISON X2', type: 'STATUS', count: 6, costET: 0, desc: 'Initial damage: -20 HP from Poison X2 (-30 HP against characters with Poison weakness: CHYNAMAN aka CHYNA, KIKO, Poochi, Kat, Bee with -10 HP one-time weakness penalty). Ongoing damage: -20 HP per turn until treated with an Antidote Card. Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card.' },
+  { name: 'POISON X2', type: 'STATUS', count: 6, costET: 0, desc: 'Initial damage: -20 HP from Poison X2 (-30 HP against characters with Poison weakness: CHYNAMAN aka CHYNA, KIKO, Kat, Bee, Pooch with -10 HP one-time weakness penalty). Ongoing damage: -20 HP per turn until treated with an Antidote Card. Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card.' },
   { name: 'REVIVE', type: 'HEAL', count: 6, costET: 0, desc: 'Used only when defeated. Note asks to quit or continue. If continue, card is discarded, replacement Action card re-appears, and character returns with 50% original HP.' },
   { name: 'SLEEPY X1', type: 'OTHERS', count: 6, costET: 0, desc: 'Target falls asleep and skips 1 turn (You are Asleep).' },
   { name: 'VISION X1', type: 'OTHERS', count: 6, costET: 0, desc: 'Target reveals Action Cards for 15s.' },
@@ -641,6 +641,24 @@ export const isValidDefenseCard = (card) => {
     return ['SHIELD', 'DEFENCE', 'DEFENSE', 'BOOMERANG', 'DODGE', '+DEF', 'ANIME EXPRESS', 'FLYER', 'MISDIRECT'].some(kw => name.includes(kw));
   }
   return false;
+};
+
+// Validates whether a character or state has Poison weakness
+// Official GDD: All Characters with Poison Weakness suffer -10 HP on first initial Poison attack
+// Characters with Poison Weakness: CHYNAMAN aka CHYNA, KIKO, Kat (Katsumi), Bee, Pooch (Poochi)
+export const hasPoisonWeakness = (charOrState) => {
+  if (!charOrState) return false;
+  const isZombie = Boolean(charOrState.isZombie || (charOrState.poisonCount >= 5) || (charOrState.poisonCards >= 5));
+  if (isZombie || charOrState.flyerNoWeakness) return false;
+
+  const rawWeakness = typeof charOrState.weakness === 'string'
+    ? charOrState.weakness
+    : (charOrState.weakness?.type || '');
+  const defWeakness = String(rawWeakness || '').toLowerCase();
+  if (defWeakness.includes('poison')) return true;
+
+  const charKey = String(charOrState.characterId || charOrState.id || charOrState.name || '').toLowerCase();
+  return ['chynaman', 'chyna', 'kiko', 'pooch', 'poochi', 'kat', 'katsumi', 'bee'].some(k => charKey.includes(k));
 };
 
 export const generateDeck = (isPremium = false, playerCount = 2) => {
@@ -1288,21 +1306,21 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           (attackSelectionName || '').toUpperCase().includes('BOMBA') ||
           (attackSelectionName || '').toUpperCase().includes('SNATCHER');
 
-        const hasPoisonWeakness = !isZombieDef && (defWeakness.includes('poison') || ['chynaman', 'chyna', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k)));
+        const hasPoisonWeak = hasPoisonWeakness(newDefenderState);
         const hasFireWeakness = isZombieDef || defWeakness.includes('fire') || ['shroomy', 'queeny'].some(k => defCharKey.includes(k));
         const hasLightningWeakness = isZombieDef || defWeakness.includes('lightning') || defWeakness.includes('lighting');
-        const hasMagicWeakness = defWeakness.includes('magic') || ['chynaman', 'chyna', 'bee', 'poochi', 'queeny'].some(k => defCharKey.includes(k));
+        const hasMagicWeakness = defWeakness.includes('magic') || ['chynaman', 'chyna', 'bee', 'poochi', 'pooch', 'queeny'].some(k => defCharKey.includes(k));
 
         let weaknessBonus = 0;
         let weaknessReason = '';
 
-        if (isMagicAndPoisonAtk && (hasPoisonWeakness || hasMagicWeakness) && isInitialAttack) {
+        if (isMagicAndPoisonAtk && (hasPoisonWeak || hasMagicWeakness) && isInitialAttack) {
           weaknessBonus = 10;
-          weaknessReason = ` 🍄☠️✨ [MAGIC & POISON WEAKNESS] ${newDefenderState.name} is vulnerable to ${hasPoisonWeakness ? 'Poison' : 'Magic'}! Suffer -10 HP initial weakness penalty!`;
+          weaknessReason = ` 🍄☠️✨ [MAGIC & POISON WEAKNESS] ${newDefenderState.name} is vulnerable to ${hasPoisonWeak ? 'Poison' : 'Magic'}! Suffer -10 HP initial weakness penalty!`;
         } else if (isZombieDef && (isFireAtk || isLightningAtk) && isInitialAttack) {
           weaknessBonus = 10;
           weaknessReason = ` 🧟⚡🔥 [ZOMBIE ${isFireAtk ? 'FIRE' : 'LIGHTNING'} WEAKNESS] ${newDefenderState.name} is in Zombie Mode and vulnerable to ${isFireAtk ? 'Fire' : 'Lightning'}! Suffered an additional -10 HP weakness penalty on the initial attack!`;
-        } else if (isAttackerZombie && hasPoisonWeakness && isInitialAttack) {
+        } else if (isAttackerZombie && hasPoisonWeak && isInitialAttack) {
           weaknessBonus = 10;
           weaknessReason = ` ☠️ [ZOMBIE POISON WEAKNESS] ${newDefenderState.name} has Poison weakness! Suffer -10 HP additional weakness penalty from Zombie attack!`;
         } else if (isFireAtk && hasFireWeakness && isInitialAttack) {
@@ -1311,7 +1329,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         } else if (isLightningAtk && hasLightningWeakness && isInitialAttack) {
           weaknessBonus = 10;
           weaknessReason = ` ⚡ [LIGHTNING WEAKNESS] ${newDefenderState.name} has Lightning weakness! Additional -10 HP weakness penalty applied!`;
-        } else if (isPoisonAtk && hasPoisonWeakness && isInitialAttack) {
+        } else if (isPoisonAtk && hasPoisonWeak && isInitialAttack) {
           weaknessBonus = 10;
           weaknessReason = ` ☠️ [POISON WEAKNESS] ${newDefenderState.name} has Poison weakness! Additional -10 HP weakness penalty applied!`;
         } else if (isMagicAtk && hasMagicWeakness && isInitialAttack) {
@@ -1521,13 +1539,8 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     if (newDefenderState) {
       newDefenderState.poisonCount = (newDefenderState.poisonCount || 0) + stacks;
       newDefenderState.justPoisoned = true; // Mark target as just infected so ongoing damage begins on subsequent turn
-      const defCharKey = (newDefenderState.characterId || newDefenderState.id || newDefenderState.name || '').toLowerCase();
-      const rawWeakness = typeof newDefenderState.weakness === 'string'
-        ? newDefenderState.weakness
-        : (newDefenderState.weakness?.type || '');
-      const defWeakness = rawWeakness.toLowerCase();
-      const hasPoisonWeakness = defWeakness.includes('poison') || ['chynaman', 'chyna', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k));
-      const weaknessPenalty = hasPoisonWeakness ? (newDefenderState.weaknessBonus || 10) : 0;
+      const hasPoisonWeak = hasPoisonWeakness(newDefenderState);
+      const weaknessPenalty = hasPoisonWeak ? (newDefenderState.weaknessBonus || 10) : 0;
       const totalInitialDamage = initialDamage + weaknessPenalty;
       newDefenderState.hp = Math.max(0, newDefenderState.hp - totalInitialDamage);
       if (newDefenderState.hp <= 0) {

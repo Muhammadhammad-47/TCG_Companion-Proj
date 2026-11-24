@@ -1193,7 +1193,7 @@ export default function BattleArena({
             : (defChar.weakness?.type || (typeof updated.weakness === 'string' ? updated.weakness : (updated.weakness?.type || '')));
           const defWeakness = String(rawWeakness || '').toLowerCase();
           const defCharKey = (updated.characterId || updated.id || updated.name || '').toLowerCase();
-          const hasPoisonWeakness = defWeakness.includes('poison') || ['chynaman', 'chyna', 'kiko', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k));
+          const hasPoisonWeakness = defWeakness.includes('poison') || ['chynaman', 'chyna', 'kiko', 'pooch', 'poochi', 'kat', 'katsumi', 'bee'].some(k => defCharKey.includes(k));
           const weaknessPenalty = hasPoisonWeakness ? 10 : 0;
           const totalInitialDmg = initialDmg + weaknessPenalty;
 
