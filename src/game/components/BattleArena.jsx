@@ -1099,12 +1099,12 @@ export default function BattleArena({
 
     // Check if alliance was broken in combat
     if (attacker.alliedWith && attacker.alliedWith === defender.id) {
-      const hasBackStab = (actionCard?.name || '').toUpperCase().includes('BACK STAB') || (actionCard?.id === 'backstab') || (attacker.actionCardsHand || []).some(c => (c.name || c.id || '').toUpperCase().includes('BACK STAB'));
-      if (!hasBackStab) {
+      const hasProperCard = (actionCard?.name || '').toUpperCase().includes('BACK STAB') || (actionCard?.id === 'backstab') || (attacker.actionCardsHand || []).some(c => (c.name || c.id || '').toUpperCase().includes('BACK STAB') || (c.name || c.id || '').toUpperCase().includes('ABANDON'));
+      if (!hasProperCard) {
         newLogs.push({
           turn: turnNum,
           actor: attacker.name,
-          action: `💔 ${attacker.name} broke their alliance with ${defender.name} without a BACK STAB card and suffered -40 HP penalty!`,
+          action: `💔 ${attacker.name} broke their alliance with ${defender.name} without an ABANDON or BACK STAB card and suffered -40 HP penalty!`,
           type: 'damage',
           amount: `-40 HP`
         });
@@ -1112,7 +1112,7 @@ export default function BattleArena({
         newLogs.push({
           turn: turnNum,
           actor: attacker.name,
-          action: `🗡️ ${attacker.name} broke their alliance with ${defender.name} with a BACK STAB card, evading the -40 HP penalty!`,
+          action: `🗡️ ${attacker.name} broke their alliance with ${defender.name} with proper card, evading the -40 HP penalty!`,
           type: 'attack',
           amount: `Betrayal`
         });

@@ -4127,7 +4127,7 @@ export default function KontrolaArena() {
       return;
     }
 
-    if (isAttack && !isAoE && !isLightning && !isFire && !isVampire && !isBackStab && !isMisdirect && !isDrain && !selectedCharacterAttack) {
+    if (isAttack && !isAoE && !isLightning && !isFire && !isVampire && !isMisdirect && !isDrain && !selectedCharacterAttack) {
       console.log('[playTurn] VALIDATION FAILED: Attack requires character move selection');
       showNotice('Please select a character attack move to strike with!', 'warning');
       return;
@@ -4142,7 +4142,7 @@ export default function KontrolaArena() {
       actionId: uniqueActionId,
       actorId: playerId,
       actionCard: selectedActionCard,
-      attackSelectionName: (isLightning || isFire || isVampire || isBackStab || isMisdirect || isDrain) ? null : effectiveAttackSelection,
+      attackSelectionName: (isLightning || isFire || isVampire || isMisdirect || isDrain) ? null : effectiveAttackSelection,
       targetId: isAoE ? 'ALL' : selectedTargetId
     };
 
@@ -7330,7 +7330,7 @@ export default function KontrolaArena() {
                       })()}
                     </div>
 
-                    {(selectedActionCard?.type === 'ATTACK' || getSafeCardName(selectedActionCard).toUpperCase().includes('BACK STAB')) && !['LIGHTNING', 'FIRE FLAME', 'VAMPIRE', 'DRAIN', 'BACK STAB', 'BOOMERANG', 'MISDIRECT', 'BLITZ'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw)) && (
+                    {(selectedActionCard?.type === 'ATTACK' || getSafeCardName(selectedActionCard).toUpperCase().includes('BACK STAB')) && !['LIGHTNING', 'FIRE FLAME', 'VAMPIRE', 'DRAIN', 'BOOMERANG', 'MISDIRECT', 'BLITZ'].some(kw => getSafeCardName(selectedActionCard).toUpperCase().includes(kw)) && (
                           <>
                             <div className="panel-title-bar" style={{ marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                               <span className="panel-kicker" style={{ color: 'var(--neon-crimson)' }}>2. SELECT CHARACTER MOVE</span>
@@ -7638,9 +7638,9 @@ export default function KontrolaArena() {
 
                       const isCtaDisabled = !isMyTurn || !selectedActionCard || isCtaCardLocked || isSelMoveLocked || (
                         getSafeCardType(selectedActionCard) === 'ATTACK' &&
-                        !['BLITZ', 'LIGHTNING', 'FIRE FLAME', 'VAMPIRE', 'DRAIN', 'BACK STAB', 'BOOMERANG', 'MISDIRECT'].some(kw => selCardUpper.includes(kw)) &&
+                        !['BLITZ', 'LIGHTNING', 'FIRE FLAME', 'VAMPIRE', 'DRAIN', 'BOOMERANG', 'MISDIRECT'].some(kw => selCardUpper.includes(kw)) &&
                         (!selectedCharacterAttack || !selectedTargetId)
-                      ) || (selCardUpper.includes('BACK STAB') && !selectedTargetId) ||
+                      ) || (selCardUpper.includes('BACK STAB') && (!selectedTargetId || !selectedCharacterAttack)) ||
                       (['POISON', 'SLEEPY', 'FREEZE', 'X-CHANGE', 'KONTROL', 'SOUL ALLIANCE', 'DRAIN', 'VAMPIRE', 'MISDIRECT', 'LIGHTNING', 'FIRE FLAME'].some(kw => selCardUpper.includes(kw)) && !selectedTargetId) ||
                       (selCardUpper.includes('VISION') && !selCardUpper.includes('FULL') && !selectedTargetId);
 
