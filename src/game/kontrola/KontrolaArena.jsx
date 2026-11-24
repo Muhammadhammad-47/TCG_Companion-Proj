@@ -288,6 +288,16 @@ export default function KontrolaArena() {
       const isFrozenSkip = latestLog.includes('is frozen and skips') || latestLog.includes('You are frozen') || activeChar?.isFrozen;
       const isSleepSkip = !isFrozenSkip && (latestLog.includes('is asleep and skips') || latestLog.includes('You are Asleep') || activeChar?.sleepTurns > 0);
 
+      // 2. Attack X2 Second Strike Announcement
+      const isSecondStrike = Boolean(currentAttackX2 && currentAttackX2 === currentTurn);
+
+      // 3. Extra Turn Announcement
+      const isExtraTurn = (prev.turn !== null && prev.turn === currentTurn && currentTurnNum > (prev.turnNumber || 0)) ||
+        latestLog.includes('Extra turn activated') ||
+        latestLog.includes('receives another turn') ||
+        latestLog.includes('extra turn') ||
+        ((activeChar?.extraTurns ?? 0) > 0);
+
       if (isFrozenSkip) {
         setTurnBanner({
           badge: '❄️ YOU ARE FROZEN',
