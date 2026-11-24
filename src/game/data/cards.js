@@ -166,7 +166,7 @@ export const ACTION_CARDS = [
     costET: 1,
     icon: '🗡️',
     color: '#ff3b6b',
-    desc: 'Bypass defenses. Deals 25 AP. Only works in 3+ player matches. Allows a player to break their alliance without suffering the -40 HP penalty. (1 ET)'
+    desc: 'Break your alliance or servitude cleanly without receiving the -40 HP penalty AND launch an immediate surprise attack against your ex-ally (3+ players only). Bypasses defenses and shields. (1 ET)'
   },
   {
     id: 'soul_alliance',
@@ -184,7 +184,43 @@ export const ACTION_CARDS = [
     costET: 0,
     icon: '💔',
     color: '#ff2a6d',
-    desc: 'Abandon your ally in combat (3+ players only). If a player breaks their alliance without having a back stab card, the leaving player will suffer a -40 HP penalty. (0 ET)'
+    desc: 'Break your alliance or servitude cleanly without receiving the -40 HP penalty (3+ players only). (0 ET)'
+  },
+  {
+    id: 'freeze_x1',
+    name: 'FREEZE X1',
+    type: 'STATUS',
+    costET: 0,
+    icon: '❄️',
+    color: '#a5f3fc',
+    desc: 'Target loses 1 turn and receives -2 penalty on their dice roll. Announces: "You are frozen". (0 ET)'
+  },
+  {
+    id: 'freeze_x2',
+    name: 'FREEZE X2',
+    type: 'STATUS',
+    costET: 0,
+    icon: '❄️❄️',
+    color: '#a5f3fc',
+    desc: 'Target loses 2 turns and receives -4 penalty on their dice roll. Announces: "You are frozen". (0 ET)'
+  },
+  {
+    id: 'sleepy_x1',
+    name: 'SLEEPY X1',
+    type: 'OTHERS',
+    costET: 0,
+    icon: '💤',
+    color: '#a855f7',
+    desc: 'Target falls asleep and skips 1 turn. Announces: "You are Asleep". (0 ET)'
+  },
+  {
+    id: 'sleepy_x2',
+    name: 'SLEEPY X2',
+    type: 'OTHERS',
+    costET: 0,
+    icon: '💤💤',
+    color: '#a855f7',
+    desc: 'Target sleeps for 2 turns and skips their turns. Announces: "You are Asleep". (0 ET)'
   },
   {
     id: 'vitality_v10',

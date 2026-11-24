@@ -1216,6 +1216,23 @@ export default function BattleArena({
             logText += ` 🎯 [POISON WEAKNESS] ${updated.name} has Poison weakness! Suffer -${weaknessPenalty} HP additional weakness penalty (Total initial: -${totalInitialDmg} HP)! (Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card)`;
           }
           logAmount = `-${totalInitialDmg} HP, +${stacks} ☠️`;
+        } else if (type === 'freeze') {
+          const isX2 = cardName?.includes('X2') || amount === 2;
+          const turns = isX2 ? 2 : 1;
+          const dicePen = isX2 ? 4 : 2;
+          updated.isFrozen = true;
+          updated.freezeTurns = (updated.freezeTurns || 0) + turns;
+          updated.dicePenalty = (updated.dicePenalty || 0) + dicePen;
+          try { soundFX.playIceShatter?.(); } catch {}
+          logText = `❄️ ${cardName || (isX2 ? 'FREEZE X2' : 'FREEZE X1')}! ${updated.name}: You are frozen (loses ${turns} turn(s) and receives -${dicePen} dice penalty)!`;
+          logAmount = `Frozen ${turns}t, -${dicePen} dice`;
+        } else if (type === 'sleep') {
+          const isX2 = cardName?.includes('X2') || amount === 2;
+          const turns = isX2 ? 2 : 1;
+          updated.sleepTurns = (updated.sleepTurns || 0) + turns;
+          try { soundFX.playZombie?.(); } catch {}
+          logText = `💤 ${cardName || (isX2 ? 'SLEEPY X2' : 'SLEEPY X1')}! ${updated.name}: You are Asleep (falls asleep and loses ${turns} turn(s))!`;
+          logAmount = `Asleep ${turns}t`;
         } else if (type === 'amplify') {
           if (amplifyChoice === 'hp') {
             updated.hp = Math.min(updated.maxHP, updated.hp + 20);

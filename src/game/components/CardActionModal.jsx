@@ -168,6 +168,48 @@ export default function CardActionModal({
       return;
     }
 
+    // Handle Freeze Cards (FREEZE X1 & FREEZE X2)
+    const isFreezeCardAction = currentAction.id === 'freeze_x1' || currentAction.id === 'freeze_x2' || (currentAction.name || '').toUpperCase().includes('FREEZE');
+    if (isFreezeCardAction) {
+      if (!targetPlayer) {
+        setErrorMsg('Please pick a target opponent to freeze.');
+        return;
+      }
+      const isX2 = currentAction.id === 'freeze_x2' || (currentAction.name || '').toUpperCase().includes('X2');
+      onApplyInstantEffect({
+        type: 'freeze',
+        sourcePlayerId: activePlayer.id,
+        targetPlayerId: targetPlayer.id,
+        costET: currentAction.costET || 0,
+        amount: isX2 ? 2 : 1,
+        cardName: currentAction.name,
+        actionCardId: currentAction.id,
+        playedInstanceId: currentAction.instanceId
+      });
+      return;
+    }
+
+    // Handle Sleepy Cards (SLEEPY X1 & SLEEPY X2)
+    const isSleepyCardAction = currentAction.id === 'sleepy_x1' || currentAction.id === 'sleepy_x2' || (currentAction.name || '').toUpperCase().includes('SLEEPY') || (currentAction.name || '').toUpperCase().includes('SLEEP');
+    if (isSleepyCardAction) {
+      if (!targetPlayer) {
+        setErrorMsg('Please pick a target opponent.');
+        return;
+      }
+      const isX2 = currentAction.id === 'sleepy_x2' || (currentAction.name || '').toUpperCase().includes('X2');
+      onApplyInstantEffect({
+        type: 'sleep',
+        sourcePlayerId: activePlayer.id,
+        targetPlayerId: targetPlayer.id,
+        costET: currentAction.costET || 0,
+        amount: isX2 ? 2 : 1,
+        cardName: currentAction.name,
+        actionCardId: currentAction.id,
+        playedInstanceId: currentAction.instanceId
+      });
+      return;
+    }
+
     // Handle Antidote
     if (currentAction.id === 'antidote_card' || currentAction.id?.includes('antidote') || currentAction.name?.includes('ANTIDOTE')) {
       onApplyInstantEffect({
