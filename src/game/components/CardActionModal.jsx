@@ -54,8 +54,18 @@ export default function CardActionModal({
   const totalETCost = isAttackPlay ? ((currentAction?.costET || 0) + (currentMove?.costET || 0)) : (currentAction?.costET || 0);
 
   const selectableTargets = allPlayers.filter(p => {
+    const cardUpper = (currentAction?.name || currentAction?.id || '').toUpperCase();
+    const isRevive = cardUpper.includes('REVIVE');
+    if (isRevive) {
+      return (activePlayer.hp <= 0 || activePlayer.isDefeated) ? (p.id === activePlayer.id) : (p.isDefeated || (p.hp <= 0));
+    }
+    const isHeal = currentAction?.type === 'HEAL' || cardUpper.includes('HEAL');
+    const isAntidote = cardUpper.includes('ANTIDOTE');
+    if (isHeal || isAntidote) {
+      return !p.isDefeated;
+    }
     if (p.isDefeated) return false;
-    if (currentAction?.id === 'poison_card' || currentAction?.id === 'poison_x1' || currentAction?.id === 'poison_x2' || currentAction?.name?.includes('POISON')) return true;
+    if (currentAction?.id === 'poison_card' || currentAction?.id === 'poison_x1' || currentAction?.id === 'poison_x2' || cardUpper.includes('POISON')) return true;
     return p.id !== activePlayer.id;
   });
 
@@ -95,10 +105,25 @@ export default function CardActionModal({
       return;
     }
 
-    // REVIVE Card gate (Nov 8 Notes): This card is ONLY used when the card holder is defeated or dies
-    if (currentAction.name && currentAction.name.toUpperCase().includes('REVIVE')) {
-      if ((activePlayer.hp || 0) > 0 && !activePlayer.isDefeated) {
-        setErrorMsg('🔒 REVIVE card is ONLY used when your character is defeated or dies!');
+    // REVIVE Card: Used when defeated (self-revive) OR by living player to revive a defeated Exile opponent
+    const isReviveAction = Boolean(currentAction.name && currentAction.name.toUpperCase().includes('REVIVE'));
+    if (isReviveAction) {
+      const isSelfDefeated = (activePlayer.hp || 0) <= 0 || activePlayer.isDefeated;
+      const isTargetDefeated = targetPlayer && ((targetPlayer.hp || 0) <= 0 || targetPlayer.isDefeated);
+      if (!isSelfDefeated && !isTargetDefeated) {
+        setErrorMsg('🔒 REVIVE card is used when you are defeated OR to revive a defeated Exile opponent!');
+        return;
+      }
+      if (!isSelfDefeated && isTargetDefeated) {
+        onApplyInstantEffect({
+          type: 'revive_exile',
+          sourcePlayerId: activePlayer.id,
+          targetPlayerId: targetPlayer.id,
+          costET: currentAction.costET || 0,
+          cardName: currentAction.name,
+          actionCardId: currentAction.id,
+          playedInstanceId: currentAction.instanceId
+        });
         return;
       }
     }
@@ -224,8 +249,8 @@ export default function CardActionModal({
       onApplyInstantEffect({
         type: 'antidote',
         sourcePlayerId: activePlayer.id,
-        targetPlayerId: targetPlayer.id,
-        costET: currentAction.costET,
+        targetPlayerId: targetPlayer ? targetPlayer.id : activePlayer.id,
+        costET: currentAction.costET || 0,
         cardName: currentAction.name,
         actionCardId: currentAction.id,
         playedInstanceId: currentAction.instanceId
@@ -233,27 +258,46 @@ export default function CardActionModal({
       return;
     }
 
-    // Handle Heal
-    if (currentAction.id === 'heal_card') {
+    // Handle Heal (HEAL H10, HEAL H20)
+    const isHealCard = currentAction.type === 'HEAL' || (currentAction.name || '').toUpperCase().includes('HEAL') || currentAction.id?.startsWith('heal');
+    if (isHealCard && !currentAction.name?.includes('REVIVE') && !currentAction.name?.includes('ANTIDOTE')) {
+      const healAmount = (currentAction.name || '').includes('H20') ? 20 : ((currentAction.name || '').includes('H10') ? 10 : (currentAction.amount || 20));
       onApplyInstantEffect({
         type: 'heal',
         sourcePlayerId: activePlayer.id,
-        targetPlayerId: targetPlayer.id,
-        costET: currentAction.costET,
-        amount: 30,
+        targetPlayerId: targetPlayer ? targetPlayer.id : activePlayer.id,
+        costET: currentAction.costET || 0,
+        amount: healAmount,
+        cardName: currentAction.name,
+        actionCardId: currentAction.id,
         playedInstanceId: currentAction.instanceId
       });
       return;
     }
 
-    // Handle Shield
-    if (currentAction.id === 'shield_card') {
+    // Handle Shield & Defense (SHIELD BASIC +25 HP, +DEFENCE D10, D15, D20)
+    const isShieldOrDefAction = currentAction.type === 'DEFENSE' || (currentAction.name || '').toUpperCase().includes('SHIELD') || (currentAction.name || '').toUpperCase().includes('DEFENCE') || currentAction.id?.startsWith('shield') || currentAction.id?.startsWith('defence');
+    if (isShieldOrDefAction) {
+      let shieldAmount = 25;
+      if (currentAction.defenseBonus) {
+        shieldAmount = currentAction.defenseBonus;
+      } else if (currentAction.name?.includes('D20')) {
+        shieldAmount = 20;
+      } else if (currentAction.name?.includes('D15')) {
+        shieldAmount = 15;
+      } else if (currentAction.name?.includes('D10')) {
+        shieldAmount = 10;
+      } else if (currentAction.name?.includes('25')) {
+        shieldAmount = 25;
+      }
       onApplyInstantEffect({
         type: 'shield',
         sourcePlayerId: activePlayer.id,
-        targetPlayerId: targetPlayer.id,
-        costET: currentAction.costET,
-        amount: 30,
+        targetPlayerId: activePlayer.id, // Shield applies to self
+        costET: currentAction.costET || 0,
+        amount: shieldAmount,
+        cardName: currentAction.name,
+        actionCardId: currentAction.id,
         playedInstanceId: currentAction.instanceId
       });
       return;
@@ -264,7 +308,7 @@ export default function CardActionModal({
       onApplyInstantEffect({
         type: 'amplify',
         sourcePlayerId: activePlayer.id,
-        targetPlayerId: targetPlayer.id,
+        targetPlayerId: targetPlayer ? targetPlayer.id : activePlayer.id,
         costET: currentAction.costET,
         amplifyChoice: amplifyChoice,
         playedInstanceId: currentAction.instanceId
@@ -852,11 +896,11 @@ export default function CardActionModal({
                   </div>
                 )}
 
-                {/* Target Opponent Selection */}
-                {(isAttackPlay || currentAction?.category === 'Attack' || currentAction?.type === 'ATTACK' || currentAction?.id === 'poison_card' || currentAction?.id === 'poison_x1' || currentAction?.id === 'poison_x2' || currentAction?.name?.includes('POISON') || isZombie) && currentAction?.type !== 'VITALITY' && (
+                {/* Target Selection */}
+                {selectableTargets.length > 0 && currentAction?.type !== 'VITALITY' && !(currentAction?.type === 'DEFENSE' || (currentAction?.name || '').includes('SHIELD') || (currentAction?.name || '').includes('DEFENCE')) && (
                   <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '12px' }}>
                     <div style={{ fontSize: '0.82rem', color: 'var(--neon-gold)', fontWeight: 'bold', marginBottom: '8px' }}>
-                      3. SELECT TARGET OPPONENT
+                      3. SELECT TARGET {currentAction?.type === 'HEAL' || currentAction?.name?.includes('ANTIDOTE') ? 'PLAYER' : 'OPPONENT'}
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '8px' }}>
                       {selectableTargets.map(target => {

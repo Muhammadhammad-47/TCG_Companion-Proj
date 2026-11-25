@@ -406,33 +406,34 @@ export default function BattleArena({
   const handleXChangeConfirm = (exchangeData) => {
     if (!exchangeData.attackerCard || !exchangeData.defenderCard) return;
 
-    const updatedStates = { ...gameState.characterStates };
-    const attacker = updatedStates[xChangeModalData.initiatorId];
-    const defender = Object.values(gameState.characterStates).find(c =>
-      c.id !== xChangeModalData.initiatorId && c.actionCardsHand?.length > 0
-    );
+    const currentPlayers = gameState.players || [];
+    const attacker = currentPlayers.find(p => p.id === xChangeModalData.initiatorId) || currentPlayers[activeIdx];
+    const defender = currentPlayers.find(p => p.id !== attacker.id && (p.actionCardsHand?.length > 0));
 
     if (attacker && defender) {
-      const attackerCardIdx = attacker.actionCardsHand.findIndex(c => c.id === exchangeData.attackerCard.id);
-      const defenderCardIdx = defender.actionCardsHand.findIndex(c => c.id === exchangeData.defenderCard.id);
+      const updatedPlayers = currentPlayers.map(p => {
+        if (p.id === attacker.id) {
+          const newHand = (p.actionCardsHand || []).filter(c => c.id !== exchangeData.attackerCard.id && c.instanceId !== exchangeData.attackerCard.instanceId);
+          newHand.push(exchangeData.defenderCard);
+          return { ...p, actionCardsHand: newHand };
+        }
+        if (p.id === defender.id) {
+          const newHand = (p.actionCardsHand || []).filter(c => c.id !== exchangeData.defenderCard.id && c.instanceId !== exchangeData.defenderCard.instanceId);
+          newHand.push(exchangeData.attackerCard);
+          return { ...p, actionCardsHand: newHand };
+        }
+        return p;
+      });
 
-      if (attackerCardIdx !== -1 && defenderCardIdx !== -1) {
-        const [attackerCardToGive] = attacker.actionCardsHand.splice(attackerCardIdx, 1);
-        const [defenderCardToGive] = defender.actionCardsHand.splice(defenderCardIdx, 1);
+      setGameState({ ...gameState, players: updatedPlayers });
 
-        attacker.actionCardsHand.push(defenderCardToGive);
-        defender.actionCardsHand.push(attackerCardToGive);
-
-        setGameState({ ...gameState, characterStates: updatedStates });
-
-        setLocalChatMessages(prev => [...prev, {
-          id: `xchange_${Date.now()}`,
-          senderId: 'system',
-          senderName: 'System',
-          text: `🔄 X-CHANGE: ${attacker.name} traded "${attackerCardToGive.name}" for "${defenderCardToGive.name}"`,
-          time: new Date().toLocaleTimeString()
-        }]);
-      }
+      setLocalChatMessages(prev => [...prev, {
+        id: `xchange_${Date.now()}`,
+        senderId: 'system',
+        senderName: 'System',
+        text: `🔄 X-CHANGE: ${attacker.name} traded "${exchangeData.attackerCard.name}" for "${exchangeData.defenderCard.name}"`,
+        time: new Date().toLocaleTimeString()
+      }]);
     }
 
     setShowXChangeModal(false);
@@ -1190,15 +1191,16 @@ export default function BattleArena({
       // Apply effect to target
       if (p.id === targetPlayerId) {
         if (type === 'heal') {
-          updated.hp = Math.min(updated.maxHP, updated.hp + (amount || 30));
+          const maxAllowed = updated.maxHp || updated.maxHP || 100;
+          updated.hp = Math.min(maxAllowed, updated.hp + (amount || 20));
           soundFX.playHeal();
           logText = `Used Heal on ${updated.name}`;
-          logAmount = `+${amount || 30} HP`;
+          logAmount = `+${amount || 20} HP`;
         } else if (type === 'shield') {
-          updated.shield = (updated.shield || 0) + (amount || 30);
+          updated.shield = (updated.shield || 0) + (amount || 25);
           soundFX.playEnergy();
-          logText = `Deployed +${amount || 30} Shield barrier`;
-          logAmount = `+${amount || 30} Shield`;
+          logText = `Deployed +${amount || 25} Shield barrier on ${updated.name}`;
+          logAmount = `+${amount || 25} Shield`;
         } else if (type === 'antidote') {
           const removeCount = cardName?.includes('FULL') ? 99 : (cardName?.includes('X2') ? 2 : 1);
           const prevPoison = updated.poisonCards || 0;
@@ -1255,7 +1257,8 @@ export default function BattleArena({
           logAmount = `Asleep ${turns}t`;
         } else if (type === 'amplify') {
           if (amplifyChoice === 'hp') {
-            updated.hp = Math.min(updated.maxHP, updated.hp + 20);
+            const maxAllowed = updated.maxHp || updated.maxHP || 100;
+            updated.hp = Math.min(maxAllowed, updated.hp + 20);
             logText = `Amplify Surge: +20 HP`;
             logAmount = `+20 HP`;
           } else if (amplifyChoice === 'ap') {
@@ -1289,7 +1292,8 @@ export default function BattleArena({
           const lvlData = getCharacterLevelData(charKey, newLvl);
           updated.level = newLvl;
           updated.maxHP = lvlData.hp;
-          updated.hp = Math.min(updated.maxHP, nextHP);
+          updated.maxHp = lvlData.hp;
+          updated.hp = Math.min(updated.maxHp, nextHP);
 
           if (newLvl !== oldLvl) {
             updated.maxReserveHp = lvlData.reserveHp;
@@ -1301,6 +1305,16 @@ export default function BattleArena({
           soundFX.playHeal();
           logText = `${updated.name} used ${cardName}!`;
           logAmount = `+${vitAmount} Max HP, Lv.${updated.level}`;
+        } else if (type === 'revive_exile') {
+          // Trigger the Revive Offer modal on the exile
+          setReviveOfferData({
+            providerId: sourcePlayerId,
+            providerName: sourcePlayer.name,
+            exileId: targetPlayerId
+          });
+          soundFX.playHeal();
+          logText = `Offered REVIVE card to ${updated.name} as an Exile!`;
+          logAmount = `Exile Offer`;
         } else if (type === 'abandon') {
           updated.allianceId = null;
           updated.alliedWith = null;
