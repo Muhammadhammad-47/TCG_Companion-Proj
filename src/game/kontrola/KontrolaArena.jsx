@@ -1333,14 +1333,15 @@ export default function KontrolaArena() {
           if (senderId && senderId === playerIdRef.current) {
             return;
           }
-          // If already enqueued for this combatId, NEVER re-enqueue to prevent duplicate turn resolution
-          if (cId && enqueuedCombatIdsRef.current.has(cId)) {
-            console.warn('[DICE_SCREEN_CLOSE] Combat already enqueued for ID:', cId);
+          const enqKey = cId + '_enqueued';
+          // If already enqueued for this combat resolution, NEVER re-enqueue to prevent duplicate turn resolution
+          if (enqueuedCombatIdsRef.current.has(enqKey)) {
+            console.warn('[DICE_SCREEN_CLOSE] Combat already enqueued for key:', enqKey);
             return;
           }
           // If a non-host client finished combat, the host must execute RESOLVE_COMBAT
           if (resolved && isHostRef.current && combatData) {
-            if (cId) enqueuedCombatIdsRef.current.add(cId);
+            enqueuedCombatIdsRef.current.add(enqKey);
             const safeDefenseCard = isValidDefenseCard(precalculatedRolls?.defenseCard)
               ? precalculatedRolls.defenseCard
               : (isValidDefenseCard(combatData?.defenseCard)
@@ -1831,11 +1832,12 @@ export default function KontrolaArena() {
       // IMPORTANT: do NOT add an early return inside this block or combat resolution will be skipped.
       if (payload.actionType === 'RESOLVE_COMBAT') {
         const combatId = payload.combatId || ('combat_' + Date.now() + '_' + payload.actorId + '_' + payload.targetId + '_' + (payload.actionCard?.id || payload.actionCard?.name || 'combat'));
-        if (combatId && executedCombatIdsRef.current.has(combatId)) {
-          console.warn('[RESOLVE_COMBAT] Skipping duplicate combat resolution for ID:', combatId);
+        const resolutionKey = combatId + '_resolved';
+        if (executedCombatIdsRef.current.has(resolutionKey)) {
+          console.warn('[RESOLVE_COMBAT] Skipping duplicate combat resolution for key:', resolutionKey);
           return currentState;
         }
-        if (combatId) executedCombatIdsRef.current.add(combatId);
+        executedCombatIdsRef.current.add(resolutionKey);
         payload.combatId = combatId;
         payload = { ...payload }; // safe copy � avoid mutating the caller's object
       }
@@ -2920,24 +2922,48 @@ export default function KontrolaArena() {
       }
 
       const { actorId, actionCard, attackSelectionName, targetId } = payload;
-      const attackerChar = currentState.characterStates[actorId];
-      const defenderChar = targetId && targetId !== 'ALL' ? currentState.characterStates[targetId] : null;
+      
+      const effectiveActorId = actorId || currentState.turn || currentState.players?.[0];
+      const attackerChar = currentState.characterStates?.[effectiveActorId] ||
+        Object.values(currentState.characterStates || {}).find(c => c.id === effectiveActorId || c.characterId === effectiveActorId || c.playerId === effectiveActorId);
 
       if (!attackerChar) return currentState;
+
+      let effectiveTargetId = targetId;
+      if (!effectiveTargetId || effectiveTargetId === 'undefined' || effectiveTargetId === 'null') {
+        if (currentState.players?.length === 2) {
+          effectiveTargetId = currentState.players.find(p => p !== effectiveActorId);
+        } else {
+          effectiveTargetId = Object.keys(currentState.characterStates || {}).find(p => p !== effectiveActorId);
+        }
+      }
+
+      let defenderChar = (effectiveTargetId && effectiveTargetId !== 'ALL')
+        ? (currentState.characterStates?.[effectiveTargetId] ||
+           Object.values(currentState.characterStates || {}).find(c => c.id === effectiveTargetId || c.characterId === effectiveTargetId || c.playerId === effectiveTargetId || c.name === effectiveTargetId))
+        : null;
+
+      if (!defenderChar && effectiveTargetId !== 'ALL' && currentState.players?.length === 2) {
+        const otherPId = currentState.players.find(p => p !== effectiveActorId);
+        if (otherPId && currentState.characterStates?.[otherPId]) {
+          effectiveTargetId = otherPId;
+          defenderChar = currentState.characterStates[otherPId];
+        }
+      }
 
       const isPass = actionCard?.type === 'PASS';
       let newAttackerState = { ...attackerChar };
       let newDefenderState = defenderChar ? { ...defenderChar } : null;
       let log = `${attackerChar.name} passed their turn.`;
       let newDeck = [...(currentState.deck || [])];
-      let newHand = [...(currentState.hands?.[actorId] || [])];
+      let newHand = [...(currentState.hands?.[effectiveActorId] || currentState.hands?.[actorId] || [])];
       let resolved = {};
       let matchWinner = currentState.winner;
       let turnLogs = [log];
       let pendingAttackX2For = currentState.pendingAttackX2For || null;
-      let nextTurnPlayerId = actorId;
+      let nextTurnPlayerId = effectiveActorId;
       let updatedStates = { ...currentState.characterStates };
-      let newDefenderHand = defenderChar ? [...(currentState.hands?.[targetId] || [])] : [];
+      let newDefenderHand = defenderChar ? [...(currentState.hands?.[effectiveTargetId] || currentState.hands?.[targetId] || [])] : [];
 
       if (!isPass) {
         // Resolve Turn via Engine (ET cost deducted only after confirming not a tie)
@@ -3241,11 +3267,8 @@ export default function KontrolaArena() {
 
       updatedStates = {
         ...updatedStates,
-        [actorId]: newAttackerState
+        [effectiveActorId]: newAttackerState
       };
-      const effectiveTargetId = (targetId && targetId !== 'ALL')
-        ? targetId
-        : (currentState.players?.find(pId => pId !== actorId) || Object.keys(currentState.characterStates || {}).find(pId => pId !== actorId));
       if (effectiveTargetId && effectiveTargetId !== 'ALL' && newDefenderState) {
         updatedStates[effectiveTargetId] = newDefenderState;
       } else if (targetId === 'ALL' && resolved.aoeDamage) {
@@ -3482,10 +3505,10 @@ export default function KontrolaArena() {
 
       let updatedHands = {
         ...(currentState.hands || {}),
-        [actorId]: newHand
+        [effectiveActorId]: newHand
       };
-      if (defenderChar && targetId !== 'ALL') {
-        updatedHands[targetId] = newDefenderHand;
+      if (defenderChar && effectiveTargetId !== 'ALL') {
+        updatedHands[effectiveTargetId] = newDefenderHand;
       }
 
       // X-CHANGE is handled interactively via EXECUTE_XCHANGE modal
@@ -4282,21 +4305,39 @@ export default function KontrolaArena() {
       defenseCard: validDefCard
     };
     const cId = activeCombat?.combatId || ('combat_' + Date.now() + '_' + (activeCombat?.actorId || 'actor') + '_' + (activeCombat?.targetId || 'target'));
-    await broadcastUIEvent(matchId, 'dice_screen_close', {
+    const combatToResolve = activeCombat ? { ...activeCombat, combatId: cId } : null;
+    const activeMatchId = matchIdRef.current || matchId;
+
+    await broadcastUIEvent(activeMatchId, 'dice_screen_close', {
       resolved,
-      combatData: activeCombat ? { ...activeCombat, combatId: cId } : null,
+      combatData: combatToResolve,
       precalculatedRolls: rollsToApply,
       senderId: playerIdRef.current
     });
     setActiveCombat(null);
     setIsDiceRollingSync(false);
     setIsProcessingAction(false);
-    if (resolved && isHost && activeCombat) {
-      if (cId && enqueuedCombatIdsRef.current.has(cId)) {
-        console.warn('[handleCloseDiceScreen] Combat already enqueued for ID:', cId);
+
+    if (resolved && combatToResolve) {
+      const isCurrentHost = Boolean(isHostRef.current || isHost);
+      const enqKey = cId + '_enqueued';
+      if (isCurrentHost) {
+        if (enqueuedCombatIdsRef.current.has(enqKey)) {
+          console.warn('[handleCloseDiceScreen] Combat already enqueued for key:', enqKey);
+        } else {
+          enqueuedCombatIdsRef.current.add(enqKey);
+          enqueueHostAction({ ...combatToResolve, actionType: 'RESOLVE_COMBAT' }, rollsToApply);
+        }
       } else {
-        if (cId) enqueuedCombatIdsRef.current.add(cId);
-        enqueueHostAction({ ...activeCombat, combatId: cId, actionType: 'RESOLVE_COMBAT' }, rollsToApply);
+        // Authoritative fallback: non-host player sends PLAYER_ACTION takeTurn to guarantee delivery to host
+        takeTurn(activeMatchId, {
+          type: 'PLAYER_ACTION',
+          payload: {
+            ...combatToResolve,
+            actionType: 'RESOLVE_COMBAT',
+            precalculatedRolls: rollsToApply
+          }
+        });
       }
     }
   };
