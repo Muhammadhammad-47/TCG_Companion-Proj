@@ -206,10 +206,13 @@ export default function BattleArena({
     const victim = gameState.players.find(p =>
       (p.hp <= 0 || p.isDefeated) &&
       !p.reviveHandled &&
-      (p.actionCardsHand || []).some(c => (c.name || '').toUpperCase().includes('REVIVE'))
+      (p.actionCardsHand || []).some(c => (c.name || c.title || c.id || '').toUpperCase().includes('REVIVE'))
     );
 
     if (victim && !showReviveModal) {
+      if (gameState.winner) {
+        setGameState(prev => ({ ...prev, winner: null }));
+      }
       const char = CHARACTERS[victim.characterId] || CHARACTERS.chynaman;
       const baseOriginalHP = char.baseHP || victim.maxHp || 100;
       const reviveHP = Math.max(1, Math.floor(baseOriginalHP * 0.5));
@@ -1210,6 +1213,15 @@ export default function BattleArena({
           soundFX.playHeal();
           logText = `Used Heal on ${updated.name}`;
           logAmount = `+${amount || 20} HP`;
+        } else if (type === 'revive') {
+          const maxAllowed = updated.maxHp || updated.maxHP || 100;
+          const reviveHP = Math.max(1, Math.floor(maxAllowed * 0.5));
+          updated.hp = reviveHP;
+          updated.isDefeated = false;
+          updated.reviveHandled = true;
+          soundFX.playHeal();
+          logText = `Used REVIVE on ${updated.name}! Restored to ${reviveHP} HP (50%)`;
+          logAmount = `+${reviveHP} HP (Revived)`;
         } else if (type === 'shield') {
           updated.shield = (updated.shield || 0) + (amount || 25);
           soundFX.playEnergy();

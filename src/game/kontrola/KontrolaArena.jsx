@@ -745,10 +745,11 @@ export default function KontrolaArena() {
 
   // Auto-trigger Revive prompt whenever player reaches 0 HP / defeated and holds REVIVE in hand
   useEffect(() => {
-    if (myCharacter && (myCharacter.hp <= 0 || myCharacter.isDefeated) && !pendingRevivePrompt) {
-      const myHand = gameState?.hands?.[playerId] || [];
-      const hasRevive = myHand.some(c => getSafeCardName(c).includes('REVIVE'));
+    if (myCharacter && ((myCharacter.hp ?? 100) <= 0 || myCharacter.isDefeated) && !pendingRevivePrompt) {
+      const myHand = gameState?.hands?.[playerId] || gameState?.hands?.[myCharacter.id] || [];
+      const hasRevive = myHand.some(c => (getSafeCardName(c) || c?.name || c?.title || c?.id || '').toUpperCase().includes('REVIVE'));
       if (hasRevive) {
+        setWinner(null);
         setPendingRevivePrompt({
           victimId: playerId,
           victimName: myCharacter.name,
@@ -757,6 +758,13 @@ export default function KontrolaArena() {
       }
     }
   }, [myCharacter?.hp, myCharacter?.isDefeated, gameState?.hands, playerId, pendingRevivePrompt]);
+
+  // Keep Winner Modal cleared if player has an active Revive Prompt awaiting decision
+  useEffect(() => {
+    if (pendingRevivePrompt && winner) {
+      setWinner(null);
+    }
+  }, [pendingRevivePrompt, winner]);
 
   // Reset Burn Extinguish attempt on turn change
   useEffect(() => {
@@ -1174,6 +1182,8 @@ export default function KontrolaArena() {
           }
           if (newState?.winner) {
             setWinner(newState.winner);
+          } else {
+            setWinner(null);
           }
           // If we joined and match is active but we are not in players list, we are a spectator
           if (newState?.status === 'active' && !newState.players?.includes(playerIdRef.current)) {
@@ -1428,7 +1438,14 @@ export default function KontrolaArena() {
           }
 
           // Handle Revive Prompt for the player who was defeated
-          if (triggerRevivePrompt && triggerRevivePrompt.victimId === playerIdRef.current) {
+          if (triggerRevivePrompt && (
+            triggerRevivePrompt.victimId === playerIdRef.current ||
+            triggerRevivePrompt.victimName === myCharacter?.name ||
+            triggerRevivePrompt.victimId === myCharacter?.id ||
+            triggerRevivePrompt.victimId === myCharacter?.playerId ||
+            opponents.length === 1
+          )) {
+            setWinner(null);
             setPendingRevivePrompt(triggerRevivePrompt);
           }
 
@@ -2174,13 +2191,13 @@ export default function KontrolaArena() {
 
       if (payload.actionType === 'EXECUTE_REVIVE') {
         const { victimId } = payload;
-        const victimChar = currentState.characterStates?.[victimId];
+        const victimChar = currentState.characterStates?.[victimId]
+          || Object.values(currentState.characterStates || {}).find(c => c.id === victimId || c.playerId === victimId || c.name === victimId);
         if (!victimChar) return currentState;
 
-        const victimHand = [...(currentState.hands?.[victimId] || [])];
-        const reviveIdx = findSafeCardIndex(victimHand, 'REVIVE') !== -1
-          ? findSafeCardIndex(victimHand, 'REVIVE')
-          : victimHand.findIndex(c => getSafeCardName(c).includes('REVIVE'));
+        const effectiveVictimId = victimChar.playerId || Object.keys(currentState.characterStates || {}).find(k => currentState.characterStates[k] === victimChar) || victimId;
+        const victimHand = [...(currentState.hands?.[effectiveVictimId] || currentState.hands?.[victimId] || [])];
+        const reviveIdx = victimHand.findIndex(c => (getSafeCardName(c) || c?.name || c?.title || c?.id || '').toUpperCase().includes('REVIVE'));
         let nextDeck = currentState.deck ? [...currentState.deck] : [];
         if (reviveIdx !== -1) {
           victimHand.splice(reviveIdx, 1);
@@ -2199,25 +2216,30 @@ export default function KontrolaArena() {
           ...victimChar,
           hp: restoredHp,
           isDefeated: false,
+          isExile: false,
+          canBeRevivedAsExile: false,
           crystals: Math.max(1, victimChar.crystals || 1)
         };
 
         const nextState = {
           ...currentState,
+          winner: null,
           deck: nextDeck,
           hands: {
-            ...(state.hands || {}),
-            [victimId]: victimHand
+            ...(currentState.hands || {}),
+            [effectiveVictimId]: victimHand
           },
           characterStates: {
             ...currentState.characterStates,
-            [victimId]: updatedVictim
+            [effectiveVictimId]: updatedVictim
           },
           logs: [
             `✨ REVIVE USED! ${victimChar.name} continued using REVIVE: restored to ${restoredHp} HP (50% HP). REVIVE was discarded and a replacement Action card re-appeared in hand!`,
             ...(currentState.logs || [])
           ]
         };
+        pendingStateRef.current = nextState;
+        gameStateRef.current = nextState;
         broadcastState(matchIdRef.current, nextState);
         return nextState;
       }
@@ -3184,19 +3206,36 @@ export default function KontrolaArena() {
         }
 
         let triggerRevivePrompt = null;
-        if (newDefenderState && newDefenderState.hp <= 0) {
-          // Check if defender holds REVIVE card
-          const hasRevive = (newDefenderHand || []).some(c => getSafeCardName(c).includes('REVIVE'));
-          if (hasRevive) {
-            triggerRevivePrompt = {
-              victimId: targetId,
-              victimName: newDefenderState.name,
-              maxHp: newDefenderState.maxHp || 100
-            };
-          }
+        const defenderHoldsRevive = (newDefenderHand || []).some(c =>
+          (getSafeCardName(c) || c?.name || c?.title || c?.id || '').toUpperCase().includes('REVIVE')
+        );
+        if (newDefenderState && newDefenderState.hp <= 0 && defenderHoldsRevive) {
+          triggerRevivePrompt = {
+            victimId: defenderKey || effectiveTargetId || targetId,
+            victimName: newDefenderState.name,
+            maxHp: newDefenderState.maxHp || 100
+          };
         }
 
-        if (triggerRevivePrompt && triggerRevivePrompt.victimId === playerIdRef.current) {
+        const attackerHoldsRevive = (newHand || []).some(c =>
+          (getSafeCardName(c) || c?.name || c?.title || c?.id || '').toUpperCase().includes('REVIVE')
+        );
+        if (newAttackerState && newAttackerState.hp <= 0 && attackerHoldsRevive) {
+          triggerRevivePrompt = {
+            victimId: attackerKey || effectiveActorId || actorId,
+            victimName: newAttackerState.name,
+            maxHp: newAttackerState.maxHp || 100
+          };
+        }
+
+        if (triggerRevivePrompt && (
+          triggerRevivePrompt.victimId === playerIdRef.current ||
+          triggerRevivePrompt.victimName === myCharacter?.name ||
+          triggerRevivePrompt.victimId === myCharacter?.id ||
+          triggerRevivePrompt.victimId === myCharacter?.playerId ||
+          opponents.length === 1
+        )) {
+          setWinner(null);
           setPendingRevivePrompt(triggerRevivePrompt);
         }
 
@@ -3346,7 +3385,9 @@ export default function KontrolaArena() {
             updatedStates[p] = newAttackerState;
           }
         });
-      } else if (targetId === 'ALL' && resolved.aoeDamage) {
+      }
+      
+      if (targetId === 'ALL' && resolved.aoeDamage) {
         // Count active defenders for AoE damage splitting
         const activeDefenders = (state.players || []).filter(pId =>
           pId !== actorId && !state.characterStates?.[pId]?.isDefeated
@@ -3360,7 +3401,7 @@ export default function KontrolaArena() {
             char.isDefeated = true;
             newAttackerState.crystals = (newAttackerState.crystals || 1) + (char.crystals || 1);
             char.crystals = 0;
-            log += ` ?? ${char.name} was defeated by AoE! ${newAttackerState.name} claimed their Crystals.`;
+            log += ` 💥 ${char.name} was defeated by AoE! ${newAttackerState.name} claimed their Crystals.`;
             if (newAttackerState.crystals >= 3) {
               matchWinner = { ...newAttackerState, playerId: actorId };
             }
@@ -3374,6 +3415,23 @@ export default function KontrolaArena() {
       const livingPlayers = (state.players || []).filter(
         (pId) => !updatedStates[pId]?.isDefeated
       );
+
+      // Check if any defeated player currently holds a REVIVE card and can still revive!
+      const anyDefeatedCanRevive = (state.players || []).some((pId) => {
+        const char = updatedStates[pId];
+        if (char && (char.isDefeated || (char.hp || 0) <= 0)) {
+          const pHand = updatedHands[pId] || state.hands?.[pId] || [];
+          return pHand.some(c => (getSafeCardName(c) || c?.name || c?.title || c?.id || '').toUpperCase().includes('REVIVE'));
+        }
+        return false;
+      });
+
+      if (triggerRevivePrompt || anyDefeatedCanRevive) {
+        matchWinner = null; // Do NOT end match or declare winner while a player can still Revive!
+      } else if (livingPlayers.length <= 1) {
+        matchWinner = updatedStates[livingPlayers[0]] ? { ...updatedStates[livingPlayers[0]], playerId: livingPlayers[0] } : matchWinner;
+        nextTurnPlayerId = livingPlayers[0] || actorId;
+      }
 
       // Cards that should NEVER grant an extra turn regardless of resolved flags.
       // TIME MACHINE is type 'OTHERS' but is the sole exception � it explicitly grants an extra turn.
@@ -3389,7 +3447,9 @@ export default function KontrolaArena() {
         (resolvedEndTurnCardType === 'ATTACK' && !resolvedEndTurnCardName.includes('X2') && !resolvedEndTurnCardName.includes('LIGHTNING') && !resolvedEndTurnCardName.includes('TIME MACHINE'))
       );
 
-      if (livingPlayers.length <= 1) {
+      if (triggerRevivePrompt || anyDefeatedCanRevive) {
+        matchWinner = null; // Do NOT end match or declare winner while a player can still Revive!
+      } else if (livingPlayers.length <= 1) {
         matchWinner = updatedStates[livingPlayers[0]] ? { ...updatedStates[livingPlayers[0]], playerId: livingPlayers[0] } : matchWinner;
         nextTurnPlayerId = livingPlayers[0] || actorId;
       } else {
@@ -3512,14 +3572,28 @@ export default function KontrolaArena() {
             incomingChar.hp = Math.max(0, incomingChar.hp - poisonDmg);
             turnLogs.unshift(`☠️ ${incomingChar.name} suffered -${poisonDmg} Poison ongoing damage (${incomingChar.poisonCount} stack${incomingChar.poisonCount > 1 ? 's' : ''}, continues until treated with Antidote)! HP: ${incomingChar.hp}`);
             if (incomingChar.hp <= 0) {
-              incomingChar.isDefeated = true;
-              turnLogs.unshift(`💀 ${incomingChar.name} succumbed to Poison and was eliminated!`);
-              const remainingLiving = (state.players || []).filter((pId) => !updatedStates[pId]?.isDefeated);
-              if (remainingLiving.length === 1) {
-                matchWinner = updatedStates[remainingLiving[0]] ? { ...updatedStates[remainingLiving[0]], playerId: remainingLiving[0] } : null;
+              const incHand = updatedHands[nextTurnPlayerId] || state.hands?.[nextTurnPlayerId] || [];
+              const incHasRevive = incHand.some(c => (getSafeCardName(c) || c?.name || c?.title || c?.id || '').toUpperCase().includes('REVIVE'));
+              if (incHasRevive) {
+                turnLogs.unshift(`💀 ${incomingChar.name} reached 0 HP from Poison, but holds a REVIVE card!`);
+                if (nextTurnPlayerId === playerIdRef.current || nextTurnPlayerId === myCharacter?.id) {
+                  setWinner(null);
+                  setPendingRevivePrompt({
+                    victimId: nextTurnPlayerId,
+                    victimName: incomingChar.name,
+                    maxHp: incomingChar.maxHp || 100
+                  });
+                }
+              } else {
+                incomingChar.isDefeated = true;
+                turnLogs.unshift(`💀 ${incomingChar.name} succumbed to Poison and was eliminated!`);
+                const remainingLiving = (state.players || []).filter((pId) => !updatedStates[pId]?.isDefeated);
+                if (remainingLiving.length === 1) {
+                  matchWinner = updatedStates[remainingLiving[0]] ? { ...updatedStates[remainingLiving[0]], playerId: remainingLiving[0] } : null;
+                }
+                const dIdx = livingPlayers.indexOf(nextTurnPlayerId);
+                nextTurnPlayerId = livingPlayers[(dIdx + 1) % livingPlayers.length];
               }
-              const dIdx = livingPlayers.indexOf(nextTurnPlayerId);
-              nextTurnPlayerId = livingPlayers[(dIdx + 1) % livingPlayers.length];
             }
           }
         }
@@ -3565,14 +3639,28 @@ export default function KontrolaArena() {
 
           turnLogs.unshift(`🧛 ${incomingChar.name} suffered ${vampireDrain} HP and ${vampireETDrain} ET drain from Vampire curse! (${incomingChar.vampireStealTurnsLeft} turn${incomingChar.vampireStealTurnsLeft === 1 ? '' : 's'} remaining)`);
           if (incomingChar.hp <= 0) {
-            incomingChar.isDefeated = true;
-            turnLogs.unshift(`💀 ${incomingChar.name} was drained to death by Vampire curse and eliminated!`);
-            const remainingLiving = (state.players || []).filter((pId) => !updatedStates[pId]?.isDefeated);
-            if (remainingLiving.length === 1) {
-              matchWinner = updatedStates[remainingLiving[0]] ? { ...updatedStates[remainingLiving[0]], playerId: remainingLiving[0] } : null;
+            const vHand = updatedHands[nextTurnPlayerId] || state.hands?.[nextTurnPlayerId] || [];
+            const vHasRevive = vHand.some(c => (getSafeCardName(c) || c?.name || c?.title || c?.id || '').toUpperCase().includes('REVIVE'));
+            if (vHasRevive) {
+              turnLogs.unshift(`💀 ${incomingChar.name} was drained to 0 HP by Vampire curse, but holds a REVIVE card!`);
+              if (nextTurnPlayerId === playerIdRef.current || nextTurnPlayerId === myCharacter?.id) {
+                setWinner(null);
+                setPendingRevivePrompt({
+                  victimId: nextTurnPlayerId,
+                  victimName: incomingChar.name,
+                  maxHp: incomingChar.maxHp || 100
+                });
+              }
+            } else {
+              incomingChar.isDefeated = true;
+              turnLogs.unshift(`💀 ${incomingChar.name} was drained to death by Vampire curse and eliminated!`);
+              const remainingLiving = (state.players || []).filter((pId) => !updatedStates[pId]?.isDefeated);
+              if (remainingLiving.length === 1) {
+                matchWinner = updatedStates[remainingLiving[0]] ? { ...updatedStates[remainingLiving[0]], playerId: remainingLiving[0] } : null;
+              }
+              const dIdx = livingPlayers.indexOf(nextTurnPlayerId);
+              nextTurnPlayerId = livingPlayers[(dIdx + 1) % livingPlayers.length];
             }
-            const dIdx = livingPlayers.indexOf(nextTurnPlayerId);
-            nextTurnPlayerId = livingPlayers[(dIdx + 1) % livingPlayers.length];
           }
         }
 
@@ -8092,8 +8180,8 @@ export default function KontrolaArena() {
             <div style={{
               position: 'fixed',
               inset: 0,
-              zIndex: 11000,
-              background: 'rgba(5, 10, 25, 0.92)',
+              zIndex: 10000000,
+              background: 'rgba(5, 10, 25, 0.95)',
               backdropFilter: 'blur(12px)',
               display: 'flex',
               alignItems: 'center',

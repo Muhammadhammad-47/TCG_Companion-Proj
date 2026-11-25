@@ -274,6 +274,22 @@ export default function CardActionModal({
       return;
     }
 
+    // Handle Revive Card
+    const isReviveCard = (currentAction.name || '').toUpperCase().includes('REVIVE') || currentAction.id?.includes('revive');
+    if (isReviveCard) {
+      onApplyInstantEffect({
+        type: 'revive',
+        sourcePlayerId: activePlayer.id,
+        targetPlayerId: targetPlayer ? targetPlayer.id : activePlayer.id,
+        costET: currentAction.costET || 0,
+        amount: 50,
+        cardName: currentAction.name,
+        actionCardId: currentAction.id,
+        playedInstanceId: currentAction.instanceId
+      });
+      return;
+    }
+
     // Handle Heal (HEAL H10, HEAL H20)
     const isHealCard = currentAction.type === 'HEAL' || (currentAction.name || '').toUpperCase().includes('HEAL') || currentAction.id?.startsWith('heal');
     if (isHealCard && !currentAction.name?.includes('REVIVE') && !currentAction.name?.includes('ANTIDOTE')) {
