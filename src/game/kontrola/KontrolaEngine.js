@@ -1134,6 +1134,14 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       }
     }
 
+    // Identify Magic & Poison elemental attacks (Shroomy's Poppers Per Pop, MS Bomba, Soul Snatcher, etc.)
+    const isMagicAndPoisonAtk = Boolean(
+      (attackElement && (attackElement.includes('&') || attackElement.toLowerCase().includes('and')) && attackElement.toLowerCase().includes('magic') && attackElement.toLowerCase().includes('poison')) ||
+      (attackSelectionName || '').toUpperCase().includes('POPPERS') ||
+      (attackSelectionName || '').toUpperCase().includes('BOMBA') ||
+      (attackSelectionName || '').toUpperCase().includes('SNATCHER')
+    );
+
     // Clash Contest: Attacker 2 dice vs Defender 2 dice
     // Apply any dice penalties (e.g., from FREEZE cards)
     let adjustedAttackerRoll = attackerRoll?.total || 0;
@@ -1312,10 +1320,6 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         const isLightningAtk = (attackElement && (attackElement.toLowerCase().includes('lightning') || attackElement.toLowerCase().includes('lighting'))) || cardName.includes('LIGHTNING') || cardName.includes('LIGHTING');
         const isPoisonAtk = (attackElement && attackElement.toLowerCase().includes('poison')) || cardName.includes('POISON');
         const isMagicAtk = (attackElement && attackElement.toLowerCase().includes('magic')) || cardName.includes('MAGIC');
-        const isMagicAndPoisonAtk = (attackElement && (attackElement.includes('&') || attackElement.toLowerCase().includes('and')) && attackElement.toLowerCase().includes('magic') && attackElement.toLowerCase().includes('poison')) ||
-          (attackSelectionName || '').toUpperCase().includes('POPPERS') ||
-          (attackSelectionName || '').toUpperCase().includes('BOMBA') ||
-          (attackSelectionName || '').toUpperCase().includes('SNATCHER');
 
         const hasPoisonWeak = hasPoisonWeakness(newDefenderState);
         const hasFireWeakness = isZombieDef || defWeakness.includes('fire') || ['shroomy', 'queeny'].some(k => defCharKey.includes(k));

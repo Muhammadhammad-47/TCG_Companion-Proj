@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { soundFX } from '../utils/audio';
 import { Dices, Shield, Swords, Check, Zap, X, Sparkles, AlertCircle, Clock, Eye, RotateCcw } from 'lucide-react';
 import { getCardGraphicUrl, getCharacterAttackGraphicUrl } from './kontrolaAssets';
@@ -453,7 +453,7 @@ export default function KontrolaDiceRoller({
       || [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
     const finalDefTotal = finalDefRolls[0] + finalDefRolls[1];
 
-    const finalMultDie = hasMultiplierDie ? (multiplierDie || 1) : undefined;
+    const finalMultDie = hasMultiplierDie ? (multiplierDie || (Math.floor(Math.random() * 6) + 1)) : undefined;
     const finalRolls = {
       attackerRoll: { rolls: finalAtkRolls, total: finalAtkTotal },
       defenderRoll: { rolls: finalDefRolls, total: finalDefTotal },
@@ -1826,28 +1826,28 @@ export default function KontrolaDiceRoller({
 
                     <button
                       onClick={handleFinishCombat}
-                      disabled={isApplyingResult}
+                      disabled={isApplyingResult || (hasMultiplierDie && !hasRolledMultiplier)}
                       style={{
-                        background: isApplyingResult ? 'rgba(57, 255, 20, 0.4)' : '#39ff14',
-                        color: '#000',
+                        background: (isApplyingResult || (hasMultiplierDie && !hasRolledMultiplier)) ? 'rgba(57, 255, 20, 0.4)' : '#39ff14',
+                        color: (hasMultiplierDie && !hasRolledMultiplier) ? '#fff' : '#000',
                         border: 'none',
                         padding: '14px 38px',
                         borderRadius: '12px',
                         fontSize: '1.15rem',
                         fontWeight: '900',
-                        cursor: isApplyingResult ? 'wait' : 'pointer',
+                        cursor: isApplyingResult ? 'wait' : (hasMultiplierDie && !hasRolledMultiplier) ? 'not-allowed' : 'pointer',
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '10px',
                         fontFamily: 'Bebas Neue, sans-serif',
                         letterSpacing: '1px',
-                        boxShadow: '0 0 25px rgba(57, 255, 20, 0.45)',
+                        boxShadow: (hasMultiplierDie && !hasRolledMultiplier) ? 'none' : '0 0 25px rgba(57, 255, 20, 0.45)',
                         transition: 'all 0.2s ease',
-                        opacity: isApplyingResult ? 0.6 : 1
+                        opacity: (isApplyingResult || (hasMultiplierDie && !hasRolledMultiplier)) ? 0.6 : 1
                       }}
                     >
                       <Check size={22} />
-                      <span>{isApplyingResult ? 'APPLYING RESULT...' : 'APPLY RESULT & CONTINUE'}</span>
+                      <span>{isApplyingResult ? 'APPLYING RESULT...' : (hasMultiplierDie && !hasRolledMultiplier) ? 'ROLL MULTIPLIER DIE FIRST' : 'APPLY RESULT & CONTINUE'}</span>
                     </button>
                   </div>
                 )}

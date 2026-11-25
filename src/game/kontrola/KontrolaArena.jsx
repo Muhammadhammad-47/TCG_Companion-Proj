@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Wifi, Swords, Shield, Skull, Zap, ScrollText, MessageSquare,
@@ -1794,6 +1794,26 @@ export default function KontrolaArena() {
     try {
       while (actionQueueRef.current.length > 0) {
         const item = actionQueueRef.current.shift();
+        if (!item || !item.payload) continue;
+
+        // De-duplicate actions before calling setGameState to prevent React 19 concurrent/strict-mode trap
+        if (item.payload.actionType === 'RESOLVE_COMBAT') {
+          const combatId = item.payload.combatId || ('combat_' + Date.now() + '_' + item.payload.actorId + '_' + item.payload.targetId + '_' + (item.payload.actionCard?.id || item.payload.actionCard?.name || 'combat'));
+          const resolutionKey = combatId + '_resolved';
+          if (executedCombatIdsRef.current.has(resolutionKey)) {
+            console.warn('[processActionQueue] Skipping duplicate combat resolution for key:', resolutionKey);
+            continue;
+          }
+          executedCombatIdsRef.current.add(resolutionKey);
+          item.payload.combatId = combatId;
+        } else if (item.payload.actionId && !item.payload.actionType) {
+          if (executedActionIdsRef.current.has(item.payload.actionId)) {
+            console.warn('[processActionQueue] Skipping duplicate action resolution for actionId:', item.payload.actionId);
+            continue;
+          }
+          executedActionIdsRef.current.add(item.payload.actionId);
+        }
+
         executeActionResolution(item.payload, item.precalculatedRolls);
       }
     } catch (err) {
@@ -1818,29 +1838,14 @@ export default function KontrolaArena() {
         ? { ...(payload.precalculatedRolls || {}), ...(precalculatedRollsParam || {}) }
         : (precalculatedRollsParam || payload?.precalculatedRolls || null);
 
-      // De-duplicate non-combat actions (e.g. Poison X1, Vitality, Boomerang) during server latency
-      if (payload.actionId && !payload.actionType) {
-        if (executedActionIdsRef.current.has(payload.actionId)) {
-          console.warn('[executeActionResolution] Skipping duplicate action resolution for actionId:', payload.actionId);
-          return currentState;
-        }
-        executedActionIdsRef.current.add(payload.actionId);
-      }
+      // De-duplicate non-combat actions already handled in processActionQueue
 
       // RESOLVE_COMBAT: falls through to the generic resolution block at the bottom of this function.
       // The payload already carries actorId, actionCard, targetId, attackSelectionName, and precalculatedRolls
       // from the original ATTACK_DECLARED spread � no special handling needed here.
       // IMPORTANT: do NOT add an early return inside this block or combat resolution will be skipped.
       if (payload.actionType === 'RESOLVE_COMBAT') {
-        const combatId = payload.combatId || ('combat_' + Date.now() + '_' + payload.actorId + '_' + payload.targetId + '_' + (payload.actionCard?.id || payload.actionCard?.name || 'combat'));
-        const resolutionKey = combatId + '_resolved';
-        if (executedCombatIdsRef.current.has(resolutionKey)) {
-          console.warn('[RESOLVE_COMBAT] Skipping duplicate combat resolution for key:', resolutionKey);
-          return currentState;
-        }
-        executedCombatIdsRef.current.add(resolutionKey);
-        payload.combatId = combatId;
-        payload = { ...payload }; // safe copy � avoid mutating the caller's object
+        payload = { ...payload }; // safe copy without duplicate-check trap inside updater
       }
 
       if (payload.actionType === 'ROLL_OFF') {
@@ -2915,66 +2920,68 @@ export default function KontrolaArena() {
         broadcastUIEvent(matchIdRef.current, 'dice_screen_open', broadcastData);
 
         const nextState = {
-          ...currentState,
+          ...state,
           activeDefenseState: null
         };
+        pendingStateRef.current = nextState;
+        gameStateRef.current = nextState;
         broadcastState(matchIdRef.current, nextState);
         return nextState;
       }
 
       const { actorId, actionCard, attackSelectionName, targetId } = payload;
       
-      const effectiveActorId = actorId || currentState.turn || currentState.players?.[0];
-      const attackerKey = Object.keys(currentState.characterStates || {}).find(k => 
+      const effectiveActorId = actorId || state.turn || state.players?.[0];
+      const attackerKey = Object.keys(state.characterStates || {}).find(k => 
         k === effectiveActorId || 
-        currentState.characterStates[k]?.id === effectiveActorId ||
-        currentState.characterStates[k]?.characterId === effectiveActorId ||
-        currentState.characterStates[k]?.playerId === effectiveActorId ||
-        currentState.characterStates[k]?.name === effectiveActorId
-      ) || (currentState.players?.includes(effectiveActorId) ? effectiveActorId : currentState.turn || currentState.players?.[0]);
+        state.characterStates[k]?.id === effectiveActorId ||
+        state.characterStates[k]?.characterId === effectiveActorId ||
+        state.characterStates[k]?.playerId === effectiveActorId ||
+        state.characterStates[k]?.name === effectiveActorId
+      ) || (state.players?.includes(effectiveActorId) ? effectiveActorId : state.turn || state.players?.[0]);
 
-      const attackerChar = currentState.characterStates?.[attackerKey] ||
-        currentState.characterStates?.[effectiveActorId] ||
-        Object.values(currentState.characterStates || {}).find(c => c.id === effectiveActorId || c.characterId === effectiveActorId || c.playerId === effectiveActorId);
+      const attackerChar = state.characterStates?.[attackerKey] ||
+        state.characterStates?.[effectiveActorId] ||
+        Object.values(state.characterStates || {}).find(c => c.id === effectiveActorId || c.characterId === effectiveActorId || c.playerId === effectiveActorId);
 
-      if (!attackerChar) return currentState;
+      if (!attackerChar) return state;
 
       let effectiveTargetId = targetId;
       if (!effectiveTargetId || effectiveTargetId === 'undefined' || effectiveTargetId === 'null') {
-        if (currentState.players?.length === 2) {
-          effectiveTargetId = currentState.players.find(p => p !== attackerKey && p !== effectiveActorId);
+        if (state.players?.length === 2) {
+          effectiveTargetId = state.players.find(p => p !== attackerKey && p !== effectiveActorId);
         } else {
-          effectiveTargetId = Object.keys(currentState.characterStates || {}).find(p => p !== attackerKey && p !== effectiveActorId);
+          effectiveTargetId = Object.keys(state.characterStates || {}).find(p => p !== attackerKey && p !== effectiveActorId);
         }
       }
 
       let defenderKey = null;
       if (effectiveTargetId && effectiveTargetId !== 'ALL') {
-        defenderKey = Object.keys(currentState.characterStates || {}).find(k => 
+        defenderKey = Object.keys(state.characterStates || {}).find(k => 
           k === effectiveTargetId || 
-          currentState.characterStates[k]?.id === effectiveTargetId ||
-          currentState.characterStates[k]?.characterId === effectiveTargetId ||
-          currentState.characterStates[k]?.playerId === effectiveTargetId ||
-          currentState.characterStates[k]?.name === effectiveTargetId
+          state.characterStates[k]?.id === effectiveTargetId ||
+          state.characterStates[k]?.characterId === effectiveTargetId ||
+          state.characterStates[k]?.playerId === effectiveTargetId ||
+          state.characterStates[k]?.name === effectiveTargetId
         ) || null;
 
-        if (!defenderKey && currentState.players?.length === 2) {
-          defenderKey = currentState.players.find(p => p !== attackerKey && p !== effectiveActorId);
+        if (!defenderKey && state.players?.length === 2) {
+          defenderKey = state.players.find(p => p !== attackerKey && p !== effectiveActorId);
         }
       }
 
       let defenderChar = (effectiveTargetId && effectiveTargetId !== 'ALL')
-        ? (currentState.characterStates?.[defenderKey] ||
-           currentState.characterStates?.[effectiveTargetId] ||
-           Object.values(currentState.characterStates || {}).find(c => c.id === effectiveTargetId || c.characterId === effectiveTargetId || c.playerId === effectiveTargetId || c.name === effectiveTargetId))
+        ? (state.characterStates?.[defenderKey] ||
+           state.characterStates?.[effectiveTargetId] ||
+           Object.values(state.characterStates || {}).find(c => c.id === effectiveTargetId || c.characterId === effectiveTargetId || c.playerId === effectiveTargetId || c.name === effectiveTargetId))
         : null;
 
-      if (!defenderChar && effectiveTargetId !== 'ALL' && currentState.players?.length === 2) {
-        const otherPId = currentState.players.find(p => p !== attackerKey && p !== effectiveActorId);
-        if (otherPId && currentState.characterStates?.[otherPId]) {
+      if (!defenderChar && effectiveTargetId !== 'ALL' && state.players?.length === 2) {
+        const otherPId = state.players.find(p => p !== attackerKey && p !== effectiveActorId);
+        if (otherPId && state.characterStates?.[otherPId]) {
           defenderKey = otherPId;
           effectiveTargetId = otherPId;
-          defenderChar = currentState.characterStates[otherPId];
+          defenderChar = state.characterStates[otherPId];
         }
       }
 
@@ -2982,15 +2989,15 @@ export default function KontrolaArena() {
       let newAttackerState = { ...attackerChar };
       let newDefenderState = defenderChar ? { ...defenderChar } : null;
       let log = `${attackerChar.name} passed their turn.`;
-      let newDeck = [...(currentState.deck || [])];
-      let newHand = [...(currentState.hands?.[attackerKey] || currentState.hands?.[effectiveActorId] || currentState.hands?.[actorId] || [])];
+      let newDeck = [...(state.deck || [])];
+      let newHand = [...(state.hands?.[attackerKey] || state.hands?.[effectiveActorId] || state.hands?.[actorId] || [])];
       let resolved = {};
-      let matchWinner = currentState.winner;
+      let matchWinner = state.winner;
       let turnLogs = [log];
-      let pendingAttackX2For = currentState.pendingAttackX2For || null;
+      let pendingAttackX2For = state.pendingAttackX2For || null;
       let nextTurnPlayerId = attackerKey || effectiveActorId;
-      let updatedStates = { ...currentState.characterStates };
-      let newDefenderHand = defenderChar ? [...(currentState.hands?.[defenderKey] || currentState.hands?.[effectiveTargetId] || currentState.hands?.[targetId] || [])] : [];
+      let updatedStates = { ...state.characterStates };
+      let newDefenderHand = defenderChar ? [...(state.hands?.[defenderKey] || state.hands?.[effectiveTargetId] || state.hands?.[targetId] || [])] : [];
 
       if (!isPass) {
         // Resolve Turn via Engine (ET cost deducted only after confirming not a tie)
@@ -3001,7 +3008,7 @@ export default function KontrolaArena() {
           newDefenderState,
           attackSelectionName,
           precalculatedRolls,
-          currentState // Pass gameState for player count validation
+          state // Pass gameState for player count validation
         );
 
         // If the engine signals a tie, do NOT commit the result � the DiceRoller
@@ -3603,15 +3610,15 @@ export default function KontrolaArena() {
       }
 
       const nextState = {
-        ...currentState,
+        ...state,
         turn: nextTurnPlayerId,
         pendingAttackX2For,
-        turnNumber: (currentState.turnNumber || 1) + 1,
+        turnNumber: (state.turnNumber || 1) + 1,
         deck: newDeck,
         hands: updatedHands,
         characterStates: updatedStates,
         stats: updatedStats,
-        logs: [...turnLogs, ...(currentState.logs || [])],
+        logs: [...turnLogs, ...(state.logs || [])],
         winner: matchWinner
       };
 
