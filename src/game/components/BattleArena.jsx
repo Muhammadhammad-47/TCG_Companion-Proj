@@ -774,7 +774,10 @@ export default function BattleArena({
 
     // Update player stats
     const updatedPlayers = players.map(p => {
-      if (p.id === attacker.id) {
+      const isAttackerMatch = p.id === attacker.id || (attacker.characterId && p.characterId === attacker.characterId) || (attacker.id && String(p.id) === String(attacker.id));
+      const isDefenderMatch = p.id === defender.id || (defender.characterId && p.characterId === defender.characterId) || (defender.id && String(p.id) === String(defender.id));
+
+      if (isAttackerMatch) {
         let newHand = p.actionCardsHand || [];
         if (actionCard?.instanceId) {
           newHand = newHand.filter(c => c.instanceId !== actionCard.instanceId);
@@ -855,7 +858,7 @@ export default function BattleArena({
           }
         };
       }
-      if (p.id === defender.id) {
+      if (isDefenderMatch) {
         const nextRawHP = Math.max(0, p.hp - damage);
         let nextPoison = Math.max(0, (p.poisonCards || 0) + targetPoisonChange);
         let nextBurn = targetBurnChange > 0 ? Math.max(p.burnCount || 0, targetBurnChange) : (p.burnCount || 0);
@@ -944,7 +947,7 @@ export default function BattleArena({
         const isSovereignDefeat = (defender.crystals >= 3 || defender.isSovereign);
         const spoils = isSovereignDefeat ? (defender.crystals || 3) : 1;
 
-        if (p.id === defender.id) {
+        if (isDefenderMatch) {
           return {
             ...p,
             crystals: Math.max(0, p.crystals - spoils),
@@ -1130,12 +1133,12 @@ export default function BattleArena({
       });
     }
 
-    setGameState({
-      ...gameState,
+    setGameState(prev => ({
+      ...prev,
       players: finalPlayers,
-      history: [...newLogs, ...(gameState.history || [])],
+      history: [...newLogs, ...(prev?.history || gameState.history || [])],
       lastActionLog: newLogs[0]
-    });
+    }));
   };
 
   // Instant card effect (Heal, Shield, Antidote, Poison, Amplify, VITALITY)

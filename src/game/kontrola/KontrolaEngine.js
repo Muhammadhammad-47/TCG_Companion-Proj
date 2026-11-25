@@ -1317,6 +1317,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         if (isMagicAndPoisonAtk && (hasPoisonWeak || hasMagicWeakness) && isInitialAttack) {
           weaknessBonus = 10;
           weaknessReason = ` 🍄☠️✨ [MAGIC & POISON WEAKNESS] ${newDefenderState.name} is vulnerable to ${hasPoisonWeak ? 'Poison' : 'Magic'}! Suffer -10 HP initial weakness penalty!`;
+          finalDamage = 0; // Exactly -10 HP initial hit total
         } else if (isZombieDef && (isFireAtk || isLightningAtk) && isInitialAttack) {
           weaknessBonus = 10;
           weaknessReason = ` 🧟⚡🔥 [ZOMBIE ${isFireAtk ? 'FIRE' : 'LIGHTNING'} WEAKNESS] ${newDefenderState.name} is in Zombie Mode and vulnerable to ${isFireAtk ? 'Fire' : 'Lightning'}! Suffered an additional -10 HP weakness penalty on the initial attack!`;
@@ -1346,16 +1347,18 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         }
       }
 
-      // 1. Innate Basic Defense (Priority over Shield): Activates when defender rolls 6+ on two dice during clash phase without a defense card
+      // 1. Innate Basic Defense (Priority over Shield): Activates when defender rolls a total of 6 on two dice during clash phase without a defense card
       // Per official rules: "Individual Defense w/o Defense Card 10 HP less on the AP.
-      // This is only activated when the player rolls a total of six or higher from two dices, even if the player loses the battle"
-      const defenderRolled6Plus = (defenderRoll?.total || 0) >= 6;
+      // This is only activated when the player rolls a total of six from two dices, even if the player loses the battle"
+      const defenderRolled6 = (defenderRoll?.total || 0) === 6;
       let innateAbsorb = 0;
-      const isPoisonAttackCard = cardName.includes('POISON') || (attackElement && attackElement.toLowerCase().includes('poison')) || isAttackerZombie;
-      if (defenderRolled6Plus && !defCard && finalDamage > 0 && !isPoisonAttackCard) {
-        innateAbsorb = Math.min(10, finalDamage);
-        finalDamage = Math.max(0, finalDamage - innateAbsorb);
-        log += ` 🛡️ Innate Basic Defense: Defender rolled ${defenderRoll?.total || 0} (≥6), reducing incoming attack power by ${innateAbsorb} AP!`;
+      const isPoisonAttackCard = cardName.includes('POISON') || (attackElement && attackElement.toLowerCase().includes('poison')) || isAttackerZombie || isMagicAndPoisonAtk;
+      if (defenderRolled6 && !defCard && finalDamage > 0 && !isPoisonAttackCard) {
+        const isDiceMult = selectedUpper.includes(' PER ') || Boolean(attackerChar?.attacks?.[attackSelectionName]?.dice);
+        const minDamage = isDiceMult ? Math.min(finalDamage, 4) : Math.min(finalDamage, 10);
+        innateAbsorb = Math.max(0, Math.min(10, finalDamage - minDamage));
+        finalDamage = Math.max(minDamage, finalDamage - innateAbsorb);
+        log += ` 🛡️ Innate Basic Defense: Defender rolled total of 6 (${defenderRoll?.total || 6}), reducing incoming attack power by ${innateAbsorb} AP!`;
       }
 
       // 2. Shield Absorption: Absorbs penetrating damage before HP is reduced

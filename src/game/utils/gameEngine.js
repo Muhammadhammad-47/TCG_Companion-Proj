@@ -314,9 +314,11 @@ export function resolveDiceCombat({
 
   if (!hasflyerImmunity) {
     if (isPoppersPerPop && (hasPoisonWeakness || hasMagicWeakness)) {
-      // Official Rule: Shroomy "Poppers per pop" is Magic and Poison; triggers -10 HP initial weakness on targets with Poison or Magic weakness
+      // Official Rule: Shroomy "Poppers per pop" is Magic and Poison; triggers -10 HP initial weakness on targets with Poison or Magic weakness.
+      // Quick Note: They will only be hit with one initial damage of -10 HP.
       weaknessTriggered = true;
       weaknessBonus = 10;
+      rawAP = 0; // Exactly -10 HP initial hit
     } else if (isDefenderZombie && (moveElement === 'Fire' || moveElement === 'Lightning')) {
       // Official Rule: Lightning and Fire weakness when character becomes a Zombie (-10 HP on first initial attack)
       weaknessTriggered = true;
@@ -347,28 +349,34 @@ export function resolveDiceCombat({
 
   const totalOffensiveAP = Math.max(0, rawAP + weaknessBonus);
 
-  // 3. Defender 6+ Defense Rule (2 Gold Dice sum >= 6 from Clash)
-  // +DEFENCE Card Priority: Priority 1 applies if defender wins clash
-  let defenseActivated = clashDefSum >= 6;
-  const isPoisonAttackCard = (moveElement && moveElement.toLowerCase().includes('poison')) || (actionCard?.name || '').includes('POISON') || (actionCard?.id || '').includes('poison') || isAttackerZombie;
+  // 3. Defender Total of 6 Defense Rule (2 Gold Dice sum === 6 from Clash)
+  // Per official GDD: "Individual Defense w/o Defense Card 10 HP less on the AP. This is only activated when the player rolls a total of six from two dices, even if the player loses the battle"
+  let defenseActivated = clashDefSum === 6;
+  const isPoisonAttackCard = (moveElement && moveElement.toLowerCase().includes('poison')) || (actionCard?.name || '').includes('POISON') || (actionCard?.id || '').includes('poison') || isAttackerZombie || isPoppersPerPop;
   let innateDP = (defenseActivated && !isPoisonAttackCard) ? (defChar.defaultDP || 0) + (defender.buffDP || 0) : 0;
   let defenseCardBonus = 0;
 
-  // Apply +DEFENCE card bonus only if defender wins clash OR has 6+ defense
+  // Apply +DEFENCE card bonus only if defender wins clash OR has defense activated
   if (defenseCard && (clashWon === false || (clashWon === true && defenseActivated))) {
     defenseCardBonus = defenseCard.defenseBonus || 0;
-    if (clashWon === false && clashDefSum >= 6) {
-      // Priority 2: Defender lost clash but rolled 6+, use innateDP
+    if (clashWon === false && clashDefSum === 6) {
+      // Priority 2: Defender lost clash but rolled 6, use innateDP
       defenseCardBonus = 0;
     }
   }
 
-  // 4. BACK STAB bypasses shield and defense
+  // 4. BACK STAB bypasses shield and defense; successful attacks deal damage
   let netDamageBeforeShield = totalOffensiveAP - innateDP - defenseCardBonus;
   
   if (isBackStab) {
     // BACK STAB: Fixed 25 AP, bypasses all defenses
     netDamageBeforeShield = 25;
+  } else if (clashWon && totalOffensiveAP > 0 && !defenseCard) {
+    // A successful attack (winning the clash) without a defender defense card must always inflict negative damage:
+    // Innate DP cannot reduce a successful clash win to 0 damage
+    const isDiceMult = characterMove?.type === 'dice_mult' || characterMove?.dice > 0 || (characterMove?.name || '').toUpperCase().includes(' PER ') || Boolean(characterMove?.multiplier);
+    const minDamage = isDiceMult ? (characterMove?.multiplier || 4) : Math.min(totalOffensiveAP, 10);
+    netDamageBeforeShield = Math.max(minDamage, totalOffensiveAP - innateDP);
   }
 
   const damageAfterDP = Math.max(0, netDamageBeforeShield);

@@ -384,6 +384,7 @@ export default function KontrolaDiceRoller({
           weaknessTriggered = true;
           weaknessBonus = 10;
           weaknessLabel = 'MAGIC & POISON WEAKNESS (+10 AP)';
+          baseAP = 0; // Exactly -10 HP initial weakness hit
         } else if (isZombieDef && (attackElem.toLowerCase().includes('fire') || attackElem.toLowerCase().includes('lightning') || attackElem.toLowerCase().includes('lighting'))) {
           weaknessTriggered = true;
           weaknessBonus = 10;
@@ -408,11 +409,13 @@ export default function KontrolaDiceRoller({
       }
 
       const totalOffensiveAP = baseAP + weaknessBonus;
-      const defRolled6Plus = defSum >= 6;
-      const innateDP = (defRolled6Plus && !activeDefenseCard && !isPoisonCard) ? 10 : 0;
-      const damageAfterDP = Math.max(0, totalOffensiveAP - innateDP);
+      const defRolled6 = defSum === 6;
+      const isPoisonOrMagicPoison = isPoisonCard || isMagicAndPoisonAtk;
+      const innateDP = (defRolled6 && !activeDefenseCard && !isPoisonOrMagicPoison) ? 10 : 0;
+      const minDamage = hasMultiplierDie ? (perAp || 4) : Math.min(totalOffensiveAP, 10);
+      const damageAfterDP = Math.max(minDamage, totalOffensiveAP - innateDP);
       const currentShield = defChar?.shield || 0;
-      const shieldAbsorbed = isPoisonCard ? 0 : Math.min(currentShield, damageAfterDP);
+      const shieldAbsorbed = isPoisonOrMagicPoison ? 0 : Math.min(currentShield, damageAfterDP);
       const netHPDamage = Math.max(0, damageAfterDP - shieldAbsorbed);
       const newDefenderHP = Math.max(0, (defChar?.hp ?? 100) - netHPDamage);
 
@@ -422,7 +425,7 @@ export default function KontrolaDiceRoller({
         weaknessBonus,
         weaknessLabel,
         totalOffensiveAP,
-        defRolled6Plus,
+        defRolled6Plus: defRolled6,
         innateDP,
         shieldAbsorbed,
         netHPDamage,

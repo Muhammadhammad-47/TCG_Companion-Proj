@@ -2978,6 +2978,7 @@ export default function KontrolaArena() {
         newAttackerState = resolved.newAttackerState;
         newDefenderState = resolved.newDefenderState;
         log = resolved.log;
+        turnLogs = [log];
 
         // If not already deducted by special ability (Blitz -5 ET, Kontrol -3 ET), deduct standard card cost
         if (!isSpecialETHandled) {
