@@ -3616,6 +3616,7 @@ export default function KontrolaArena() {
       };
 
       pendingStateRef.current = nextState;
+      gameStateRef.current = nextState;
       broadcastState(matchIdRef.current, nextState);
       setIsProcessingAction(false); // Instantly unlock host actions
       if (matchWinner) {
