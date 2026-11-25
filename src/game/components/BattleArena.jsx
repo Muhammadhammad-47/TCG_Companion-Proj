@@ -789,10 +789,16 @@ export default function BattleArena({
       );
 
       if (isAttackerMatch) {
-        let newHand = p.actionCardsHand || [];
+        let newHand = p.actionCardsHand ? [...p.actionCardsHand] : [];
         if (actionCard?.instanceId) {
           newHand = newHand.filter(c => c.instanceId !== actionCard.instanceId);
           newHand.push(...drawRandomCards(1));
+        } else if (actionCard?.id || actionCard?.name) {
+          const cardIdx = newHand.findIndex(c => (c.instanceId && c.instanceId === actionCard.instanceId) || (c.id && c.id === actionCard.id) || (c.name && c.name === actionCard.name));
+          if (cardIdx !== -1) {
+            newHand.splice(cardIdx, 1);
+            newHand.push(...drawRandomCards(1));
+          }
         }
 
         let extraTurns = p.extraTurns || 0;
