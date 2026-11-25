@@ -744,6 +744,11 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   let newAttackerState = { ...attackerState };
   let newDefenderState = defenderState ? { ...defenderState } : null;
 
+  const rawDefWeakness = typeof newDefenderState?.weakness === 'string'
+    ? newDefenderState.weakness
+    : (newDefenderState?.weakness?.type || '');
+  const defWeakness = String(rawDefWeakness || '').toLowerCase();
+
   // Dice Rolls
   const attackerRoll = precalculatedRolls?.attackerRoll || rollDice(2);
   const defenderRoll = precalculatedRolls?.defenderRoll || rollDice(2);
@@ -1309,10 +1314,6 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       // Official Rule: Shroomy "Poppers per Pop" is a Magic and Poison attack; triggers -10 HP initial weakness if defender has Poison OR Magic weakness.
       if (newDefenderState && !newDefenderState.flyerNoWeakness) {
         const defCharKey = (newDefenderState.characterId || newDefenderState.id || newDefenderState.name || '').toLowerCase();
-        const rawWeakness = typeof newDefenderState.weakness === 'string'
-          ? newDefenderState.weakness
-          : (newDefenderState.weakness?.type || '');
-        const defWeakness = rawWeakness.toLowerCase();
         const isZombieDef = Boolean(isDefenderZombie || newDefenderState.isZombie || (newDefenderState.poisonCount >= 5) || (newDefenderState.poisonCards >= 5));
         const isInitialAttack = !cardName.includes('2ND HIT') && !cardName.includes('SECOND HIT');
 
