@@ -345,6 +345,7 @@ export default function KontrolaDiceRoller({
       let baseAP = 15;
       const cardNameUpper = (resolvedCardName || '').toUpperCase();
       const isPoisonCard = cardNameUpper.includes('POISON');
+      const isAttackX2 = cardNameUpper.includes('ATTACK X2') || cardNameUpper.includes('ATK X2') || cardNameUpper.includes('X2');
       if (cardNameUpper.includes('LIGHTNING')) {
         baseAP = cardNameUpper.includes('X2') ? 20 : 10;
       } else if (cardNameUpper.includes('FIRE FLAME')) {
@@ -354,9 +355,20 @@ export default function KontrolaDiceRoller({
       } else if (cardNameUpper.includes('BACK STAB')) {
         baseAP = 35;
       } else if (hasMultiplierDie) {
-        baseAP = (multiplierDie || 1) * perAp;
+        const mult = (isAttackX2 && !cardNameUpper.includes('LIGHTNING') && !cardNameUpper.includes('FIRE') && !isPoisonCard) ? perAp * 2 : perAp;
+        baseAP = (multiplierDie || 1) * mult;
       } else if (selectedAttackInfo?.ap || selectedAttackInfo?.baseAP) {
         baseAP = Number(selectedAttackInfo.ap || selectedAttackInfo.baseAP);
+        if (isAttackX2 && !cardNameUpper.includes('LIGHTNING') && !cardNameUpper.includes('FIRE') && !isPoisonCard) {
+          baseAP *= 2;
+        }
+      } else if (isAttackX2) {
+        baseAP = 30; // 15 * 2
+      }
+
+      // If defender played a DODGE card and lost clash, apply official +25% failed dodge penalty
+      if (activeDefenseCard && defCardName.includes('DODGE')) {
+        baseAP = Math.floor(baseAP * 1.25);
       }
 
       const defCharKey = (defChar?.id || defChar?.name || '').toLowerCase();
