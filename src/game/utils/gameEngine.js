@@ -254,7 +254,8 @@ export function resolveDiceCombat({
       
       // ATTACK X2 doubles the multiplier (ATTACK X1 = ×10 AP, ATTACK X2 = ×20 AP)
       // Check if actionCard is ATTACK X2 to apply the doubling bonus
-      if (actionCard?.name === 'ATTACK X2') {
+      const isAttackX2Card = (actionCard?.name || '').toUpperCase().includes('ATTACK X2') || actionCard?.id === 'atk_x2';
+      if (isAttackX2Card) {
         charMultiplier = charMultiplier * 2;
       }
       

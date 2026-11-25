@@ -747,16 +747,19 @@ export default function BattleArena({
     }
 
     // Trigger visual feedback
+    const targetAttackerId = attacker?.id != null ? String(attacker.id) : (activePlayer?.id != null ? String(activePlayer.id) : null);
+    const targetDefenderId = defender?.id != null ? String(defender.id) : (defaultTarget?.id != null ? String(defaultTarget.id) : null);
+
     if (damage > 0) {
       const damageText = result.weaknessTriggered ? `🎯 WEAKNESS! -${damage} HP` : `-${damage} HP`;
-      setFloatingDamage({ targetId: defender.id, text: damageText, type: 'damage' });
+      setFloatingDamage({ targetId: targetDefenderId, text: damageText, type: 'damage' });
       setIsShaking(true);
       setTimeout(() => {
         setFloatingDamage(null);
         setIsShaking(false);
       }, 1400);
     } else if (result.isMiss) {
-      setFloatingDamage({ targetId: defender.id, text: '🛡️ DEFLECTED (0 HP)', type: 'miss' });
+      setFloatingDamage({ targetId: targetDefenderId, text: '🛡️ DEFLECTED (0 HP)', type: 'miss' });
       setTimeout(() => {
         setFloatingDamage(null);
       }, 1400);
@@ -773,9 +776,10 @@ export default function BattleArena({
     }
 
     // Update player stats
-    const updatedPlayers = players.map(p => {
-      const isAttackerMatch = p.id === attacker.id || (attacker.characterId && p.characterId === attacker.characterId) || (attacker.id && String(p.id) === String(attacker.id));
-      const isDefenderMatch = p.id === defender.id || (defender.characterId && p.characterId === defender.characterId) || (defender.id && String(p.id) === String(defender.id));
+    const updatedPlayers = players.map((p, idx) => {
+      const pIdStr = p.id != null ? String(p.id) : `player_${idx + 1}`;
+      const isAttackerMatch = targetAttackerId ? (pIdStr === targetAttackerId) : (idx === activeIdx);
+      const isDefenderMatch = !isAttackerMatch && (targetDefenderId ? (pIdStr === targetDefenderId) : (idx !== activeIdx));
 
       if (isAttackerMatch) {
         let newHand = p.actionCardsHand || [];
@@ -914,12 +918,21 @@ export default function BattleArena({
     let crystalWinner = null;
     let didTransferCrystal = false;
 
-    const defenderDefeated = updatedPlayers.find(p => p.id === defender.id && p.hp === 0 && !p.isZombie);
+    const defenderDefeated = updatedPlayers.find((p, idx) => {
+      const pIdStr = p.id != null ? String(p.id) : `player_${idx + 1}`;
+      return (targetDefenderId ? pIdStr === targetDefenderId : idx !== activeIdx) && p.hp === 0 && !p.isZombie;
+    });
 
     // Check if we should show crystal split modal
     // Show modal when: 2+ players in game AND opponent defeated AND crystal available
-    const otherPlayers = updatedPlayers.filter(p => p.id !== attacker.id && !p.isDefeated);
-    const defenderStillDefeated = updatedPlayers.find(p => p.id === defender.id && p.hp === 0);
+    const otherPlayers = updatedPlayers.filter((p, idx) => {
+      const pIdStr = p.id != null ? String(p.id) : `player_${idx + 1}`;
+      return (targetAttackerId ? pIdStr !== targetAttackerId : idx !== activeIdx) && !p.isDefeated;
+    });
+    const defenderStillDefeated = updatedPlayers.find((p, idx) => {
+      const pIdStr = p.id != null ? String(p.id) : `player_${idx + 1}`;
+      return (targetDefenderId ? pIdStr === targetDefenderId : idx !== activeIdx) && p.hp === 0;
+    });
     const shouldShowCrystalSplitModal =
       defenderDefeated &&
       defender.crystals > 0 &&
@@ -942,12 +955,15 @@ export default function BattleArena({
     }
 
     // Normal crystal transfer (Spoils of War if defender stabilized world with 3 crystals)
-    const finalPlayers = updatedPlayers.map(p => {
+    const finalPlayers = updatedPlayers.map((p, idx) => {
       if (defenderDefeated) {
         const isSovereignDefeat = (defender.crystals >= 3 || defender.isSovereign);
         const spoils = isSovereignDefeat ? (defender.crystals || 3) : 1;
+        const pIdStr = p.id != null ? String(p.id) : `player_${idx + 1}`;
+        const isDef = targetDefenderId ? (pIdStr === targetDefenderId) : (idx !== activeIdx);
+        const isAtk = targetAttackerId ? (pIdStr === targetAttackerId) : (idx === activeIdx);
 
-        if (isDefenderMatch) {
+        if (isDef) {
           return {
             ...p,
             crystals: Math.max(0, p.crystals - spoils),
@@ -956,7 +972,7 @@ export default function BattleArena({
             canBeRevivedAsExile: true
           };
         }
-        if (p.id === attacker.id) {
+        if (isAtk) {
           const newCrystals = p.crystals + spoils;
           didTransferCrystal = true;
           if (newCrystals >= 3) {
@@ -1738,7 +1754,8 @@ export default function BattleArena({
     const { winner, loser, offer, method } = result;
 
     // Update game state with crystal and item transfers
-    const updatedPlayers = players.map(p => {
+    const basePlayersList = crystalSplitData?.updatedPlayers || players;
+    const updatedPlayers = basePlayersList.map(p => {
       if (p.id === winner.id) {
         // Winner gets the crystal
         let updatedCards = p.actionCardsHand || [];

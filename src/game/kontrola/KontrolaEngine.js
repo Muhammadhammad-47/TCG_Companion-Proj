@@ -1341,7 +1341,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           weaknessReason = ` 🎯 [WEAKNESS TRIGGER] ${newDefenderState.name} has ${attackElement} weakness! +10 AP bonus applied!`;
         }
 
-        if (weaknessBonus > 0 && (finalDamage > 0 || (isAttackerZombie && hasPoisonWeak))) {
+        if (weaknessBonus > 0 && (finalDamage > 0 || isMagicAndPoisonAtk || (isAttackerZombie && hasPoisonWeak))) {
           finalDamage += weaknessBonus;
           log += weaknessReason;
         }
