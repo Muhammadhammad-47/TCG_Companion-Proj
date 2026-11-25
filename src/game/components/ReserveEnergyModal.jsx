@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Zap, Sparkles, Lock, Unlock, QrCode, Heart, Plus, Minus, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { getAssetUrl, CHARACTERS, CHARACTER_LEVEL_MATRIX, getCharacterLevelData } from '../data/characters';
 import { soundFX } from '../utils/audio';
@@ -15,6 +15,22 @@ export default function ReserveEnergyModal({
   const [amount, setAmount] = useState(10);
   const [manualCode, setManualCode] = useState('');
   const [codeFeedback, setCodeFeedback] = useState({ text: '', type: '' });
+  const backdropMouseDownRef = useRef(false);
+
+  const handleBackdropMouseDown = (e) => {
+    if (e.target === e.currentTarget) {
+      backdropMouseDownRef.current = true;
+    } else {
+      backdropMouseDownRef.current = false;
+    }
+  };
+
+  const handleBackdropClick = (e) => {
+    if (backdropMouseDownRef.current && e.target === e.currentTarget) {
+      onClose();
+    }
+    backdropMouseDownRef.current = false;
+  };
 
   const currentHp = character?.hp || 0;
   const maxHp = character?.maxHp || 100;
@@ -111,11 +127,12 @@ export default function ReserveEnergyModal({
         justifyContent: 'center',
         padding: '16px'
       }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+      onMouseDown={handleBackdropMouseDown}
+      onClick={handleBackdropClick}
     >
       <div
+        onMouseDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
         style={{
           width: '100%',
           maxWidth: '520px',
@@ -433,6 +450,9 @@ export default function ReserveEnergyModal({
                     step={1}
                     value={amount}
                     onChange={(e) => setAmount(Number(e.target.value))}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => e.stopPropagation()}
                     style={{
                       width: '100%',
                       accentColor: '#10b981',
