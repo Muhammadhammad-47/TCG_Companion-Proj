@@ -1160,6 +1160,8 @@ export default function KontrolaArena() {
         else if (event.type === 'SYNC_STATE') {
           const newState = event.payload;
           setGameState(newState);
+          gameStateRef.current = newState;
+          pendingStateRef.current = newState;
           setIsProcessingAction(false); // Free the action lock on state sync
           if (newState?.rollOffs) {
             setRollingOffPlayers(prev => {
@@ -2031,7 +2033,7 @@ export default function KontrolaArena() {
         } else {
           // Advance turn to next player for character selection
           const currentIdx = currentState.players.indexOf(actorId);
-          const step = currentState.turnDirection === 'counter' ? -1 : 1;
+          const step = state.turnDirection === 'counter' ? -1 : 1;
           let nextIdx = (currentIdx + step) % currentState.players.length;
           if (nextIdx < 0) nextIdx += currentState.players.length;
           nextState.turn = currentState.players[nextIdx] || currentState.players[0];
@@ -2138,7 +2140,7 @@ export default function KontrolaArena() {
           let turnId = currentState.turn;
           if (turnId === actorId && livingPlayers.length > 1) {
             const currentIdx = livingPlayers.indexOf(actorId);
-            const step = currentState.turnDirection === 'counter' ? -1 : 1;
+            const step = state.turnDirection === 'counter' ? -1 : 1;
             let nextIdx = (currentIdx + step) % livingPlayers.length;
             if (nextIdx < 0) nextIdx += livingPlayers.length;
             turnId = livingPlayers[nextIdx] || livingPlayers[0];
@@ -2148,7 +2150,7 @@ export default function KontrolaArena() {
             ...currentState,
             turn: turnId,
             hands: {
-              ...(currentState.hands || {}),
+              ...(state.hands || {}),
               [actorId]: actorHand,
               [targetId]: targetHand
             },
@@ -2197,7 +2199,7 @@ export default function KontrolaArena() {
           ...currentState,
           deck: nextDeck,
           hands: {
-            ...(currentState.hands || {}),
+            ...(state.hands || {}),
             [victimId]: victimHand
           },
           characterStates: {
@@ -2253,7 +2255,7 @@ export default function KontrolaArena() {
               if (!hasRevive) {
                 const pList = currentState.players || [];
                 const currentIdx = pList.indexOf(actorId);
-                const step = currentState.turnDirection === 'counter' ? -1 : 1;
+                const step = state.turnDirection === 'counter' ? -1 : 1;
                 let nextIdx = (currentIdx + step) % pList.length;
                 if (nextIdx < 0) nextIdx += pList.length;
                 let attempts = 0;
@@ -2289,7 +2291,7 @@ export default function KontrolaArena() {
         } else if (livingPlayers.length > 1 && currentState.turn === victimId) {
           const pList = currentState.players || [];
           const currentIdx = pList.indexOf(victimId);
-          const step = currentState.turnDirection === 'counter' ? -1 : 1;
+          const step = state.turnDirection === 'counter' ? -1 : 1;
           let nextIdx = (currentIdx + step) % pList.length;
           if (nextIdx < 0) nextIdx += pList.length;
           let attempts = 0;
@@ -2373,7 +2375,7 @@ export default function KontrolaArena() {
           deck: nextDeck,
           winner: null, // Clear any premature game-over since match resumes with Exile
           hands: {
-            ...(currentState.hands || {}),
+            ...(state.hands || {}),
             [providerId]: providerHand
           },
           characterStates: {
@@ -2539,9 +2541,9 @@ export default function KontrolaArena() {
         }
         while (pHand.length > 10) pHand.pop();
 
-        const livingPlayers = currentState.players.filter(pId => !currentState.characterStates?.[pId]?.isDefeated);
+        const livingPlayers = (state.players || []).filter(pId => !currentState.characterStates?.[pId]?.isDefeated);
         const currentIdx = livingPlayers.indexOf(currentState.turn);
-        const step = currentState.turnDirection === 'counter' ? -1 : 1;
+        const step = state.turnDirection === 'counter' ? -1 : 1;
         let nextIdx = (currentIdx + step) % livingPlayers.length;
         if (nextIdx < 0) nextIdx += livingPlayers.length;
         let nextTurnPlayerId = livingPlayers[nextIdx] || livingPlayers[0];
@@ -2565,7 +2567,7 @@ export default function KontrolaArena() {
           turn: nextTurnPlayerId,
           pendingAttackX2For: null,
           hands: {
-            ...(currentState.hands || {}),
+            ...(state.hands || {}),
             [retreatingPlayerId]: pHand
           },
           characterStates: updatedCharStates,
@@ -2600,7 +2602,7 @@ export default function KontrolaArena() {
         const nextState = {
           ...currentState,
           hands: {
-            ...(currentState.hands || {}),
+            ...(state.hands || {}),
             [traderId]: traderHand,
             [recipientId]: recipientHand
           },
@@ -2631,9 +2633,9 @@ export default function KontrolaArena() {
           actorHand.push(drawnCard);
         }
         while (actorHand.length > 10) actorHand.pop();
-        const livingPlayers = currentState.players.filter(pId => !currentState.characterStates?.[pId]?.isDefeated);
+        const livingPlayers = (state.players || []).filter(pId => !currentState.characterStates?.[pId]?.isDefeated);
         const currentIdx = livingPlayers.indexOf(actorId);
-        const step = currentState.turnDirection === 'counter' ? -1 : 1;
+        const step = state.turnDirection === 'counter' ? -1 : 1;
         let nextIdx = (currentIdx + step) % livingPlayers.length;
         if (nextIdx < 0) nextIdx += livingPlayers.length;
         let nextTurnPlayerId = livingPlayers[nextIdx] || livingPlayers[0];
@@ -2644,7 +2646,7 @@ export default function KontrolaArena() {
           pendingAttackX2For: null,
           deck: newDeck,
           hands: {
-            ...(currentState.hands || {}),
+            ...(state.hands || {}),
             [actorId]: actorHand
           },
           logs: [logMsg, ...(currentState.logs || [])]
@@ -3110,7 +3112,7 @@ export default function KontrolaArena() {
         let healDelta = 0;
         let atkDmgDealt = 0;
         if (playedCardType === 'ATTACK' || playedCardType === 'STATUS' || playedCardName.includes('POISON') || playedCardName.includes('FREEZE') || playedCardName.includes('BURN')) {
-          const prevDefHP = Number(currentState.characterStates?.[targetId]?.hp) || 0;
+          const prevDefHP = Number(state.characterStates?.[targetId]?.hp) || 0;
           const newDefHP = Number(newDefenderState?.hp) || 0;
           dmgDealt = Math.max(0, prevDefHP - newDefHP);
 
@@ -3313,15 +3315,37 @@ export default function KontrolaArena() {
         }
       } else if (effectiveTargetId && effectiveTargetId !== 'ALL' && newDefenderState) {
         updatedStates[effectiveTargetId] = newDefenderState;
+      }
+      if (newDefenderState && state.players) {
+        state.players.forEach(p => {
+          if (p === targetId || p === effectiveTargetId || p === defenderKey ||
+              state.characterStates?.[p]?.id === effectiveTargetId ||
+              state.characterStates?.[p]?.characterId === effectiveTargetId ||
+              state.characterStates?.[p]?.playerId === effectiveTargetId ||
+              state.characterStates?.[p]?.name === newDefenderState?.name) {
+            updatedStates[p] = newDefenderState;
+          }
+        });
+      }
+      if (newAttackerState && state.players) {
+        state.players.forEach(p => {
+          if (p === actorId || p === effectiveActorId || p === attackerKey ||
+              state.characterStates?.[p]?.id === effectiveActorId ||
+              state.characterStates?.[p]?.characterId === effectiveActorId ||
+              state.characterStates?.[p]?.playerId === effectiveActorId ||
+              state.characterStates?.[p]?.name === newAttackerState?.name) {
+            updatedStates[p] = newAttackerState;
+          }
+        });
       } else if (targetId === 'ALL' && resolved.aoeDamage) {
         // Count active defenders for AoE damage splitting
-        const activeDefenders = currentState.players.filter(pId =>
-          pId !== actorId && !currentState.characterStates[pId]?.isDefeated
+        const activeDefenders = (state.players || []).filter(pId =>
+          pId !== actorId && !state.characterStates?.[pId]?.isDefeated
         );
         const damagePerDefender = Math.ceil(resolved.aoeDamage / Math.max(1, activeDefenders.length));
 
         activeDefenders.forEach(pId => {
-          const char = { ...currentState.characterStates[pId] };
+          const char = { ...state.characterStates?.[pId] };
           char.hp = Math.max(0, char.hp - damagePerDefender);
           if (char.hp <= 0 && !char.isDefeated) {
             char.isDefeated = true;
@@ -3338,7 +3362,7 @@ export default function KontrolaArena() {
       }
 
       // Turn rotation (modulo next non-defeated player)
-      const livingPlayers = currentState.players.filter(
+      const livingPlayers = (state.players || []).filter(
         (pId) => !updatedStates[pId]?.isDefeated
       );
 
@@ -3361,7 +3385,7 @@ export default function KontrolaArena() {
         nextTurnPlayerId = livingPlayers[0] || actorId;
       } else {
         // STATUS/HEAL/OTHERS/TACTICAL/DEFENSE cards must ALWAYS advance the turn � never stay on same player
-        const isAlreadySecondHit = currentState.pendingAttackX2For === actorId || (typeof actionCard === 'object' && actionCard?.id === 'attack_x2_2nd') || resolvedEndTurnCardName.includes('2ND HIT');
+        const isAlreadySecondHit = state.pendingAttackX2For === actorId || (typeof actionCard === 'object' && actionCard?.id === 'attack_x2_2nd') || resolvedEndTurnCardName.includes('2ND HIT');
         const triggerSecondHit = !isAlreadySecondHit && Boolean(resolved.triggerAttackX2SecondHit);
 
         let grantExtraTurn = false;
@@ -3399,10 +3423,10 @@ export default function KontrolaArena() {
           pendingAttackX2For = null;
           const attackerPlayerId = livingPlayers.includes(attackerKey)
             ? attackerKey
-            : (livingPlayers.includes(effectiveActorId) ? effectiveActorId : (livingPlayers.includes(actorId) ? actorId : currentState.turn));
+            : (livingPlayers.includes(effectiveActorId) ? effectiveActorId : (livingPlayers.includes(actorId) ? actorId : state.turn));
           const currentIdx = livingPlayers.indexOf(attackerPlayerId);
           const safeIdx = currentIdx >= 0 ? currentIdx : 0;
-          const step = currentState.turnDirection === 'counter' ? -1 : 1;
+          const step = state.turnDirection === 'counter' ? -1 : 1;
           let nextIdx = (safeIdx + step) % livingPlayers.length;
           if (nextIdx < 0) nextIdx += livingPlayers.length;
           nextTurnPlayerId = livingPlayers[nextIdx] || livingPlayers[0];
@@ -3455,7 +3479,7 @@ export default function KontrolaArena() {
 
           // Advance to next player for sleeping turn check
           const sIdx = livingPlayers.indexOf(nextTurnPlayerId);
-          const step = currentState.turnDirection === 'counter' ? -1 : 1;
+          const step = state.turnDirection === 'counter' ? -1 : 1;
           let nextSIdx = (sIdx + step) % livingPlayers.length;
           if (nextSIdx < 0) nextSIdx += livingPlayers.length;
           nextTurnPlayerId = livingPlayers[nextSIdx];
@@ -3481,7 +3505,7 @@ export default function KontrolaArena() {
             if (incomingChar.hp <= 0) {
               incomingChar.isDefeated = true;
               turnLogs.unshift(`💀 ${incomingChar.name} succumbed to Poison and was eliminated!`);
-              const remainingLiving = currentState.players.filter((pId) => !updatedStates[pId]?.isDefeated);
+              const remainingLiving = (state.players || []).filter((pId) => !updatedStates[pId]?.isDefeated);
               if (remainingLiving.length === 1) {
                 matchWinner = updatedStates[remainingLiving[0]] ? { ...updatedStates[remainingLiving[0]], playerId: remainingLiving[0] } : null;
               }
@@ -3534,7 +3558,7 @@ export default function KontrolaArena() {
           if (incomingChar.hp <= 0) {
             incomingChar.isDefeated = true;
             turnLogs.unshift(`💀 ${incomingChar.name} was drained to death by Vampire curse and eliminated!`);
-            const remainingLiving = currentState.players.filter((pId) => !updatedStates[pId]?.isDefeated);
+            const remainingLiving = (state.players || []).filter((pId) => !updatedStates[pId]?.isDefeated);
             if (remainingLiving.length === 1) {
               matchWinner = updatedStates[remainingLiving[0]] ? { ...updatedStates[remainingLiving[0]], playerId: remainingLiving[0] } : null;
             }
@@ -3550,7 +3574,7 @@ export default function KontrolaArena() {
       }
 
       let updatedHands = {
-        ...(currentState.hands || {}),
+        ...(state.hands || {}),
         [attackerKey]: newHand
       };
       if (effectiveActorId && effectiveActorId !== attackerKey) {
@@ -3576,7 +3600,7 @@ export default function KontrolaArena() {
       });
 
       // Update Match Summary Stats
-      let updatedStats = { ...(currentState.stats || { damageDealt: {}, cardsPlayed: {}, turnsTaken: {} }) };
+      let updatedStats = { ...(state.stats || { damageDealt: {}, cardsPlayed: {}, turnsTaken: {} }) };
 
       // Cards Played
       if (!isPass) {
@@ -3590,18 +3614,18 @@ export default function KontrolaArena() {
       if (!isPass && getSafeCardType(actionCard) === 'ATTACK') {
         let totalTurnDmg = 0;
         if (targetId && targetId !== 'ALL' && newDefenderState) {
-          const prevDefHP = Number(currentState.characterStates?.[targetId]?.hp) || 0;
+          const prevDefHP = Number(state.characterStates?.[targetId]?.hp) || 0;
           const curDefHP = Number(newDefenderState.hp) || 0;
           totalTurnDmg = Math.max(0, prevDefHP - curDefHP);
         } else if (targetId === 'ALL' && resolved.aoeDamage) {
           // Calculate split damage per defender for AoE attacks
-          const activeDefenders = currentState.players.filter(pId =>
-            pId !== actorId && !currentState.characterStates[pId]?.isDefeated
+          const activeDefenders = (state.players || []).filter(pId =>
+            pId !== actorId && !state.characterStates?.[pId]?.isDefeated
           );
           const damagePerDefender = Math.ceil(resolved.aoeDamage / Math.max(1, activeDefenders.length));
 
           activeDefenders.forEach(pId => {
-            const prevHp = currentState.characterStates[pId].hp;
+            const prevHp = state.characterStates?.[pId]?.hp || 0;
             const newHp = Math.max(0, prevHp - damagePerDefender);
             totalTurnDmg += Math.max(0, prevHp - newHp);
           });
