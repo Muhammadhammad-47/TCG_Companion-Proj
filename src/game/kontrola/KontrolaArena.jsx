@@ -1358,7 +1358,8 @@ export default function KontrolaArena() {
         // 9. Client Action received by Host
         else if (event.type === 'PLAYER_ACTION') {
           if (isHostRef.current) {
-            enqueueHostAction(event.payload);
+            const rolls = event.payload?.precalculatedRolls || null;
+            enqueueHostAction(event.payload, rolls);
           }
         }
         // 10. Chat and Taunts
@@ -1815,7 +1816,7 @@ export default function KontrolaArena() {
       // or fallback to the parameter
       const precalculatedRolls = payload.actionType === 'RESOLVE_COMBAT'
         ? { ...(payload.precalculatedRolls || {}), ...(precalculatedRollsParam || {}) }
-        : precalculatedRollsParam;
+        : (precalculatedRollsParam || payload?.precalculatedRolls || null);
 
       // De-duplicate non-combat actions (e.g. Poison X1, Vitality, Boomerang) during server latency
       if (payload.actionId && !payload.actionType) {
@@ -2924,7 +2925,16 @@ export default function KontrolaArena() {
       const { actorId, actionCard, attackSelectionName, targetId } = payload;
       
       const effectiveActorId = actorId || currentState.turn || currentState.players?.[0];
-      const attackerChar = currentState.characterStates?.[effectiveActorId] ||
+      const attackerKey = Object.keys(currentState.characterStates || {}).find(k => 
+        k === effectiveActorId || 
+        currentState.characterStates[k]?.id === effectiveActorId ||
+        currentState.characterStates[k]?.characterId === effectiveActorId ||
+        currentState.characterStates[k]?.playerId === effectiveActorId ||
+        currentState.characterStates[k]?.name === effectiveActorId
+      ) || (currentState.players?.includes(effectiveActorId) ? effectiveActorId : currentState.turn || currentState.players?.[0]);
+
+      const attackerChar = currentState.characterStates?.[attackerKey] ||
+        currentState.characterStates?.[effectiveActorId] ||
         Object.values(currentState.characterStates || {}).find(c => c.id === effectiveActorId || c.characterId === effectiveActorId || c.playerId === effectiveActorId);
 
       if (!attackerChar) return currentState;
@@ -2932,20 +2942,37 @@ export default function KontrolaArena() {
       let effectiveTargetId = targetId;
       if (!effectiveTargetId || effectiveTargetId === 'undefined' || effectiveTargetId === 'null') {
         if (currentState.players?.length === 2) {
-          effectiveTargetId = currentState.players.find(p => p !== effectiveActorId);
+          effectiveTargetId = currentState.players.find(p => p !== attackerKey && p !== effectiveActorId);
         } else {
-          effectiveTargetId = Object.keys(currentState.characterStates || {}).find(p => p !== effectiveActorId);
+          effectiveTargetId = Object.keys(currentState.characterStates || {}).find(p => p !== attackerKey && p !== effectiveActorId);
+        }
+      }
+
+      let defenderKey = null;
+      if (effectiveTargetId && effectiveTargetId !== 'ALL') {
+        defenderKey = Object.keys(currentState.characterStates || {}).find(k => 
+          k === effectiveTargetId || 
+          currentState.characterStates[k]?.id === effectiveTargetId ||
+          currentState.characterStates[k]?.characterId === effectiveTargetId ||
+          currentState.characterStates[k]?.playerId === effectiveTargetId ||
+          currentState.characterStates[k]?.name === effectiveTargetId
+        ) || null;
+
+        if (!defenderKey && currentState.players?.length === 2) {
+          defenderKey = currentState.players.find(p => p !== attackerKey && p !== effectiveActorId);
         }
       }
 
       let defenderChar = (effectiveTargetId && effectiveTargetId !== 'ALL')
-        ? (currentState.characterStates?.[effectiveTargetId] ||
+        ? (currentState.characterStates?.[defenderKey] ||
+           currentState.characterStates?.[effectiveTargetId] ||
            Object.values(currentState.characterStates || {}).find(c => c.id === effectiveTargetId || c.characterId === effectiveTargetId || c.playerId === effectiveTargetId || c.name === effectiveTargetId))
         : null;
 
       if (!defenderChar && effectiveTargetId !== 'ALL' && currentState.players?.length === 2) {
-        const otherPId = currentState.players.find(p => p !== effectiveActorId);
+        const otherPId = currentState.players.find(p => p !== attackerKey && p !== effectiveActorId);
         if (otherPId && currentState.characterStates?.[otherPId]) {
+          defenderKey = otherPId;
           effectiveTargetId = otherPId;
           defenderChar = currentState.characterStates[otherPId];
         }
@@ -2956,14 +2983,14 @@ export default function KontrolaArena() {
       let newDefenderState = defenderChar ? { ...defenderChar } : null;
       let log = `${attackerChar.name} passed their turn.`;
       let newDeck = [...(currentState.deck || [])];
-      let newHand = [...(currentState.hands?.[effectiveActorId] || currentState.hands?.[actorId] || [])];
+      let newHand = [...(currentState.hands?.[attackerKey] || currentState.hands?.[effectiveActorId] || currentState.hands?.[actorId] || [])];
       let resolved = {};
       let matchWinner = currentState.winner;
       let turnLogs = [log];
       let pendingAttackX2For = currentState.pendingAttackX2For || null;
-      let nextTurnPlayerId = effectiveActorId;
+      let nextTurnPlayerId = attackerKey || effectiveActorId;
       let updatedStates = { ...currentState.characterStates };
-      let newDefenderHand = defenderChar ? [...(currentState.hands?.[effectiveTargetId] || currentState.hands?.[targetId] || [])] : [];
+      let newDefenderHand = defenderChar ? [...(currentState.hands?.[defenderKey] || currentState.hands?.[effectiveTargetId] || currentState.hands?.[targetId] || [])] : [];
 
       if (!isPass) {
         // Resolve Turn via Engine (ET cost deducted only after confirming not a tie)
@@ -3267,9 +3294,17 @@ export default function KontrolaArena() {
 
       updatedStates = {
         ...updatedStates,
-        [effectiveActorId]: newAttackerState
+        [attackerKey]: newAttackerState
       };
-      if (effectiveTargetId && effectiveTargetId !== 'ALL' && newDefenderState) {
+      if (effectiveActorId && effectiveActorId !== attackerKey) {
+        updatedStates[effectiveActorId] = newAttackerState;
+      }
+      if (defenderKey && newDefenderState) {
+        updatedStates[defenderKey] = newDefenderState;
+        if (effectiveTargetId && effectiveTargetId !== defenderKey && effectiveTargetId !== 'ALL') {
+          updatedStates[effectiveTargetId] = newDefenderState;
+        }
+      } else if (effectiveTargetId && effectiveTargetId !== 'ALL' && newDefenderState) {
         updatedStates[effectiveTargetId] = newDefenderState;
       } else if (targetId === 'ALL' && resolved.aoeDamage) {
         // Count active defenders for AoE damage splitting
@@ -3351,13 +3386,17 @@ export default function KontrolaArena() {
         }
 
         if (grantExtraTurn) {
-          nextTurnPlayerId = actorId;
-          pendingAttackX2For = triggerSecondHit ? actorId : null;
+          nextTurnPlayerId = attackerKey || actorId;
+          pendingAttackX2For = triggerSecondHit ? (attackerKey || actorId) : null;
         } else {
           pendingAttackX2For = null;
-          const currentIdx = livingPlayers.indexOf(actorId);
+          const attackerPlayerId = livingPlayers.includes(attackerKey)
+            ? attackerKey
+            : (livingPlayers.includes(effectiveActorId) ? effectiveActorId : (livingPlayers.includes(actorId) ? actorId : currentState.turn));
+          const currentIdx = livingPlayers.indexOf(attackerPlayerId);
+          const safeIdx = currentIdx >= 0 ? currentIdx : 0;
           const step = currentState.turnDirection === 'counter' ? -1 : 1;
-          let nextIdx = (currentIdx + step) % livingPlayers.length;
+          let nextIdx = (safeIdx + step) % livingPlayers.length;
           if (nextIdx < 0) nextIdx += livingPlayers.length;
           nextTurnPlayerId = livingPlayers[nextIdx] || livingPlayers[0];
         }
@@ -3505,9 +3544,17 @@ export default function KontrolaArena() {
 
       let updatedHands = {
         ...(currentState.hands || {}),
-        [effectiveActorId]: newHand
+        [attackerKey]: newHand
       };
-      if (defenderChar && effectiveTargetId !== 'ALL') {
+      if (effectiveActorId && effectiveActorId !== attackerKey) {
+        updatedHands[effectiveActorId] = newHand;
+      }
+      if (defenderKey) {
+        updatedHands[defenderKey] = newDefenderHand;
+        if (effectiveTargetId && effectiveTargetId !== defenderKey && effectiveTargetId !== 'ALL') {
+          updatedHands[effectiveTargetId] = newDefenderHand;
+        }
+      } else if (defenderChar && effectiveTargetId !== 'ALL') {
         updatedHands[effectiveTargetId] = newDefenderHand;
       }
 
