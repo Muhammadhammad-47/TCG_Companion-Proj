@@ -73,11 +73,12 @@ export default function CardActionModal({
     soundFX.playCard();
     setSelectedInstanceId(card.instanceId);
 
-    if (card.id === 'retreat_card' && activePlayer.retreatedThisTurn) {
+    const isRetreat = card.id === 'retreat' || card.id === 'retreat_card' || (card.name || '').toUpperCase().includes('RETREAT');
+    if (isRetreat && activePlayer.retreatedThisTurn) {
       setErrorMsg('Already retreated this turn.');
       return;
     }
-    if (card.id === 'retreat_card') {
+    if (isRetreat) {
       // RETREAT timing gate: Only available AFTER dice rolled (inCombat phase or later)
       // For now, we allow retreat anytime. Phase gating will happen in RetreatModal
       onOpenRetreat(activePlayer, card.instanceId);
@@ -93,8 +94,27 @@ export default function CardActionModal({
       return;
     }
 
+    // RETREAT Action check
+    const isRetreatAction = currentAction.id === 'retreat' || currentAction.id === 'retreat_card' || (currentAction.name || '').toUpperCase().includes('RETREAT');
+    if (isRetreatAction) {
+      if (activePlayer.retreatedThisTurn) {
+        setErrorMsg('Already retreated this turn.');
+        return;
+      }
+      if (onOpenRetreat) {
+        onOpenRetreat(activePlayer, currentAction.instanceId);
+        onClose();
+      }
+      return;
+    }
+
+    // Determine target player safely before action-specific checks
+    const targetPlayer = selectableTargets.find(p => p.id === targetPlayerId)
+      || selectableTargets.find(p => p.id !== activePlayer.id)
+      || selectableTargets[0];
+
     // BACK STAB gate: Only works in 3+ player matches
-    if (currentAction.id === 'backstab' && allPlayers.length <= 2) {
+    if ((currentAction.id === 'backstab' || (currentAction.name || '').toUpperCase().includes('BACK STAB')) && allPlayers.length <= 2) {
       setErrorMsg('BACK STAB only available in 3+ player matches.');
       return;
     }
@@ -127,10 +147,6 @@ export default function CardActionModal({
         return;
       }
     }
-
-    const targetPlayer = selectableTargets.find(p => p.id === targetPlayerId)
-      || selectableTargets.find(p => p.id !== activePlayer.id)
-      || selectableTargets[0];
 
     // Handle Attacks
     if (currentAction.category === 'Attack' || currentAction.type === 'ATTACK' || isZombie || currentAction.id === 'backstab' || (currentAction.name || '').toUpperCase().includes('BACK STAB')) {
