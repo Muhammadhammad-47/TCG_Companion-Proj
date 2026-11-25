@@ -729,6 +729,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   const cardType = (typeof actionCard === 'object' && actionCard?.type) ? actionCard.type : (
     ['ATTACK', 'LIGHTNING', 'FIRE', 'BACK STAB'].some(kw => cardName.includes(kw)) ? 'ATTACK' : 'OTHERS'
   );
+  const selectedUpper = (attackSelectionName || '').toUpperCase();
   let log = `${attackerState.name} played ${typeof actionCard === 'string' ? actionCard : (actionCard?.name || 'Action Card')}.`;
   let damage = 0;
   let heal = 0;
@@ -1101,24 +1102,34 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       baseAP = 15; // Zombie Venom Strike (15 AP base)
       attackElement = 'Poison';
     } else if (attackSelectionName) {
-      const charKey = attackerChar?.id || attackerState?.id || 'chynaman';
-      const template = KONTROLA_CHARACTERS[charKey] || Object.values(KONTROLA_CHARACTERS).find(c => c.name?.toLowerCase() === attackerChar?.name?.toLowerCase());
-      const selectedUpper = (attackSelectionName || '').toUpperCase();
+      const charKey = (attackerChar?.characterId || attackerChar?.id || attackerState?.characterId || attackerState?.id || 'chynaman').toLowerCase();
+      const template = KONTROLA_CHARACTERS[charKey]
+        || Object.values(KONTROLA_CHARACTERS).find(c => c.name?.toLowerCase() === attackerChar?.name?.toLowerCase())
+        || KONTROLA_CHARACTERS[charKey.replace('player_', '')]
+        || KONTROLA_CHARACTERS.chynaman;
       const atk = attackerChar?.attacks?.[attackSelectionName]
         || template?.attacks?.[attackSelectionName]
         || Object.entries(attackerChar?.attacks || {}).find(([k]) => k.toUpperCase() === selectedUpper)?.[1]
         || Object.entries(template?.attacks || {}).find(([k]) => k.toUpperCase() === selectedUpper)?.[1]
-        || (attackerChar?.characterCardMoves || []).find(m => (m.name || '').toUpperCase() === selectedUpper);
+        || (attackerChar?.characterCardMoves || []).find(m => (m.name || '').toUpperCase() === selectedUpper)
+        || Object.values(KONTROLA_CHARACTERS).flatMap(c => Object.entries(c.attacks || {})).find(([k]) => k.toUpperCase() === selectedUpper)?.[1];
       if (atk) {
         attackElement = atk.element || 'Physical';
         const isDiceMult = atk.dice > 0 || atk.type === 'dice_mult' || selectedUpper.includes(' PER ') || Boolean(atk.multiplier);
         if (isDiceMult) {
-          const multiplier = Number(atk.ap || atk.multiplier || atk.baseAP || 5);
-          const multRoll = (dRoll?.total && Number(dRoll.total) > 0) ? Number(dRoll.total) : (Number(attackerRoll?.rolls?.[0]) || (Math.floor(Math.random() * 6) + 1));
+          let multiplier = Number(atk.ap || atk.multiplier || atk.baseAP || 5);
+          if (cardName.includes('ATTACK X2') || cardName.includes('ATK X2')) {
+            multiplier *= 2;
+          }
+          const multVal = typeof dRoll === 'number' ? dRoll : (dRoll?.total != null ? Number(dRoll.total) : (dRoll?.rolls?.[0] != null ? Number(dRoll.rolls[0]) : null));
+          const multRoll = (multVal && multVal > 0) ? multVal : (Number(attackerRoll?.rolls?.[0]) || (Math.floor(Math.random() * 6) + 1));
           baseAP = multRoll * multiplier;
           log += ` [${attackSelectionName}: ${multRoll} × ${multiplier} AP = ${baseAP} AP]`;
         } else {
           baseAP = Number(atk.ap || atk.baseAP || 25);
+          if (cardName.includes('ATTACK X2') || cardName.includes('ATK X2')) {
+            baseAP *= 2;
+          }
         }
       }
     }
@@ -1354,8 +1365,8 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       let innateAbsorb = 0;
       const isPoisonAttackCard = cardName.includes('POISON') || (attackElement && attackElement.toLowerCase().includes('poison')) || isAttackerZombie || isMagicAndPoisonAtk;
       if (defenderRolled6 && !defCard && finalDamage > 0 && !isPoisonAttackCard) {
-        const isDiceMult = selectedUpper.includes(' PER ') || Boolean(attackerChar?.attacks?.[attackSelectionName]?.dice);
-        const minDamage = isDiceMult ? Math.min(finalDamage, 4) : Math.min(finalDamage, 10);
+        const isDiceMult = selectedUpper.includes(' PER ') || Boolean(attackerChar?.attacks?.[attackSelectionName]?.dice) || Boolean(attackerChar?.attacks?.[attackSelectionName]?.multiplier);
+        const minDamage = isDiceMult ? Math.min(finalDamage, 3) : Math.min(finalDamage, 10);
         innateAbsorb = Math.max(0, Math.min(10, finalDamage - minDamage));
         finalDamage = Math.max(minDamage, finalDamage - innateAbsorb);
         log += ` 🛡️ Innate Basic Defense: Defender rolled total of 6 (${defenderRoll?.total || 6}), reducing incoming attack power by ${innateAbsorb} AP!`;

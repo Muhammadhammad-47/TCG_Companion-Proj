@@ -779,8 +779,14 @@ export default function BattleArena({
     // Update player stats
     const updatedPlayers = players.map((p, idx) => {
       const pIdStr = p.id != null ? String(p.id) : `player_${idx + 1}`;
-      const isAttackerMatch = targetAttackerId ? (pIdStr === targetAttackerId) : (idx === activeIdx);
-      const isDefenderMatch = !isAttackerMatch && (targetDefenderId ? (pIdStr === targetDefenderId) : (idx !== activeIdx));
+      const isAttackerMatch = targetAttackerId
+        ? (pIdStr === targetAttackerId || String(p.id) === String(attacker?.id) || (p.characterId && p.characterId === attacker?.characterId && idx === activeIdx) || idx === activeIdx)
+        : (idx === activeIdx);
+      const isDefenderMatch = !isAttackerMatch && (
+        (targetDefenderId && (pIdStr === targetDefenderId || String(p.id) === String(defender?.id) || (p.characterId && p.characterId === defender?.characterId) || (p.name && p.name === defender?.name))) ||
+        (players.length === 2) ||
+        (!targetDefenderId && idx !== activeIdx)
+      );
 
       if (isAttackerMatch) {
         let newHand = p.actionCardsHand || [];
@@ -921,7 +927,8 @@ export default function BattleArena({
 
     const defenderDefeated = updatedPlayers.find((p, idx) => {
       const pIdStr = p.id != null ? String(p.id) : `player_${idx + 1}`;
-      return (targetDefenderId ? pIdStr === targetDefenderId : idx !== activeIdx) && p.hp === 0 && !p.isZombie;
+      const isDef = (targetDefenderId && (pIdStr === targetDefenderId || String(p.id) === String(defender?.id) || (p.characterId && p.characterId === defender?.characterId) || (p.name && p.name === defender?.name))) || (updatedPlayers.length === 2 && idx !== activeIdx) || (!targetDefenderId && idx !== activeIdx);
+      return isDef && p.hp === 0 && !p.isZombie;
     });
 
     // Check if we should show crystal split modal
@@ -932,7 +939,8 @@ export default function BattleArena({
     });
     const defenderStillDefeated = updatedPlayers.find((p, idx) => {
       const pIdStr = p.id != null ? String(p.id) : `player_${idx + 1}`;
-      return (targetDefenderId ? pIdStr === targetDefenderId : idx !== activeIdx) && p.hp === 0;
+      const isDef = (targetDefenderId && (pIdStr === targetDefenderId || String(p.id) === String(defender?.id) || (p.characterId && p.characterId === defender?.characterId) || (p.name && p.name === defender?.name))) || (updatedPlayers.length === 2 && idx !== activeIdx) || (!targetDefenderId && idx !== activeIdx);
+      return isDef && p.hp === 0;
     });
     const shouldShowCrystalSplitModal =
       defenderDefeated &&
@@ -961,8 +969,8 @@ export default function BattleArena({
         const isSovereignDefeat = (defender.crystals >= 3 || defender.isSovereign);
         const spoils = isSovereignDefeat ? (defender.crystals || 3) : 1;
         const pIdStr = p.id != null ? String(p.id) : `player_${idx + 1}`;
-        const isDef = targetDefenderId ? (pIdStr === targetDefenderId) : (idx !== activeIdx);
-        const isAtk = targetAttackerId ? (pIdStr === targetAttackerId) : (idx === activeIdx);
+        const isDef = (targetDefenderId && (pIdStr === targetDefenderId || String(p.id) === String(defender?.id) || (p.characterId && p.characterId === defender?.characterId) || (p.name && p.name === defender?.name))) || (updatedPlayers.length === 2 && idx !== activeIdx) || (!targetDefenderId && idx !== activeIdx);
+        const isAtk = (targetAttackerId && (pIdStr === targetAttackerId || String(p.id) === String(attacker?.id))) || idx === activeIdx;
 
         if (isDef) {
           return {

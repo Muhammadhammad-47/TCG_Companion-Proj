@@ -3243,8 +3243,11 @@ export default function KontrolaArena() {
         ...updatedStates,
         [actorId]: newAttackerState
       };
-      if (targetId && targetId !== 'ALL' && newDefenderState) {
-        updatedStates[targetId] = newDefenderState;
+      const effectiveTargetId = (targetId && targetId !== 'ALL')
+        ? targetId
+        : (currentState.players?.find(pId => pId !== actorId) || Object.keys(currentState.characterStates || {}).find(pId => pId !== actorId));
+      if (effectiveTargetId && effectiveTargetId !== 'ALL' && newDefenderState) {
+        updatedStates[effectiveTargetId] = newDefenderState;
       } else if (targetId === 'ALL' && resolved.aoeDamage) {
         // Count active defenders for AoE damage splitting
         const activeDefenders = currentState.players.filter(pId =>
