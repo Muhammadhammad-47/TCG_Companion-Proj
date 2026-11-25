@@ -627,16 +627,17 @@ export default function KontrolaDiceRoller({
           
           if (refs.phase === 'clash') {
             if (!refs.hasAttackerRolled) {
-              // Only attacker rolls; host only rolls as fallback if not the attacker
+              // Only attacker rolls; host only rolls as fallback if not the defender
               if (refs.isAttacker) refs.handleRollAttacker();
               else if (refs.isHost && !refs.isDefender) refs.handleRollAttacker();
             } else if (!refs.hasDefenderRolled) {
-              // Only defender rolls; host only rolls as fallback if not the defender
+              // Only defender rolls; host only rolls as fallback if not the attacker
               if (refs.isDefender) refs.handleRollDefender();
               else if (refs.isHost && !refs.isAttacker) refs.handleRollDefender();
             }
           } else if (refs.phase === 'clash_summary') {
-            if (refs.isAttacker || refs.isHost) {
+            const isAuthorizedFinisher = refs.isAttacker || (refs.isHost && !refs.isDefender);
+            if (isAuthorizedFinisher) {
               if (refs.isTie) refs.handleReRoll();
               else if (refs.hasRolledMultiplier === false) refs.handleRollMultiplierDie();
               else if (typeof refs.handleFinishCombat === 'function') refs.handleFinishCombat();
@@ -649,7 +650,7 @@ export default function KontrolaDiceRoller({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [phase, rerollKey]);
+  }, [phase, rerollKey, hasAttackerRolled, hasDefenderRolled]);
 
   // Sync rolls when precalculatedRolls updates from peer broadcast
   // ─── RPC receive path ──────────────────────────────────────────────────────

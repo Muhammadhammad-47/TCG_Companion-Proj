@@ -1228,27 +1228,33 @@ export default function KontrolaArena() {
           const attackerPlayerId = event.payload?.attackerPlayerId || actorId;
           const defenderPlayerId = event.payload?.defenderPlayerId || targetId;
 
-          // Reconstruct character objects from current gameState
-          const attacker = gameStateRef.current?.characterStates?.[actorId];
-          const defender = gameStateRef.current?.characterStates?.[targetId];
+          // Reconstruct character objects from payload or current gameState with deep fallback
+          const attacker = event.payload?.attacker
+            || gameStateRef.current?.characterStates?.[actorId]
+            || gameStateRef.current?.characterStates?.[attackerPlayerId]
+            || Object.values(gameStateRef.current?.characterStates || {}).find(c => c.id === actorId || c.characterId === actorId || c.playerId === actorId || c.name === event.payload?.attackerPlayerName);
+          const defender = event.payload?.defender
+            || gameStateRef.current?.characterStates?.[targetId]
+            || gameStateRef.current?.characterStates?.[defenderPlayerId]
+            || Object.values(gameStateRef.current?.characterStates || {}).find(c => c.id === targetId || c.characterId === targetId || c.playerId === targetId || c.name === event.payload?.defenderPlayerName);
 
-          // Fallback: if character data is missing, use the names from broadcast
+          // Fallback: if character data is missing, use the payload character properties or names
           // IMPORTANT: These must NEVER be undefined
           const attackerFallback = attacker || {
-            name: event.payload?.attackerPlayerName || 'Attacker',
-            hp: 100,
-            energyTokens: 5,
+            name: event.payload?.attackerPlayerName || event.payload?.attacker?.name || 'Attacker',
+            hp: event.payload?.attacker?.hp ?? 100,
+            energyTokens: event.payload?.attacker?.energyTokens ?? 5,
             id: actorId,
-            shield: 0,
-            poisonCards: 0
+            shield: event.payload?.attacker?.shield ?? 0,
+            poisonCards: event.payload?.attacker?.poisonCards ?? 0
           };
           const defenderFallback = defender || {
-            name: event.payload?.defenderPlayerName || 'Defender',
-            hp: 100,
-            energyTokens: 5,
+            name: event.payload?.defenderPlayerName || event.payload?.defender?.name || 'Defender',
+            hp: event.payload?.defender?.hp ?? 100,
+            energyTokens: event.payload?.defender?.energyTokens ?? 5,
             id: targetId,
-            shield: 0,
-            poisonCards: 0
+            shield: event.payload?.defender?.shield ?? 0,
+            poisonCards: event.payload?.defender?.poisonCards ?? 0
           };
 
           // Ensure actionCard exists
@@ -1458,26 +1464,27 @@ export default function KontrolaArena() {
           }
 
           // Visual shake + contextual sound effects + damage number popup
-          if (actionType === 'ATTACK') {
-            setIsShaking(true);
-            setTimeout(() => setIsShaking(false), 800);
-            soundFX.init();
+          try {
+            if (actionType === 'ATTACK') {
+              setIsShaking(true);
+              setTimeout(() => setIsShaking(false), 800);
+              try { soundFX.init?.(); } catch { }
 
-            // Cinematic super move triggers
-            const actionUpper = String(actionName || '').toUpperCase();
-            if (actionUpper.includes('BLITZ')) {
-              setIsScreenShattered(true);
-              setTimeout(() => setIsScreenShattered(false), 1700);
-            } else if (actionUpper.includes('KONTROL')) {
-              setIsPsychicWarp(true);
-              setTimeout(() => setIsPsychicWarp(false), 1500);
-            } else if (dmgDealt >= 40) {
-              setIsScreenDimmed(true);
-              setTimeout(() => setIsScreenDimmed(false), 1200);
-            }
+              // Cinematic super move triggers
+              const actionUpper = String(actionName || '').toUpperCase();
+              if (actionUpper.includes('BLITZ')) {
+                setIsScreenShattered(true);
+                setTimeout(() => setIsScreenShattered(false), 1700);
+              } else if (actionUpper.includes('KONTROL')) {
+                setIsPsychicWarp(true);
+                setTimeout(() => setIsPsychicWarp(false), 1500);
+              } else if (dmgDealt >= 40) {
+                setIsScreenDimmed(true);
+                setTimeout(() => setIsScreenDimmed(false), 1200);
+              }
 
-            if (dmgDealt > 0) spawnDamagePopup(`-${dmgDealt}`, false);
-            if (atkDmgDealt > 0) spawnDamagePopup(`-${atkDmgDealt}`, false);
+              if (dmgDealt > 0) spawnDamagePopup(`-${dmgDealt}`, false);
+              if (atkDmgDealt > 0) spawnDamagePopup(`-${atkDmgDealt}`, false);
 
             if (actionName && actionName.includes('FIRE FLAME')) {
               soundFX.playTimeout();
@@ -1489,19 +1496,18 @@ export default function KontrolaArena() {
               soundFX.playHit();
             }
           } else if (actionType === 'HEAL' || actionType === 'RESERVE_RECOVERY') {
-            soundFX.init();
-            soundFX.playHeal();
+            try { soundFX.init?.(); soundFX.playHeal?.(); } catch { }
             if (healDelta > 0) spawnDamagePopup(`+${healDelta}`, true);
           } else if (actionType === 'DEFENSE') {
-            soundFX.init();
-            soundFX.playMenuSelect();
+            try { soundFX.init?.(); soundFX.playMenuSelect?.(); } catch { }
           } else if (actionType === 'STATUS') {
-            soundFX.init();
-            soundFX.playZombie();
+            try { soundFX.init?.(); soundFX.playZombie?.(); } catch { }
           } else if (actionType === 'SPECIAL') {
-            soundFX.init();
-            soundFX.playPowerUp();
+            try { soundFX.init?.(); soundFX.playPowerUp?.(); } catch { }
           }
+        } catch (fxErr) {
+          console.warn('[ACTION_EFFECT] Non-critical FX error:', fxErr);
+        }
         }
         else if (event.type === 'ALLIANCE_INVITE') {
           const invite = event.payload;
@@ -1827,7 +1833,8 @@ export default function KontrolaArena() {
 
   const executeActionResolution = (payload, precalculatedRollsParam = null) => {
     setGameState((currentState) => {
-      // Always use the most-recently-computed pending state when available.
+      try {
+        // Always use the most-recently-computed pending state when available.
       // This prevents the React batching bug where two sequential setGameState calls
       // in the same queue flush both receive the original stale currentState snapshot.
       const state = pendingStateRef.current || currentState;
@@ -2890,7 +2897,7 @@ export default function KontrolaArena() {
           defenseCard: activeCombat.defenseCard?.name
         });
 
-        // Broadcast lightweight data - clients will reconstruct character objects from their gameState
+        // Broadcast combat data - clients receive full character objects so HP & stats are 100% synchronized
         const broadcastData = {
           combatId: activeCombat.combatId,
           actorId: activeCombat.actorId,
@@ -2898,6 +2905,8 @@ export default function KontrolaArena() {
           actionCard: activeCombat.actionCard,
           attackSelectionName: activeCombat.attackSelectionName,
           actionType: 'RESOLVE_COMBAT',
+          attacker: activeCombat.attacker,
+          defender: activeCombat.defender,
           attackerId: activeCombat.attackerId,
           attackerPlayerName: activeCombat.attackerPlayerName,
           defenderPlayerName: activeCombat.defenderPlayerName,
@@ -3078,9 +3087,9 @@ export default function KontrolaArena() {
         if (playedCardName.includes('VISION') || resolved?.revealTargetHand) {
           if (playedCardName.includes('VISION FULL')) {
             const allCards = [];
-            Object.keys(currentState.hands || {}).forEach(pid => {
+            Object.keys(state.hands || {}).forEach(pid => {
               if (pid !== actorId) {
-                allCards.push(...(currentState.hands[pid] || []));
+                allCards.push(...(state.hands[pid] || []));
               }
             });
             visionData = {
@@ -3093,12 +3102,12 @@ export default function KontrolaArena() {
             };
           } else if (targetId && targetId !== 'ALL') {
             visionData = {
-              targetId: (targetId && targetId !== 'ALL') ? targetId : (opponents[0] || Object.keys(currentState.hands || {}).find(p => p !== actorId)),
+              targetId: (targetId && targetId !== 'ALL') ? targetId : (opponents[0] || Object.keys(state.hands || {}).find(p => p !== actorId)),
               isFull: false,
               isXChange: false,
               targetName: defenderChar?.name || 'Opponent',
               expiresAt: Date.now() + 15000,
-              cards: currentState.hands?.[targetId] || [],
+              cards: state.hands?.[targetId] || [],
               actorId
             };
           }
@@ -3116,32 +3125,32 @@ export default function KontrolaArena() {
           const newDefHP = Number(newDefenderState?.hp) || 0;
           dmgDealt = Math.max(0, prevDefHP - newDefHP);
 
-          const prevAtkHP = Number(currentState.characterStates?.[actorId]?.hp) || 0;
+          const prevAtkHP = Number(state.characterStates?.[attackerKey]?.hp ?? state.characterStates?.[actorId]?.hp ?? attackerChar?.hp ?? 0);
           const newAtkHP = Number(newAttackerState?.hp) || 0;
           atkDmgDealt = Math.max(0, prevAtkHP - newAtkHP);
         } else if (playedCardType === 'HEAL') {
-          const prevAtkHP = Number(currentState.characterStates?.[actorId]?.hp) || 0;
+          const prevAtkHP = Number(state.characterStates?.[attackerKey]?.hp ?? state.characterStates?.[actorId]?.hp ?? attackerChar?.hp ?? 0);
           const newAtkHP = Number(newAttackerState?.hp) || 0;
           healDelta = Math.max(0, newAtkHP - prevAtkHP);
         }
 
-        const prevDefShield = currentState.characterStates?.[targetId]?.shield || 0;
+        const prevDefShield = state.characterStates?.[defenderKey]?.shield ?? state.characterStates?.[targetId]?.shield ?? defenderChar?.shield ?? 0;
         const newDefShield = newDefenderState?.shield || 0;
         const shieldDelta = newDefShield - prevDefShield;
 
-        const prevAtkShield = currentState.characterStates?.[actorId]?.shield || 0;
+        const prevAtkShield = state.characterStates?.[attackerKey]?.shield ?? state.characterStates?.[actorId]?.shield ?? attackerChar?.shield ?? 0;
         const newAtkShield = newAttackerState?.shield || 0;
         const atkShieldDelta = newAtkShield - prevAtkShield;
 
-        const prevDefPoison = currentState.characterStates?.[targetId]?.poisonCount || 0;
+        const prevDefPoison = state.characterStates?.[defenderKey]?.poisonCount ?? state.characterStates?.[targetId]?.poisonCount ?? 0;
         const newDefPoison = newDefenderState?.poisonCount || 0;
         const poisonDelta = newDefPoison - prevDefPoison;
 
-        const prevDefBurn = currentState.characterStates?.[targetId]?.burnCount || 0;
+        const prevDefBurn = state.characterStates?.[defenderKey]?.burnCount ?? state.characterStates?.[targetId]?.burnCount ?? 0;
         const newDefBurn = newDefenderState?.burnCount || 0;
         const burnDelta = newDefBurn - prevDefBurn;
 
-        const prevDefSleep = currentState.characterStates?.[targetId]?.sleepTurns || 0;
+        const prevDefSleep = state.characterStates?.[defenderKey]?.sleepTurns ?? state.characterStates?.[targetId]?.sleepTurns ?? 0;
         const newDefSleep = newDefenderState?.sleepTurns || 0;
         const sleepDelta = newDefSleep - prevDefSleep;
 
@@ -3163,10 +3172,10 @@ export default function KontrolaArena() {
           triggerXChange = {
             xChangeType: playedCardName.includes('FULL') ? 'FULL' : 'X1',
             actorId,
-            targetId: (targetId && targetId !== 'ALL') ? targetId : (opponents[0] || Object.keys(currentState.hands || {}).find(p => p !== actorId)),
+            targetId: (targetId && targetId !== 'ALL') ? targetId : (opponents[0] || Object.keys(state.hands || {}).find(p => p !== actorId)),
             defenderName: defenderChar?.name || 'Opponent',
             attackerHand: availableAttackerHand,
-            defenderHand: (targetId && targetId !== 'ALL') ? newDefenderHand : (currentState.hands?.[opponents[0]] || newDefenderHand || [])
+            defenderHand: (targetId && targetId !== 'ALL') ? newDefenderHand : (state.hands?.[opponents[0]] || newDefenderHand || [])
           };
         }
 
@@ -3257,9 +3266,9 @@ export default function KontrolaArena() {
         // ===== CRYSTAL SPLIT TRIGGER =====
         // If 3+ players and 2+ attackers involved, trigger crystal split negotiation
         const defenderStillDefeated = newDefenderState?.isDefeated === true;
-        const playersCount = currentState.players?.length || 0;
-        const livingPlayerIds = currentState.players.filter(
-          (pId) => pId !== targetId && !currentState.characterStates[pId]?.isDefeated
+        const playersCount = state.players?.length || 0;
+        const livingPlayerIds = (state.players || []).filter(
+          (pId) => pId !== targetId && !state.characterStates?.[pId]?.isDefeated
         );
         const hasMultipleAttackers = livingPlayerIds.length >= 2; // At least 2 living players besides defender
 
@@ -3267,11 +3276,11 @@ export default function KontrolaArena() {
           // Build list of attackers (all living players except the defender)
           const attackersList = livingPlayerIds.map(pId => ({
             id: pId,
-            name: currentState.characterStates[pId]?.name || 'Unknown',
-            hp: currentState.characterStates[pId]?.hp || 0,
-            crystals: currentState.characterStates[pId]?.crystals || 0,
-            energyTokens: currentState.characterStates[pId]?.energyTokens || 0,
-            actionCardsHand: currentState.hands?.[pId] || [],
+            name: state.characterStates?.[pId]?.name || 'Unknown',
+            hp: state.characterStates?.[pId]?.hp || 0,
+            crystals: state.characterStates?.[pId]?.crystals || 0,
+            energyTokens: state.characterStates?.[pId]?.energyTokens || 0,
+            actionCardsHand: state.hands?.[pId] || [],
             isDefeated: false
           }));
 
@@ -3652,15 +3661,22 @@ export default function KontrolaArena() {
       setIsProcessingAction(false); // Instantly unlock host actions
       if (matchWinner) {
         setWinner(matchWinner);
-        soundFX.init();
-        if (matchWinner.playerId === playerIdRef.current) {
-          soundFX.playVictory();
-        } else {
-          soundFX.playDefeat();
-        }
+        try {
+          soundFX.init?.();
+          if (matchWinner.playerId === playerIdRef.current) {
+            soundFX.playVictory?.();
+          } else {
+            soundFX.playDefeat?.();
+          }
+        } catch { }
       }
       return nextState;
-    });
+    } catch (err) {
+      console.error('[executeActionResolution] Uncaught error during resolution:', err);
+      setIsProcessingAction(false);
+      return currentState;
+    }
+  });
   };
 
   // ==========================================
@@ -9017,8 +9033,14 @@ export default function KontrolaArena() {
             <KontrolaDiceRoller
               combatData={{
                 ...activeCombat,
-                attacker: gameState?.characterStates?.[activeCombat.actorId || activeCombat.attackerPlayerId] || activeCombat.attacker,
-                defender: (activeCombat.targetId && activeCombat.targetId !== 'ALL' ? gameState?.characterStates?.[activeCombat.targetId] : null) || gameState?.characterStates?.[activeCombat.defenderPlayerId] || activeCombat.defender
+                attacker: gameState?.characterStates?.[activeCombat.actorId]
+                  || gameState?.characterStates?.[activeCombat.attackerPlayerId]
+                  || Object.values(gameState?.characterStates || {}).find(c => c.id === activeCombat.actorId || c.characterId === activeCombat.actorId || c.playerId === activeCombat.actorId || c.name === activeCombat.attackerPlayerName)
+                  || activeCombat.attacker,
+                defender: (activeCombat.targetId && activeCombat.targetId !== 'ALL' ? gameState?.characterStates?.[activeCombat.targetId] : null)
+                  || gameState?.characterStates?.[activeCombat.defenderPlayerId]
+                  || Object.values(gameState?.characterStates || {}).find(c => c.id === activeCombat.targetId || c.characterId === activeCombat.targetId || c.playerId === activeCombat.targetId || c.name === activeCombat.defenderPlayerName)
+                  || activeCombat.defender
               }}
               precalculatedRolls={activeCombat.precalculatedRolls}
               isAttacker={activeCombat.attackerPlayerId === playerId}
