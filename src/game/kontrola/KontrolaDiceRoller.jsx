@@ -375,7 +375,7 @@ export default function KontrolaDiceRoller({
       const rawWeakness = typeof defChar?.weakness === 'string'
         ? defChar.weakness
         : (defChar?.weakness?.type || '');
-      const defWeakness = rawWeakness.toLowerCase();
+      const defWeakness = String(rawWeakness || '').toLowerCase();
       const isZombieDef = Boolean(defChar?.isZombie || (defChar?.poisonCount >= 5) || (defChar?.poisonCards >= 5));
       const isPoisonWeakness = hasPoisonWeakness(defChar);
       const isFireWeakness = isZombieDef || defWeakness.includes('fire') || ['shroomy', 'queeny'].some(k => defCharKey.includes(k));
