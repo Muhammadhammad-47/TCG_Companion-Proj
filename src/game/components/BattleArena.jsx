@@ -206,7 +206,7 @@ export default function BattleArena({
     const victim = gameState.players.find(p =>
       (p.hp <= 0 || p.isDefeated) &&
       !p.reviveHandled &&
-      (p.actionCardsHand || []).some(c => (c.name || c.title || c.id || '').toUpperCase().includes('REVIVE'))
+      (p.actionCardsHand || []).some(c => (c?.name || c?.title || c?.id || '').toUpperCase().includes('REVIVE'))
     );
 
     if (victim && !showReviveModal) {
@@ -338,7 +338,7 @@ export default function BattleArena({
     const updatedPlayers = (gameState.players || []).map(p => {
       if (p.id === reviveModalData.playerId) {
         // Discard the REVIVE card
-        let newHand = (p.actionCardsHand || []).filter(c => !(c.name || '').toUpperCase().includes('REVIVE'));
+        let newHand = (p.actionCardsHand || []).filter(c => !(c?.name || c?.title || c?.id || '').toUpperCase().includes('REVIVE'));
         // The original Action card will re-appear (draw replacement from deck)
         newHand.push(...drawRandomCards(1));
 
@@ -1017,7 +1017,7 @@ export default function BattleArena({
     const anyDefeatedHoldsRevive = finalPlayers.some(p =>
       (p.hp <= 0 || p.isDefeated) &&
       !p.reviveHandled &&
-      (p.actionCardsHand || []).some(c => (c.name || c.title || c.id || '').toUpperCase().includes('REVIVE'))
+      (p.actionCardsHand || []).some(c => (c?.name || c?.title || c?.id || '').toUpperCase().includes('REVIVE'))
     );
 
     if (crystalWinner && !anyDefeatedHoldsRevive) {

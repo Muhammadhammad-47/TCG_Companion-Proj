@@ -2337,16 +2337,23 @@ export default function KontrolaArena() {
 
       if (payload.actionType === 'DECLINE_REVIVE') {
         const victimId = payload.victimId;
-        const livingPlayers = (currentState.players || []).filter(pId => !currentState.characterStates?.[pId]?.isDefeated && pId !== victimId);
+        const victimChar = currentState.characterStates?.[victimId]
+          || Object.values(currentState.characterStates || {}).find(c => c.id === victimId || c.playerId === victimId || c.name === victimId);
+        const effectiveVictimId = victimChar?.playerId || Object.keys(currentState.characterStates || {}).find(k => currentState.characterStates[k] === victimChar) || victimId;
+        const livingPlayers = (currentState.players || []).filter(pId => {
+          const char = currentState.characterStates?.[pId];
+          return !char?.isDefeated && pId !== victimId && pId !== effectiveVictimId && char?.id !== victimId;
+        });
         let nextTurn = currentState.turn;
         let matchWinner = currentState.winner || null;
         if (livingPlayers.length === 1) {
           matchWinner = currentState.characterStates?.[livingPlayers[0]] ? { ...currentState.characterStates[livingPlayers[0]], playerId: livingPlayers[0] } : null;
-        } else if (livingPlayers.length > 1 && currentState.turn === victimId) {
+        } else if (livingPlayers.length > 1 && (currentState.turn === victimId || currentState.turn === effectiveVictimId)) {
           const pList = currentState.players || [];
-          const currentIdx = pList.indexOf(victimId);
+          const currentIdx = pList.indexOf(effectiveVictimId);
+          const validIdx = currentIdx !== -1 ? currentIdx : pList.indexOf(victimId);
           const step = state.turnDirection === 'counter' ? -1 : 1;
-          let nextIdx = (currentIdx + step) % pList.length;
+          let nextIdx = (validIdx + step) % pList.length;
           if (nextIdx < 0) nextIdx += pList.length;
           let attempts = 0;
           while (currentState.characterStates?.[pList[nextIdx]]?.isDefeated && attempts < pList.length) {
@@ -2358,20 +2365,23 @@ export default function KontrolaArena() {
         }
 
         const updatedCharStates = { ...currentState.characterStates };
-        if (updatedCharStates[victimId]) {
-          updatedCharStates[victimId] = {
-            ...updatedCharStates[victimId],
-            isDefeated: true,
-            hp: 0
-          };
-        }
+        const keysToUpdate = [victimId, effectiveVictimId, victimChar?.id].filter(Boolean);
+        keysToUpdate.forEach(k => {
+          if (updatedCharStates[k]) {
+            updatedCharStates[k] = {
+              ...updatedCharStates[k],
+              isDefeated: true,
+              hp: 0
+            };
+          }
+        });
 
         const nextState = {
           ...currentState,
           characterStates: updatedCharStates,
           turn: nextTurn,
           winner: matchWinner,
-          logs: [`💀 ${currentState.characterStates?.[victimId]?.name || 'Player'} opted to quit and was eliminated!`, ...(currentState.logs || [])]
+          logs: [`💀 ${victimChar?.name || currentState.characterStates?.[victimId]?.name || 'Player'} opted to quit and was eliminated!`, ...(currentState.logs || [])]
         };
         broadcastState(matchIdRef.current, nextState);
         return nextState;
