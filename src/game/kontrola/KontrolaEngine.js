@@ -2054,6 +2054,9 @@ export const createExileRelationship = (providerState, exileState, relType = 'IN
         relationshipType: 'SERVANT',
         relationshipPartnerId: exile.id,
         relationshipRole: 'MASTER',
+        isMaster: true,
+        isServant: false,
+        servantId: exile.id,
         canTradeWithAlliance: true
       },
       exile: {
@@ -2062,6 +2065,9 @@ export const createExileRelationship = (providerState, exileState, relType = 'IN
         relationshipType: 'SERVANT',
         relationshipPartnerId: provider.id,
         relationshipRole: 'SLAVE',
+        isServant: true,
+        isMaster: false,
+        masterId: provider.id,
         canTradeWithAlliance: true,
         activeTask: options.task || 'Defend or attack targets commanded by Master',
         taskReward: options.reward || '+1 Energy Token on turn start'
@@ -2079,6 +2085,7 @@ export const createExileRelationship = (providerState, exileState, relType = 'IN
         relationshipRole: 'EMPLOYER',
         canTradeWithAlliance: true,
         contractTurns: 3,
+        mercenaryTurnsRemaining: 3,
         escrowBounty: options.bounty || { et: 2 }
       },
       exile: {
@@ -2089,6 +2096,7 @@ export const createExileRelationship = (providerState, exileState, relType = 'IN
         relationshipRole: 'MERCENARY',
         canTradeWithAlliance: true,
         contractTurns: 3,
+        mercenaryTurnsRemaining: 3,
         contractTask: options.task || 'Contract active: 3 turns',
         escrowBounty: options.bounty || { et: 2 }
       }

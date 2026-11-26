@@ -2474,7 +2474,21 @@ export default function KontrolaArena() {
         const exileChar = currentState.characterStates?.[exileId];
         if (!providerChar || !exileChar) return currentState;
 
-        const { updatedProvider, updatedExile } = createExileRelationship(providerChar, exileChar, relType, options);
+        const relResult = createExileRelationship(providerChar, exileChar, relType, options);
+        const updatedProvider = {
+          ...(relResult.updatedProvider || relResult.provider || providerChar),
+          relationshipPartnerId: exileId,
+          allianceId: relType === 'INDEPENDENT' ? null : exileId,
+          ...(relType === 'SERVANT' ? { isMaster: true, servantId: exileId } : { isMaster: false }),
+          ...(relType === 'MERCENARY' ? { mercenaryTurnsRemaining: 3 } : {})
+        };
+        const updatedExile = {
+          ...(relResult.updatedExile || relResult.exile || exileChar),
+          relationshipPartnerId: providerId,
+          allianceId: relType === 'INDEPENDENT' ? null : providerId,
+          ...(relType === 'SERVANT' ? { isServant: true, masterId: providerId } : { isServant: false }),
+          ...(relType === 'MERCENARY' ? { mercenaryTurnsRemaining: 3 } : {})
+        };
 
         const nextState = {
           ...currentState,
