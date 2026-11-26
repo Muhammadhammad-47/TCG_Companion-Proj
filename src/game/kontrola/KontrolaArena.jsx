@@ -1184,6 +1184,12 @@ export default function KontrolaArena() {
         // 2. Full State Sync
         else if (event.type === 'SYNC_STATE') {
           const newState = event.payload;
+          // Host is authoritative once match state exists; ignore own WebSocket echo (self: true)
+          // so delayed echoes never overwrite newer local state transitions.
+          if (isHostRef.current && gameStateRef.current && newState?.status === gameStateRef.current?.status && (newState?.turnNumber || 0) <= (gameStateRef.current?.turnNumber || 0)) {
+            setIsProcessingAction(false);
+            return;
+          }
           setGameState(newState);
           gameStateRef.current = newState;
           pendingStateRef.current = newState;
@@ -3100,6 +3106,7 @@ export default function KontrolaArena() {
       let pendingAttackX2For = state.pendingAttackX2For || null;
       let nextTurnPlayerId = attackerKey || effectiveActorId;
       let updatedStates = { ...state.characterStates };
+      let updatedHands = { ...(state.hands || {}) };
       let newDefenderHand = defenderChar ? [
         ...(
           state.hands?.[defenderKey] ||
@@ -3136,11 +3143,12 @@ export default function KontrolaArena() {
             energyTokens: (currentState.characterStates[actorId]?.energyTokens || 0)  // keep original, cost not yet written
           };
           const tieState = {
-            ...currentState,
+            ...state,
             logs: tieLogs,
             // keep characterStates untouched � ET cost not applied on tie
           };
           pendingStateRef.current = tieState;
+          gameStateRef.current = tieState;
           broadcastState(matchIdRef.current, tieState);
           return tieState;
         }
@@ -3377,6 +3385,23 @@ export default function KontrolaArena() {
         newDefenderHand.pop();
       }
 
+      // Build updatedHands BEFORE defeat/revive checks so AoE/Revive/Poison/Vampire lookups never hit TDZ
+      updatedHands = {
+        ...(state.hands || {}),
+        [attackerKey]: newHand
+      };
+      if (effectiveActorId && effectiveActorId !== attackerKey) {
+        updatedHands[effectiveActorId] = newHand;
+      }
+      if (defenderKey) {
+        updatedHands[defenderKey] = newDefenderHand;
+        if (effectiveTargetId && effectiveTargetId !== defenderKey && effectiveTargetId !== 'ALL') {
+          updatedHands[effectiveTargetId] = newDefenderHand;
+        }
+      } else if (defenderChar && effectiveTargetId !== 'ALL') {
+        updatedHands[effectiveTargetId] = newDefenderHand;
+      }
+
       // Check if target was defeated and reward Stability Crystal
       if (newDefenderState && newDefenderState.hp <= 0 && !newDefenderState.isDefeated) {
         newDefenderState.isDefeated = true;
@@ -3517,18 +3542,11 @@ export default function KontrolaArena() {
         return false;
       });
 
-      if (triggerRevivePrompt || anyDefeatedCanRevive) {
-        matchWinner = null; // Do NOT end match or declare winner while a player can still Revive!
-      } else if (livingPlayers.length <= 1) {
-        matchWinner = updatedStates[livingPlayers[0]] ? { ...updatedStates[livingPlayers[0]], playerId: livingPlayers[0] } : matchWinner;
-        nextTurnPlayerId = livingPlayers[0] || actorId;
-      }
-
       // Cards that should NEVER grant an extra turn regardless of resolved flags.
       // TIME MACHINE is type 'OTHERS' but is the sole exception � it explicitly grants an extra turn.
       // ATTACK X2 is type 'ATTACK' and handles its second-hit via triggerAttackX2SecondHit.
       const resolvedEndTurnCardType = getSafeCardType(actionCard);
-      const resolvedEndTurnCardName = getSafeCardName(actionCard);
+      const resolvedEndTurnCardName = getSafeCardName(actionCard).toUpperCase();
       const isStatusOrHealCard = Boolean(actionCard) &&
         ['STATUS', 'HEAL', 'OTHERS', 'TACTICAL', 'DEFENSE', 'SPECIAL'].includes(resolvedEndTurnCardType) &&
         resolvedEndTurnCardName !== 'TIME MACHINE';
@@ -3545,7 +3563,7 @@ export default function KontrolaArena() {
         nextTurnPlayerId = livingPlayers[0] || actorId;
       } else {
         // STATUS/HEAL/OTHERS/TACTICAL/DEFENSE cards must ALWAYS advance the turn � never stay on same player
-        const isAlreadySecondHit = state.pendingAttackX2For === actorId || (typeof actionCard === 'object' && actionCard?.id === 'attack_x2_2nd') || resolvedEndTurnCardName.includes('2ND HIT');
+        const isAlreadySecondHit = state.pendingAttackX2For === attackerKey || state.pendingAttackX2For === effectiveActorId || state.pendingAttackX2For === actorId || (typeof actionCard === 'object' && actionCard?.id === 'attack_x2_2nd') || resolvedEndTurnCardName.includes('2ND HIT');
         const triggerSecondHit = !isAlreadySecondHit && Boolean(resolved.triggerAttackX2SecondHit);
 
         let grantExtraTurn = false;
@@ -3764,22 +3782,24 @@ export default function KontrolaArena() {
         if (updatedStates[nextTurnPlayerId]) {
           updatedStates[nextTurnPlayerId].claimedTurnET = false;
         }
-      }
-
-      let updatedHands = {
-        ...(state.hands || {}),
-        [attackerKey]: newHand
-      };
-      if (effectiveActorId && effectiveActorId !== attackerKey) {
-        updatedHands[effectiveActorId] = newHand;
-      }
-      if (defenderKey) {
-        updatedHands[defenderKey] = newDefenderHand;
-        if (effectiveTargetId && effectiveTargetId !== defenderKey && effectiveTargetId !== 'ALL') {
-          updatedHands[effectiveTargetId] = newDefenderHand;
+      } else {
+        // PASS TURN / 60s auto-pass / Host skip: must still advance turn to next living player!
+        pendingAttackX2For = null;
+        const livingPlayers = (state.players || []).filter((pId) => !updatedStates[pId]?.isDefeated);
+        if (livingPlayers.length > 0) {
+          const attackerPlayerId = livingPlayers.includes(attackerKey)
+            ? attackerKey
+            : (livingPlayers.includes(effectiveActorId) ? effectiveActorId : (livingPlayers.includes(actorId) ? actorId : state.turn));
+          const currentIdx = livingPlayers.indexOf(attackerPlayerId);
+          const safeIdx = currentIdx >= 0 ? currentIdx : 0;
+          const step = state.turnDirection === 'counter' ? -1 : 1;
+          let nextIdx = (safeIdx + step) % livingPlayers.length;
+          if (nextIdx < 0) nextIdx += livingPlayers.length;
+          nextTurnPlayerId = livingPlayers[nextIdx] || livingPlayers[0];
+          if (updatedStates[nextTurnPlayerId]) {
+            updatedStates[nextTurnPlayerId].claimedTurnET = false;
+          }
         }
-      } else if (defenderChar && effectiveTargetId !== 'ALL') {
-        updatedHands[effectiveTargetId] = newDefenderHand;
       }
 
       // X-CHANGE is handled interactively via EXECUTE_XCHANGE modal
