@@ -3416,8 +3416,9 @@ export default function KontrolaArena() {
             updatedPlayers: { ...updatedStates }
           });
           setShowCrystalSplitModal(true);
-          // Pause combat resolution until crystal split completes
-          return;
+          setIsProcessingAction(false);
+          // Pause combat resolution until crystal split completes (must return state, never undefined!)
+          return state;
         }
       }
 
