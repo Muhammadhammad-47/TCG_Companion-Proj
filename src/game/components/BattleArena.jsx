@@ -390,9 +390,14 @@ export default function BattleArena({
       return p;
     });
 
+    const remainingLiving = updatedPlayers.filter(p => !p.isDefeated && (p.hp || 0) > 0);
+    const gameOverWinner = remainingLiving.length === 1 ? remainingLiving[0] : null;
+
     setGameState({
       ...gameState,
       players: updatedPlayers,
+      winner: gameOverWinner || gameState.winner,
+      phase: gameOverWinner ? 'game_over' : gameState.phase,
       lastActionLog: `💀 ${reviveModalData.playerName} chose to quit and was eliminated!`
     });
     setShowReviveModal(false);
@@ -984,10 +989,13 @@ export default function BattleArena({
         if (isDef) {
           return {
             ...p,
+            hp: 0,
+            isDefeated: true,
             crystals: Math.max(0, p.crystals - spoils),
             isSovereign: false,
             isExile: true,
-            canBeRevivedAsExile: true
+            canBeRevivedAsExile: true,
+            reviveHandled: false
           };
         }
         if (isAtk) {
@@ -1006,7 +1014,13 @@ export default function BattleArena({
       return p;
     });
 
-    if (crystalWinner) {
+    const anyDefeatedHoldsRevive = finalPlayers.some(p =>
+      (p.hp <= 0 || p.isDefeated) &&
+      !p.reviveHandled &&
+      (p.actionCardsHand || []).some(c => (c.name || c.title || c.id || '').toUpperCase().includes('REVIVE'))
+    );
+
+    if (crystalWinner && !anyDefeatedHoldsRevive) {
       setGameState({
         ...gameState,
         players: finalPlayers,

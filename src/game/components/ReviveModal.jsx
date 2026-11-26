@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Heart, X } from 'lucide-react';
 
 export default function ReviveModal({
@@ -9,17 +9,21 @@ export default function ReviveModal({
   onAccept,
   onReject
 }) {
-  const [countdown, setCountdown] = useState(10);
+  const [countdown, setCountdown] = useState(60);
+  const onRejectRef = useRef(onReject);
+  onRejectRef.current = onReject;
 
   useEffect(() => {
     if (!isOpen) return;
+
+    setCountdown(60);
 
     const timer = setInterval(() => {
       setCountdown(prev => {
         if (prev <= 1) {
           clearInterval(timer);
           // Auto-reject if timeout
-          onReject();
+          if (onRejectRef.current) onRejectRef.current();
           return 0;
         }
         return prev - 1;
@@ -27,7 +31,7 @@ export default function ReviveModal({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isOpen, onReject]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -104,7 +108,7 @@ export default function ReviveModal({
           display: flex;
           align-items: center;
           justify-content: center;
-          z-index: 10000;
+          z-index: 10000000;
           backdrop-filter: blur(6px);
         }
 
