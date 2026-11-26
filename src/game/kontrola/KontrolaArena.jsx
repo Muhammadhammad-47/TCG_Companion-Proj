@@ -1521,9 +1521,6 @@ export default function KontrolaArena() {
                 setTimeout(() => setIsScreenDimmed(false), 1200);
               }
 
-              if (dmgDealt > 0) spawnDamagePopup(`-${dmgDealt}`, false);
-              if (atkDmgDealt > 0) spawnDamagePopup(`-${atkDmgDealt}`, false);
-
             if (actionName && actionName.includes('FIRE FLAME')) {
               soundFX.playTimeout();
             } else if (actionName && actionName.includes('LIGHTNING')) {
@@ -1535,7 +1532,6 @@ export default function KontrolaArena() {
             }
           } else if (actionType === 'HEAL' || actionType === 'RESERVE_RECOVERY') {
             try { soundFX.init?.(); soundFX.playHeal?.(); } catch { }
-            if (healDelta > 0) spawnDamagePopup(`+${healDelta}`, true);
           } else if (actionType === 'DEFENSE') {
             try { soundFX.init?.(); soundFX.playMenuSelect?.(); } catch { }
           } else if (actionType === 'STATUS') {
