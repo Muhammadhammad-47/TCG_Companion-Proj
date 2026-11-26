@@ -1239,19 +1239,27 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
           log += ` 🧛 VAMPIRE LIFE STEAL hit! Stole ${stolenHp} HP and ${stolenEt} ET.`;
 
           // Apply 3-turn duration to defender for continued drain effect (not additional attacks)
-          newDefenderState.vampireStealStack = (newDefenderState.vampireStealStack || 0) + 1;
-          newDefenderState.vampireStealTurnsLeft = 3;
-          newDefenderState.vampireAttackerId = newAttackerState.id || attackerChar?.id || null;
-          newDefenderState.vampireStealActivated = true; // Flag to prevent multiple hits
-          log += ` 🧛 VAMPIRE effect applied for 3 turns! Attacker gains +10 HP/turn and +1 ET/turn.`;
+          if (newDefenderState.sacredProtection) {
+            log += ` ✨ SHIELD SACRED PROTECTION negated Vampire curse!`;
+          } else {
+            newDefenderState.vampireStealStack = (newDefenderState.vampireStealStack || 0) + 1;
+            newDefenderState.vampireStealTurnsLeft = 3;
+            newDefenderState.vampireAttackerId = newAttackerState.id || attackerChar?.id || null;
+            newDefenderState.vampireStealActivated = true; // Flag to prevent multiple hits
+            log += ` 🧛 VAMPIRE effect applied for 3 turns! Attacker gains +10 HP/turn and +1 ET/turn.`;
+          }
         }
         finalDamage = 0; // Handled directly above
       } else if (cardName === 'FIRE INFERNO LOCK') {
         // FIRE INFERNO LOCK: -20 HP, apply burn, spreads to neighbors
         if (newDefenderState) {
           finalDamage = 20;
-          newDefenderState.burnCount = (newDefenderState.burnCount || 0) + 1;
-          log += ` 🔥🔥 FIRE INFERNO LOCK! Deal 20 AP and applied burn status! Must roll doubles each turn to extinguish.`;
+          if (newDefenderState.sacredProtection) {
+            log += ` 🔥🔥 FIRE INFERNO LOCK dealt 20 AP (✨ SHIELD SACRED PROTECTION negated burn status!).`;
+          } else {
+            newDefenderState.burnCount = (newDefenderState.burnCount || 0) + 1;
+            log += ` 🔥🔥 FIRE INFERNO LOCK! Deal 20 AP and applied burn status! Must roll doubles each turn to extinguish.`;
+          }
         }
       }
 
@@ -1440,18 +1448,26 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
 
         // If Attacker was Zombie Venom Strike -> Defender gains 1 Poison Card
         if (isAttackerZombie && !isDefenderZombie) {
-          newDefenderState.poisonCount = (newDefenderState.poisonCount || 0) + 1;
-          newDefenderState.justPoisoned = true;
-          log += ` Venom Strike infected ${newDefenderState.name} with 1 Poison card!`;
+          if (newDefenderState.sacredProtection) {
+            log += ` ✨ SHIELD SACRED PROTECTION negated Venom Strike poison!`;
+          } else {
+            newDefenderState.poisonCount = (newDefenderState.poisonCount || 0) + 1;
+            newDefenderState.justPoisoned = true;
+            log += ` Venom Strike infected ${newDefenderState.name} with 1 Poison card!`;
+          }
         }
 
         // If attack was POISON X1 or POISON X2 -> Defender gains poison stacks & marked justPoisoned
         if (cardName.includes('POISON')) {
-          const isX2 = cardName.includes('X2');
-          const stacks = isX2 ? 2 : 1;
-          newDefenderState.poisonCount = (newDefenderState.poisonCount || 0) + stacks;
-          newDefenderState.justPoisoned = true;
-          log += ` ☠️ Poison strike infected ${newDefenderState.name} with ${stacks} Poison card(s)! Ongoing damage starts on their next turn.`;
+          if (newDefenderState.sacredProtection) {
+            log += ` ✨ SHIELD SACRED PROTECTION negated Poison status!`;
+          } else {
+            const isX2 = cardName.includes('X2');
+            const stacks = isX2 ? 2 : 1;
+            newDefenderState.poisonCount = (newDefenderState.poisonCount || 0) + stacks;
+            newDefenderState.justPoisoned = true;
+            log += ` ☠️ Poison strike infected ${newDefenderState.name} with ${stacks} Poison card(s)! Ongoing damage starts on their next turn.`;
+          }
         }
 
         // Apply Burn Status if Fire Flame X1 or X2 (only if not immune to Fire)
@@ -1561,8 +1577,12 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     const isShadowPurr = attackSelectionName && (attackSelectionName.toUpperCase().replace(/\s+/g, '').includes('SHADOWPURR') || attackSelectionName.trim().toUpperCase() === 'SP');
     if (isShadowPurr && atkWin && newDefenderState) {
       newAttackerState.hp = Math.min(newAttackerState.maxHp || 100, newAttackerState.hp + 20);
-      newDefenderState.sleepTurns = (newDefenderState.sleepTurns || 0) + 1;
-      log += ` 😻 SHADOW PURR! ${newAttackerState.name} restored +20 HP and ${newDefenderState.name}: You are Asleep (suffers Sleep X1, loses 1 turn)!`;
+      if (newDefenderState.sacredProtection) {
+        log += ` 😻 SHADOW PURR! ${newAttackerState.name} restored +20 HP (✨ SHIELD SACRED PROTECTION negated Sleep!).`;
+      } else {
+        newDefenderState.sleepTurns = (newDefenderState.sleepTurns || 0) + 1;
+        log += ` 😻 SHADOW PURR! ${newAttackerState.name} restored +20 HP and ${newDefenderState.name}: You are Asleep (suffers Sleep X1, loses 1 turn)!`;
+      }
     }
 
     // Bee's Pararazzi Stun: Defender is frozen (loses 1 turn, if and only if attack is successful)
@@ -1573,9 +1593,13 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       attackSelectionName.trim().toUpperCase() === 'PAPS'
     );
     if (isPararazziStun && atkWin && newDefenderState && !isShadowPurr) {
-      newDefenderState.isFrozen = true;
-      newDefenderState.freezeTurns = (newDefenderState.freezeTurns || 0) + 1;
-      log += ` 📸 PAPARAZZI STUN! ${newDefenderState.name}: You are frozen (loses their next turn)!`;
+      if (newDefenderState.sacredProtection) {
+        log += ` 📸 PAPARAZZI STUN! ✨ SHIELD SACRED PROTECTION negated Freeze/Stun!`;
+      } else {
+        newDefenderState.isFrozen = true;
+        newDefenderState.freezeTurns = (newDefenderState.freezeTurns || 0) + 1;
+        log += ` 📸 PAPARAZZI STUN! ${newDefenderState.name}: You are frozen (loses their next turn)!`;
+      }
     }
   }
   // 4. POISON CARDS (Official Rules: Initial damage: -10 HP from Poison X1 or -20 HP from Poison X2. Additional weakness penalty: -10 HP one-time on characters with Poison weakness: CHYNAMAN, Kiko, Poochi, Kat, Bee. Ongoing damage: -10 HP/turn on Poison X1 and -20 HP/turn on Poison X2 until treated with an Antidote Card. Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card.)
@@ -1585,12 +1609,15 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     const initialDamage = isX2 ? 20 : 10;
     const ongoingTurnDmg = isX2 ? 20 : 10;
     if (newDefenderState) {
-      newDefenderState.poisonCount = (newDefenderState.poisonCount || 0) + stacks;
-      newDefenderState.justPoisoned = true; // Mark target as just infected so ongoing damage begins on subsequent turn
-      const hasPoisonWeak = hasPoisonWeakness(newDefenderState);
-      const weaknessPenalty = hasPoisonWeak ? 10 : 0;
-      const totalInitialDamage = initialDamage + weaknessPenalty;
-      newDefenderState.hp = Math.max(0, newDefenderState.hp - totalInitialDamage);
+      if (newDefenderState.sacredProtection) {
+        log += ` ✨ SHIELD SACRED PROTECTION negated ${cardName} on ${newDefenderState.name}! (0 Poison stacks, status negated).`;
+      } else {
+        newDefenderState.poisonCount = (newDefenderState.poisonCount || 0) + stacks;
+        newDefenderState.justPoisoned = true; // Mark target as just infected so ongoing damage begins on subsequent turn
+        const hasPoisonWeak = hasPoisonWeakness(newDefenderState);
+        const weaknessPenalty = hasPoisonWeak ? 10 : 0;
+        const totalInitialDamage = initialDamage + weaknessPenalty;
+        newDefenderState.hp = Math.max(0, newDefenderState.hp - totalInitialDamage);
       if (newDefenderState.hp <= 0) {
         newDefenderState.isDefeated = true;
       }
@@ -1748,7 +1775,12 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       log += ` Fortified defense (+${bonus} temporary barrier).`;
     } else if (cardName.includes('100HP') || cardName.includes('ADVANCE') || cardName.includes('SACRED')) {
       newAttackerState.shield = (newAttackerState.shield || 0) + 100;
-      log += ` Advanced Sacred Shield Barrier Activated (+100 temporary barrier).`;
+      if (cardName.includes('SACRED')) {
+        newAttackerState.sacredProtection = true;
+        log += ` ✨ SHIELD SACRED PROTECTION Activated (+100 barrier & negates status effects for 1 turn).`;
+      } else {
+        log += ` Advanced Shield Barrier Activated (+100 temporary barrier).`;
+      }
     } else if (cardName.includes('50HP') || cardName.includes('FIRE') || cardName.includes('FULL GUARD')) {
       newAttackerState.shield = (newAttackerState.shield || 0) + 50;
       if (cardName.includes('FIRE')) newAttackerState.immuneFire = true;
@@ -1782,7 +1814,9 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
     const dicePenalty = isFreeze ? (cardName.includes('X2') ? 4 : 2) : 0;
 
     if (newDefenderState) {
-      if (isFreeze) {
+      if (newDefenderState.sacredProtection) {
+        log += ` ✨ SHIELD SACRED PROTECTION negated ${cardName} on ${newDefenderState.name}!`;
+      } else if (isFreeze) {
         newDefenderState.isFrozen = true;
         newDefenderState.freezeTurns = (newDefenderState.freezeTurns || 0) + sleepRounds;
         newDefenderState.dicePenalty = (newDefenderState.dicePenalty || 0) + dicePenalty;
@@ -1815,18 +1849,22 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
   // 10c. VAMPIRE LIFE STEAL (Steals 1 ET and 10 HP for 3 turns)
   else if (cardName === 'VAMPIRE LIFE STEAL') {
     if (newDefenderState) {
-      const stolenHp = Math.min(10, newDefenderState.hp);
-      const stolenEt = Math.min(1, newDefenderState.energyTokens || 0);
-      newDefenderState.hp = Math.max(0, newDefenderState.hp - stolenHp);
-      newDefenderState.energyTokens = Math.max(0, (newDefenderState.energyTokens || 0) - stolenEt);
-      newAttackerState.hp = Math.min(newAttackerState.maxHp || 100, (newAttackerState.hp || 0) + stolenHp);
-      newAttackerState.energyTokens = Math.min(10, (newAttackerState.energyTokens || 0) + stolenEt);
+      if (newDefenderState.sacredProtection) {
+        log += ` ✨ SHIELD SACRED PROTECTION negated VAMPIRE LIFE STEAL curse on ${newDefenderState.name}!`;
+      } else {
+        const stolenHp = Math.min(10, newDefenderState.hp);
+        const stolenEt = Math.min(1, newDefenderState.energyTokens || 0);
+        newDefenderState.hp = Math.max(0, newDefenderState.hp - stolenHp);
+        newDefenderState.energyTokens = Math.max(0, (newDefenderState.energyTokens || 0) - stolenEt);
+        newAttackerState.hp = Math.min(newAttackerState.maxHp || 100, (newAttackerState.hp || 0) + stolenHp);
+        newAttackerState.energyTokens = Math.min(10, (newAttackerState.energyTokens || 0) + stolenEt);
 
-      newDefenderState.vampireStealStack = (newDefenderState.vampireStealStack || 0) + 1;
-      newDefenderState.vampireStealTurnsLeft = 3;
-      newDefenderState.vampireAttackerId = newAttackerState.id || attackerChar?.id || null;
-      newDefenderState.vampireStealActivated = true;
-      log += ` 🧛 VAMPIRE LIFE STEAL activated! Stole ${stolenHp} HP and ${stolenEt} ET. Curse applied for 3 turns (-10 HP, -1 ET/turn)!`;
+        newDefenderState.vampireStealStack = (newDefenderState.vampireStealStack || 0) + 1;
+        newDefenderState.vampireStealTurnsLeft = 3;
+        newDefenderState.vampireAttackerId = newAttackerState.id || attackerChar?.id || null;
+        newDefenderState.vampireStealActivated = true;
+        log += ` 🧛 VAMPIRE LIFE STEAL activated! Stole ${stolenHp} HP and ${stolenEt} ET. Curse applied for 3 turns (-10 HP, -1 ET/turn)!`;
+      }
     } else {
       log += ` 🧛 VAMPIRE LIFE STEAL played without target.`;
     }

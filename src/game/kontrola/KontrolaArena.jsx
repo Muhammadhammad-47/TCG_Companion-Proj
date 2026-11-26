@@ -3684,6 +3684,11 @@ export default function KontrolaArena() {
           }
         }
 
+        // SHIELD SACRED PROTECTION: clear 1-turn status immunity at the end of the protected player's turn (unless just played this turn)
+        if (!grantExtraTurn && updatedStates[actorId]?.sacredProtection && !resolvedEndTurnCardName.includes('SACRED')) {
+          updatedStates[actorId].sacredProtection = false;
+        }
+
         // Mechanics of Exiles: Mercenary contract expiration (3 turns)
         if (!grantExtraTurn && updatedStates[actorId]?.relationshipType === 'MERCENARY') {
           const rem = Math.max(0, (updatedStates[actorId].mercenaryTurnsRemaining || 3) - 1);
