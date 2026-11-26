@@ -423,11 +423,31 @@ export default function KontrolaDiceRoller({
       const totalOffensiveAP = baseAP + weaknessBonus;
       const defRolled6 = defSum === 6;
       const isPoisonOrMagicPoison = isPoisonCard || isMagicAndPoisonAtk;
+      const isFireAttack = (attackElem && attackElem.toLowerCase().includes('fire')) || cardNameUpper.includes('FIRE') || attackNameUpper.includes('FIRE');
+      const isBasicShieldActive = Boolean(defChar?.hasBasicShield || (activeDefenseCard && defCardName.includes('SHIELD') && (defCardName.includes('BASIC') || defCardName.includes('25'))));
       const innateDP = (defRolled6 && !activeDefenseCard && !isPoisonOrMagicPoison) ? 10 : 0;
       const minDamage = hasMultiplierDie ? (perAp || 4) : Math.min(totalOffensiveAP, 10);
       const damageAfterDP = Math.max(minDamage, totalOffensiveAP - innateDP);
-      const currentShield = defChar?.shield || 0;
-      const shieldAbsorbed = isPoisonOrMagicPoison ? 0 : Math.min(currentShield, damageAfterDP);
+      let pendingCardShield = 0;
+      if (activeDefenseCard) {
+        if (defCardName.includes('SHIELD')) {
+          if (defCardName.includes('100HP') || defCardName.includes('ADVANCE') || defCardName.includes('SACRED')) pendingCardShield = 100;
+          else if (defCardName.includes('50HP') || defCardName.includes('FIRE')) pendingCardShield = 50;
+          else if (defCardName.includes('25') || defCardName.includes('BASIC')) pendingCardShield = 25;
+          else if (defCardName.includes('20')) pendingCardShield = 20;
+          else pendingCardShield = 25;
+        } else if (defCardName.includes('FULL GUARD')) {
+          pendingCardShield = 50;
+        } else if (defCardName.includes('+DEFENCE') || defCardName.startsWith('+DEF') || defCardName.includes(' D20') || defCardName.includes(' D15') || defCardName.includes(' D10') || defCardName.includes(' D5')) {
+          if (defCardName.includes('D5')) pendingCardShield = 5;
+          else if (defCardName.includes('D10')) pendingCardShield = 10;
+          else if (defCardName.includes('D15')) pendingCardShield = 15;
+          else pendingCardShield = 20;
+        }
+      }
+      const currentShield = (defChar?.shield || 0) + pendingCardShield;
+      const shieldBypassed = isPoisonOrMagicPoison || (isBasicShieldActive && isFireAttack);
+      const shieldAbsorbed = shieldBypassed ? 0 : Math.min(currentShield, damageAfterDP);
       const netHPDamage = Math.max(0, damageAfterDP - shieldAbsorbed);
       const newDefenderHP = Math.max(0, (defChar?.hp ?? 100) - netHPDamage);
 

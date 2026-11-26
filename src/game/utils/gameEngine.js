@@ -388,7 +388,7 @@ export function resolveDiceCombat({
   let absorbedByShield = 0;
 
   // BACK STAB and Poison bypass shield
-  const isFire = (moveElement && moveElement.toLowerCase().includes('fire')) || (actionCard?.name || '').includes('FIRE');
+  const isFire = (moveElement && moveElement.toLowerCase().includes('fire')) || (actionCard?.name || '').toUpperCase().includes('FIRE') || (characterMove?.name || '').toUpperCase().includes('FIRE');
   const isPoison = isPoisonAttackCard;
   if (isBackStab || isPoison) {
     absorbedByShield = 0;

@@ -1244,6 +1244,9 @@ export default function BattleArena({
           logAmount = `+${reviveHP} HP (Revived)`;
         } else if (type === 'shield') {
           updated.shield = (updated.shield || 0) + (amount || 25);
+          if ((cardName || '').toUpperCase().includes('BASIC') || (actionCardId || '').toLowerCase().includes('basic') || (amount || 25) === 25) {
+            updated.hasBasicShield = true;
+          }
           soundFX.playEnergy();
           logText = `Deployed +${amount || 25} Shield barrier on ${updated.name}`;
           logAmount = `+${amount || 25} Shield`;

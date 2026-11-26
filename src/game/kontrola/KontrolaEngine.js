@@ -767,7 +767,9 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       newDefenderState.hasBoomerang = false;
       newDefenderState.hasDodge = false;
       newDefenderState.hasDefendBasic = false;
-      newDefenderState.hasBasicShield = false;
+      if ((newDefenderState.shield || 0) <= 0) {
+        newDefenderState.hasBasicShield = false;
+      }
       newDefenderState.hasMisdirect = false;
       newDefenderState.dodgeCardName = null;
       newDefenderState.flyerNoWeakness = false;
@@ -1380,7 +1382,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
       // 2. Shield Absorption: Absorbs penetrating damage before HP is reduced
       // Official Rule: "SHIELD BASIC + 25HP - Prevents all damage except poison and fire"
       let shieldAbsorbed = 0;
-      const isFireAttack = (attackElement && attackElement.toLowerCase().includes('fire')) || cardName.includes('FIRE');
+      const isFireAttack = (attackElement && attackElement.toLowerCase().includes('fire')) || cardName.includes('FIRE') || selectedUpper.includes('FIRE');
       const isPoisonAttack = isPoisonAttackCard;
       if (newDefenderState?.shield > 0 && finalDamage > 0) {
         if (newDefenderState.hasBasicShield && (isFireAttack || isPoisonAttack)) {
@@ -1390,6 +1392,9 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         } else {
           shieldAbsorbed = Math.min(newDefenderState.shield, finalDamage);
           newDefenderState.shield -= shieldAbsorbed;
+          if (newDefenderState.shield <= 0) {
+            newDefenderState.hasBasicShield = false;
+          }
           finalDamage -= shieldAbsorbed;
           log += ` 🛡️ Shield absorbed ${shieldAbsorbed} damage.`;
         }
