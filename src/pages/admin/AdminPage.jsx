@@ -15,6 +15,7 @@ import { knowledgeService, calculateGroqMetrics, GROQ_LIMITS } from '../../servi
 import { economyService } from '../../services/economyService';
 import { musicService } from '../../services/musicService';
 import { bugReportService } from '../../services/bugReportService';
+import { matchConsoleLogService } from '../../services/matchConsoleLogService';
 import { supportService } from '../../services/supportService';
 import AdminSupportPanel from '../../components/AdminSupportPanel';
 import AdminTournamentManager from '../../components/AdminTournamentManager';
@@ -58,6 +59,13 @@ export default function AdminPage() {
   // Match History
   const [matchHistory, setMatchHistory] = useState([]);
   const [isMatchesLoading, setIsMatchesLoading] = useState(false);
+  const [matchLogsByRoom, setMatchLogsByRoom] = useState({});
+  const [selectedMatchLogRoom, setSelectedMatchLogRoom] = useState(null);
+  const [selectedMatchLogRows, setSelectedMatchLogRows] = useState([]);
+  const [isMatchLogsLoading, setIsMatchLogsLoading] = useState(false);
+  const [activeLogPlayerFilter, setActiveLogPlayerFilter] = useState('ALL');
+  const [activeLogLevelFilter, setActiveLogLevelFilter] = useState('ALL');
+  const [copiedMatchLogs, setCopiedMatchLogs] = useState(false);
 
   // Document-based Knowledge Base (Master: public/Knowledge Base/AI_Breakdowns.txt + Custom Documents)
   const [documents, setDocuments] = useState([]);
@@ -294,12 +302,79 @@ export default function AdminPage() {
   const loadMatches = async () => {
     setIsMatchesLoading(true);
     try {
-      const data = await authService.fetchMatchHistory(50);
-      setMatchHistory(data || []);
+      const [data, logRows] = await Promise.all([
+        authService.fetchMatchHistory(50),
+        matchConsoleLogService.fetchAllMatchLogRows(250)
+      ]);
+
+      const grouped = {};
+      (logRows || []).forEach((row) => {
+        if (!row?.room_code) return;
+        if (!grouped[row.room_code]) grouped[row.room_code] = [];
+        grouped[row.room_code].push(row);
+      });
+      setMatchLogsByRoom(grouped);
+
+      const matchesList = [...(data || [])];
+      const existingRooms = new Set(matchesList.map((m) => m.room_code).filter(Boolean));
+      Object.entries(grouped).forEach(([roomCode, rows]) => {
+        if (!existingRooms.has(roomCode)) {
+          const latestTs = rows.reduce((max, r) => (r.updated_at > max ? r.updated_at : max), rows[0]?.updated_at || new Date().toISOString());
+          matchesList.push({
+            id: `log_${roomCode}`,
+            room_code: roomCode,
+            game_mode: 'kontrola',
+            winner_name: 'In Progress / Unfinished',
+            player_names: rows.map((r) => r.player_name || r.player_id),
+            crystals_awarded: 0,
+            created_at: latestTs,
+            isLogOnly: true
+          });
+        }
+      });
+      matchesList.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      setMatchHistory(matchesList);
     } catch (e) {
       console.warn('Failed loading matches:', e);
     } finally {
       setIsMatchesLoading(false);
+    }
+  };
+
+  const openMatchLogModal = async (roomCode) => {
+    if (!roomCode) return;
+    setSelectedMatchLogRoom(roomCode);
+    setActiveLogPlayerFilter('ALL');
+    setActiveLogLevelFilter('ALL');
+    setCopiedMatchLogs(false);
+    setIsMatchLogsLoading(true);
+    try {
+      const rows = await matchConsoleLogService.fetchMatchLogsByRoom(roomCode);
+      setSelectedMatchLogRows(rows || matchLogsByRoom[roomCode] || []);
+    } catch {
+      setSelectedMatchLogRows(matchLogsByRoom[roomCode] || []);
+    } finally {
+      setIsMatchLogsLoading(false);
+    }
+  };
+
+  const handleCopyAllMatchLogs = async () => {
+    if (!selectedMatchLogRoom) return;
+    const text = matchConsoleLogService.formatLogsForCopy(selectedMatchLogRoom, selectedMatchLogRows);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedMatchLogs(true);
+      setTimeout(() => setCopiedMatchLogs(false), 2500);
+    } catch {
+      // Fallback for non-HTTPS or restricted clipboard
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      setCopiedMatchLogs(true);
+      setTimeout(() => setCopiedMatchLogs(false), 2500);
     }
   };
 
@@ -1697,13 +1772,14 @@ export default function AdminPage() {
                   </div>
 
                   <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', overflow: 'hidden' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 2fr 2fr 1fr', padding: '10px 16px', background: 'var(--bg-deep)', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', fontSize: '0.74rem', color: 'rgba(255,255,255,0.7)', fontWeight: 'bold', letterSpacing: '1px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 0.9fr 1.6fr 1.8fr 0.8fr 1.1fr', padding: '10px 16px', background: 'var(--bg-deep)', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', fontSize: '0.74rem', color: 'rgba(255,255,255,0.7)', fontWeight: 'bold', letterSpacing: '1px' }}>
                       <span>DATE & TIME</span>
                       <span>ROOM</span>
                       <span>MODE</span>
-                      <span>?? WINNER</span>
+                      <span>🏆 WINNER</span>
                       <span>PLAYERS</span>
                       <span style={{ textAlign: 'right' }}>AWARDED</span>
+                      <span style={{ textAlign: 'right' }}>CONSOLE LOGS</span>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -1712,47 +1788,262 @@ export default function AdminPage() {
                           No matches recorded yet. Completed duels in Kontrola Arena will automatically populate here!
                         </div>
                       ) : (
-                        matchHistory.map((m) => (
-                          <div
-                            key={m.id}
-                            className="data-row"
-                            style={{
-                              display: 'grid',
-                              gridTemplateColumns: '1.5fr 1fr 1fr 2fr 2fr 1fr',
-                              alignItems: 'center',
-                              padding: '10px 16px',
-                              borderBottom: '1px solid rgba(255,255,255,0.06)',
-                              fontSize: '0.82rem'
-                            }}
-                          >
-                            <span style={{ color: '#CBD5E1', fontSize: '0.78rem' }}>
-                              {new Date(m.created_at).toLocaleString()}
-                            </span>
-                            <span style={{ color: 'var(--neon-gold, #FBC80D)', fontFamily: 'monospace', fontWeight: 'bold' }}>
-                              {m.room_code || 'ARENA'}
-                            </span>
-                            <span>
-                              <span style={{ background: 'rgba(251, 200, 13, 0.1)', color: 'var(--neon-gold, #FBC80D)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', textTransform: 'uppercase' }}>
-                                {m.game_mode || 'kontrola'}
+                        matchHistory.map((m) => {
+                          const logCount = (matchLogsByRoom[m.room_code] || []).length;
+                          return (
+                            <div
+                              key={m.id}
+                              className="data-row"
+                              onClick={() => openMatchLogModal(m.room_code)}
+                              style={{
+                                display: 'grid',
+                                gridTemplateColumns: '1.4fr 1fr 0.9fr 1.6fr 1.8fr 0.8fr 1.1fr',
+                                alignItems: 'center',
+                                padding: '10px 16px',
+                                borderBottom: '1px solid rgba(255,255,255,0.06)',
+                                fontSize: '0.82rem',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <span style={{ color: '#CBD5E1', fontSize: '0.78rem' }}>
+                                {new Date(m.created_at).toLocaleString()}
                               </span>
-                            </span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <Crown size={14} color="var(--neon-gold, #FBC80D)" />
-                              <strong style={{ color: 'var(--neon-gold, #FBC80D)', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', fontSize: '0.92rem' }}>
-                                {m.winner_name || 'Unknown / Draw'}
-                              </strong>
+                              <span style={{ color: 'var(--neon-gold, #FBC80D)', fontFamily: 'monospace', fontWeight: 'bold' }}>
+                                {m.room_code || 'ARENA'}
+                              </span>
+                              <span>
+                                <span style={{ background: 'rgba(251, 200, 13, 0.1)', color: 'var(--neon-gold, #FBC80D)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', textTransform: 'uppercase' }}>
+                                  {m.game_mode || 'kontrola'}
+                                </span>
+                              </span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <Crown size={14} color="var(--neon-gold, #FBC80D)" />
+                                <strong style={{ color: m.isLogOnly ? '#94a3b8' : 'var(--neon-gold, #FBC80D)', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', fontSize: '0.92rem' }}>
+                                  {m.winner_name || 'Unknown / Draw'}
+                                </strong>
+                              </div>
+                              <span style={{ color: '#cbd5e1', fontSize: '0.78rem' }}>
+                                {Array.isArray(m.player_names) && m.player_names.length > 0 ? m.player_names.filter(Boolean).join(' vs ') : '2 Players'}
+                              </span>
+                              <span style={{ textAlign: 'right', fontWeight: 'bold', color: '#39ff14' }}>
+                                {m.isLogOnly ? '—' : `+${m.crystals_awarded || 1} 💎`}
+                              </span>
+                              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openMatchLogModal(m.room_code);
+                                  }}
+                                  style={{
+                                    background: logCount > 0 ? 'rgba(0, 240, 255, 0.14)' : 'rgba(255, 255, 255, 0.06)',
+                                    border: logCount > 0 ? '1px solid rgba(0, 240, 255, 0.45)' : '1px solid rgba(255, 255, 255, 0.15)',
+                                    color: logCount > 0 ? '#00f0ff' : 'rgba(255,255,255,0.65)',
+                                    padding: '4px 10px',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    fontSize: '0.72rem',
+                                    fontWeight: 'bold',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '5px'
+                                  }}
+                                >
+                                  <FileText size={12} />
+                                  <span>{logCount > 0 ? `LOGS (${logCount})` : 'OPEN LOGS'}</span>
+                                </button>
+                              </div>
                             </div>
-                            <span style={{ color: '#cbd5e1', fontSize: '0.78rem' }}>
-                              {Array.isArray(m.player_names) && m.player_names.length > 0 ? m.player_names.filter(Boolean).join(' vs ') : '2 Players'}
-                            </span>
-                            <span style={{ textAlign: 'right', fontWeight: 'bold', color: '#39ff14' }}>
-                              +{m.crystals_awarded || 1} ??
-                            </span>
-                          </div>
-                        ))
+                          );
+                        })
                       )}
                     </div>
                   </div>
+
+                  {/* Match Console Logs Modal */}
+                  {selectedMatchLogRoom && (
+                    <div
+                      onClick={() => setSelectedMatchLogRoom(null)}
+                      style={{
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgba(0, 0, 0, 0.82)',
+                        zIndex: 9999,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '20px'
+                      }}
+                    >
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          width: 'min(980px, 96vw)',
+                          maxHeight: '86vh',
+                          background: '#0d111a',
+                          border: '1px solid rgba(0, 240, 255, 0.35)',
+                          borderRadius: '14px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          overflow: 'hidden',
+                          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.7)'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 18px', borderBottom: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0, 240, 255, 0.05)' }}>
+                          <div>
+                            <div style={{ fontSize: '1.05rem', fontWeight: '900', color: '#fff', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', letterSpacing: '1px' }}>
+                              MATCH CONSOLE LOGS — <span style={{ color: 'var(--neon-gold, #FBC80D)', fontFamily: 'monospace' }}>{selectedMatchLogRoom}</span>
+                            </div>
+                            <div style={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.6)' }}>
+                              {selectedMatchLogRows.length} player(s) recorded
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <button
+                              onClick={handleCopyAllMatchLogs}
+                              title="Play / Copy all players' console logs"
+                              style={{
+                                background: copiedMatchLogs ? '#39ff14' : 'linear-gradient(135deg, #00f0ff, #0088ff)',
+                                color: '#000',
+                                border: 'none',
+                                padding: '8px 14px',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                fontWeight: '900',
+                                fontSize: '0.78rem',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                              }}
+                            >
+                              {copiedMatchLogs ? <Check size={14} /> : <Play size={14} fill="currentColor" />}
+                              <span>{copiedMatchLogs ? 'ALL LOGS COPIED!' : 'COPY ALL LOGS'}</span>
+                            </button>
+                            <button
+                              onClick={() => setSelectedMatchLogRoom(null)}
+                              style={{
+                                background: 'rgba(255,255,255,0.08)',
+                                border: '1px solid rgba(255,255,255,0.2)',
+                                color: '#fff',
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Player & Level Filters */}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: '8px', padding: '10px 18px', borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
+                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                            <button
+                              onClick={() => setActiveLogPlayerFilter('ALL')}
+                              style={{
+                                padding: '4px 10px',
+                                borderRadius: '6px',
+                                fontSize: '0.74rem',
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                                background: activeLogPlayerFilter === 'ALL' ? 'rgba(0, 240, 255, 0.2)' : 'rgba(255,255,255,0.05)',
+                                border: activeLogPlayerFilter === 'ALL' ? '1px solid #00f0ff' : '1px solid rgba(255,255,255,0.12)',
+                                color: activeLogPlayerFilter === 'ALL' ? '#00f0ff' : '#cbd5e1'
+                              }}
+                            >
+                              ALL PLAYERS
+                            </button>
+                            {selectedMatchLogRows.map((row) => (
+                              <button
+                                key={row.player_id}
+                                onClick={() => setActiveLogPlayerFilter(row.player_id)}
+                                style={{
+                                  padding: '4px 10px',
+                                  borderRadius: '6px',
+                                  fontSize: '0.74rem',
+                                  fontWeight: 'bold',
+                                  cursor: 'pointer',
+                                  background: activeLogPlayerFilter === row.player_id ? 'rgba(251, 200, 13, 0.2)' : 'rgba(255,255,255,0.05)',
+                                  border: activeLogPlayerFilter === row.player_id ? '1px solid #FBC80D' : '1px solid rgba(255,255,255,0.12)',
+                                  color: activeLogPlayerFilter === row.player_id ? '#FBC80D' : '#cbd5e1'
+                                }}
+                              >
+                                [{row.role || 'PLAYER'}] {row.player_name || row.player_id} ({(row.logs || []).length})
+                              </button>
+                            ))}
+                          </div>
+
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            {['ALL', 'ERROR', 'WARN', 'LOG'].map((lvl) => (
+                              <button
+                                key={lvl}
+                                onClick={() => setActiveLogLevelFilter(lvl)}
+                                style={{
+                                  padding: '4px 8px',
+                                  borderRadius: '6px',
+                                  fontSize: '0.7rem',
+                                  fontWeight: 'bold',
+                                  cursor: 'pointer',
+                                  background: activeLogLevelFilter === lvl ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.04)',
+                                  border: '1px solid rgba(255,255,255,0.15)',
+                                  color: lvl === 'ERROR' ? '#ff5555' : lvl === 'WARN' ? '#fbbf24' : '#e2e8f0'
+                                }}
+                              >
+                                {lvl}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Log Output Body */}
+                        <div style={{ flex: 1, overflowY: 'auto', padding: '14px 18px', fontFamily: 'monospace', fontSize: '0.76rem', lineHeight: 1.5, background: '#070a10' }}>
+                          {isMatchLogsLoading ? (
+                            <div style={{ color: 'rgba(255,255,255,0.5)', textAlign: 'center', padding: '30px' }}>Loading match console logs...</div>
+                          ) : selectedMatchLogRows.length === 0 ? (
+                            <div style={{ color: 'rgba(255,255,255,0.45)', textAlign: 'center', padding: '30px' }}>
+                              No console logs recorded for this room yet. (Ensure <code>supabase/schema_match_console_logs.sql</code> is applied for cross-device sync.)
+                            </div>
+                          ) : (
+                            selectedMatchLogRows
+                              .filter((row) => activeLogPlayerFilter === 'ALL' || row.player_id === activeLogPlayerFilter)
+                              .map((row) => {
+                                const filteredEntries = (row.logs || []).filter((e) => activeLogLevelFilter === 'ALL' || (e.level || 'LOG') === activeLogLevelFilter);
+                                return (
+                                  <div key={row.player_id} style={{ marginBottom: '18px' }}>
+                                    <div style={{ color: '#00f0ff', fontWeight: 'bold', borderBottom: '1px solid rgba(0, 240, 255, 0.2)', paddingBottom: '4px', marginBottom: '8px' }}>
+                                      [{row.role || 'PLAYER'}] {row.player_name || row.player_id} ({filteredEntries.length} entries)
+                                    </div>
+                                    {filteredEntries.length === 0 ? (
+                                      <div style={{ color: 'rgba(255,255,255,0.35)' }}>No matching log entries.</div>
+                                    ) : (
+                                      filteredEntries.map((entry, idx) => (
+                                        <div
+                                          key={idx}
+                                          style={{
+                                            color: entry.level === 'ERROR' ? '#ff6b6b' : entry.level === 'WARN' ? '#fbbf24' : '#cbd5e1',
+                                            whiteSpace: 'pre-wrap',
+                                            wordBreak: 'break-word',
+                                            padding: '2px 0'
+                                          }}
+                                        >
+                                          <span style={{ color: 'rgba(255,255,255,0.4)' }}>[{entry.ts ? new Date(entry.ts).toLocaleTimeString() : '--:--:--'}]</span>{' '}
+                                          <span style={{ fontWeight: 'bold' }}>[{entry.level || 'LOG'}]</span>{' '}
+                                          {entry.message}
+                                        </div>
+                                      ))
+                                    )}
+                                  </div>
+                                );
+                              })
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
