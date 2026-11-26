@@ -509,7 +509,7 @@ export const ACTION_CARDS_BASIC = [
   { name: 'HEAL H10', type: 'HEAL', count: 6, costET: 0, desc: 'Restores +10 HP.' },
   { name: 'LIGHTNING X1', type: 'ATTACK', count: 6, costET: 1, desc: 'On successful attack, defendant receives -10 HP and attacker receives another turn. If not successful, nothing happens.' },
   { name: 'RETREAT', type: 'TACTICAL', count: 6, costET: 0, desc: 'Disengage or forfeit combat. Only appears if held in Action Deck. Attacker can retreat before/after roll (before Defender rolls). Defender can retreat before rolling.' },
-  { name: 'SHIELD BASIC +25 HP', type: 'DEFENSE', count: 6, costET: 0, desc: 'Grants +25 Shield barrier points.' },
+  { name: 'SHIELD BASIC +25 HP', type: 'DEFENSE', count: 6, costET: 0, desc: 'Grants +25 Shield barrier points. Does NOT prevent damage from Poison or Fire attacks (Poison Cards, Fire Flame, Chynaman Fire attacks, Shroomy Poison attacks, etc.).' },
   { name: 'SOUL ALLIANCE', type: 'OTHERS', count: 6, costET: 0, desc: 'Forge an alliance with another player.' },
   { name: 'VITALITY GAIN V10', type: 'HEAL', count: 6, costET: 0, desc: '+10 HP or prepare to Level Up.' },
   { name: 'HEAL H30', type: 'HEAL', count: 6, costET: 0, desc: 'Restores +30 HP.' },

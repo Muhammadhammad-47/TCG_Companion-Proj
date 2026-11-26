@@ -55,7 +55,7 @@ export const ACTION_CARDS = [
     costET: 0,
     icon: '🛡️',
     color: '#3b9dff',
-    desc: 'Grants +25 Shield barrier points. (0 ET)'
+    desc: 'Grants +25 Shield barrier points. Does NOT prevent damage from Poison or Fire attacks (Poison Cards, Fire Flame, Chynaman Fire attacks, Shroomy Poison attacks, etc.). (0 ET)'
   },
   {
     id: 'heal_h10',

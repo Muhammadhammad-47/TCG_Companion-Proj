@@ -106,9 +106,9 @@ export const RULES_KNOWLEDGE = [
   },
   {
     topic: 'Shield & Heal Cards',
-    keywords: ['shield', 'heal', 'absorb', 'protection', 'recovery', 'health', 'heal card', 'shield card'],
-    shortAnswer: 'Heal restores +30 HP (1 ET). Shield grants a 30 HP barrier (1 ET) that absorbs incoming damage before HP is reduced.',
-    details: 'Defense & Recovery Cards:\n- Heal Card: Restores +30 HP. HP cannot exceed maximum unless a card effect states otherwise. Costs 1 ET.\n- Shield Card: Generates a 30 HP barrier. When attacked, the shield absorbs all incoming damage first. Any damage exceeding the shield value spills into the player\'s HP. Costs 1 ET.'
+    keywords: ['shield', 'shield basic', 'shield basic +25', 'shield fire', 'shield advance', 'heal', 'absorb', 'protection', 'recovery', 'health', 'heal card', 'shield card', 'poison', 'fire'],
+    shortAnswer: 'SHIELD BASIC +25 HP grants +25 Shield barrier (0 ET), but does NOT prevent damage from Poison or Fire attacks (Poison Cards, Fire Flame, Chynaman Fire attacks, Shroomy Poison attacks, etc.).',
+    details: 'Defense & Recovery Cards:\n- SHIELD BASIC +25 HP (0 ET): Grants +25 Shield barrier points that absorb incoming physical/standard damage first. IMPORTANT: Does NOT prevent damage from Poison or Fire attacks (including Poison Cards, Fire Flame X1/X2, Chynaman\'s Fire attacks, Shroomy\'s Magic & Poison attacks, etc.).\n- SHIELD FIRE +50 HP (1 ET): Grants +50 Shield barrier points and protects against Fire.\n- SHIELD ADVANCE +100 HP / SACRED PROTECTION: Grants +100 Shield barrier points.\n- HEAL H10 / H20: Restores +10 HP or +20 HP (up to character max HP). Costs 1 ET.'
   },
   {
     topic: 'Action Cards & Hand Management',
