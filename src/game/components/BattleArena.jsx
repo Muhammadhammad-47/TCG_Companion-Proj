@@ -956,8 +956,13 @@ export default function BattleArena({
       const isDef = (targetDefenderId && (pIdStr === targetDefenderId || String(p.id) === String(defender?.id) || (p.characterId && p.characterId === defender?.characterId) || (p.name && p.name === defender?.name))) || (updatedPlayers.length === 2 && idx !== activeIdx) || (!targetDefenderId && idx !== activeIdx);
       return isDef && p.hp === 0;
     });
+    const defenderDefeatedHoldsRevive = defenderDefeated && (defenderDefeated.actionCardsHand || []).some(c =>
+      (c?.name || c?.title || c?.id || '').toUpperCase().includes('REVIVE')
+    ) && !defenderDefeated.reviveHandled;
+
     const shouldShowCrystalSplitModal =
       defenderDefeated &&
+      !defenderDefeatedHoldsRevive &&
       defender.crystals > 0 &&
       otherPlayers.length > 0;
 
@@ -1271,6 +1276,7 @@ export default function BattleArena({
           updated.hp = Math.max(0, updated.hp - totalInitialDmg);
           if (updated.hp === 0) {
             updated.isDefeated = true;
+            updated.reviveHandled = false;
           }
           soundFX.playDamage();
           logText = `Infected ${updated.name} with ${cardName || (isX2 ? 'POISON X2' : 'POISON X1')} (Initial damage: -${initialDmg} HP, Ongoing: -${ongoingTurnDmg} HP/turn until Antidote)`;
@@ -1551,7 +1557,13 @@ export default function BattleArena({
       return p;
     });
 
-    if (crystalWinner) {
+    const anyDefeatedHoldsRevive = finalPlayers.some(p =>
+      (p.hp <= 0 || p.isDefeated) &&
+      !p.reviveHandled &&
+      (p.actionCardsHand || []).some(c => (c?.name || c?.title || c?.id || '').toUpperCase().includes('REVIVE'))
+    );
+
+    if (crystalWinner && !anyDefeatedHoldsRevive) {
       setGameState({
         ...gameState,
         players: finalPlayers,
@@ -1874,7 +1886,13 @@ export default function BattleArena({
       }
     }
 
-    if (gameWinner) {
+    const anyDefeatedHoldsRevive = updatedPlayers.some(p =>
+      (p.hp <= 0 || p.isDefeated) &&
+      !p.reviveHandled &&
+      (p.actionCardsHand || []).some(c => (c?.name || c?.title || c?.id || '').toUpperCase().includes('REVIVE'))
+    );
+
+    if (gameWinner && !anyDefeatedHoldsRevive) {
       setGameState({
         ...gameState,
         players: updatedPlayers,
@@ -1964,7 +1982,7 @@ export default function BattleArena({
             return { ...p, burnCount: 0 };
           } else {
             const newHp = Math.max(0, p.hp - burnDmg);
-            return { ...p, hp: newHp, isDefeated: newHp <= 0 };
+            return { ...p, hp: newHp, isDefeated: newHp <= 0, reviveHandled: newHp <= 0 ? false : p.reviveHandled };
           }
         }
         return p;
@@ -3473,7 +3491,7 @@ export default function BattleArena({
         )}
 
         {/* Winner Screen Modal */}
-        {gameState?.winner && (
+        {gameState?.winner && !showReviveModal && (
           <WinnerModal
             winner={gameState.winner}
             players={players}

@@ -1197,7 +1197,17 @@ export default function KontrolaArena() {
               return updated;
             });
           }
-          if (newState?.winner) {
+          const syncedMyChar = newState?.characterStates?.[playerIdRef.current];
+          const syncedMyHand = newState?.hands?.[playerIdRef.current] || newState?.hands?.[syncedMyChar?.id] || [];
+          const syncedHasRevive = syncedMyHand.some(c => (getSafeCardName(c) || c?.name || c?.title || c?.id || '').toUpperCase().includes('REVIVE'));
+          if (syncedMyChar && ((syncedMyChar.hp ?? 100) <= 0 || syncedMyChar.isDefeated) && syncedHasRevive) {
+            setWinner(null);
+            setPendingRevivePrompt(prev => prev || {
+              victimId: playerIdRef.current || syncedMyChar.playerId || syncedMyChar.id,
+              victimName: syncedMyChar.name,
+              maxHp: syncedMyChar.maxHp || 100
+            });
+          } else if (newState?.winner) {
             setWinner(newState.winner);
           } else {
             setWinner(null);
@@ -3364,7 +3374,7 @@ export default function KontrolaArena() {
         );
         const hasMultipleAttackers = livingPlayerIds.length >= 2; // At least 2 living players besides defender
 
-        if (defenderStillDefeated && playersCount >= 3 && hasMultipleAttackers) {
+        if (defenderStillDefeated && !defenderHoldsRevive && playersCount >= 3 && hasMultipleAttackers) {
           // Build list of attackers (all living players except the defender)
           const attackersList = livingPlayerIds.map(pId => ({
             id: pId,
@@ -3455,7 +3465,16 @@ export default function KontrolaArena() {
             newAttackerState.crystals = (newAttackerState.crystals || 1) + (char.crystals || 1);
             char.crystals = 0;
             log += ` 💥 ${char.name} was defeated by AoE! ${newAttackerState.name} claimed their Crystals.`;
-            if (newAttackerState.crystals >= 3) {
+            const aoeHand = updatedHands[pId] || state.hands?.[pId] || [];
+            const aoeHoldsRevive = aoeHand.some(c => (getSafeCardName(c) || c?.name || c?.title || c?.id || '').toUpperCase().includes('REVIVE'));
+            if (aoeHoldsRevive && !triggerRevivePrompt) {
+              triggerRevivePrompt = {
+                victimId: pId,
+                victimName: char.name,
+                maxHp: char.maxHp || 100
+              };
+            }
+            if (newAttackerState.crystals >= 3 && !aoeHoldsRevive) {
               matchWinner = { ...newAttackerState, playerId: actorId };
             }
           }
