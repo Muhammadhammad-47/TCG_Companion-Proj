@@ -4371,6 +4371,19 @@ export default function KontrolaArena() {
         return; // Must select target
       }
 
+      // Allied players (NSA / Soul Alliance) cannot attack each other unless using BACK STAB
+      const targetCharState = selectedTargetId ? gameState?.characterStates?.[selectedTargetId] : null;
+      const isTargetAlly = Boolean(
+        targetCharState && (
+          (myCharacter?.allianceId && (myCharacter.allianceId === targetCharState.allianceId || myCharacter.allianceId === targetCharState.id || myCharacter.allianceId === selectedTargetId)) ||
+          (myCharacter?.relationshipType === 'ALLIANCE' && (myCharacter?.relationshipPartnerId === selectedTargetId || myCharacter?.relationshipPartnerId === targetCharState.id))
+        )
+      );
+      if (isTargetAlly && (isAttack || ['POISON', 'SLEEPY', 'FREEZE', 'KONTROL', 'DRAIN', 'VAMPIRE'].some(kw => cardName.includes(kw))) && !cardName.includes('BACK STAB')) {
+        showNotice('🤝 Allied players cannot attack each other! Use an ABANDON or BACK STAB card (or Break Agreement) first.', 'warning');
+        return;
+      }
+
       // 3+ Player check for Soul Alliance, Abandon, Back Stab & Misdirect
       const is3PlayerOnly = cardName.includes('BACK STAB') || cardName.includes('SOUL ALLIANCE') || cardName.includes('ABANDON') || cardName.includes('MISDIRECT');
       const totalMatchPlayers = (gameState?.players?.length) || 2;
