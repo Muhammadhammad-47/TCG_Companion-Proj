@@ -232,19 +232,22 @@ export default function KontrolaDiceRoller({
     return null;
   }
   
-  console.log('[KontrolaDiceRoller] Component mounted with combatData:', {
-    hasAttacker: !!combatData?.attacker,
-    hasDefender: !!combatData?.defender,
-    attackerPlayerName: combatData?.attacker?.name || combatData?.attackerPlayerName,
-    defenderPlayerName: combatData?.defender?.name || combatData?.defenderPlayerName,
-    actionCard: typeof combatData?.actionCard === 'string' ? combatData.actionCard : combatData?.actionCard?.name,
-    attackSelectionName: combatData?.attackSelectionName,
-    isAttacker,
-    isDefender,
-    isSpectator,
-    isHost,
-    allPropsValid: !![combatData?.attacker, combatData?.defender, combatData?.actionCard].every(p => p)
-  });
+  useEffect(() => {
+    console.log('[KontrolaDiceRoller] Component mounted with combatData:', {
+      hasAttacker: !!combatData?.attacker,
+      hasDefender: !!combatData?.defender,
+      attackerPlayerName: combatData?.attacker?.name || combatData?.attackerPlayerName,
+      defenderPlayerName: combatData?.defender?.name || combatData?.defenderPlayerName,
+      actionCard: typeof combatData?.actionCard === 'string' ? combatData.actionCard : combatData?.actionCard?.name,
+      attackSelectionName: combatData?.attackSelectionName,
+      isAttacker,
+      isDefender,
+      isSpectator,
+      isHost,
+      allPropsValid: !![combatData?.attacker, combatData?.defender, combatData?.actionCard].every(p => p)
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
   const { attacker, defender, actionCard, attackSelectionName, attackerPlayerName, defenderPlayerName } = combatData || {};
   const resolvedCardName = typeof actionCard === 'string' ? actionCard : (actionCard?.name || '');

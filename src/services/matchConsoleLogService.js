@@ -174,6 +174,44 @@ export const matchConsoleLogService = {
   },
 
   /**
+   * Returns a snapshot of the active player's buffered logs.
+   */
+  getBufferedLogs() {
+    return activeLogsBuffer.slice(-MAX_LOGS_PER_MATCH);
+  },
+
+  /**
+   * Saves another player's logs received over WebSocket to localStorage + Supabase.
+   */
+  async saveRemotePlayerLogs({ roomCode, playerId, playerName = 'Player', role = 'PLAYER', logs = [] }) {
+    if (!roomCode || !playerId || !Array.isArray(logs) || logs.length === 0) return null;
+    const ctx = { roomCode, playerId, playerName, role };
+    const trimmed = logs.slice(-MAX_LOGS_PER_MATCH);
+    saveToLocalFallback(ctx, trimmed);
+    if (!supabase) return null;
+    try {
+      const { data } = await supabase
+        .from('match_console_logs')
+        .upsert(
+          {
+            room_code: roomCode,
+            player_id: playerId,
+            player_name: playerName,
+            role,
+            logs: trimmed,
+            updated_at: new Date().toISOString()
+          },
+          { onConflict: 'room_code,player_id' }
+        )
+        .select()
+        .single();
+      return data || null;
+    } catch {
+      return null;
+    }
+  },
+
+  /**
    * Flushes remaining logs and clears active match context.
    */
   async clearMatchContext() {

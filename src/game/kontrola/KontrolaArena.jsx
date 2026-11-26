@@ -560,6 +560,15 @@ export default function KontrolaArena() {
       const doLog = async () => {
         try {
           await matchConsoleLogService.flushLogs();
+          if (!isHost && matchIdRef.current) {
+            broadcastUIEvent(matchIdRef.current, 'player_console_logs', {
+              roomCode: matchIdRef.current,
+              playerId,
+              playerName: playerName || myCharacter?.name || 'Player',
+              role: isSpectator ? 'SPECTATOR' : 'PLAYER',
+              logs: matchConsoleLogService.getBufferedLogs()
+            });
+          }
           // Host logs the global match record
           if (isHost) {
             const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -677,12 +686,29 @@ export default function KontrolaArena() {
   // Capture all browser console logs for this player during the match
   useEffect(() => {
     if (!matchId || !playerId) return;
+    const role = isSpectator ? 'SPECTATOR' : (isHost ? 'HOST' : 'PLAYER');
+    const resolvedName = playerName || myCharacter?.name || 'Player';
     matchConsoleLogService.setMatchContext({
       roomCode: matchId,
       playerId,
-      playerName: playerName || myCharacter?.name || 'Player',
-      role: isSpectator ? 'SPECTATOR' : (isHost ? 'HOST' : 'PLAYER')
+      playerName: resolvedName,
+      role
     });
+
+    if (isHost) return;
+    const relayInterval = setInterval(() => {
+      const logs = matchConsoleLogService.getBufferedLogs();
+      if (logs.length > 0) {
+        broadcastUIEvent(matchId, 'player_console_logs', {
+          roomCode: matchId,
+          playerId,
+          playerName: resolvedName,
+          role,
+          logs
+        });
+      }
+    }, 10000);
+    return () => clearInterval(relayInterval);
   }, [matchId, playerId, playerName, isHost, isSpectator, myCharacter?.name]);
 
   useEffect(() => {
@@ -1616,6 +1642,11 @@ export default function KontrolaArena() {
             } else {
               showNotice(`${toPlayerName} declined your Secret Soul Alliance offer.`, 'warning');
             }
+          }
+        }
+        else if (event.type === 'PLAYER_CONSOLE_LOGS') {
+          if (isHostRef.current && event.payload?.playerId && event.payload.playerId !== playerIdRef.current) {
+            matchConsoleLogService.saveRemotePlayerLogs(event.payload);
           }
         }
         else if (event.type === 'EXILE_REVIVE_OFFER') {
