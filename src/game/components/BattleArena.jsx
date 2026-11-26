@@ -8,6 +8,7 @@ import { createGameRoom, updateGameRoom } from '../../services/roomService';
 import WinnerModal from './WinnerModal';
 import AdModal from '../../components/AdModal';
 import DiceRollerModal from './DiceRollerModal';
+import { CanvasPipDie } from '../kontrola/KontrolaDiceRoller';
 import CardActionModal from './CardActionModal';
 import KontrolModal from './KontrolModal';
 import BlitzModal from './BlitzModal';
@@ -3572,46 +3573,17 @@ export default function BattleArena({
                 <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>This note will continue to pop up until the flame is extinguished.</span>
               </p>
 
-              {extinguishDice && (
+              {(isExtinguishRolling || extinguishDice) && (
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '16px',
-                  margin: '16px 0',
-                  fontSize: '2rem',
-                  fontWeight: '900',
-                  color: '#fff'
+                  gap: '18px',
+                  margin: '16px 0'
                 }}>
-                  <div style={{
-                    width: '64px',
-                    height: '64px',
-                    background: '#1a1a2e',
-                    border: '2px solid #ff4d00',
-                    borderRadius: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '2rem',
-                    color: '#ff7700'
-                  }}>
-                    {extinguishDice[0]}
-                  </div>
-                  <span style={{ color: 'rgba(255,255,255,0.5)' }}>+</span>
-                  <div style={{
-                    width: '64px',
-                    height: '64px',
-                    background: '#1a1a2e',
-                    border: '2px solid #ff4d00',
-                    borderRadius: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '2rem',
-                    color: '#ff7700'
-                  }}>
-                    {extinguishDice[1]}
-                  </div>
+                  <CanvasPipDie value={extinguishDice?.[0] || 1} theme="red" isRolling={isExtinguishRolling} size={68} />
+                  <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1.8rem', fontWeight: '900' }}>+</span>
+                  <CanvasPipDie value={extinguishDice?.[1] || 1} theme="red" isRolling={isExtinguishRolling} size={68} />
                 </div>
               )}
 
