@@ -5116,6 +5116,7 @@ export default function KontrolaArena() {
   // CRYSTAL SPLIT HANDLERS
   // ==========================================
   const handleCrystalSplitComplete = (result) => {
+    const splitSnapshot = crystalSplitData;
     setShowCrystalSplitModal(false);
     setCrystalSplitData(null);
 
@@ -5125,33 +5126,74 @@ export default function KontrolaArena() {
       if (!prev) return prev;
       const updatedPlayers = { ...prev.characterStates };
 
-      if (updatedPlayers[winner.id]) {
+      if (splitSnapshot?.defender?.id && updatedPlayers[splitSnapshot.defender.id]) {
+        updatedPlayers[splitSnapshot.defender.id] = {
+          ...updatedPlayers[splitSnapshot.defender.id],
+          hp: 0,
+          isDefeated: true,
+          isExile: true,
+          canBeRevivedAsExile: true,
+          crystals: 0,
+          isSovereign: false
+        };
+      }
+
+      let matchWinner = null;
+      if (winner?.id && updatedPlayers[winner.id]) {
         const newCrystals = (updatedPlayers[winner.id].crystals || 0) + 1;
         updatedPlayers[winner.id] = {
           ...updatedPlayers[winner.id],
-          crystals: newCrystals
+          crystals: newCrystals,
+          isSovereign: newCrystals >= 3
         };
 
         if (newCrystals >= 3) {
-          return { ...prev, characterStates: updatedPlayers, status: 'finished', winner: { ...updatedPlayers[winner.id], playerId: winner.id } };
+          matchWinner = { ...updatedPlayers[winner.id], playerId: winner.id };
         }
       }
 
-      if (updatedPlayers[loser.id]) {
+      if (loser?.id && updatedPlayers[loser.id]) {
         updatedPlayers[loser.id] = {
           ...updatedPlayers[loser.id],
           crystals: Math.max(0, (updatedPlayers[loser.id].crystals || 0) - 1)
         };
       }
 
-      const methodText = result.accepted ? 'Negotiation' : 'Dice Roll';
-      const newLog = `💎 ${winner.name} won crystal via ${methodText} (defeated ${loser.name})`;
+      const livingPlayers = (prev.players || []).filter(pId => !updatedPlayers[pId]?.isDefeated);
+      if (!matchWinner && livingPlayers.length <= 1) {
+        matchWinner = updatedPlayers[livingPlayers[0]] ? { ...updatedPlayers[livingPlayers[0]], playerId: livingPlayers[0] } : null;
+      }
 
-      return {
+      let nextTurn = prev.turn;
+      if (livingPlayers.length > 1) {
+        const curIdx = livingPlayers.indexOf(prev.turn);
+        const safeIdx = curIdx >= 0 ? curIdx : 0;
+        const step = prev.turnDirection === 'counter' ? -1 : 1;
+        let nextIdx = (safeIdx + step) % livingPlayers.length;
+        if (nextIdx < 0) nextIdx += livingPlayers.length;
+        nextTurn = livingPlayers[nextIdx] || livingPlayers[0];
+      }
+
+      const methodText = result.accepted ? 'Negotiation' : 'Dice Roll';
+      const newLog = `💎 ${winner?.name || 'Winner'} won crystal via ${methodText} (defeated ${loser?.name || splitSnapshot?.defender?.name || 'Opponent'})`;
+
+      const nextState = {
         ...prev,
+        turn: nextTurn,
+        turnNumber: (prev.turnNumber || 1) + 1,
         characterStates: updatedPlayers,
+        status: matchWinner ? 'finished' : prev.status,
+        winner: matchWinner || prev.winner || null,
         logs: [newLog, ...(prev.logs || [])]
       };
+
+      pendingStateRef.current = nextState;
+      gameStateRef.current = nextState;
+      broadcastState(matchIdRef.current, nextState);
+      if (matchWinner) {
+        setWinner(matchWinner);
+      }
+      return nextState;
     });
   };
 
