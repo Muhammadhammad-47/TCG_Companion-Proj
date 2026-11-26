@@ -542,20 +542,24 @@ export const ACTION_CARDS_BASIC = [
 export const ACTION_CARDS_PREMIUM = [
   ...ACTION_CARDS_BASIC,
   { name: 'ANTIDOTE FULL', type: 'HEAL', count: 2, costET: 0, desc: 'Cures all poison cards.' },
-  { name: 'DEFENCE FULL GUARD', type: 'DEFENSE', count: 4, costET: 0, desc: 'High defense barrier.' },
+  { name: 'DEFENCE FULL GUARD', type: 'DEFENSE', count: 4, costET: 0, desc: 'Roll doubles to evade an attack. If Blitz Card is active 50% of the damage will be dealt.' },
   { name: 'DODGE - COUNTER', type: 'DEFENSE', count: 3, costET: 0, desc: 'Dodge and immediately counter-attack.' },
   { name: 'FIRE FLAME X2', type: 'ATTACK', count: 3, costET: 1, desc: 'On successful attack, deals -20 HP and burns opponent (-20 HP each turn until doubles are rolled) (1 ET).' },
   { name: 'FREEZE X2', type: 'STATUS', count: 4, costET: 0, desc: 'Target loses 2 turns and receives -4 on dice roll (You are frozen).' },
   { name: 'VISION FULL', type: 'OTHERS', count: 3, costET: 0, desc: 'All players reveal Action Cards for 30s.' },
   { name: 'BACK STAB', type: 'ATTACK', count: 4, costET: 1, desc: 'Surprise rear assault.' },
-  { name: 'SHIELD FIRE + 50HP', type: 'DEFENSE', count: 2, costET: 0, desc: '+50 Shield; immune to Fire damage.' },
-  { name: 'SHIELD SACRED PROTECTION', type: 'DEFENSE', count: 2, costET: 0, desc: 'Sacred barrier absorbing damage.' },
+  { name: 'SHIELD FIRE + 50HP', type: 'DEFENSE', count: 2, costET: 0, desc: 'Protects your character HP from damage until it is destroyed. 0 damage from all fire attacks. Not immune to poison card.' },
+  { name: 'SHIELD SACRED PROTECTION', type: 'DEFENSE', count: 2, costET: 0, desc: 'Negates all status effects of poison, burns, curses, etc for 1 turn.' },
   { name: 'SHIELD ADVANCE +100HP', type: 'DEFENSE', count: 1, costET: 0, desc: '+100 Advanced Shield barrier.' },
   { name: 'SLEEPY X2', type: 'OTHERS', count: 3, costET: 0, desc: 'Target sleeps for 2 turns (You are Asleep).' },
   { name: 'VAMPIRE LIFE STEAL', type: 'OTHERS', count: 1, costET: 1, desc: 'Steals 1 ET and 10 HP for 3 turns.' },
   { name: 'DRAIN', type: 'ATTACK', count: 2, costET: 1, desc: 'Steals all opponent Energy Tokens.' },
   { name: 'VITALITY GAIN V30', type: 'HEAL', count: 2, costET: 0, desc: '+30 HP vitality surge.' },
+  { name: 'VITALITY GAIN V40', type: 'HEAL', count: 2, costET: 0, minLevel: 3, desc: '+40 HP vitality surge or level up to Level 4 (Requires Level 3+).' },
   { name: 'HEAL H40', type: 'HEAL', count: 2, costET: 0, desc: 'Restores +40 HP.' },
+  { name: '+DEFENCE D5', type: 'DEFENSE', count: 4, costET: 0, desc: '+5 Defense points.' },
+  { name: '+DEFENCE D10', type: 'DEFENSE', count: 4, costET: 0, desc: '+10 Defense points.' },
+  { name: '+DEFENCE D15', type: 'DEFENSE', count: 4, costET: 0, desc: '+15 Defense points.' },
   { name: '+DEFENCE D20', type: 'DEFENSE', count: 4, costET: 0, desc: '+20 Defense points.' },
   { name: 'X-CHANGE FULL', type: 'OTHERS', count: 2, costET: 0, desc: 'Exchange cards with all opponents.' },
   { name: 'FIRE INFERNO LOCK', type: 'ATTACK', count: 1, costET: 1, desc: 'Burns with spreading flames (-20 HP, spreads to neighbors, must roll doubles to extinguish, -5 HP/turn).' },
@@ -793,6 +797,11 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
 
         // SHIELD FIRE grants fire immunity for this hit
         if (dName.includes('FIRE')) newDefenderState.immuneFire = true;
+        // SHIELD SACRED PROTECTION negates all status effects for 1 turn
+        if (dName.includes('SACRED')) {
+          newDefenderState.sacredProtection = true;
+          log += ` ✨ Sacred Protection active: negates all status effects (Poison, Burn, Curses) for 1 turn!`;
+        }
       } else if (dName.includes('BOOMERANG')) {
         newDefenderState.hasBoomerang = true;
         log += ` 🪃 Boomerang Trap set! (Will reflect 100% on clash defense win).`;
@@ -804,8 +813,10 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         newDefenderState.dodgeCardName = typeof defCard === 'string' ? defCard : (defCard?.name || 'DODGE - BASIC');
         log += ` 💨 ${newDefenderState.dodgeCardName} prepared!`;
       } else if (dName.includes('FULL GUARD')) {
+        newDefenderState.hasDodge = true;
+        newDefenderState.dodgeCardName = 'DEFENCE FULL GUARD';
         newDefenderState.shield = (newDefenderState.shield || 0) + 50;
-        log += ` 🛡️ Defense Full Guard active! +50 shield barrier.`;
+        log += ` 🛡️ DEFENCE FULL GUARD active! Roll doubles to evade attack (50% dmg vs Blitz).`;
       } else if (dName.includes('+DEFENCE') || dName.startsWith('+DEF') || dName.includes(' D20') || dName.includes(' D15') || dName.includes(' D10') || dName.includes(' D5')) {
         let bonus = 20;
         if (dName.includes('D5')) bonus = 5;
@@ -1446,10 +1457,12 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         // Apply Burn Status if Fire Flame X1 or X2 (only if not immune to Fire)
         // FIRE FLAME X1: Burns opponent (-10 HP each turn until doubles are rolled)
         // FIRE FLAME X2: Burns opponent (-20 HP each turn until doubles are rolled)
-        if ((cardName === 'FIRE FLAME X1' || cardName === 'FIRE FLAME X2') && !wasImmuneFire) {
+        if ((cardName === 'FIRE FLAME X1' || cardName === 'FIRE FLAME X2') && !wasImmuneFire && !newDefenderState.sacredProtection) {
           const burnTier = cardName === 'FIRE FLAME X2' ? 2 : 1;
           newDefenderState.burnCount = Math.max(newDefenderState.burnCount || 0, burnTier);
           log += ` 🔥 Applied Fire Flame Burn (-${burnTier * 10} HP each turn until doubles are rolled) to ${newDefenderState.name}!`;
+        } else if ((cardName === 'FIRE FLAME X1' || cardName === 'FIRE FLAME X2') && newDefenderState.sacredProtection) {
+          log += ` ✨ SHIELD SACRED PROTECTION negated Fire Flame burn!`;
         }
 
         // Lightning effect: Client feedback Nov 14 (Official LIGHTNING Functionality):

@@ -121,6 +121,16 @@ export const ACTION_CARDS = [
     desc: 'On a successful attack, deals -20 HP and burns opponent (-20 HP each turn until doubles are rolled). Prompt asks to roll to extinguish before each turn (1 ET).'
   },
   {
+    id: 'defence_d5',
+    name: '+DEFENCE D5',
+    type: 'DEFENSE',
+    costET: 0,
+    icon: '🛡️',
+    color: '#00f0ff',
+    defenseBonus: 5,
+    desc: 'Adds +5 Defense Points during incoming attack clash. (0 ET)'
+  },
+  {
     id: 'defence_d10',
     name: '+DEFENCE D10',
     type: 'DEFENSE',
@@ -149,6 +159,65 @@ export const ACTION_CARDS = [
     color: '#3b9dff',
     defenseBonus: 20,
     desc: 'Gain +20 Defense bonus. Applies if you win clash or roll 6+ on defense. (0 ET)'
+  },
+  {
+    id: 'defence_full_guard',
+    name: 'DEFENCE FULL GUARD',
+    type: 'DEFENSE',
+    costET: 0,
+    icon: '🛡️',
+    color: '#3b9dff',
+    defenseBonus: 50,
+    desc: 'Roll doubles to evade an attack. If Blitz Card is active 50% of the damage will be dealt. (0 ET)'
+  },
+  {
+    id: 'heal_h30',
+    name: 'HEAL H30',
+    type: 'HEAL',
+    costET: 0,
+    icon: '💚',
+    color: '#39ff14',
+    healAmount: 30,
+    desc: 'Restores +30 HP (up to character max HP). (0 ET)'
+  },
+  {
+    id: 'shield_advance_100',
+    name: 'SHIELD ADVANCE +100 HP',
+    type: 'DEFENSE',
+    costET: 0,
+    icon: '🛡️',
+    color: '#00f0ff',
+    shieldAmount: 100,
+    desc: 'Grants +100 Advanced Shield barrier points. (0 ET)'
+  },
+  {
+    id: 'shield_sacred_protection',
+    name: 'SHIELD SACRED PROTECTION',
+    type: 'DEFENSE',
+    costET: 0,
+    icon: '✨',
+    color: '#ffd700',
+    shieldAmount: 100,
+    desc: 'Negates all status effects of poison, burns, curses, etc for 1 turn. (0 ET)'
+  },
+  {
+    id: 'shield_fire_50',
+    name: 'SHIELD FIRE +50 HP',
+    type: 'DEFENSE',
+    costET: 0,
+    icon: '🔥',
+    color: '#ff4d00',
+    shieldAmount: 50,
+    desc: 'Protects your character HP from damage until it is destroyed. 0 damage from all fire attacks. Not immune to poison card. (0 ET)'
+  },
+  {
+    id: 'xchange_full',
+    name: 'X-CHANGE FULL',
+    type: 'OTHERS',
+    costET: 0,
+    icon: '🔄',
+    color: '#a855f7',
+    desc: 'Exchange cards with all opponents. (0 ET)'
   },
   {
     id: 'revive_card',
