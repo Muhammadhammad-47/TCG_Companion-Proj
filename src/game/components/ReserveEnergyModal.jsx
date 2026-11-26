@@ -15,22 +15,6 @@ export default function ReserveEnergyModal({
   const [amount, setAmount] = useState(10);
   const [manualCode, setManualCode] = useState('');
   const [codeFeedback, setCodeFeedback] = useState({ text: '', type: '' });
-  const backdropMouseDownRef = useRef(false);
-
-  const handleBackdropMouseDown = (e) => {
-    if (e.target === e.currentTarget) {
-      backdropMouseDownRef.current = true;
-    } else {
-      backdropMouseDownRef.current = false;
-    }
-  };
-
-  const handleBackdropClick = (e) => {
-    if (backdropMouseDownRef.current && e.target === e.currentTarget) {
-      onClose();
-    }
-    backdropMouseDownRef.current = false;
-  };
 
   const currentHp = character?.hp || 0;
   const maxHp = character?.maxHp || 100;
@@ -53,13 +37,13 @@ export default function ReserveEnergyModal({
   useEffect(() => {
     if (isOpen && character) {
       if (maxPossible > 0) {
-        setAmount(Math.min(maxPossible, Math.max(1, amount > 0 ? amount : maxPossible)));
+        setAmount(prev => Math.min(maxPossible, Math.max(1, prev > 0 ? prev : maxPossible)));
       } else {
         setAmount(0);
       }
       setCodeFeedback({ text: '', type: '' });
     }
-  }, [isOpen, maxPossible, isUnlocked, character]);
+  }, [isOpen, maxPossible, isUnlocked]);
 
   if (!isOpen || !character) return null;
 
@@ -127,8 +111,6 @@ export default function ReserveEnergyModal({
         justifyContent: 'center',
         padding: '16px'
       }}
-      onMouseDown={handleBackdropMouseDown}
-      onClick={handleBackdropClick}
     >
       <div
         onMouseDown={(e) => e.stopPropagation()}
