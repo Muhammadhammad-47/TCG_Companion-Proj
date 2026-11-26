@@ -3224,7 +3224,7 @@ export default function KontrolaArena() {
         let healDelta = 0;
         let atkDmgDealt = 0;
         if (playedCardType === 'ATTACK' || playedCardType === 'STATUS' || playedCardName.includes('POISON') || playedCardName.includes('FREEZE') || playedCardName.includes('BURN')) {
-          const prevDefHP = Number(state.characterStates?.[targetId]?.hp) || 0;
+          const prevDefHP = Number(state.characterStates?.[defenderKey]?.hp ?? state.characterStates?.[targetId]?.hp ?? defenderChar?.hp ?? 0);
           const newDefHP = Number(newDefenderState?.hp) || 0;
           dmgDealt = Math.max(0, prevDefHP - newDefHP);
 
