@@ -1618,12 +1618,13 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         const weaknessPenalty = hasPoisonWeak ? 10 : 0;
         const totalInitialDamage = initialDamage + weaknessPenalty;
         newDefenderState.hp = Math.max(0, newDefenderState.hp - totalInitialDamage);
-      if (newDefenderState.hp <= 0) {
-        newDefenderState.isDefeated = true;
+        if (newDefenderState.hp <= 0) {
+          newDefenderState.isDefeated = true;
+        }
+        log += ` ☠️ ${cardName} hit ${newDefenderState.name}! Initial damage: -${initialDamage} HP` +
+          (weaknessPenalty > 0 ? ` ☠️ [POISON WEAKNESS] ${newDefenderState.name} has Poison weakness! Suffer -${weaknessPenalty} HP additional weakness penalty (Total initial: -${totalInitialDamage} HP)! (Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card)` : '') +
+          `, +${stacks} Poison stack(s) applied (Ongoing damage: -${ongoingTurnDmg} HP per turn until treated with an Antidote Card).`;
       }
-      log += ` ☠️ ${cardName} hit ${newDefenderState.name}! Initial damage: -${initialDamage} HP` +
-        (weaknessPenalty > 0 ? ` ☠️ [POISON WEAKNESS] ${newDefenderState.name} has Poison weakness! Suffer -${weaknessPenalty} HP additional weakness penalty (Total initial: -${totalInitialDamage} HP)! (Additional -10 HP weakness penalty activates again if another player attacks with another Poison Card)` : '') +
-        `, +${stacks} Poison stack(s) applied (Ongoing damage: -${ongoingTurnDmg} HP per turn until treated with an Antidote Card).`;
     } else {
       newAttackerState.poisonCount = (newAttackerState.poisonCount || 0) + stacks;
       log += ` Attached ${stacks} Poison card(s) to self.`;
