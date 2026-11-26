@@ -3452,22 +3452,18 @@ export default function KontrolaArena() {
       }
       if (newDefenderState && state.players) {
         state.players.forEach(p => {
+          if (p === attackerKey || p === effectiveActorId) return;
           if (p === targetId || p === effectiveTargetId || p === defenderKey ||
-              state.characterStates?.[p]?.id === effectiveTargetId ||
-              state.characterStates?.[p]?.characterId === effectiveTargetId ||
-              state.characterStates?.[p]?.playerId === effectiveTargetId ||
-              state.characterStates?.[p]?.name === newDefenderState?.name) {
+              state.characterStates?.[p]?.playerId === effectiveTargetId) {
             updatedStates[p] = newDefenderState;
           }
         });
       }
       if (newAttackerState && state.players) {
         state.players.forEach(p => {
+          if (p === defenderKey || p === effectiveTargetId) return;
           if (p === actorId || p === effectiveActorId || p === attackerKey ||
-              state.characterStates?.[p]?.id === effectiveActorId ||
-              state.characterStates?.[p]?.characterId === effectiveActorId ||
-              state.characterStates?.[p]?.playerId === effectiveActorId ||
-              state.characterStates?.[p]?.name === newAttackerState?.name) {
+              state.characterStates?.[p]?.playerId === effectiveActorId) {
             updatedStates[p] = newAttackerState;
           }
         });
