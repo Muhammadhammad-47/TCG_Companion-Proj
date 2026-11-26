@@ -287,6 +287,12 @@ export default function AdminPage() {
     }
   };
 
+  useEffect(() => {
+    if (isAdmin && activeTab === 'matches') {
+      loadMatches();
+    }
+  }, [isAdmin, activeTab]);
+
   const loadUsers = async () => {
     setIsUsersLoading(true);
     try {

@@ -1,7 +1,7 @@
 import { supabase } from './supabaseClient';
 
 const MAX_LOGS_PER_MATCH = 600;
-const FLUSH_INTERVAL_MS = 8000;
+const FLUSH_INTERVAL_MS = 4000;
 const LOCAL_STORAGE_PREFIX = 'kontrola_match_logs_';
 
 let isCaptureInstalled = false;
@@ -121,6 +121,7 @@ export const matchConsoleLogService = {
     }
 
     activeContext = { roomCode, playerId, playerName, role };
+    saveToLocalFallback(activeContext, activeLogsBuffer);
 
     if (!flushTimer) {
       flushTimer = setInterval(() => {

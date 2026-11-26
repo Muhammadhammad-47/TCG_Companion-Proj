@@ -579,11 +579,13 @@ export default function KontrolaArena() {
           await matchConsoleLogService.flushLogs();
           // Host logs the global match record
           if (isHost) {
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            const validUuidPlayerIds = allPlayerIds.filter((id) => uuidRegex.test(String(id || '')));
             await authService.logMatchResult({
               roomCode: matchIdRef.current || 'KONTROLA_ARENA',
               winnerId: currentUser?.id || null, // use Supabase UUID if available
               winnerName: winner.name || gameState?.playerNames?.[winner.playerId] || playerName || 'Player',
-              playerIds: allPlayerIds,
+              playerIds: validUuidPlayerIds,
               playerNames: allPlayerNames,
               gameMode: 'kontrola',
               crystalsAwarded: 3
