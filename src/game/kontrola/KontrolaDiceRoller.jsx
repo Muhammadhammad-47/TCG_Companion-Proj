@@ -1653,8 +1653,8 @@ export default function KontrolaDiceRoller({
                   )
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
-                    {/* Re-Roll Options: Snake Eyes (Double 1s) or Fate Card Doubles */}
-                    {(attackerDoubleOnes || defenderDoubleOnes || attackerFateCard || defenderFateCard) && (
+                    {/* Re-Roll Options: Snake Eyes (Double 1s) or Fate Card Doubles (only shown to owning player) */}
+                    {(((attackerDoubleOnes || attackerFateCard) && isAttacker) || ((defenderDoubleOnes || defenderFateCard) && isDefender)) && (
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                         <div style={{ color: '#FBC80D', fontWeight: 'bold', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <Sparkles size={18} />
@@ -1665,7 +1665,7 @@ export default function KontrolaDiceRoller({
                           </span>
                         </div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
-                          {(attackerDoubleOnes || attackerFateCard) && (
+                          {(attackerDoubleOnes || attackerFateCard) && isAttacker && (
                             <button
                               onClick={() => handleReRollSingle('attacker')}
                               style={{
@@ -1689,7 +1689,7 @@ export default function KontrolaDiceRoller({
                               <span>🔄 RE-ROLL ATTACKER ({atkChar?.name || 'Attacker'})</span>
                             </button>
                           )}
-                          {(defenderDoubleOnes || defenderFateCard) && (
+                          {(defenderDoubleOnes || defenderFateCard) && isDefender && (
                             <button
                               onClick={() => handleReRollSingle('defender')}
                               style={{
@@ -1713,7 +1713,7 @@ export default function KontrolaDiceRoller({
                               <span>🔄 RE-ROLL DEFENDER ({defChar?.name || 'Defender'})</span>
                             </button>
                           )}
-                          {((attackerDoubleOnes && defenderDoubleOnes) || (attackerFateCard && defenderFateCard)) && (
+                          {((attackerDoubleOnes && defenderDoubleOnes) || (attackerFateCard && defenderFateCard)) && isAttacker && (
                             <button
                               onClick={handleReRoll}
                               style={{
@@ -1857,31 +1857,49 @@ export default function KontrolaDiceRoller({
                       </div>
                     )}
 
-                    <button
-                      onClick={handleFinishCombat}
-                      disabled={isApplyingResult || (hasMultiplierDie && !hasRolledMultiplier)}
-                      style={{
-                        background: (isApplyingResult || (hasMultiplierDie && !hasRolledMultiplier)) ? 'rgba(57, 255, 20, 0.4)' : '#39ff14',
-                        color: (hasMultiplierDie && !hasRolledMultiplier) ? '#fff' : '#000',
-                        border: 'none',
-                        padding: '14px 38px',
-                        borderRadius: '12px',
-                        fontSize: '1.15rem',
-                        fontWeight: '900',
-                        cursor: isApplyingResult ? 'wait' : (hasMultiplierDie && !hasRolledMultiplier) ? 'not-allowed' : 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        fontFamily: 'Bebas Neue, sans-serif',
-                        letterSpacing: '1px',
-                        boxShadow: (hasMultiplierDie && !hasRolledMultiplier) ? 'none' : '0 0 25px rgba(57, 255, 20, 0.45)',
-                        transition: 'all 0.2s ease',
-                        opacity: (isApplyingResult || (hasMultiplierDie && !hasRolledMultiplier)) ? 0.6 : 1
-                      }}
-                    >
-                      <Check size={22} />
-                      <span>{isApplyingResult ? 'APPLYING RESULT...' : (hasMultiplierDie && !hasRolledMultiplier) ? 'ROLL MULTIPLIER DIE FIRST' : 'APPLY RESULT & CONTINUE'}</span>
-                    </button>
+                    {isAttacker ? (
+                      <button
+                        onClick={handleFinishCombat}
+                        disabled={isApplyingResult || (hasMultiplierDie && !hasRolledMultiplier)}
+                        style={{
+                          background: (isApplyingResult || (hasMultiplierDie && !hasRolledMultiplier)) ? 'rgba(57, 255, 20, 0.4)' : '#39ff14',
+                          color: (hasMultiplierDie && !hasRolledMultiplier) ? '#fff' : '#000',
+                          border: 'none',
+                          padding: '14px 38px',
+                          borderRadius: '12px',
+                          fontSize: '1.15rem',
+                          fontWeight: '900',
+                          cursor: isApplyingResult ? 'wait' : (hasMultiplierDie && !hasRolledMultiplier) ? 'not-allowed' : 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          fontFamily: 'Bebas Neue, sans-serif',
+                          letterSpacing: '1px',
+                          boxShadow: (hasMultiplierDie && !hasRolledMultiplier) ? 'none' : '0 0 25px rgba(57, 255, 20, 0.45)',
+                          transition: 'all 0.2s ease',
+                          opacity: (isApplyingResult || (hasMultiplierDie && !hasRolledMultiplier)) ? 0.6 : 1
+                        }}
+                      >
+                        <Check size={22} />
+                        <span>{isApplyingResult ? 'APPLYING RESULT...' : (hasMultiplierDie && !hasRolledMultiplier) ? 'ROLL MULTIPLIER DIE FIRST' : 'APPLY RESULT & CONTINUE'}</span>
+                      </button>
+                    ) : (
+                      <div
+                        style={{
+                          color: '#39ff14',
+                          fontStyle: 'italic',
+                          fontSize: '1rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px',
+                          padding: '10px 18px'
+                        }}
+                      >
+                        <Clock size={18} />
+                        <span>Waiting for {atkChar?.name || 'Attacker'} to apply result & continue...</span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

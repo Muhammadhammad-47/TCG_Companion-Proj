@@ -1403,6 +1403,14 @@ export default function KontrolaArena() {
         // 9. Client Action received by Host
         else if (event.type === 'PLAYER_ACTION') {
           if (isHostRef.current) {
+            if (event.payload?.actionType === 'RESOLVE_COMBAT' && event.payload?.combatId) {
+              const enqKey = event.payload.combatId + '_enqueued';
+              if (enqueuedCombatIdsRef.current.has(enqKey)) {
+                console.warn('[PLAYER_ACTION] Combat already enqueued for key:', enqKey);
+                return;
+              }
+              enqueuedCombatIdsRef.current.add(enqKey);
+            }
             const rolls = event.payload?.precalculatedRolls || null;
             enqueueHostAction(event.payload, rolls);
           }
