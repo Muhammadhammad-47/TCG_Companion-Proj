@@ -3107,6 +3107,7 @@ export default function KontrolaArena() {
       let nextTurnPlayerId = attackerKey || effectiveActorId;
       let updatedStates = { ...state.characterStates };
       let updatedHands = { ...(state.hands || {}) };
+      let triggerRevivePrompt = null;
       let newDefenderHand = defenderChar ? [
         ...(
           state.hands?.[defenderKey] ||
@@ -3294,7 +3295,7 @@ export default function KontrolaArena() {
           setXChangeModalData(triggerXChange);
         }
 
-        let triggerRevivePrompt = null;
+        triggerRevivePrompt = null;
         const defenderHoldsRevive = (newDefenderHand || []).some(c =>
           (getSafeCardName(c) || c?.name || c?.title || c?.id || '').toUpperCase().includes('REVIVE')
         );
@@ -3781,24 +3782,6 @@ export default function KontrolaArena() {
         // Refresh Energy Token claim flag for the active player's new turn
         if (updatedStates[nextTurnPlayerId]) {
           updatedStates[nextTurnPlayerId].claimedTurnET = false;
-        }
-      } else {
-        // PASS TURN / 60s auto-pass / Host skip: must still advance turn to next living player!
-        pendingAttackX2For = null;
-        const livingPlayers = (state.players || []).filter((pId) => !updatedStates[pId]?.isDefeated);
-        if (livingPlayers.length > 0) {
-          const attackerPlayerId = livingPlayers.includes(attackerKey)
-            ? attackerKey
-            : (livingPlayers.includes(effectiveActorId) ? effectiveActorId : (livingPlayers.includes(actorId) ? actorId : state.turn));
-          const currentIdx = livingPlayers.indexOf(attackerPlayerId);
-          const safeIdx = currentIdx >= 0 ? currentIdx : 0;
-          const step = state.turnDirection === 'counter' ? -1 : 1;
-          let nextIdx = (safeIdx + step) % livingPlayers.length;
-          if (nextIdx < 0) nextIdx += livingPlayers.length;
-          nextTurnPlayerId = livingPlayers[nextIdx] || livingPlayers[0];
-          if (updatedStates[nextTurnPlayerId]) {
-            updatedStates[nextTurnPlayerId].claimedTurnET = false;
-          }
         }
       }
 
