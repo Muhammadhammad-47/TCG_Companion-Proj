@@ -916,7 +916,7 @@ export default function KontrolaDiceRoller({
             <span>AUTO-RESOLVE: {secondsRemaining}s</span>
           </div>
 
-          {onClose && (
+          {onClose && (isAttacker || isHost) && (
             <button
               onClick={() => {
                 if (hasAttackerRolled && hasDefenderRolled && !isTie) {
