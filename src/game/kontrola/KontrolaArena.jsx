@@ -7945,7 +7945,8 @@ export default function KontrolaArena() {
                       const isV30Blocked = selCardUpper.includes('V30') && (myCharacter?.level || 1) < 3;
                       const isV40Blocked = selCardUpper.includes('V40') && (myCharacter?.level || 1) < 4;
                       const is3PlayerBlocked = ['BACK STAB', 'SOUL ALLIANCE', 'ABANDON', 'MISDIRECT'].some(kw => selCardUpper.includes(kw)) && ((gameState?.players?.length) || 2) <= 2;
-                      const isReviveBlocked = selCardUpper.includes('REVIVE') && (myCharacter?.hp || 0) > 0;
+                      const hasDefeatedOpponentCta = (gameState?.players || []).some(pId => pId !== playerId && (gameState?.characterStates?.[pId]?.isDefeated || (gameState?.characterStates?.[pId]?.hp || 0) <= 0));
+                      const isReviveBlocked = selCardUpper.includes('REVIVE') && (myCharacter?.hp || 0) > 0 && !hasDefeatedOpponentCta;
                       const isAttackMovesBlocked = (selCardUpper.startsWith('ATTACK X1') || selCardUpper.startsWith('ATTACK X2') || selCardUpper === 'ATTACK X1' || selCardUpper === 'ATTACK X2') && (myCharacter?.characterCardMoves || []).length === 0;
                       const isCtaCardLocked = isV20Blocked || isV30Blocked || isV40Blocked || is3PlayerBlocked || isReviveBlocked || isAttackMovesBlocked;
 
@@ -7961,6 +7962,7 @@ export default function KontrolaArena() {
                         (!selectedCharacterAttack || !selectedTargetId)
                       ) || (selCardUpper.includes('BACK STAB') && (!selectedTargetId || !selectedCharacterAttack)) ||
                       (['POISON', 'SLEEPY', 'FREEZE', 'X-CHANGE', 'KONTROL', 'SOUL ALLIANCE', 'DRAIN', 'VAMPIRE', 'MISDIRECT', 'LIGHTNING', 'FIRE FLAME'].some(kw => selCardUpper.includes(kw)) && !selectedTargetId) ||
+                      (selCardUpper.includes('REVIVE') && (myCharacter?.hp || 0) > 0 && !selectedTargetId) ||
                       (selCardUpper.includes('VISION') && !selCardUpper.includes('FULL') && !selectedTargetId);
 
                       const buttonText = isReviveBlocked

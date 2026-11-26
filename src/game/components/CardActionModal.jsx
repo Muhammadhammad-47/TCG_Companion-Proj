@@ -1009,7 +1009,8 @@ export default function CardActionModal({
                   </div>
 
                   {(() => {
-                    const isReviveBlocked = (currentAction?.name || '').toUpperCase().includes('REVIVE') && (activePlayer?.hp || 0) > 0 && !activePlayer?.isDefeated;
+                    const hasDefeatedExile = (allPlayers || []).some(p => p.id !== activePlayer?.id && (p.isDefeated || (p.hp || 0) <= 0));
+                    const isReviveBlocked = (currentAction?.name || '').toUpperCase().includes('REVIVE') && (activePlayer?.hp || 0) > 0 && !activePlayer?.isDefeated && !hasDefeatedExile;
                     const isAttackAction = (currentAction?.name || '').toUpperCase().includes('ATTACK X1') || (currentAction?.name || '').toUpperCase().includes('ATTACK X2') || currentAction?.id === 'atk_x1' || currentAction?.id === 'atk_x2';
                     const hasCharMoves = (activePlayer.characterCardMoves || []).length > 0;
                     const isAttackActionBlocked = isAttackAction && !hasCharMoves;
