@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Sparkles, Trophy, Skull, Swords, Zap, Crown } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -20,6 +20,7 @@ export default function FullScreenCinematics({
   onClearTurnBanner
 }) {
   const [showBanner, setShowBanner] = useState(false);
+  const hasFiredVictoryConfettiRef = useRef(false);
 
   // Trigger turn banner animation
   useEffect(() => {
@@ -33,9 +34,14 @@ export default function FullScreenCinematics({
     }
   }, [turnBanner, onClearTurnBanner]);
 
-  // Trigger Victory Confetti
+  // Trigger Victory Confetti (strictly once per match win, never on every re-render)
   useEffect(() => {
-    if (winnerData && winnerData.isWinner) {
+    if (!winnerData) {
+      hasFiredVictoryConfettiRef.current = false;
+      return;
+    }
+    if (winnerData.isWinner && !hasFiredVictoryConfettiRef.current) {
+      hasFiredVictoryConfettiRef.current = true;
       try {
         confetti({
           particleCount: 120,
@@ -45,7 +51,7 @@ export default function FullScreenCinematics({
         });
       } catch (e) {}
     }
-  }, [winnerData]);
+  }, [winnerData?.isWinner, winnerData?.name]);
 
   return (
     <>
