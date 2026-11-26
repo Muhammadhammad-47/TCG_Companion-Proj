@@ -549,23 +549,6 @@ export default function KontrolaArena() {
   };
 
   // Record match victory and award crystals � single guarded effect, DB only
-  // Capture all browser console logs for this player during the match
-  useEffect(() => {
-    if (!matchId || !playerId) return;
-    matchConsoleLogService.setMatchContext({
-      roomCode: matchId,
-      playerId,
-      playerName: playerName || myCharacter?.name || 'Player',
-      role: isSpectator ? 'SPECTATOR' : (isHost ? 'HOST' : 'PLAYER')
-    });
-  }, [matchId, playerId, playerName, isHost, isSpectator, myCharacter?.name]);
-
-  useEffect(() => {
-    return () => {
-      matchConsoleLogService.clearMatchContext();
-    };
-  }, []);
-
   useEffect(() => {
     if (winner && !hasLoggedMatchRef.current) {
       hasLoggedMatchRef.current = true;
@@ -690,6 +673,23 @@ export default function KontrolaArena() {
   const isPendingSecondAttack = Boolean(gameState?.pendingAttackX2For === playerId);
   const myCharacter = gameState?.characterStates?.[playerId] || KONTROLA_CHARACTERS[selectedCharacter];
   const myHand = gameState?.hands?.[playerId] || [];
+
+  // Capture all browser console logs for this player during the match
+  useEffect(() => {
+    if (!matchId || !playerId) return;
+    matchConsoleLogService.setMatchContext({
+      roomCode: matchId,
+      playerId,
+      playerName: playerName || myCharacter?.name || 'Player',
+      role: isSpectator ? 'SPECTATOR' : (isHost ? 'HOST' : 'PLAYER')
+    });
+  }, [matchId, playerId, playerName, isHost, isSpectator, myCharacter?.name]);
+
+  useEffect(() => {
+    return () => {
+      matchConsoleLogService.clearMatchContext();
+    };
+  }, []);
 
   // Auto-select dummy card for 2nd hit of ATTACK X2
   useEffect(() => {
