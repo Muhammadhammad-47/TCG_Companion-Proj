@@ -1447,8 +1447,8 @@ export default function KontrolaDiceRoller({
                 }
               </p>
 
-              {/* Rule of 6+ Basic Defense Rule Banner */}
-              {defSum >= 6 && (
+              {/* Rule of 6 Basic Defense Rule Banner (only exact roll of 6, without Defense card, non-Poison) */}
+              {defSum === 6 && !activeDefenseCard && !(resolvedCardName || '').toUpperCase().includes('POISON') && (
                 <div
                   style={{
                     margin: '0 auto 16px auto',
@@ -1465,7 +1465,7 @@ export default function KontrolaDiceRoller({
                   }}
                 >
                   <Shield size={16} />
-                  <span>🛡️ RULE OF 6+ ACTIVATED! Defender rolled {defSum} (≥6): Innate Base Defense (-10 AP) activated!</span>
+                  <span>🛡️ BASIC DEFENSE ACTIVATED! Defender rolled {defSum} (no Defense card): Innate Base Defense (-10 AP) activated!</span>
                 </div>
               )}
 
@@ -1804,7 +1804,7 @@ export default function KontrolaDiceRoller({
                           )}
 
                           <div style={{ background: previewMath.innateDP > 0 ? 'rgba(251, 200, 13, 0.15)' : 'rgba(255,255,255,0.05)', border: previewMath.innateDP > 0 ? '1px solid var(--neon-gold)' : 'none', padding: '6px', borderRadius: '6px', textAlign: 'center' }}>
-                            <div style={{ fontSize: '0.65rem', color: previewMath.innateDP > 0 ? 'var(--neon-gold)' : 'rgba(255,255,255,0.6)' }}>🛡️ DP (6+ ROLL)</div>
+                            <div style={{ fontSize: '0.65rem', color: previewMath.innateDP > 0 ? 'var(--neon-gold)' : 'rgba(255,255,255,0.6)' }}>🛡️ DP (ROLL = 6)</div>
                             <strong style={{ fontSize: '0.95rem', color: previewMath.innateDP > 0 ? 'var(--neon-gold)' : '#888' }}>
                               {previewMath.innateDP > 0 ? `-${previewMath.innateDP} AP` : '0 (Failed)'}
                             </strong>
