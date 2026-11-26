@@ -148,6 +148,23 @@ export default function CardActionModal({
       }
     }
 
+    // Allied players (NSA / Soul Alliance) cannot attack each other unless using BACK STAB
+    const actionNameUpper = (currentAction?.name || '').toUpperCase();
+    const isHostileAction = currentAction.category === 'Attack' ||
+      currentAction.type === 'ATTACK' ||
+      isZombie ||
+      ['POISON', 'SLEEPY', 'FREEZE', 'KONTROL', 'DRAIN', 'VAMPIRE'].some(kw => actionNameUpper.includes(kw));
+    const isTargetAlly = Boolean(
+      targetPlayer && (
+        (activePlayer?.allianceId && (activePlayer.allianceId === targetPlayer.allianceId || activePlayer.allianceId === targetPlayer.id)) ||
+        (activePlayer?.relationshipType === 'ALLIANCE' && activePlayer?.relationshipPartnerId === targetPlayer.id)
+      )
+    );
+    if (isTargetAlly && isHostileAction && currentAction.id !== 'backstab' && !actionNameUpper.includes('BACK STAB')) {
+      setErrorMsg('🤝 Allied players cannot attack each other! Use an ABANDON or BACK STAB card (or Break Agreement) first.');
+      return;
+    }
+
     // Handle Attacks
     if (currentAction.category === 'Attack' || currentAction.type === 'ATTACK' || isZombie || currentAction.id === 'backstab' || (currentAction.name || '').toUpperCase().includes('BACK STAB')) {
       // CHECK VITALITY LEVEL REQUIREMENTS (before initiating attack)
