@@ -42,7 +42,7 @@ import {
   Clock, Play, Heart, Trophy, Crown, Dices,
   MessageSquare, Eye, Layers, ScrollText, FlaskConical,
   Maximize2, Minimize2, Sparkles, ChevronRight, Activity,
-  X, Send, CheckCircle2, Flame, RefreshCw, AlertTriangle, HelpCircle, Trash2, Upload, ShoppingBag
+  X, Send, CheckCircle2, Flame, RefreshCw, AlertTriangle, HelpCircle, Trash2, Upload, ShoppingBag, Lock
 } from 'lucide-react';
 
 export default function BattleArena({
