@@ -201,6 +201,10 @@ export const subscribeToMatch = (matchId, callback, onSubscribe = null, playerId
     callback({ type: 'ALLIANCE_RESPONSE', payload });
   });
 
+  channel.on('broadcast', { event: 'player_console_logs' }, ({ payload }) => {
+    callback({ type: 'PLAYER_CONSOLE_LOGS', payload });
+  });
+
   channel.on('presence', { event: 'leave' }, ({ key }) => {
     if (key && key !== 'spectator') {
       callback({ type: 'PLAYER_PRESENCE_AWAY', payload: { playerId: key } });

@@ -32,3 +32,7 @@ create policy "Players can insert match console logs"
 drop policy if exists "Players can update match console logs" on public.match_console_logs;
 create policy "Players can update match console logs"
   on public.match_console_logs for update using (true);
+
+drop policy if exists "Admins can prune old match console logs" on public.match_console_logs;
+create policy "Admins can prune old match console logs"
+  on public.match_console_logs for delete using (true);

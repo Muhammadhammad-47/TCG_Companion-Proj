@@ -225,9 +225,76 @@ export const matchConsoleLogService = {
   },
 
   /**
+   * Checks whether the match_console_logs Supabase table is reachable.
+   */
+  async checkDbStatus() {
+    if (!supabase) return { ok: false, error: 'Supabase client not configured' };
+    try {
+      const { error } = await supabase.from('match_console_logs').select('id').limit(1);
+      if (error) return { ok: false, error: error.message || 'Table unavailable' };
+      return { ok: true, error: null };
+    } catch (e) {
+      return { ok: false, error: e?.message || 'Connection error' };
+    }
+  },
+
+  /**
+   * Keeps only the latest `keepCount` (default 25) matches in localStorage & Supabase.
+   */
+  async pruneOldMatches(keepCount = 25) {
+    try {
+      // Prune localStorage
+      const roomEntries = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(LOCAL_STORAGE_PREFIX)) {
+          const parsed = JSON.parse(localStorage.getItem(k) || '{}');
+          const rows = Object.values(parsed);
+          const maxTs = rows.reduce((m, r) => (r.updated_at > m ? r.updated_at : m), '');
+          roomEntries.push({ key: k, maxTs });
+        }
+      }
+      if (roomEntries.length > keepCount) {
+        roomEntries.sort((a, b) => (b.maxTs > a.maxTs ? 1 : -1));
+        roomEntries.slice(keepCount).forEach((entry) => {
+          localStorage.removeItem(entry.key);
+        });
+      }
+    } catch {
+      // Ignore storage errors
+    }
+
+    if (!supabase) return;
+    try {
+      const { data } = await supabase
+        .from('match_console_logs')
+        .select('room_code, updated_at')
+        .order('updated_at', { ascending: false })
+        .limit(500);
+      if (!data || data.length === 0) return;
+
+      const seenRooms = [];
+      const seenSet = new Set();
+      data.forEach((r) => {
+        if (r.room_code && !seenSet.has(r.room_code)) {
+          seenSet.add(r.room_code);
+          seenRooms.push(r.room_code);
+        }
+      });
+
+      if (seenRooms.length > keepCount) {
+        const roomsToDelete = seenRooms.slice(keepCount);
+        await supabase.from('match_console_logs').delete().in('room_code', roomsToDelete);
+      }
+    } catch {
+      // Ignore prune failures
+    }
+  },
+
+  /**
    * Fetches all match console log rows for Admin Match History aggregation.
    */
-  async fetchAllMatchLogRows(limit = 200) {
+  async fetchAllMatchLogRows(limit = 500) {
     const localRows = readAllLocalFallbacks();
     if (!supabase) return localRows;
 

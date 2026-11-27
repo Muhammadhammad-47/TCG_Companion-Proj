@@ -60,6 +60,7 @@ export default function AdminPage() {
   const [matchHistory, setMatchHistory] = useState([]);
   const [isMatchesLoading, setIsMatchesLoading] = useState(false);
   const [matchLogsByRoom, setMatchLogsByRoom] = useState({});
+  const [matchLogsDbStatus, setMatchLogsDbStatus] = useState({ ok: true, error: null });
   const [selectedMatchLogRoom, setSelectedMatchLogRoom] = useState(null);
   const [selectedMatchLogRows, setSelectedMatchLogRows] = useState([]);
   const [isMatchLogsLoading, setIsMatchLogsLoading] = useState(false);
@@ -308,10 +309,12 @@ export default function AdminPage() {
   const loadMatches = async () => {
     setIsMatchesLoading(true);
     try {
-      const [data, logRows] = await Promise.all([
-        authService.fetchMatchHistory(50),
-        matchConsoleLogService.fetchAllMatchLogRows(250)
+      const [data, logRows, dbStatus] = await Promise.all([
+        authService.fetchMatchHistory(25),
+        matchConsoleLogService.fetchAllMatchLogRows(500),
+        matchConsoleLogService.checkDbStatus()
       ]);
+      setMatchLogsDbStatus(dbStatus || { ok: false, error: 'Unknown status' });
 
       const grouped = {};
       (logRows || []).forEach((row) => {
@@ -339,7 +342,8 @@ export default function AdminPage() {
         }
       });
       matchesList.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-      setMatchHistory(matchesList);
+      setMatchHistory(matchesList.slice(0, 25));
+      matchConsoleLogService.pruneOldMatches(25);
     } catch (e) {
       console.warn('Failed loading matches:', e);
     } finally {
@@ -1747,14 +1751,30 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
                     <div>
                       <h2 style={{ fontSize: '1.35rem', fontWeight: '900', color: '#fff', margin: '0 0 2px 0', fontFamily: 'var(--font-display, "Bebas Neue", sans-serif)', letterSpacing: '1px' }}>
-                        RECORDED DUEL OUTCOMES
+                        RECORDED DUEL OUTCOMES (LAST 25 MATCHES)
                       </h2>
-                      <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>
-                        Logged match victories recorded from Kontrola Arena and Tabletop Simulator
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>
+                          All players&apos; console logs &amp; match outcomes (capped at last 25 matches)
+                        </span>
+                        <span
+                          style={{
+                            fontSize: '0.7rem',
+                            fontWeight: 'bold',
+                            padding: '2px 8px',
+                            borderRadius: '999px',
+                            background: matchLogsDbStatus?.ok ? 'rgba(57, 255, 20, 0.12)' : 'rgba(255, 68, 68, 0.16)',
+                            border: matchLogsDbStatus?.ok ? '1px solid rgba(57, 255, 20, 0.4)' : '1px solid rgba(255, 68, 68, 0.5)',
+                            color: matchLogsDbStatus?.ok ? '#39ff14' : '#ff6b6b'
+                          }}
+                          title={matchLogsDbStatus?.error || 'Supabase match_console_logs connected'}
+                        >
+                          {matchLogsDbStatus?.ok ? 'DB LOGS: CONNECTED' : `DB LOGS OFFLINE: ${matchLogsDbStatus?.error || 'Run schema_match_console_logs.sql'}`}
+                        </span>
+                      </div>
                     </div>
 
                     <button
