@@ -2337,6 +2337,7 @@ export default function KontrolaArena() {
         };
         pendingStateRef.current = nextState;
         gameStateRef.current = nextState;
+        setWinner(null);
         broadcastState(matchIdRef.current, nextState);
         return nextState;
       }

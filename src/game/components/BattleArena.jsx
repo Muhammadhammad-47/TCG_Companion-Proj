@@ -357,6 +357,8 @@ export default function BattleArena({
     setGameState({
       ...gameState,
       players: updatedPlayers,
+      winner: null,
+      phase: 'playing',
       lastActionLog: `✨ ${reviveModalData.playerName} used REVIVE! Restored to ${reviveModalData.reviveHP} HP (50%). REVIVE was discarded and a replacement Action card re-appeared!`
     });
     setShowReviveModal(false);
