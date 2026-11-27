@@ -3276,7 +3276,7 @@ export default function BattleArena({
         <StoreModal
           isOpen={isStoreOpen}
           onClose={() => setIsStoreOpen(false)}
-          userProfile={currentUser}
+          userProfile={gameState?.currentUser || null}
           onPurchaseComplete={() => {
             handleReplenishMovesForPlayer(activePlayer.id, activePlayer.characterId);
           }}
