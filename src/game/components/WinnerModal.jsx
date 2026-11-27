@@ -20,32 +20,16 @@ export default function WinnerModal({ winner, players, turnNumber, gameStats = {
   useEffect(() => {
     soundFX.playVictory();
 
-    // Confetti celebration (Stability Crystals)
-    const end = Date.now() + 3.5 * 1000;
-    const colors = ['#FBC80D', '#39ff14', '#ffffff'];
-
-    (function frame() {
+    // Confetti celebration (single burst)
+    try {
       confetti({
-        particleCount: 5,
-        angle: 60,
-        spread: 70,
-        origin: { x: 0.1, y: 0.6 },
-        colors: colors,
-        shapes: ['square'] // Like crystals
-      });
-      confetti({
-        particleCount: 5,
-        angle: 120,
-        spread: 70,
-        origin: { x: 0.9, y: 0.6 },
-        colors: colors,
+        particleCount: 120,
+        spread: 80,
+        origin: { y: 0.6 },
+        colors: ['#FBC80D', '#39ff14', '#ffffff'],
         shapes: ['square']
       });
-
-      if (Date.now() < end) {
-        requestAnimationFrame(frame);
-      }
-    })();
+    } catch {}
   }, []);
 
   const otherPlayers = (players || [])
