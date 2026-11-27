@@ -1542,6 +1542,10 @@ export default function KontrolaArena() {
           }
 
           // Spawn floating stat badges for all users
+          if (logText && logText.includes('SACRED PROTECTION negated')) {
+            spawnStatPopup('✨ STATUS NEGATED (Sacred Protection)', 'shield');
+            showNotice(logText.trim(), 'info');
+          }
           if (dmgDealt > 0) {
             spawnStatPopup(`💥 -${dmgDealt} HP`, 'damage');
           }
@@ -3687,6 +3691,8 @@ export default function KontrolaArena() {
           if (sleepingChar.poisonCount > 0 && !sleepingChar.isDefeated) {
             if (sleepingChar.justPoisoned) {
               sleepingChar.justPoisoned = false; // Initial hit already applied; ongoing damage begins on subsequent turn
+            } else if (sleepingChar.sacredProtection) {
+              turnLogs.unshift(`✨ SHIELD SACRED PROTECTION negated ongoing Poison damage for ${sleepingChar.name}!`);
             } else {
               const pDmg = sleepingChar.poisonCount * 10;
               sleepingChar.hp = Math.max(0, sleepingChar.hp - pDmg);
@@ -3700,12 +3706,16 @@ export default function KontrolaArena() {
 
           // Apply burn damage tick during skipped turn
           if (typeof sleepingChar.burnCount === 'number' && sleepingChar.burnCount > 0 && !sleepingChar.isDefeated) {
-            const bDmg = sleepingChar.burnCount * 10;
-            sleepingChar.hp = Math.max(0, sleepingChar.hp - bDmg);
-            turnLogs.unshift(`🔥 ${sleepingChar.name} suffered ${bDmg} Burn damage while incapacitated! HP: ${sleepingChar.hp}`);
-            if (sleepingChar.hp <= 0) {
-              sleepingChar.isDefeated = true;
-              turnLogs.unshift(`💀 ${sleepingChar.name} was incinerated by Burn damage and eliminated!`);
+            if (sleepingChar.sacredProtection) {
+              turnLogs.unshift(`✨ SHIELD SACRED PROTECTION negated Burn damage for ${sleepingChar.name}!`);
+            } else {
+              const bDmg = sleepingChar.burnCount * 10;
+              sleepingChar.hp = Math.max(0, sleepingChar.hp - bDmg);
+              turnLogs.unshift(`🔥 ${sleepingChar.name} suffered ${bDmg} Burn damage while incapacitated! HP: ${sleepingChar.hp}`);
+              if (sleepingChar.hp <= 0) {
+                sleepingChar.isDefeated = true;
+                turnLogs.unshift(`💀 ${sleepingChar.name} was incinerated by Burn damage and eliminated!`);
+              }
             }
           }
 
@@ -3730,6 +3740,8 @@ export default function KontrolaArena() {
             // Target was just infected this round; initial hit (-20 HP) was already applied.
             // Consume the flag so ongoing damage starts on their subsequent turn.
             incomingChar.justPoisoned = false;
+          } else if (incomingChar.sacredProtection) {
+            turnLogs.unshift(`✨ SHIELD SACRED PROTECTION negated ongoing Poison damage for ${incomingChar.name}!`);
           } else {
             const poisonDmg = incomingChar.poisonCount * 10;
             incomingChar.hp = Math.max(0, incomingChar.hp - poisonDmg);
@@ -3796,6 +3808,10 @@ export default function KontrolaArena() {
         // Note: Burn damage is resolved via the interactive Extinguish Roll prompt before the active player's move per Nov 5 specification.
         // Check Vampire drain effect (-10 HP, -1 ET per turn for 3 turns)
         if (incomingChar && typeof incomingChar.vampireStealTurnsLeft === 'number' && incomingChar.vampireStealTurnsLeft > 0 && !incomingChar.isDefeated) {
+          if (incomingChar.sacredProtection) {
+            incomingChar.vampireStealTurnsLeft -= 1;
+            turnLogs.unshift(`✨ SHIELD SACRED PROTECTION negated Vampire curse drain for ${incomingChar.name}! (${incomingChar.vampireStealTurnsLeft} turn${incomingChar.vampireStealTurnsLeft === 1 ? '' : 's'} remaining)`);
+          } else {
           const vampireDrain = Math.min(10, incomingChar.hp);
           const vampireETDrain = Math.min(1, incomingChar.energyTokens || 0);
           incomingChar.hp = Math.max(0, incomingChar.hp - vampireDrain);
@@ -3834,6 +3850,7 @@ export default function KontrolaArena() {
               const dIdx = livingPlayers.indexOf(nextTurnPlayerId);
               nextTurnPlayerId = livingPlayers[(dIdx + 1) % livingPlayers.length];
             }
+          }
           }
         }
 
