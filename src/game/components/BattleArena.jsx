@@ -1278,7 +1278,7 @@ export default function BattleArena({
           updated.poisonCards = (updated.poisonCards || 0) + stacks;
           updated.justPoisoned = true; // Protect against immediate double-dip on turn start
           updated.hp = Math.max(0, updated.hp - totalInitialDmg);
-          if (updated.hp === 0) {
+          if (updated.hp === 0 && updated.poisonCards < GAME_LIMITS.ZOMBIE_POISON_TRIGGER) {
             updated.isDefeated = true;
             updated.reviveHandled = false;
           }

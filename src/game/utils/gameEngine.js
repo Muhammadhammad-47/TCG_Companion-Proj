@@ -99,6 +99,7 @@ export function checkZombieStatus(player) {
   // Zombie Transformation (5+ Poison cards)
   if (!p.isZombie && p.poisonCards >= GAME_LIMITS.ZOMBIE_POISON_TRIGGER) {
     p.isZombie = true;
+    p.isDefeated = false; // Reaching 5 Poison cards transforms into Zombie instead of defeat
     p.preZombieHP = Math.max(1, p.hp); // Save HP before turning
     p.hp = ZOMBIE_PROFILE.baseHP; // 40 HP
     p.preZombieWeakness = p.weakness; // Save original weakness
