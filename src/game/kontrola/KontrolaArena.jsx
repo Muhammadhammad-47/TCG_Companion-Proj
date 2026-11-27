@@ -3766,6 +3766,11 @@ export default function KontrolaArena() {
           updatedStates[actorId].sacredProtection = false;
         }
 
+        // KONTROL Cooldown: decrement 5-turn cooldown when advancing to the player's next turn
+        if (incomingChar && (incomingChar.kontrolCooldown || 0) > 0 && nextTurnPlayerId !== (attackerKey || actorId)) {
+          incomingChar.kontrolCooldown = Math.max(0, incomingChar.kontrolCooldown - 1);
+        }
+
         // Mechanics of Exiles: Mercenary contract expiration (3 turns)
         if (!grantExtraTurn && updatedStates[actorId]?.relationshipType === 'MERCENARY') {
           const rem = Math.max(0, (updatedStates[actorId].mercenaryTurnsRemaining || 3) - 1);
