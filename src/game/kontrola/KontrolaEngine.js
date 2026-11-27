@@ -1346,7 +1346,7 @@ export const resolveTurn = (actionCard, attackerChar, attackerState, defenderSta
         const hasPoisonWeak = hasPoisonWeakness(newDefenderState);
         const hasFireWeakness = isZombieDef || defWeakness.includes('fire') || ['shroomy', 'queeny'].some(k => defCharKey.includes(k));
         const hasLightningWeakness = isZombieDef || defWeakness.includes('lightning') || defWeakness.includes('lighting');
-        const hasMagicWeakness = defWeakness.includes('magic') || ['chynaman', 'chyna', 'bee', 'poochi', 'pooch', 'queeny'].some(k => defCharKey.includes(k));
+        const hasMagicWeakness = !isZombieDef && (defWeakness.includes('magic') || ['chynaman', 'chyna', 'bee', 'poochi', 'pooch', 'queeny'].some(k => defCharKey.includes(k)));
 
         let weaknessBonus = 0;
         let weaknessReason = '';

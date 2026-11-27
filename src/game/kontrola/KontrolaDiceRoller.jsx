@@ -383,7 +383,7 @@ export default function KontrolaDiceRoller({
       const isPoisonWeakness = hasPoisonWeakness(defChar);
       const isFireWeakness = isZombieDef || defWeakness.includes('fire') || ['shroomy', 'queeny'].some(k => defCharKey.includes(k));
       const isLightningWeakness = isZombieDef || defWeakness.includes('lightning') || defWeakness.includes('lighting');
-      const isMagicWeakness = defWeakness.includes('magic') || ['chynaman', 'chyna', 'bee', 'poochi', 'pooch', 'queeny'].some(k => defCharKey.includes(k));
+      const isMagicWeakness = !isZombieDef && (defWeakness.includes('magic') || ['chynaman', 'chyna', 'bee', 'poochi', 'pooch', 'queeny'].some(k => defCharKey.includes(k)));
       const attackElem = selectedAttackInfo?.element || (cardNameUpper.includes('FIRE') ? 'Fire' : (cardNameUpper.includes('LIGHTNING') || cardNameUpper.includes('LIGHTING')) ? 'Lightning' : isPoisonCard ? 'Poison' : 'Physical');
       const isMagicAndPoisonAtk = (attackElem && (attackElem.includes('&') || attackElem.toLowerCase().includes('and')) && attackElem.toLowerCase().includes('magic') && attackElem.toLowerCase().includes('poison')) || 
         attackNameUpper.includes('POPPERS') || 
