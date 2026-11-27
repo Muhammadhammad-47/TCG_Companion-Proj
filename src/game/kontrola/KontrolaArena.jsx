@@ -4510,8 +4510,12 @@ export default function KontrolaArena() {
         return;
       }
 
+      if ((selectedCharacterAttack === 'WILD CARD' || (selectedCharacterAttack || '').toUpperCase().includes('WILD')) && !selectedWildMoveChoice) {
+        showNotice('Please choose 1 move for your Wild Card!', 'warning');
+        return;
+      }
       const effectiveAttackSelection = (selectedCharacterAttack === 'WILD CARD' || (selectedCharacterAttack || '').toUpperCase().includes('WILD'))
-        ? (selectedWildMoveChoice || Object.keys(myCharacter?.attacks || {})[0] || selectedCharacterAttack)
+        ? selectedWildMoveChoice
         : selectedCharacterAttack;
 
       const uniqueActionId = `act_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
@@ -7891,8 +7895,8 @@ export default function KontrolaArena() {
                                               return;
                                             }
                                             setSelectedCharacterAttack(atkName);
-                                            if (atkData.isWild && !selectedWildMoveChoice && atkData.wildOptions?.length) {
-                                              setSelectedWildMoveChoice(atkData.wildOptions[0]);
+                                            if (atkData.isWild) {
+                                              setSelectedWildMoveChoice(null);
                                             }
                                           }}
                                           style={{
@@ -7952,7 +7956,7 @@ export default function KontrolaArena() {
                                             </div>
                                             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                                               {(atkData.wildOptions || []).map(opt => {
-                                                const isOptSelected = (selectedWildMoveChoice || atkData.wildOptions[0]) === opt;
+                                                const isOptSelected = selectedWildMoveChoice === opt;
                                                 return (
                                                   <button
                                                     key={opt}

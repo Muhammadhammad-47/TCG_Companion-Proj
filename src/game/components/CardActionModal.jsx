@@ -197,8 +197,13 @@ export default function CardActionModal({
         return;
       }
 
+      if (currentMove?.isWild && !selectedWildOption) {
+        setErrorMsg('Please choose 1 technique for your Wild Card!');
+        return;
+      }
+
       const resolvedMove = currentMove?.isWild
-        ? (allCharMoves.find(m => m.name === (selectedWildOption || currentMove.wildOptions?.[0])) || currentMove)
+        ? (allCharMoves.find(m => m.name === selectedWildOption) || currentMove)
         : currentMove;
 
       setPlacementData({
@@ -846,7 +851,7 @@ export default function CardActionModal({
                         </div>
                       </div>
                     ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '280px', overflowY: 'auto' }}>
                         {availableMoves.map(move => {
                           const isMoveSelected = (selectedMoveId || availableMoves[0]?.id) === move.id;
                           const isMult = move.type === 'dice_mult';
@@ -857,8 +862,8 @@ export default function CardActionModal({
                               onClick={() => {
                                 soundFX.playCard();
                                 setSelectedMoveId(move.id);
-                                if (move.isWild && !selectedWildOption && move.wildOptions?.length) {
-                                  setSelectedWildOption(move.wildOptions[0]);
+                                if (move.isWild) {
+                                  setSelectedWildOption(null);
                                 }
                               }}
                               style={{
@@ -910,7 +915,7 @@ export default function CardActionModal({
                                   </div>
                                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                                     {(move.wildOptions || []).map(optName => {
-                                      const isOptSelected = (selectedWildOption || move.wildOptions[0]) === optName;
+                                      const isOptSelected = selectedWildOption === optName;
                                       return (
                                         <button
                                           key={optName}
